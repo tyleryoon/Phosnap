@@ -1,0 +1,321 @@
+================================================================================
+  PHOSNAP — PROJECT BACKUP PROMPT
+  작성일: 2026-04-10
+  목적: 새 대화창에서 프로젝트 컨텍스트 복원용 프롬프트
+================================================================================
+
+아래 내용을 새 대화 시작 시 첫 메시지로 붙여넣기하세요.
+
+────────────────────────────────────────────────────────────────────────────────
+[붙여넣기 시작]
+────────────────────────────────────────────────────────────────────────────────
+
+나는 Phosnap이라는 글로벌 스냅 사진·영상 예약 플랫폼을 개발하고 있어.
+φῶς(phos) = 그리스어로 "빛"에서 이름을 따왔어.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 프로젝트 위치 & 기술 스택
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+경로: C:\Users\keons\Documents\Claude\phosnap\
+프레임워크: Vite + React 18
+라우터: React Router v6
+상태관리: Context API (LanguageContext)
+스타일: CSS-in-JS (App.jsx navCSS string) + global.css + tokens.css
+폰트: Cinzel, Cormorant Garamond, Noto Sans KR
+디자인 테마: 어두운 배경(#0B0B0B), 골드 어센트(#E8A020), 고급 럭셔리 미니멀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 파일 구조
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+src/
+├── main.jsx                  ← <LanguageProvider> 가 <BrowserRouter> 감싸고 있음
+├── App.jsx                   ← 라우트 + navCSS (전체 CSS 정의 포함)
+├── styles/
+│   ├── global.css            ← 전역 스타일 (section, filters, modal, stats 등)
+│   └── tokens.css            ← CSS 변수 (--gold, --bg, --muted 등)
+├── contexts/
+│   └── LanguageContext.jsx   ← useLanguage() hook, LANG_LABELS, t(key) 함수
+├── i18n/
+│   ├── ko.json               ← 한국어 (202 keys)
+│   ├── en.json               ← 영어 (202 keys)
+│   ├── ja.json               ← 일본어 (202 keys)
+│   └── zh.json               ← 중국어 (202 keys)
+├── components/
+│   ├── Nav.jsx               ← 네비게이션 (LogoText 사용, 언어 전환 버튼)
+│   ├── Footer.jsx            ← 푸터 (LogoText, Instagram 링크)
+│   ├── LogoText.jsx          ← PHOSNAP 로고 (S자에 금→흰 그라디언트)
+│   ├── AuthModal.jsx         ← 로그인/회원가입 모달 (역할 3종 선택)
+│   ├── PhotographerCard.jsx  ← 사진작가 카드 (i18n 완료)
+│   ├── StylistCard.jsx       ← 스타일리스트 카드
+│   ├── Corners.jsx           ← 브랜드 코너 마크 (dotted 골드 테두리)
+│   ├── Toast.jsx             ← 토스트 메시지
+│   └── Icons.jsx             ← SVG 아이콘 컴포넌트
+├── data/
+│   ├── photographers.js      ← mock 작가 데이터 (i18n 키 태그, nameI18n, bioI18n)
+│   ├── locations.js          ← 국내/해외 지역 (nameI18n 포함)
+│   └── stylists.js           ← H&M 스타일리스트 mock 데이터
+└── pages/
+    ├── Home.jsx              ← 메인 홈 (Hero, Stats, Location, Featured, How it works, Instagram, Waitlist)
+    ├── Explore.jsx           ← 지역 탐색 (국내/해외 탭)
+    ├── Photographers.jsx     ← 작가 목록 (태그 필터, 언어 필터)
+    ├── Profile.jsx           ← 작가 프로필 (포트폴리오/패키지/리뷰/스케줄 탭)
+    ├── Booking.jsx           ← 예약 4단계 (날짜/패키지/스타일리스트/확인)
+    ├── ForArtists.jsx        ← 작가 모집 페이지
+    └── Waitlist.jsx          ← 얼리 액세스 등록 (역할별 3카드)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 언어 시스템 (i18n)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+언어: KR(ko) / EN(en) / JP(ja) / CN(zh) — 4개 언어 완전 지원
+Nav 표시: KR / EN / JP / CN (ZH 아님!)
+
+LanguageContext.jsx 핵심 코드:
+---
+import ko from '../i18n/ko.json';
+import en from '../i18n/en.json';
+import ja from '../i18n/ja.json';
+import zh from '../i18n/zh.json';
+
+export const LANG_LABELS = [
+  { code: 'ko', label: 'KR' },
+  { code: 'en', label: 'EN' },
+  { code: 'ja', label: 'JP' },
+  { code: 'zh', label: 'CN' },
+];
+
+const t = (key) => {
+  const keys = key.split('.');
+  let val = LANGS[lang];
+  for (const k of keys) { val = val?.[k]; }
+  return val ?? key;  // 키 없으면 key 문자열 그대로 반환
+};
+---
+
+t() 함수는 배열도 반환 가능 (예: t('booking.days') → ['일','월','화'...])
+모든 페이지에서: const { lang, t } = useLanguage();
+
+i18n JSON 최상위 섹션 (202개 키, 4개 언어 완전 일치):
+nav, tags, hero, stats, section, profile, photographers, explore,
+home, card, booking, forartists, waitlist, footer
+
+주요 섹션 구조:
+- tags: all, wedding, couple, outdoor, birthday1st, portrait, video, iphone, indoor, landmark, hmk
+- hero: eyebrow, headline, subtitle, searchPlaceholder, searchTags(배열), ctaPrimary, ctaSecondary
+- booking: days(배열 7개), months(배열 12개) — 언어별로 요일/월 표기 다름
+- waitlist: 3개 역할 카드 + 폼 필드 + 혜택 b1~b4 모두 i18n
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 로고 — LogoText 컴포넌트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+src/components/LogoText.jsx:
+---
+const sGradient = {
+  background: 'linear-gradient(to right, #E8A020, #f2f2f2)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  backgroundClip: 'text',
+  display: 'inline-block',  // 필수! 없으면 그라디언트 안 됨
+};
+
+const LogoText = ({ style = {} }) => (
+  <span style={{ letterSpacing: '0.2em', fontFamily: 'inherit', ...style }}>
+    <span style={{ color: '#E8A020' }}>PHO</span>
+    <span style={sGradient}>S</span>
+    <span style={{ color: '#f2f2f2' }}>NAP</span>
+  </span>
+);
+---
+Nav.jsx와 Footer.jsx 두 곳에서 import해서 사용.
+App.jsx에 `.nav-logo span { color }` 같은 전역 CSS가 있으면 인라인 스타일을 덮어쓰니 주의.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 데이터 구조
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+photographers.js — 핵심 필드:
+---
+{
+  id: 1,
+  name: 'Mina J.',       // 영문명 (기본 표시)
+  nameKo: '정미나',       // 한국어명 (lang==='ko' 일 때 표시)
+  location: '교토 · 오사카',
+  locationNames: { ko:'교토 · 오사카', en:'Kyoto · Osaka', ja:'京都・大阪', zh:'京都・大阪' },
+  locationId: 'kyoto',
+  tags: ['wedding', 'outdoor', 'couple'],  // i18n key 배열 (한국어 문자열 X)
+  languages: ['KO', 'JP', 'EN'],
+  bio: '한국어 원본 바이오',
+  bioI18n: { ko:'...', en:'...', ja:'...', zh:'...' },
+  hmk: true,  // H&M 스타일링 포함 여부
+  props: ['부케', '한복 소품'],  // 보유 소품 (현재 한국어 하드코딩)
+  packages: [{ name, price, hours, photos, desc, popular? }],
+  reviewList: [{ author, date, stars, text }],
+}
+---
+
+locations.js — 핵심 필드:
+---
+{
+  id: 'seoul',
+  nameEn: 'Seoul',
+  nameI18n: { ko:'서울', en:'Seoul', ja:'ソウル', zh:'首尔' },
+  count: 124,   // 해당 지역 작가 수
+  img: 'unsplash URL',
+}
+---
+
+ALL_TAG_KEYS (photographers.js 최하단):
+['all', 'wedding', 'couple', 'outdoor', 'birthday1st', 'portrait', 'video', 'iphone', 'indoor', 'landmark']
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 컴포넌트 별 i18n 패턴
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+이름 표시 (전체 공통 패턴):
+  const displayName = lang === 'ko' && p.nameKo ? p.nameKo : p.name;
+
+지역명:
+  const locationLabel = p.locationNames?.[lang] ?? p.location;
+
+Bio:
+  const bio = p.bioI18n?.[lang] ?? p.bio;
+
+태그:
+  {p.tags.map(tagKey => <span>{t('tags.' + tagKey)}</span>)}
+
+위치명 (locations.js):
+  const displayName = loc.nameI18n?.[lang] ?? loc.nameEn;
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 용어 정책
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+"Photographer" 단독 사용 X → 사진+영상 작가를 모두 포함하는 표현 사용:
+  KO: 사진·영상 작가
+  EN: Visual Artist
+  JP: ビジュアルアーティスト
+  CN: 视觉艺术家
+
+H&M = Hair & Makeup (헤어·메이크업)
+
+인스타그램: https://instagram.com/phosnap.kr (@phosnap.kr)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 주요 완료 작업 목록
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[완료] 언어 전환 시스템 — 4개 언어 전체 컨텐츠 반영
+[완료] PHOSNAP 로고 — S자 금→흰 그라디언트 (LogoText 컴포넌트)
+[완료] 언어 스위처 레이블 ZH → CN 변경
+[완료] 인스타그램 @phosnap.kr 링크 (Footer + Home)
+[완료] 작가 카드 i18n (이름/지역/태그/바이오 다국어)
+[완료] AuthModal — 작가/스타일리스트 회원가입 시 자국어명+영문명 2개 필드
+[완료] Waitlist — 3개 역할 카드 (고객/사진·영상작가/헤어·메이크업) + 이름/이메일/인스타 필드
+[완료] Explore 페이지 전체 i18n
+[완료] Photographers 페이지 전체 i18n (ALL_TAG_KEYS로 필터)
+[완료] Profile 페이지 전체 i18n
+[완료] Booking 페이지 전체 i18n (요일/월 배열 포함)
+[완료] ForArtists 페이지 전체 i18n
+[완료] Home 페이지 지역 카드 nameI18n 적용 (버그 수정)
+[완료] Home 검색 태그 언어별 도시명 (서울→ソウル→首尔)
+[완료] Photographers.jsx 한국어 하드코딩 텍스트 → i18n
+[완료] JSON 중복 키 버그 수정 (waitlist 섹션 4개 파일)
+[완료] 4개 언어 JSON 완전 일치 검증 (202개 키)
+[완료] 모바일 반응형 — Booking 레이아웃 (900px↓ 1열)
+[완료] 모바일 반응형 — Waitlist 역할카드 (640px↓ 1열)
+[완료] 모바일 반응형 — Instagram 그리드 (600px↓ 2열)
+[완료] 모바일 반응형 — Hero CTA 버튼 (480px↓ 전체폭 세로)
+[완료] 모바일 반응형 — 탭네비 수평스크롤
+[완료] 모바일 반응형 — 필터 바 수평스크롤
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 미완료 / 향후 작업
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[ ] AuthModal 전체 i18n (현재 한국어 하드코딩 일부 남아있음)
+[ ] 작가 props (보유 소품) 한국어 하드코딩 → i18n
+[ ] Booking 패키지 desc 한국어 → 다국어
+[ ] StylistCard 스타일리스트 태그 한국어 하드코딩
+[ ] 실제 backend/결제 연동 (현재 alert() MVP)
+[ ] 작가 프로필 이미지 (현재 Unsplash placeholder)
+[ ] SEO / meta tags
+[ ] 실제 배포 (Vercel 등)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ App.jsx CSS 클래스 레퍼런스 (모바일 반응형 포함)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+.booking-layout        → Booking 2열 그리드 (900px↓ 1열)
+.booking-sidebar       → Booking 우측 사이드바 (900px↓ 숨김)
+.booking-progress      → 예약 진행 표시바 (overflow-x: auto)
+.booking-progress-step → 각 단계 버튼
+.booking-progress-step-label → 단계 텍스트 (500px↓ 숨김)
+.waitlist-roles        → 역할 선택 3열 카드 (640px↓ 1열)
+.instagram-grid        → 인스타 4열 그리드 (600px↓ 2열)
+.section-pad-hero      → 80px 48px 패딩 섹션 (768px↓ 60px 20px)
+
+global.css 주요 클래스:
+.section               → 100px 48px 패딩 (768px↓ 60px 20px)
+.photo-grid            → 작가 카드 그리드 (600px↓ 1열)
+.location-grid         → 지역 카드 그리드 (600px↓ 2열)
+.gallery-grid          → 포트폴리오 3열 (600px↓ 2열)
+.stats-bar             → 통계 바 (600px↓ 세로)
+.profile-hero          → 프로필 2열 (768px↓ 1열)
+.footer-top            → 푸터 4열 (900px↓ 2열, 500px↓ 1열)
+.filters               → 태그 필터 (600px↓ 수평스크롤)
+.tab-nav               → 탭 네비 (500px↓ 수평스크롤)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 중요 CSS 변수 (tokens.css)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+--bg:          #0B0B0B    (메인 배경)
+--bg2:         #111111    (카드/섹션 배경)
+--bg3:         #1a1a1a    (이미지 placeholder)
+--text:        #F2F2F2    (기본 텍스트)
+--muted:       #888888    (보조 텍스트)
+--gold:        #E8A020    (브랜드 골드)
+--gold-border: rgba(232,160,32,0.3)
+--gold-dim:    rgba(232,160,32,0.05)
+--border:      rgba(242,242,242,0.08)
+--border-hover: rgba(242,242,242,0.18)
+--font-serif:  'Cinzel', serif
+--font-elegant: 'Cormorant Garamond', serif
+--font-sans:   'Noto Sans KR', sans-serif
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 알려진 패턴 & 주의사항
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. JSON 중복 키 금지
+   같은 최상위 키(예: "waitlist")가 JSON 파일에 2번 나오면 나중 값이 앞 값을
+   덮어씀. 수정 후 항상 node -e "JSON.parse(require('fs').readFileSync(...))"
+   로 유효성 검사할 것.
+
+2. CSS background-clip: text
+   단일 글자 그라디언트 효과에는 반드시 display: inline-block 필요.
+   없으면 gradient가 적용되지 않음.
+
+3. t() 반환값이 배열일 수 있음
+   t('booking.days')는 string이 아닌 string[] 반환.
+   Array.isArray() 체크 후 사용 권장.
+
+4. App.jsx 전역 CSS 주의
+   .nav-logo span { color: ... } 같은 전역 선택자가
+   LogoText의 인라인 스타일을 덮어쓸 수 있음. 구체성(specificity) 확인 필요.
+
+5. 빌드 환경 제한
+   Claude 샌드박스에서는 @rollup/rollup-linux-x64-gnu 모듈 없어
+   npm run build 실패함 (코드 문제 아님). 로컬에서 빌드 시 정상 작동.
+
+────────────────────────────────────────────────────────────────────────────────
+[붙여넣기 끝]
+────────────────────────────────────────────────────────────────────────────────
+
+이 프롬프트를 새 대화창에 붙여넣은 후, 원하는 작업을 요청하면
+컨텍스트를 완전히 복원하고 이어서 작업할 수 있습니다.
+
+================================================================================
