@@ -56,6 +56,7 @@ const Waitlist = () => {
     { key: 'b2', n: '02', title: t('waitlist.b2Title'), desc: t('waitlist.b2Desc') },
     { key: 'b3', n: '03', title: t('waitlist.b3Title'), desc: t('waitlist.b3Desc') },
     { key: 'b4', n: '04', title: t('waitlist.b4Title'), desc: t('waitlist.b4Desc') },
+    { key: 'b5', n: '05', title: t('waitlist.b5Title'), desc: t('waitlist.b5Desc') },
   ];
 
   const handleSubmit = async (e) => {
@@ -131,16 +132,30 @@ const Waitlist = () => {
           })}
         </div>
 
-        {/* ── 혜택 ── */}
-        <div className="steps" style={{ marginBottom: 64 }}>
-          {benefits.map(b => (
-            <div key={b.key} className="step">
-              <Corners />
-              <div className="step-num">{b.n}</div>
-              <div className="step-title">{b.title}</div>
-              <p className="step-desc">{b.desc}</p>
-            </div>
-          ))}
+        {/* ── 혜택 (3+2 레이아웃) ── */}
+        <div style={{ marginBottom: 64 }}>
+          {/* 상단 3개 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
+            {benefits.slice(0, 3).map(b => (
+              <div key={b.key} className="step">
+                <Corners />
+                <div className="step-num">{b.n}</div>
+                <div className="step-title">{b.title}</div>
+                <p className="step-desc">{b.desc}</p>
+              </div>
+            ))}
+          </div>
+          {/* 하단 2개 — 중앙 정렬 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16, maxWidth: '66%', margin: '0 auto' }}>
+            {benefits.slice(3).map(b => (
+              <div key={b.key} className="step">
+                <Corners />
+                <div className="step-num">{b.n}</div>
+                <div className="step-title">{b.title}</div>
+                <p className="step-desc">{b.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── 등록 폼 / 완료 ── */}
