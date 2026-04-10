@@ -47,7 +47,7 @@ const Footer = () => {
           {/* Support */}
           <div>
             <div className="footer-col-title">{t('footer.supportTitle')}</div>
-            <span className="footer-link">{t('footer.supportCenter')}</span>
+            <Link to="/contact" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportCenter')}</Link>
             <Link to="/terms"   className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportTerms')}</Link>
             <Link to="/privacy" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportPrivacy')}</Link>
             <a

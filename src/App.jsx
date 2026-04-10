@@ -16,6 +16,7 @@ import ForArtists   from './pages/ForArtists';
 import Waitlist     from './pages/Waitlist';
 import Terms        from './pages/Terms';
 import Privacy      from './pages/Privacy';
+import Contact      from './pages/Contact';
 
 // Styles
 import './styles/global.css';
@@ -255,6 +256,7 @@ const App = () => {
         <Route path="/waitlist"            element={<Waitlist />} />
         <Route path="/terms"              element={<Terms />} />
         <Route path="/privacy"            element={<Privacy />} />
+        <Route path="/contact"            element={<Contact />} />
         {/* Fallback */}
         <Route path="*"                    element={<Home         onAuthOpen={(m) => setAuthModal(m)} />} />
       </Routes>
