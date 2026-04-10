@@ -93,6 +93,22 @@ const Nav = ({ onAuthOpen }) => {
             ))}
           </div>
 
+          {/* Instagram icon */}
+          <a
+            href="https://instagram.com/phosnap.kr"
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: 'flex', alignItems: 'center', color: 'var(--muted)', transition: 'color 0.2s' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+          </a>
+
           {/* Divider */}
           <span style={{ width: '1px', height: '16px', background: 'var(--border-hover)', display: 'inline-block' }} />
 
@@ -139,6 +155,22 @@ const Nav = ({ onAuthOpen }) => {
           <button className="btn-primary" onClick={() => { onAuthOpen('signup'); setMobileOpen(false); }}>
             {t('nav.signup')}
           </button>
+
+          {/* Instagram (mobile) */}
+          <a
+            href="https://instagram.com/phosnap.kr"
+            target="_blank"
+            rel="noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)', textDecoration: 'none', fontSize: 13, letterSpacing: '0.08em' }}
+            onClick={() => setMobileOpen(false)}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+            </svg>
+            @phosnap.kr
+          </a>
 
           {/* Language switcher (mobile) */}
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
