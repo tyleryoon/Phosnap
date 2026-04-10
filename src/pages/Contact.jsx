@@ -101,6 +101,7 @@ const CONTENT = {
 const Contact = () => {
   const { lang } = useLanguage();
   const c = CONTENT[lang] ?? CONTENT['ko'];
+  // eslint-disable-next-line no-unused-vars
 
   const [type, setType]       = useState(c.types[0]);
   const [name, setName]       = useState('');
@@ -119,7 +120,7 @@ const Contact = () => {
         const res = await fetch(CONTACT_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-          body: JSON.stringify({ name, email, type, message, _subject: `[Phosnap Contact] ${type} — ${name}` }),
+          body: JSON.stringify({ name, email, type, message, _subject: `[Phosnap Contact] ${type} — ${name}`, _language: lang }),
         });
         if (!res.ok) throw new Error();
       } else {

@@ -38,8 +38,16 @@ const ROLES = [
   },
 ];
 
+const getHonorific = (name, lang) => {
+  if (!name) return '';
+  if (lang === 'ko') return `${name}님, `;
+  if (lang === 'ja') return `${name}様、`;
+  if (lang === 'zh') return `您好，${name}！`;
+  return `${name}, `;
+};
+
 const Waitlist = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [role, setRole]           = useState('customer');
   const [name, setName]           = useState('');
@@ -172,7 +180,7 @@ const Waitlist = () => {
               {t('waitlist.doneTitle')}
             </div>
             <p style={{ color: 'var(--muted)', fontFamily: 'var(--font-elegant)', fontStyle: 'italic', fontSize: 16, lineHeight: 1.8 }}>
-              {name ? `${name}, ` : ''}{t('waitlist.doneMsg')}
+              {getHonorific(name, lang)}{t('waitlist.doneMsg')}
             </p>
             {instagram && (
               <p style={{ marginTop: 12, fontSize: 13, color: 'var(--gold)' }}>
