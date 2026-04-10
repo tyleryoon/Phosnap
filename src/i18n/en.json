@@ -300,6 +300,9 @@
     "switchSignupLink": "Sign Up",
     "switchToLogin": "Already have an account?",
     "switchLoginLink": "Log In",
-    "comingSoon": "Coming soon!"
+    "comingSoon": "Coming soon!",
+    "consentVisa": "I am responsible for confirming my visa and work authorization status in all countries where I provide services. Phosnap bears no legal responsibility for any violations.",
+    "consentPayment": "All payments must be processed exclusively through the Phosnap platform. Direct payments outside the platform violate our Terms of Service and may result in account suspension.",
+    "consentRequired": "Please agree to all required terms."
   }
 }

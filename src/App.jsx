@@ -14,6 +14,8 @@ import Profile      from './pages/Profile';
 import Booking      from './pages/Booking';
 import ForArtists   from './pages/ForArtists';
 import Waitlist     from './pages/Waitlist';
+import Terms        from './pages/Terms';
+import Privacy      from './pages/Privacy';
 
 // Styles
 import './styles/global.css';
@@ -251,6 +253,8 @@ const App = () => {
         <Route path="/booking/:id"         element={<Booking />} />
         <Route path="/for-artists"         element={<ForArtists   onAuthOpen={(m) => setAuthModal(m)} />} />
         <Route path="/waitlist"            element={<Waitlist />} />
+        <Route path="/terms"              element={<Terms />} />
+        <Route path="/privacy"            element={<Privacy />} />
         {/* Fallback */}
         <Route path="*"                    element={<Home         onAuthOpen={(m) => setAuthModal(m)} />} />
       </Routes>

@@ -48,8 +48,8 @@ const Footer = () => {
           <div>
             <div className="footer-col-title">{t('footer.supportTitle')}</div>
             <span className="footer-link">{t('footer.supportCenter')}</span>
-            <span className="footer-link">{t('footer.supportTerms')}</span>
-            <span className="footer-link">{t('footer.supportPrivacy')}</span>
+            <Link to="/terms"   className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportTerms')}</Link>
+            <Link to="/privacy" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportPrivacy')}</Link>
             <a
               href="https://instagram.com/phosnap.kr"
               target="_blank"
