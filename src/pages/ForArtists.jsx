@@ -35,8 +35,8 @@ const ForArtists = ({ onAuthOpen }) => {
         </h1>
         <p className="hero-subtitle">{t('forartists.heroSub')}</p>
         <div className="hero-ctas">
-          <button className="btn-primary" onClick={() => navigate('/waitlist')}>{t('forartists.joinBtn')}</button>
-          <button className="btn-outline" onClick={() => onAuthOpen('login')}>{t('forartists.alreadyMember')}</button>
+          <button className="btn-primary" onClick={() => navigate('/artist/register')}>{t('forartists.joinBtn')}</button>
+          <button className="btn-outline" onClick={() => onAuthOpen('artist-login')}>{t('forartists.alreadyMember')}</button>
         </div>
       </div>
 
@@ -45,7 +45,7 @@ const ForArtists = ({ onAuthOpen }) => {
         {[
           { num: '2,400+', labelKey: 'forartists.statArtists' },
           { num: '48',     labelKey: 'forartists.statCities' },
-          { num: '20~30%', labelKey: 'forartists.statFee' },
+          { num: '8~15%', labelKey: 'forartists.statFee' },
           { num: '4.93',   labelKey: 'forartists.statRating' },
         ].map(s => (
           <div key={s.labelKey} className="stat-item">

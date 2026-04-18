@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import PhotographerCard from '../components/PhotographerCard';
+import WorldMap from '../components/WorldMap';
 import Footer from '../components/Footer';
 import { SearchIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { submitWaitlist } from '../lib/waitlist';
 import { PHOTOGRAPHERS } from '../data/photographers';
-import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
+import { getAllLocationsSorted } from '../data/locationUtils';
+import { HomeSEO } from '../components/SEO';
+import { fetchFeaturedPhotographers } from '../lib/supabase';
 
 // ─── Instagram 피드 미리보기 이미지 (포트폴리오에서 큐레이션) ──────────
 const INSTA_IMAGES = [
@@ -157,7 +160,23 @@ const Home = ({ onAuthOpen }) => {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const { t, lang } = useLanguage();
-  const featuredLocations = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS].slice(0, 8);
+  const featuredLocations = getAllLocationsSorted().slice(0, 8);
+
+  // Fetch featured photographers from DB with fallback to mock
+  const [featuredPhotographers, setFeaturedPhotographers] = useState(null);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      setFeaturedLoading(true);
+      const { data } = await fetchFeaturedPhotographers(6);
+      if (data && data.length > 0) {
+        setFeaturedPhotographers(data);
+      }
+      setFeaturedLoading(false);
+    };
+    fetchFeatured();
+  }, []);
 
   const steps = [
     { n: '01', titleKey: 'home.step1Title', descKey: 'home.step1Desc' },
@@ -168,6 +187,7 @@ const Home = ({ onAuthOpen }) => {
 
   return (
     <div className="page-enter">
+      <HomeSEO lang={lang} />
 
       {/* ── Hero ── */}
       <div className="hero">
@@ -186,14 +206,14 @@ const Home = ({ onAuthOpen }) => {
             placeholder={t('hero.searchPlaceholder')}
             value={query}
             onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && navigate('/photographers')}
+            onKeyDown={e => e.key === 'Enter' && query.trim() && navigate('/photographers', { state: { searchQuery: query.trim() } })}
           />
-          <button className="search-btn" onClick={() => navigate('/photographers')}>
+          <button className="search-btn" onClick={() => query.trim() && navigate('/photographers', { state: { searchQuery: query.trim() } })}>
             <SearchIcon />
           </button>
           <div className="search-tags">
             {(t('hero.searchTags') || ['Seoul','Kyoto','Paris','Jeju','Bali','Tokyo']).map(loc => (
-              <span key={loc} className="search-tag" onClick={() => navigate('/photographers')}>
+              <span key={loc} className="search-tag" onClick={() => navigate('/photographers', { state: { searchQuery: loc } })}>
                 {loc}
               </span>
             ))}
@@ -225,6 +245,26 @@ const Home = ({ onAuthOpen }) => {
         ))}
       </div>
 
+      {/* ── World Map ── */}
+      <div className="section">
+        <div className="section-label">
+          {lang === 'ko' ? '세계 곳곳에서' : lang === 'ja' ? '世界中で' : 'WORLDWIDE'}
+        </div>
+        <h2 className="section-title" style={{ fontSize: 'clamp(20px, 3vw, 32px)' }}>
+          {lang === 'ko' ? '당신이 어디에 있든, 작가가 기다립니다' :
+           lang === 'ja' ? 'どこにいても、フォトグラファーがお待ちしています' :
+           'Wherever you are, a photographer awaits'}
+        </h2>
+        <p className="section-sub">
+          {lang === 'ko' ? '지도에서 도시를 클릭하면 해당 지역의 작가를 바로 만나보실 수 있습니다.' :
+           lang === 'ja' ? '地図上の都市をクリックすると、その地域のフォトグラファーをご覧いただけます。' :
+           'Click a city on the map to discover photographers in that area.'}
+        </p>
+        <WorldMap />
+      </div>
+
+      <div className="divider" />
+
       {/* ── Explore by Location ── */}
       <div className="section">
         <div className="section-label">{t('section.discover')}</div>
@@ -233,12 +273,12 @@ const Home = ({ onAuthOpen }) => {
 
         <div className="location-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: 3 }}>
           {featuredLocations.map(loc => (
-            <div key={loc.id} className="location-card" onClick={() => navigate('/photographers')}>
+            <div key={loc.id} className="location-card" onClick={() => navigate('/photographers', { state: { locationId: loc.id } })}>
               <div className="location-img">
                 <div className="location-img-inner" style={{ backgroundImage: `url(${loc.img})` }} />
               </div>
               <div className="location-overlay">
-                <div className="location-name">{loc.nameI18n?.[lang] ?? loc.nameEn}</div>
+                <div className="location-name">{loc.nameI18n?.[lang] ?? loc.en}</div>
                 <div className="location-count">{loc.count}{t('home.locationCount')}</div>
               </div>
             </div>
@@ -258,7 +298,24 @@ const Home = ({ onAuthOpen }) => {
         <h2 className="section-title">{t('home.featuredTitle')}</h2>
         <p className="section-sub">{t('home.featuredSub')}</p>
         <div className="photo-grid">
-          {PHOTOGRAPHERS.map(p => <PhotographerCard key={p.id} p={p} />)}
+          {featuredLoading ? (
+            // Loading skeleton: 6 placeholder cards
+            Array.from({ length: 6 }).map((_, i) => (
+              <div
+                key={`skeleton-${i}`}
+                style={{
+                  aspectRatio: '1 / 1.2',
+                  background: 'var(--bg2)',
+                  borderRadius: 8,
+                  animation: 'pulse 1.5s infinite',
+                }}
+              />
+            ))
+          ) : (
+            (featuredPhotographers || PHOTOGRAPHERS).map(p => (
+              <PhotographerCard key={p.id} p={p} />
+            ))
+          )}
         </div>
         <div style={{ textAlign: 'center', marginTop: 40 }}>
           <button className="btn-outline" onClick={() => navigate('/photographers')}>{t('home.seeAllPhotographers')}</button>

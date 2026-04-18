@@ -1,0 +1,90 @@
+{
+  "date": "2026-04-18T09:56:16.186Z",
+  "total": 16,
+  "passed": 16,
+  "failed": 0,
+  "scenarios": [
+    {
+      "name": "S01: 한국 고객 풀코스 예약 (작가+HMK+의상+장소)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S02: 일본 고객 JPY 예약 (교토 기모노 촬영)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S03: 작가 더블부킹 방지",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S04: 스타일리스트 더블부킹 방지",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S05: 통합 리뷰 (작가+HMK+의상+장소 한번에)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S06: 벤더 대시보드 리뷰 열람",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S07: 멀티파티 채팅 (고객↔작가↔스타일리스트↔장소)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S08: EUR 유저 파리 작가 예약 + 통화 변환",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S09: 예약 필터링 (전체/확정/완료/취소)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S10: 즐겨찾기 토글 + 목록",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S11: 리뷰 답글 1회 제한 (upsert 검증)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S12: 종합 시나리오 — 50명 고객 동시 예약 스트레스 테스트",
+      "pass": true,
+      "issues": [
+        "Results: 49 success, 1 fail, 1 double-book blocked"
+      ]
+    },
+    {
+      "name": "S13: 환불 정책 계산 (7일/3-6일/2일 이내)",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S14: Manual confirm 48시간 만료 처리",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S15: 장소(Venue) 더블부킹 방지",
+      "pass": true,
+      "issues": []
+    },
+    {
+      "name": "S16: 회원 탈퇴 시 데이터 정리",
+      "pass": true,
+      "issues": []
+    }
+  ]
+}

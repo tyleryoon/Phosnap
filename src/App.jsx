@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layout
 import Nav from './components/Nav';
 import Toast from './components/Toast';
 import AuthModal from './components/AuthModal';
+import { useAuth } from './contexts/AuthContext';
 
 // Pages
 import Home         from './pages/Home';
@@ -14,12 +15,35 @@ import Profile      from './pages/Profile';
 import Booking      from './pages/Booking';
 import ForArtists   from './pages/ForArtists';
 import Waitlist     from './pages/Waitlist';
-import Terms        from './pages/Terms';
-import Privacy      from './pages/Privacy';
-import Contact      from './pages/Contact';
+import Terms          from './pages/Terms';
+import Privacy        from './pages/Privacy';
+import Contact        from './pages/Contact';
+import BookingSuccess  from './pages/BookingSuccess';
+import BookingFail     from './pages/BookingFail';
+import ArtistSchedule  from './pages/ArtistSchedule';
+import MyBookings      from './pages/MyBookings';
+import StylistProfile  from './pages/StylistProfile';
+import ArtistRegister  from './pages/ArtistRegister';
+import ArtistDashboard from './pages/ArtistDashboard';
+import VendorRegister  from './pages/VendorRegister';
+import VendorDashboard from './pages/VendorDashboard';
+import Vendors         from './pages/Vendors';
+import CustomerDashboard from './pages/CustomerDashboard';
+import StylistDashboard from './pages/StylistDashboard';
+import AdminDashboard  from './pages/AdminDashboard';
+import TourDetail      from './pages/TourDetail';
+import NotFound        from './pages/NotFound';
+import ProtectedRoute  from './components/ProtectedRoute';
 
 // Styles
 import './styles/global.css';
+
+// ─── Scroll to Top on Route Change ──────────────────────────────────────
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+};
 
 // Nav CSS additions (not in global.css to keep it clean)
 const navCSS = `
@@ -82,13 +106,51 @@ const navCSS = `
   .location-count { font-size: 11px; color: var(--gold); margin-top: 2px; }
 
   /* Photographer card */
-  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 24px; }
+  @media (max-width: 900px) { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 600px) { .photo-grid { grid-template-columns: 1fr; } }
   .photo-card { background: var(--bg2); border: 1px solid var(--border); position: relative; cursor: pointer; transition: border-color 0.3s, transform 0.3s; overflow: hidden; }
   .photo-card:hover { border-color: var(--gold-border); transform: translateY(-4px); }
-  .photo-card:hover .photo-card-img-inner { transform: scale(1.03); }
-  .photo-card-img { width: 100%; aspect-ratio: 4/3; overflow: hidden; }
-  .photo-card-img-inner { width: 100%; height: 100%; background-size: cover; background-position: center; transition: transform 0.5s ease; }
+  .photo-card:hover .photo-card-arrow { opacity: 1; }
+
+  /* ── 슬라이더 (넷플릭스 스타일) ── */
+  .photo-card-slider { width: calc(100% - 12px); aspect-ratio: 4/3; overflow: hidden; position: relative; margin: 6px auto 0; }
+  .photo-card-slider-track { display: flex; width: 100%; height: 100%; transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+  .photo-card-slide { min-width: 100%; height: 100%; background-size: cover; background-position: center; }
+
+  /* 좌우 화살표 */
+  .photo-card-arrow {
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(0,0,0,0.55); color: #fff; border: none; cursor: pointer;
+    font-size: 18px; line-height: 1; display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: opacity 0.25s;
+    backdrop-filter: blur(4px);
+  }
+  .photo-card-arrow-left { left: 8px; }
+  .photo-card-arrow-right { right: 8px; }
+  @media (hover: none) { .photo-card-arrow { opacity: 0.7; } }
+
+  /* 페이지 인디케이터 (1/5) */
+  .photo-card-indicator {
+    position: absolute; top: 10px; right: 10px; z-index: 2;
+    background: rgba(0,0,0,0.55); color: #fff;
+    font-size: 10px; font-family: 'Cinzel', serif; letter-spacing: 0.05em;
+    padding: 2px 8px; border-radius: 10px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* 프로필 아바타 (좌하단) */
+  .photo-card-avatar {
+    position: absolute; bottom: 10px; left: 12px; z-index: 2;
+  }
+  .photo-card-avatar-img {
+    width: 36px; height: 36px; border-radius: 50%;
+    background-size: cover; background-position: center;
+    border: 2px solid rgba(255,255,255,0.85);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
   .photo-card-body { padding: 20px; }
   .photo-card-name { font-family: 'Cinzel', serif; font-size: 14px; letter-spacing: 0.1em; margin-bottom: 6px; }
   .photo-card-location { font-size: 12px; color: var(--muted); margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
@@ -144,9 +206,26 @@ const navCSS = `
     grid-template-columns: 1fr 320px;
     gap: 48px;
   }
+  /* Mobile booking summary bar: 기본 숨김 */
+  .booking-mobile-bar {
+    display: none;
+  }
   @media (max-width: 900px) {
     .booking-layout { grid-template-columns: 1fr; }
     .booking-sidebar { display: none; }
+    .booking-mobile-bar {
+      display: block;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: var(--z-mobile, 150);
+      background: var(--bg2);
+      border-top: 1px solid var(--gold-border);
+      padding: 12px 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
   }
   .booking-progress {
     display: flex;
@@ -209,11 +288,12 @@ const navCSS = `
     .meta-val { font-size: 16px; }
   }
 
-  /* ── Tab nav: scroll on small screens ── */
+  /* ── Tab nav: tighter padding on small screens ── */
   @media (max-width: 500px) {
-    .tab-nav { overflow-x: auto; scrollbar-width: none; }
-    .tab-nav::-webkit-scrollbar { display: none; }
-    .tab-btn { white-space: nowrap; padding: 12px 16px; font-size: 10px; }
+    .tab-btn { padding: 12px 14px; font-size: 10px; letter-spacing: 0.1em; }
+  }
+  @media (max-width: 360px) {
+    .tab-btn { padding: 10px 10px; font-size: 9px; letter-spacing: 0.06em; }
   }
 
   /* ── Filters: horizontal scroll on mobile ── */
@@ -231,6 +311,29 @@ const navCSS = `
   }
 `;
 
+// ─── Role-aware Home: activeRole 기반으로 대시보드 리다이렉트 ────────────
+// 멀티롤 사용자가 고객으로 접속하면 홈 표시, 작가로 접속하면 대시보드로
+const RoleAwareHome = ({ onAuthOpen }) => {
+  const { activeRole, roleLoading, loading, isLoggedIn } = useAuth();
+  if (loading || roleLoading) return null;
+  if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
+  if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
+  if (activeRole === 'admin')                                           return <Navigate to="/admin" replace />;
+  // 고객 로그인 → 작가 찾기 페이지로 (홈화면은 비로그인 전용)
+  if (isLoggedIn)                                                       return <Navigate to="/photographers" replace />;
+  return <Home onAuthOpen={onAuthOpen} />;
+};
+
+// ─── Role-aware Explore: activeRole 기반 리다이렉트 ────────────────────
+const RoleAwareExplore = () => {
+  const { activeRole, roleLoading, loading } = useAuth();
+  if (loading || roleLoading) return null;
+  if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
+  if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
+  // customer 또는 기타 → Explore 페이지
+  return <Explore />;
+};
+
 // ─── App Root ──────────────────────────────────────────────────────────
 
 const App = () => {
@@ -242,23 +345,40 @@ const App = () => {
       {/* Inline extra CSS */}
       <style>{navCSS}</style>
 
+      {/* Scroll to top on every route change */}
+      <ScrollToTop />
+
       {/* Navigation */}
       <Nav onAuthOpen={(mode) => setAuthModal(mode)} />
 
       {/* Routes */}
       <Routes>
-        <Route path="/"                    element={<Home         onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/explore"             element={<Explore />} />
-        <Route path="/photographers"       element={<Photographers />} />
+        <Route path="/"                    element={<RoleAwareHome onAuthOpen={(m) => setAuthModal(m)} />} />
+        <Route path="/explore"             element={<RoleAwareExplore />} />
+        <Route path="/photographers"       element={<Photographers onAuthOpen={(m) => setAuthModal(m)} />} />
         <Route path="/photographer/:id"    element={<Profile      onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/booking/:id"         element={<Booking />} />
+        <Route path="/booking/:id"         element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><Booking /></ProtectedRoute>} />
         <Route path="/for-artists"         element={<ForArtists   onAuthOpen={(m) => setAuthModal(m)} />} />
         <Route path="/waitlist"            element={<Waitlist />} />
         <Route path="/terms"              element={<Terms />} />
         <Route path="/privacy"            element={<Privacy />} />
         <Route path="/contact"            element={<Contact />} />
-        {/* Fallback */}
-        <Route path="*"                    element={<Home         onAuthOpen={(m) => setAuthModal(m)} />} />
+        <Route path="/booking/success"    element={<BookingSuccess />} />
+        <Route path="/booking/fail"       element={<BookingFail />} />
+        <Route path="/artist/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistDashboard /></ProtectedRoute>} />
+        <Route path="/artist/schedule"    element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistSchedule /></ProtectedRoute>} />
+        <Route path="/artist/register"    element={<ArtistRegister />} />
+        <Route path="/my"                  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><CustomerDashboard /></ProtectedRoute>} />
+        <Route path="/my-bookings"        element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><MyBookings /></ProtectedRoute>} />
+        <Route path="/stylist/dashboard"  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="stylist"><StylistDashboard /></ProtectedRoute>} />
+        <Route path="/stylist/:id"        element={<StylistProfile />} />
+        <Route path="/vendors"             element={<Vendors />} />
+        <Route path="/vendor/register"    element={<VendorRegister />} />
+        <Route path="/vendor/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="vendor"><VendorDashboard /></ProtectedRoute>} />
+        <Route path="/tour/:instanceId"    element={<TourDetail />} />
+        <Route path="/admin"              element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+        {/* 404 */}
+        <Route path="*"                    element={<NotFound />} />
       </Routes>
 
       {/* Auth modal */}
