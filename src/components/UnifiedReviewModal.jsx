@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import Corners from './Corners';
 import { useLanguage } from '../contexts/LanguageContext';
-import { submitPhotographerReview, submitPackageReview } from '../lib/supabase';
+import { submitPhotographerReview, submitPackageReview, submitVendorReview } from '../lib/supabase';
 
 // ─── 당근마켓 스타일 태그 버튼 리뷰 모달 ──────────────────────────────
 // booking.pipeline = { artist, stylist, costume, venue }
@@ -130,22 +130,19 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
         }).catch(() => {});
       }
 
-      // Stylist/costume/venue 리뷰는 아직 전용 테이블이 없으므로
-      // 벤더 대시보드에서 조회할 수 있도록 localStorage에 보존
-      // TODO: stylist_reviews, costume_reviews, venue_reviews 테이블 생성 후 전환
-      const hasStylistOrVendorReview = reviewData.stylist?.rating > 0 ||
-        reviewData.costume?.rating > 0 || reviewData.venue?.rating > 0;
-      if (hasStylistOrVendorReview) {
-        const allReviewData = {
-          bookingId: booking.id,
-          photographerId: booking.artistId || booking.photographer_id,
-          reviews: reviewData,
-          createdAt: new Date().toISOString(),
-        };
-        const existing = JSON.parse(localStorage.getItem('phosnap_unified_reviews') || '[]');
-        existing.push(allReviewData);
-        localStorage.setItem('phosnap_unified_reviews', JSON.stringify(existing));
-      }
+      // Stylist/costume/venue → Supabase vendor_reviews 테이블
+      const vendorTypes = ['stylist', 'costume', 'venue'];
+      const vendorPromises = vendorTypes
+        .filter(vt => reviewData[vt]?.rating > 0)
+        .map(vt => submitVendorReview({
+          booking_id: booking.id,
+          vendor_type: vt,
+          photographer_id: booking.artistId || booking.photographer_id,
+          rating: reviewData[vt].rating,
+          tags: reviewData[vt].tags || [],
+          body: reviewData[vt].comment || '',
+        }).catch(() => {}));
+      await Promise.all(vendorPromises);
 
       setSavedMsg(lang === 'ko' ? '리뷰가 저장되었습니다! 감사합니다 ✓' :
                   lang === 'ja' ? 'レビューが保存されました！ありがとうございます ✓' :

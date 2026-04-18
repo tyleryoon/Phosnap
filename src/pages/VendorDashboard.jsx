@@ -15,6 +15,9 @@ import {
 import { isTagAllowed, sanitizeTag } from '../utils/tagFilter';
 import { COSTUME_TAG_REGISTRY, VENUE_TAG_REGISTRY, getTagLabel, getAllTagIds } from '../data/tagRegistry';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
+import { getAvatarUrl } from '../lib/supabase';
+import ProfileAvatar from '../components/ProfileAvatar';
+import DragDropImageUpload from '../components/DragDropImageUpload';
 
 const MOCK_BOOKINGS = [
   { id: 'b1', date: '2026-04-15', hours: '09:00-13:00', rentalType: 'half_am', customer: 'K**', itemName: '클래식 여성 한복', size: 'M', status: 'confirmed', confirmType: 'instant', vendorType: 'costume' },
@@ -26,14 +29,14 @@ const MOCK_BOOKINGS = [
   { id: 'b7', date: '2026-04-19', hours: '13:00-17:00', rentalType: 'half_pm', customer: 'H**', itemName: '루프탑 야외촬영장', size: '-', status: 'pending', vendorType: 'venue' },
 ];
 
-// 의상 대여 일정 mock
+// 의상 대여 일정 mock (사이즈 포함, itemId는 dresses.js의 id와 일치)
 const MOCK_COSTUME_TIMELINE = [
-  { itemId: 'd1', itemName: '여성 경주 한복', start: '2026-04-13', end: '2026-04-13', hours: '09:00-13:00', type: 'half_am', customer: 'K**', status: 'confirmed', dashboardType: 'costume' },
-  { itemId: 'd1', itemName: '여성 경주 한복', start: '2026-04-13', end: '2026-04-13', hours: '14:00-18:00', type: 'half_pm', customer: 'L**', status: 'pending', dashboardType: 'costume' },
-  { itemId: 'd2', itemName: '남성 경주 한복', start: '2026-04-14', end: '2026-04-15', hours: '10:00-18:00', type: 'full', customer: 'T**', status: 'confirmed', dashboardType: 'costume' },
-  { itemId: 'd3', itemName: '여성 기모노 후리소데', start: '2026-04-15', end: '2026-04-17', hours: '전일', type: 'multi', customer: 'P**', status: 'completed', dashboardType: 'costume' },
-  { itemId: 'd4', itemName: '남성 기모노 착용', start: '2026-04-16', end: '2026-04-16', hours: '09:00-18:00', type: 'full', customer: 'M**', status: 'pending', dashboardType: 'costume' },
-  { itemId: 'd1', itemName: '여성 경주 한복', start: '2026-04-18', end: '2026-04-19', hours: '전일', type: 'multi', customer: 'S**', status: 'confirmed', dashboardType: 'costume' },
+  { itemId: 'di-1', itemName: '여성 경주 한복', size: 'S', start: '2026-04-13', end: '2026-04-13', hours: '09:00-13:00', type: 'half_am', customer: 'K**', status: 'confirmed', dashboardType: 'costume' },
+  { itemId: 'di-1', itemName: '여성 경주 한복', size: 'M', start: '2026-04-13', end: '2026-04-13', hours: '14:00-18:00', type: 'half_pm', customer: 'L**', status: 'pending', dashboardType: 'costume' },
+  { itemId: 'di-2', itemName: '남성 경주 한복', size: 'L', start: '2026-04-14', end: '2026-04-15', hours: '10:00-18:00', type: 'full', customer: 'T**', status: 'confirmed', dashboardType: 'costume' },
+  { itemId: 'di-3', itemName: '여성 기모노 후리소데', size: 'Free', start: '2026-04-15', end: '2026-04-17', hours: '전일', type: 'multi', customer: 'P**', status: 'completed', dashboardType: 'costume' },
+  { itemId: 'di-4', itemName: '남성 기모노 착용', size: 'M', start: '2026-04-16', end: '2026-04-16', hours: '09:00-18:00', type: 'full', customer: 'M**', status: 'pending', dashboardType: 'costume' },
+  { itemId: 'di-1', itemName: '여성 경주 한복', size: 'L', start: '2026-04-18', end: '2026-04-19', hours: '전일', type: 'multi', customer: 'S**', status: 'confirmed', dashboardType: 'costume' },
 ];
 // 장소 대여 일정 mock
 const MOCK_VENUE_TIMELINE = [
@@ -99,6 +102,7 @@ function VendorDashboard() {
   const [dataError, setDataError] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [bookingActionConfirm, setBookingActionConfirm] = useState(null); // { bookingId, action }
 
   const matchedMockVendor = DRESS_VENDORS.find(v =>
     v.contact?.email === user?.email
@@ -149,6 +153,7 @@ function VendorDashboard() {
 
   // Timeline view
   const [timelineView, setTimelineView] = useState('gantt');
+  const [expandedTimelineItems, setExpandedTimelineItems] = useState({});
   // Calendar month state (year, month index 0-based)
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
@@ -157,6 +162,8 @@ function VendorDashboard() {
 
   // Reviews
   const [reviews, setReviews] = useState({ costume: [], venue: [] });
+  const [reviewStats, setReviewStats] = useState({ costume: { avg: 0, count: 0 }, venue: { avg: 0, count: 0 } });
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Vendor type switcher (for vendors with both costume + venue)
   const [selectedVendorTypes, setSelectedVendorTypes] = useState(['costume']);
@@ -216,6 +223,43 @@ function VendorDashboard() {
       setActiveDashboard(vendorTypeList[0]);
     }
   }, [vendorTypeList]);
+
+  // 자동 재고 계산: dresses의 sizeStock(총 재고)에서 confirmed/pending 예약을 차감
+  useEffect(() => {
+    const inv = {};
+    dresses.forEach(d => {
+      const stock = d.sizeStock || {};
+      const sizes = d.sizes || [];
+      if (sizes.length === 0 && Object.keys(stock).length === 0) return;
+      inv[d.id] = {};
+      const allSizes = [...new Set([...sizes, ...Object.keys(stock)])];
+      allSizes.forEach(s => {
+        inv[d.id][s] = { total: stock[s] || 0, rented: 0 };
+      });
+    });
+    // 예약에서 rented 카운트 (confirmed + pending만)
+    bookings.forEach(bk => {
+      if (bk.status === 'cancelled' || bk.status === 'completed') return;
+      // itemName으로 dress 매칭
+      const matchedDress = dresses.find(d => d.name === bk.itemName || d.nameEn === bk.itemName);
+      if (!matchedDress || !inv[matchedDress.id]) return;
+      const size = bk.size || 'Free';
+      if (inv[matchedDress.id][size]) {
+        inv[matchedDress.id][size].rented += 1;
+      }
+    });
+    // 타임라인 데이터에서도 rented 카운트 (사이즈별)
+    MOCK_RENTAL_TIMELINE.forEach(tl => {
+      if (tl.status === 'cancelled' || tl.status === 'completed') return;
+      const matchedDress = dresses.find(d => d.name === tl.itemName || d.id === tl.itemId);
+      if (!matchedDress || !inv[matchedDress.id]) return;
+      const size = tl.size || Object.keys(inv[matchedDress.id])[0];
+      if (size && inv[matchedDress.id][size]) {
+        inv[matchedDress.id][size].rented += 1;
+      }
+    });
+    setSizeInventory(inv);
+  }, [dresses, bookings]);
 
   // Per-item booking mode: 'instant' or 'manual'
   const [bookingModes, setBookingModes] = useState({});
@@ -318,16 +362,31 @@ function VendorDashboard() {
         setDataLoading(false);
       }
 
-      // Load reviews from localStorage
-      const costumeReviews = getVendorReviews('costume');
-      const venueReviews = getVendorReviews('venue');
+      // Load reviews + stats from Supabase (fallback: localStorage)
+      const [costumeReviews, venueReviews, costumeStats, venueStats] = await Promise.all([
+        getVendorReviews('costume'),
+        getVendorReviews('venue'),
+        getAverageRating('costume'),
+        getAverageRating('venue'),
+      ]);
       setReviews({ costume: costumeReviews, venue: venueReviews });
+      setReviewStats({ costume: costumeStats, venue: venueStats });
+      // 아바타 로드
+      const avatar = await getAvatarUrl();
+      if (avatar) setAvatarUrl(avatar);
     };
     loadVendorData();
   }, []);
 
-  // Booking confirm/reject handler
+  // Booking confirm/reject — 확인 다이얼로그 표시
   const handleBookingAction = (bookingId, action) => {
+    setBookingActionConfirm({ bookingId, action });
+  };
+
+  // 실제 확정/거절 실행
+  const executeBookingAction = () => {
+    if (!bookingActionConfirm) return;
+    const { bookingId, action } = bookingActionConfirm;
     setBookings(prev => prev.map(b => {
       if (b.id !== bookingId) return b;
       if (action === 'confirm') return { ...b, status: 'confirmed' };
@@ -336,6 +395,7 @@ function VendorDashboard() {
     }));
     setSaveStatus('saved');
     setTimeout(() => setSaveStatus(null), 2000);
+    setBookingActionConfirm(null);
   };
 
   // Toggle booking mode for a dress
@@ -472,8 +532,10 @@ function VendorDashboard() {
       if (bk && bk.length > 0) setBookings(bk);
 
       // Refresh reviews
-      const costumeReviews = getVendorReviews('costume');
-      const venueReviews = getVendorReviews('venue');
+      const [costumeReviews, venueReviews] = await Promise.all([
+        getVendorReviews('costume'),
+        getVendorReviews('venue'),
+      ]);
       setReviews({ costume: costumeReviews, venue: venueReviews });
 
       setSaveStatus('saved');
@@ -565,6 +627,7 @@ function VendorDashboard() {
         image_url: imageUrl || null,
         color: formData.color || null,
         sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
+        size_stock: formData.sizeStock || {},
         description: formData.description || null,
       });
 
@@ -580,6 +643,7 @@ function VendorDashboard() {
           images: [savedDress.image_url || '/default-dress.jpg'],
           color: savedDress.color,
           sizes: savedDress.sizes || [],
+          sizeStock: savedDress.size_stock || {},
           description: savedDress.description,
         };
         setDresses(prev => [...prev, mapped]);
@@ -599,6 +663,7 @@ function VendorDashboard() {
         images: [imageUrl || '/default-dress.jpg'],
         color: formData.color,
         sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
+        sizeStock: formData.sizeStock || {},
         description: formData.description,
       };
       setDresses(prev => [...prev, newDress]);
@@ -652,6 +717,7 @@ function VendorDashboard() {
         image_url: imageUrl || null,
         color: editForm.color || null,
         sizes: editForm.sizes.split(',').map(s => s.trim()).filter(Boolean),
+        size_stock: editForm.sizeStock || {},
         description: editForm.description || null,
       });
 
@@ -669,6 +735,7 @@ function VendorDashboard() {
           images: [imageUrl || '/default-dress.jpg'],
           color: editForm.color,
           sizes: editForm.sizes.split(',').map(s => s.trim()).filter(Boolean),
+          sizeStock: editForm.sizeStock || {},
           description: editForm.description,
         };
         setDresses(prev => prev.map(d => d.id === editTarget.id ? updated : d));
@@ -685,6 +752,7 @@ function VendorDashboard() {
         images: [imageUrl || '/default-dress.jpg'],
         color: editForm.color,
         sizes: editForm.sizes.split(',').map(s => s.trim()).filter(Boolean),
+        sizeStock: editForm.sizeStock || {},
         description: editForm.description,
       };
       setDresses(prev => prev.map(d => d.id === editTarget.id ? updated : d));
@@ -785,29 +853,37 @@ function VendorDashboard() {
           </button>
 
           {/* Title */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h1
-              style={{
-                fontSize: '2.5rem',
-                fontFamily: 'var(--font-serif)',
-                fontWeight: 'normal',
-                margin: 0,
-                marginBottom: '0.5rem',
-              }}
-            >
-              벤더 대시보드
-            </h1>
-            <p
-              style={{
-                fontSize: '1rem',
-                fontFamily: 'var(--font-serif)',
-                color: 'var(--gold)',
-                margin: 0,
-                letterSpacing: '1px',
-              }}
-            >
-              Vendor Dashboard
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: '2rem' }}>
+            <ProfileAvatar
+              avatarUrl={avatarUrl}
+              onAvatarChange={(url) => setAvatarUrl(url)}
+              size={68}
+              editable={true}
+            />
+            <div>
+              <h1
+                style={{
+                  fontSize: '2.5rem',
+                  fontFamily: 'var(--font-serif)',
+                  fontWeight: 'normal',
+                  margin: 0,
+                  marginBottom: '0.5rem',
+                }}
+              >
+                벤더 대시보드
+              </h1>
+              <p
+                style={{
+                  fontSize: '1rem',
+                  fontFamily: 'var(--font-serif)',
+                  color: 'var(--gold)',
+                  margin: 0,
+                  letterSpacing: '1px',
+                }}
+              >
+                Vendor Dashboard
+              </p>
+            </div>
           </div>
 
           {/* Vendor Type Dashboard Switcher */}
@@ -917,7 +993,7 @@ function VendorDashboard() {
             {/* 업체명 미입력 경고 */}
             {!profileForm.nameKo && (
               <p style={{ fontSize: '0.72rem', color: '#e85d5d', margin: '0.2rem 0 0.4rem', fontStyle: 'italic' }}>
-                ⚠ 업체명을 입력하고 저장해야 고객에게 노출됩니다
+                ⚠ 업체명을 입력하고 저장해야 고객에게 노출됩니다 (담당자 실명은 노출되지 않습니다)
               </p>
             )}
             {/* 한줄 소개 + 📍 위치 */}
@@ -1060,26 +1136,38 @@ function VendorDashboard() {
             { key: 'bookings', label: '예약 현황' },
             { key: 'timeline', label: '대여 일정' },
             { key: 'reviews', label: '리뷰 관리' },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: activeTab === tab.key ? 'var(--gold)' : 'var(--muted)',
-                fontSize: '1rem',
-                fontFamily: 'var(--font-serif)',
-                padding: '1rem 0',
-                cursor: 'pointer',
-                borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : 'none',
-                transition: 'all 0.3s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          ].map((tab) => {
+            const pendingBookings = bookings.filter(b => b.status === 'pending' && (b.vendorType === activeDashboard || !b.vendorType));
+            const hasBadge = tab.key === 'bookings' && pendingBookings.length > 0 && activeTab !== 'bookings';
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: activeTab === tab.key ? 'var(--gold)' : 'var(--muted)',
+                  fontSize: '1rem',
+                  fontFamily: 'var(--font-serif)',
+                  padding: '1rem 0',
+                  cursor: 'pointer',
+                  borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : 'none',
+                  transition: 'all 0.3s',
+                  whiteSpace: 'nowrap',
+                  position: 'relative',
+                }}
+              >
+                {tab.label}
+                {hasBadge && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: -4,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#e85d5d',
+                  }} />
+                )}
+              </button>
+            );
+          })}
           {vendorProfile && (
             <button onClick={refreshData}
               style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)', padding: '6px 14px', fontSize: 11, cursor: 'pointer', fontFamily: 'var(--font-serif)', marginBottom: 8 }}>
@@ -1461,6 +1549,7 @@ function VendorDashboard() {
                             nameEn: dress.nameEn || '',
                             category: dress.category,
                             sizes: (dress.sizes || []).join(', '),
+                            sizeStock: dress.sizeStock || (dress.sizes || []).reduce((acc, s) => ({ ...acc, [s]: 1 }), {}),
                             price: dress.price || '',
                             imageUrl: dress.image || '',
                             color: dress.color || '',
@@ -1631,45 +1720,57 @@ function VendorDashboard() {
                 </p>
               </div>
 
+              {/* 업체명 — 고객에게 노출되는 대표 이름 */}
+              <p style={{ fontSize: '0.72rem', color: 'var(--muted)', margin: '0 0 0.8rem', lineHeight: 1.5, fontStyle: 'italic' }}>
+                🔒 업체명은 고객이 업체를 검색·예약할 때 표시되는 이름입니다. 담당자 실명은 고객에게 노출되지 않습니다.
+              </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                    업체명 (한글)
+                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameKo ? '#e85d5d' : 'var(--muted)' }}>
+                    업체명 (한글) <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={profileForm.nameKo}
                     onChange={(e) => setProfileForm({ ...profileForm, nameKo: e.target.value })}
+                    placeholder="업체명을 입력하세요"
                     style={{
                       width: '100%',
                       padding: '0.75rem',
                       backgroundColor: 'var(--bg)',
                       color: 'var(--text)',
-                      border: '1px solid var(--gold-dim)',
+                      border: `1px solid ${!profileForm.nameKo ? 'rgba(232,93,93,0.5)' : 'var(--gold-dim)'}`,
                       boxSizing: 'border-box',
                       fontFamily: 'var(--font-sans)',
                     }}
                   />
+                  {!profileForm.nameKo && (
+                    <p style={{ fontSize: '0.7rem', color: '#e85d5d', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
+                  )}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                    업체명 (영문)
+                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameEn ? '#e85d5d' : 'var(--muted)' }}>
+                    업체명 (영문) <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
                   </label>
                   <input
                     type="text"
                     value={profileForm.nameEn}
                     onChange={(e) => setProfileForm({ ...profileForm, nameEn: e.target.value })}
+                    placeholder="Enter business name"
                     style={{
                       width: '100%',
                       padding: '0.75rem',
                       backgroundColor: 'var(--bg)',
                       color: 'var(--text)',
-                      border: '1px solid var(--gold-dim)',
+                      border: `1px solid ${!profileForm.nameEn ? 'rgba(232,93,93,0.5)' : 'var(--gold-dim)'}`,
                       boxSizing: 'border-box',
                       fontFamily: 'var(--font-sans)',
                     }}
                   />
+                  {!profileForm.nameEn && (
+                    <p style={{ fontSize: '0.7rem', color: '#e85d5d', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
+                  )}
                 </div>
 
                 <div>
@@ -2141,95 +2242,185 @@ function VendorDashboard() {
               </button>
             </div>
 
-            {timelineView === 'gantt' && (
+            {timelineView === 'gantt' && (() => {
+              try {
+              // 오늘 기준 14일 날짜 배열
+              const today = new Date();
+              const ganttDays = Array.from({ length: 14 }, (_, i) => {
+                const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1 + i);
+                return d;
+              });
+              const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const todayStr = fmtDate(today);
+
+              // 현재 대시보드 타입의 타임라인만 필터
+              const filteredTimeline = MOCK_RENTAL_TIMELINE.filter(r => r.dashboardType === activeDashboard);
+
+              // 아이템별 그룹화: dashboardDresses 기준 (실제 등록된 아이템)
+              const items = dashboardDresses || [];
+              const itemGroups = items.map(dress => {
+                const rentals = filteredTimeline.filter(r => r.itemName === dress.name || r.itemId === dress.id);
+                const sizeStr = typeof dress.sizes === 'string' ? dress.sizes : '';
+                const sizes = sizeStr
+                  ? sizeStr.split(',').map(s => s.trim()).filter(Boolean)
+                  : (dress.sizeStock && typeof dress.sizeStock === 'object' ? Object.keys(dress.sizeStock) : ['Free']);
+                return { dress, rentals, sizes };
+              });
+
+              const toggleExpand = (itemId) => {
+                setExpandedTimelineItems(prev => ({ ...prev, [itemId]: !prev[itemId] }));
+              };
+
+              // 날짜 셀 렌더 헬퍼
+              const renderDateCells = (rentalsForRow, rowHeight = '28px') => (
+                <div style={{ display: 'flex', gap: '0px', flex: 1 }}>
+                  {ganttDays.map((gd, i) => {
+                    const dateStr = fmtDate(gd);
+                    const hits = rentalsForRow.filter(r => dateStr >= r.start && dateStr <= r.end);
+                    return (
+                      <div key={i} style={{
+                        width: '60px', borderRight: '1px solid rgba(212,175,55,0.08)',
+                        position: 'relative', minHeight: rowHeight, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '2px',
+                      }}>
+                        {hits.map((h, hi) => (
+                          <div key={hi} style={{
+                            backgroundColor: getTimelineBarColor(h.status),
+                            height: hits.length > 1 ? '10px' : '20px', flex: 'none',
+                            margin: '0 2px', borderRadius: '2px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.55rem', color: 'var(--bg)', fontFamily: 'var(--font-serif)',
+                            cursor: 'pointer',
+                          }} title={`${h.customer} · ${h.size || '-'} · ${h.hours}`}>
+                            {hits.length === 1 && getDaysDiff(h.start, h.end) === 0 ? h.hours : ''}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+
+              return (
               <div style={{ overflowX: 'auto', backgroundColor: 'var(--bg2)', border: '1px solid var(--gold-dim)', padding: '1rem' }}>
                 <div style={{ minWidth: '1000px' }}>
                   {/* Header with Dates */}
-                  <div style={{ display: 'flex', gap: '20px', marginBottom: '1rem' }}>
+                  <div style={{ display: 'flex', gap: '20px', marginBottom: '0.5rem', borderBottom: '1px solid var(--gold-dim)', paddingBottom: '0.5rem' }}>
                     <div style={{ width: '200px', fontFamily: 'var(--font-serif)', fontWeight: 'bold', color: 'var(--gold)', fontSize: '0.9rem' }}>
-                      의상명
+                      {activeDashboard === 'venue' ? '장소명' : '의상명'}
                     </div>
                     <div style={{ display: 'flex', gap: '0px' }}>
-                      {Array.from({ length: 14 }).map((_, i) => {
-                        const date = new Date('2026-04-13');
-                        date.setDate(date.getDate() + i);
+                      {ganttDays.map((gd, i) => {
+                        const isToday = fmtDate(gd) === todayStr;
                         return (
-                          <div
-                            key={i}
-                            style={{
-                              width: '60px',
-                              textAlign: 'center',
-                              fontSize: '0.7rem',
-                              fontFamily: 'var(--font-serif)',
-                              color: 'var(--muted)',
-                              borderRight: '1px solid rgba(212,175,55,0.1)',
-                              paddingBottom: '0.5rem',
-                            }}
-                          >
-                            {date.getDate()}
+                          <div key={i} style={{
+                            width: '60px', textAlign: 'center', fontSize: '0.7rem',
+                            fontFamily: 'var(--font-serif)',
+                            color: isToday ? 'var(--gold)' : 'var(--muted)',
+                            fontWeight: isToday ? '700' : 'normal',
+                            borderRight: '1px solid rgba(212,175,55,0.1)',
+                            paddingBottom: '0.3rem',
+                          }}>
+                            <div>{gd.getMonth() + 1}/{gd.getDate()}</div>
+                            <div style={{ fontSize: '0.6rem', opacity: 0.6 }}>{['일','월','화','수','목','금','토'][gd.getDay()]}</div>
                           </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Timeline Rows */}
-                  {MOCK_RENTAL_TIMELINE.filter(r => r.dashboardType === activeDashboard).map((rental, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '20px', marginBottom: '1rem', alignItems: 'center', minHeight: '40px' }}>
-                      <div style={{ width: '200px', fontSize: '0.85rem', color: 'var(--text)', fontFamily: 'var(--font-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {rental.itemName}
-                      </div>
-                      <div style={{ display: 'flex', gap: '0px', flex: 1 }}>
-                        {Array.from({ length: 14 }).map((_, i) => {
-                          const currentDate = new Date('2026-04-13');
-                          currentDate.setDate(currentDate.getDate() + i);
-                          const rentalStart = new Date(rental.start);
-                          const rentalEnd = new Date(rental.end);
-                          const isInRange = currentDate >= rentalStart && currentDate <= rentalEnd;
+                  {/* 아이템별 그룹 행 */}
+                  {itemGroups.map(({ dress, rentals, sizes }) => {
+                    const isExpanded = expandedTimelineItems[dress.id];
+                    const totalRentals = rentals.length;
+                    const inv = sizeInventory[dress.id];
+
+                    return (
+                      <div key={dress.id} style={{ borderBottom: '1px solid rgba(212,175,55,0.08)' }}>
+                        {/* 아이템 메인 행 */}
+                        <div
+                          onClick={() => sizes.length > 0 && toggleExpand(dress.id)}
+                          style={{
+                            display: 'flex', gap: '20px', alignItems: 'center', minHeight: '44px',
+                            cursor: sizes.length > 0 ? 'pointer' : 'default',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={e => { if (sizes.length > 0) e.currentTarget.style.background = 'rgba(232,160,32,0.04)'; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                        >
+                          <div style={{ width: '200px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {sizes.length > 0 && (
+                              <span style={{ fontSize: '0.7rem', color: 'var(--gold)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}>▶</span>
+                            )}
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text)', fontFamily: 'var(--font-serif)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {dress.name}
+                            </span>
+                            {totalRentals > 0 && (
+                              <span style={{ fontSize: '0.6rem', color: 'var(--gold)', background: 'rgba(232,160,32,0.12)', padding: '1px 5px', borderRadius: '8px', fontFamily: 'var(--font-serif)' }}>
+                                {totalRentals}건
+                              </span>
+                            )}
+                          </div>
+                          {/* 전체 예약 바 */}
+                          {renderDateCells(rentals, '36px')}
+                        </div>
+
+                        {/* 사이즈별 서브행 (아코디언) */}
+                        {isExpanded && sizes.map(size => {
+                          const sizeRentals = rentals.filter(r => (r.size || 'Free') === size);
+                          const sizeInv = inv?.[size];
+                          const total = sizeInv?.total ?? (dress.sizeStock?.[size] || 0);
+                          const rented = sizeInv?.rented ?? 0;
+                          const avail = Math.max(0, total - rented);
 
                           return (
-                            <div
-                              key={i}
-                              style={{
-                                width: '60px',
-                                borderRight: '1px solid rgba(212,175,55,0.1)',
-                                position: 'relative',
-                                minHeight: '40px',
-                                display: 'flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              {isInRange && (
-                                <div
-                                  style={{
-                                    backgroundColor: getTimelineBarColor(rental.status),
-                                    height: '24px',
-                                    flex: 1,
-                                    margin: '0 4px',
-                                    borderRadius: '2px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: '0.6rem',
-                                    color: 'var(--bg)',
-                                    fontFamily: 'var(--font-serif)',
-                                    cursor: 'pointer',
-                                    transition: 'opacity 0.3s',
-                                  }}
-                                  title={`${rental.customer} - ${rental.hours}`}
-                                >
-                                  {getDaysDiff(rental.start, rental.end) === 0 && rental.hours}
-                                </div>
-                              )}
+                            <div key={size} style={{ display: 'flex', gap: '20px', alignItems: 'center', minHeight: '32px', background: 'rgba(232,160,32,0.02)' }}>
+                              <div style={{ width: '200px', paddingLeft: '24px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
+                                  {size}
+                                </span>
+                                <span style={{
+                                  fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontFamily: 'var(--font-serif)',
+                                  color: avail > 0 ? '#4AFF6A' : '#e85d5d',
+                                  background: avail > 0 ? 'rgba(74,255,106,0.08)' : 'rgba(232,93,93,0.08)',
+                                  border: `1px solid ${avail > 0 ? 'rgba(74,255,106,0.2)' : 'rgba(232,93,93,0.2)'}`,
+                                }}>
+                                  {avail}/{total}
+                                </span>
+                              </div>
+                              {renderDateCells(sizeRentals, '28px')}
                             </div>
                           );
                         })}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+
+                  {/* 범례 */}
+                  <div style={{ display: 'flex', gap: '16px', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--gold-dim)' }}>
+                    {[
+                      { label: '확정', color: 'var(--gold)' },
+                      { label: '대기', color: '#4A9EFF' },
+                      { label: '완료', color: '#4AFF6A' },
+                    ].map(item => (
+                      <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 2, background: item.color }} />
+                        <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            )}
+              );
+              } catch (err) {
+                console.error('Gantt render error:', err);
+                return (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#e85d5d', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}>
+                    <p style={{ marginBottom: '0.5rem' }}>일정표를 불러오는 중 오류가 발생했습니다.</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{String(err?.message || err)}</p>
+                  </div>
+                );
+              }
+            })()}
 
             {timelineView === 'calendar' && (() => {
               const { year, month } = calendarMonth;
@@ -2331,15 +2522,31 @@ function VendorDashboard() {
                     const isSat = dow === 5;
                     const isSun = dow === 6;
 
-                    // Find rentals that include this date
-                    const dayRentals = dateStr ? MOCK_RENTAL_TIMELINE.filter(r => {
+                    // Find rentals that include this date — 아이템별 그룹화
+                    const dayRentalsRaw = dateStr ? MOCK_RENTAL_TIMELINE.filter(r => {
                       return r.dashboardType === activeDashboard && dateStr >= r.start && dateStr <= r.end;
                     }) : [];
+                    // 아이템별로 그룹화: { itemName, count, statuses[], sizes[] }
+                    const dayItemMap = {};
+                    dayRentalsRaw.forEach(r => {
+                      if (!dayItemMap[r.itemName]) dayItemMap[r.itemName] = { itemName: r.itemName, count: 0, statuses: [], sizes: [] };
+                      dayItemMap[r.itemName].count++;
+                      dayItemMap[r.itemName].statuses.push(r.status);
+                      if (r.size) dayItemMap[r.itemName].sizes.push(r.size);
+                    });
+                    const dayItems = Object.values(dayItemMap);
 
                     const statusColor = (status) => {
                       if (status === 'confirmed') return 'var(--gold)';
                       if (status === 'pending') return '#4A9EFF';
                       if (status === 'completed') return '#4caf50';
+                      return 'var(--muted)';
+                    };
+                    // 그룹의 우선 상태: pending > confirmed > completed
+                    const groupStatusColor = (statuses) => {
+                      if (statuses.includes('pending')) return '#4A9EFF';
+                      if (statuses.includes('confirmed')) return 'var(--gold)';
+                      if (statuses.includes('completed')) return '#4caf50';
                       return 'var(--muted)';
                     };
 
@@ -2366,34 +2573,39 @@ function VendorDashboard() {
                               {dayNum}
                               {isToday && <span style={{ fontSize: '0.55rem', color: 'var(--gold)', marginLeft: 4 }}>오늘</span>}
                             </div>
-                            {/* Rental items for this day */}
+                            {/* 아이템별 그룹화된 대여 현황 */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                              {dayRentals.slice(0, 3).map((rental, ri) => (
-                                <div
-                                  key={ri}
-                                  title={`${rental.itemName} — ${rental.customer} (${rental.hours})`}
-                                  style={{
-                                    fontSize: '0.55rem',
-                                    padding: '2px 4px',
-                                    backgroundColor: `${statusColor(rental.status)}22`,
-                                    borderLeft: `3px solid ${statusColor(rental.status)}`,
-                                    color: statusColor(rental.status),
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                    cursor: 'pointer',
-                                    fontFamily: 'var(--font-serif)',
-                                  }}
-                                >
-                                  {rental.itemName.length > 8 ? rental.itemName.slice(0, 8) + '…' : rental.itemName}
-                                </div>
-                              ))}
-                              {dayRentals.length > 3 && (
+                              {dayItems.slice(0, 3).map((item, ri) => {
+                                const color = groupStatusColor(item.statuses);
+                                return (
+                                  <div
+                                    key={ri}
+                                    title={`${item.itemName} — ${item.count}건 (${[...new Set(item.sizes)].join(', ') || '-'})`}
+                                    style={{
+                                      fontSize: '0.55rem',
+                                      padding: '2px 4px',
+                                      backgroundColor: `${color}22`,
+                                      borderLeft: `3px solid ${color}`,
+                                      color: color,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      cursor: 'pointer',
+                                      fontFamily: 'var(--font-serif)',
+                                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    }}
+                                  >
+                                    <span>{item.itemName.length > 6 ? item.itemName.slice(0, 6) + '…' : item.itemName}</span>
+                                    {item.count > 1 && <span style={{ opacity: 0.7 }}>×{item.count}</span>}
+                                  </div>
+                                );
+                              })}
+                              {dayItems.length > 3 && (
                                 <div style={{
                                   fontSize: '0.5rem', color: 'var(--muted)',
                                   textAlign: 'center', padding: '1px 0',
                                 }}>
-                                  +{dayRentals.length - 3}건 더
+                                  +{dayItems.length - 3}건 더
                                 </div>
                               )}
                             </div>
@@ -2477,7 +2689,7 @@ function VendorDashboard() {
 
                   {(() => {
                     const vendorReviews = reviews[activeDashboard] || [];
-                    const { avg, count } = getAverageRating(activeDashboard);
+                    const { avg, count } = reviewStats[activeDashboard] || { avg: 0, count: 0 };
 
                     return (
                       <div>
@@ -2892,16 +3104,31 @@ function VendorDashboard() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2
-              style={{
-                fontSize: '1.5rem',
-                fontFamily: 'var(--font-serif)',
-                color: 'var(--gold)',
-                margin: '0 0 1.5rem 0',
-              }}
-            >
-              새 아이템 등록
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
+              <h2
+                style={{
+                  fontSize: '1.5rem',
+                  fontFamily: 'var(--font-serif)',
+                  color: 'var(--gold)',
+                  margin: 0,
+                }}
+              >
+                새 아이템 등록
+              </h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{
+                  background: 'transparent', border: 'none', color: 'var(--muted)',
+                  fontSize: '1.5rem', cursor: 'pointer', padding: '4px 8px',
+                  lineHeight: 1, transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gold)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}
+                title="닫기"
+              >
+                ✕
+              </button>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
@@ -2997,44 +3224,101 @@ function VendorDashboard() {
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
                   사이즈별 재고 수량
                 </label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {(formData.sizes || '').split(',').filter(s => s.trim()).map((size, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--gold)', minWidth: '40px' }}>{size.trim()}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder="수량"
-                        value={formData.sizeStock?.[size.trim()] || ''}
-                        onChange={(e) => setFormData(prev => ({
-                          ...prev,
-                          sizeStock: { ...(prev.sizeStock || {}), [size.trim()]: parseInt(e.target.value) || 0 },
-                        }))}
-                        style={{
-                          width: '80px', padding: '0.5rem',
-                          backgroundColor: 'var(--bg)', color: 'var(--text)',
-                          border: '1px solid var(--gold-dim)', boxSizing: 'border-box',
-                          textAlign: 'center',
-                        }}
-                      />
-                      <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>벌</span>
-                    </div>
-                  ))}
-                </div>
-                <input
-                  type="text"
-                  placeholder="사이즈 입력 (예: S, M, L, XL)"
-                  value={formData.sizes}
-                  onChange={(e) => setFormData({ ...formData, sizes: e.target.value })}
-                  style={{
-                    width: '100%', padding: '0.75rem', marginTop: '0.5rem',
-                    backgroundColor: 'var(--bg)', color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)', boxSizing: 'border-box',
-                    fontSize: '0.85rem',
-                  }}
-                />
+                {/* 2-column table: Size | Quantity */}
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.8rem', color: 'var(--gold)', borderBottom: '1px solid var(--gold-dim)', width: '50%' }}>사이즈</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.8rem', color: 'var(--gold)', borderBottom: '1px solid var(--gold-dim)', width: '40%' }}>수량 (벌)</th>
+                      <th style={{ width: '10%', borderBottom: '1px solid var(--gold-dim)' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(formData.sizes || '').split(',').map((size, idx, arr) => (
+                      <tr key={idx}>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input
+                            type="text"
+                            value={size.trim()}
+                            onChange={(e) => {
+                              const parts = (formData.sizes || '').split(',').map(s => s.trim());
+                              const oldSize = parts[idx];
+                              parts[idx] = e.target.value;
+                              const newStock = { ...(formData.sizeStock || {}) };
+                              if (oldSize && oldSize !== e.target.value) {
+                                newStock[e.target.value] = newStock[oldSize] || 0;
+                                delete newStock[oldSize];
+                              }
+                              setFormData(prev => ({ ...prev, sizes: parts.join(', '), sizeStock: newStock }));
+                            }}
+                            placeholder="예: M"
+                            style={{
+                              width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg)',
+                              color: 'var(--text)', border: '1px solid var(--gold-dim)',
+                              boxSizing: 'border-box', fontSize: '0.85rem',
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={formData.sizeStock?.[size.trim()] || ''}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              sizeStock: { ...(prev.sizeStock || {}), [size.trim()]: parseInt(e.target.value) || 0 },
+                            }))}
+                            style={{
+                              width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg)',
+                              color: 'var(--text)', border: '1px solid var(--gold-dim)',
+                              boxSizing: 'border-box', textAlign: 'center', fontSize: '0.85rem',
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => {
+                              const parts = (formData.sizes || '').split(',');
+                              const removed = parts[idx]?.trim();
+                              parts.splice(idx, 1);
+                              const newStock = { ...(formData.sizeStock || {}) };
+                              if (removed) delete newStock[removed];
+                              setFormData(prev => ({ ...prev, sizes: parts.join(','), sizeStock: newStock }));
+                            }}
+                            style={{
+                              background: 'transparent', border: 'none', color: '#e85d5d',
+                              cursor: 'pointer', fontSize: '1rem', padding: '2px 6px', lineHeight: 1,
+                            }}
+                            title="삭제"
+                          >✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {(formData.sizes || '').split(',').length < 6 && (
+                  <button
+                    onClick={() => {
+                      const current = formData.sizes || '';
+                      const newSizes = current ? current + ',' : ',';
+                      setFormData(prev => ({ ...prev, sizes: newSizes }));
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      background: 'transparent', border: '1px dashed var(--gold-dim)',
+                      color: 'var(--gold)', padding: '6px 14px', cursor: 'pointer',
+                      fontSize: '0.8rem', fontFamily: 'var(--font-serif)', width: '100%',
+                      justifyContent: 'center', transition: 'border-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--gold)'}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--gold-dim)'}
+                  >
+                    + 사이즈 추가 ({(formData.sizes || '').split(',').length}/6)
+                  </button>
+                )}
                 <p style={{ fontSize: '0.7rem', color: 'var(--muted)', margin: '0.3rem 0 0' }}>
-                  사이즈를 쉼표로 구분하여 입력하면, 각 사이즈별 재고 수량을 설정할 수 있습니다.
+                  각 행에 사이즈와 보유 수량을 입력하세요. Free 사이즈의 경우 "Free"를 입력합니다. (최대 6개)
                 </p>
               </div>
 
@@ -3095,39 +3379,14 @@ function VendorDashboard() {
                 />
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  이미지 파일
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    setImageFile(file);
-                    setImagePreview(URL.createObjectURL(file));
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: 'var(--bg)',
-                    color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                {imagePreview && (
-                  <img src={imagePreview} style={{ width: 80, height: 80, objectFit: 'cover', marginTop: 8, border: '1px solid var(--gold-dim)' }} />
-                )}
-              </div>
+              <DragDropImageUpload
+                label="이미지 파일"
+                previewUrl={imagePreview}
+                onFileSelect={(file) => {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }}
+              />
 
               <div>
                 <label
@@ -3246,16 +3505,31 @@ function VendorDashboard() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h2
-              style={{
-                fontSize: '1.5rem',
-                fontFamily: 'var(--font-serif)',
-                color: 'var(--gold)',
-                margin: '0 0 1.5rem 0',
-              }}
-            >
-              아이템 수정
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 1.5rem 0' }}>
+              <h2
+                style={{
+                  fontSize: '1.5rem',
+                  fontFamily: 'var(--font-serif)',
+                  color: 'var(--gold)',
+                  margin: 0,
+                }}
+              >
+                아이템 수정
+              </h2>
+              <button
+                onClick={() => { setEditTarget(null); setEditForm({}); setImageFile(null); setImagePreview(''); setCurrentImageIndex(0); }}
+                style={{
+                  background: 'transparent', border: 'none', color: 'var(--muted)',
+                  fontSize: '1.5rem', cursor: 'pointer', padding: '4px 8px',
+                  lineHeight: 1, transition: 'color 0.2s',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gold)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}
+                title="닫기"
+              >
+                ✕
+              </button>
+            </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
@@ -3348,32 +3622,101 @@ function VendorDashboard() {
               </div>
 
               <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  사이즈 (쉼표로 구분)
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
+                  사이즈별 재고 수량
                 </label>
-                <input
-                  type="text"
-                  placeholder="XS, S, M, L, XL"
-                  value={editForm.sizes || ''}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, sizes: e.target.value })
-                  }
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: 'var(--bg)',
-                    color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
-                    boxSizing: 'border-box',
-                  }}
-                />
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.8rem', color: 'var(--gold)', borderBottom: '1px solid var(--gold-dim)', width: '50%' }}>사이즈</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '0.8rem', color: 'var(--gold)', borderBottom: '1px solid var(--gold-dim)', width: '40%' }}>수량 (벌)</th>
+                      <th style={{ width: '10%', borderBottom: '1px solid var(--gold-dim)' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(editForm.sizes || '').split(',').map((size, idx) => (
+                      <tr key={idx}>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input
+                            type="text"
+                            value={size.trim()}
+                            onChange={(e) => {
+                              const parts = (editForm.sizes || '').split(',').map(s => s.trim());
+                              const oldSize = parts[idx];
+                              parts[idx] = e.target.value;
+                              const newStock = { ...(editForm.sizeStock || {}) };
+                              if (oldSize && oldSize !== e.target.value) {
+                                newStock[e.target.value] = newStock[oldSize] || 0;
+                                delete newStock[oldSize];
+                              }
+                              setEditForm(prev => ({ ...prev, sizes: parts.join(', '), sizeStock: newStock }));
+                            }}
+                            placeholder="예: M"
+                            style={{
+                              width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg)',
+                              color: 'var(--text)', border: '1px solid var(--gold-dim)',
+                              boxSizing: 'border-box', fontSize: '0.85rem',
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '4px 8px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={editForm.sizeStock?.[size.trim()] || ''}
+                            onChange={(e) => setEditForm(prev => ({
+                              ...prev,
+                              sizeStock: { ...(prev.sizeStock || {}), [size.trim()]: parseInt(e.target.value) || 0 },
+                            }))}
+                            style={{
+                              width: '100%', padding: '0.5rem', backgroundColor: 'var(--bg)',
+                              color: 'var(--text)', border: '1px solid var(--gold-dim)',
+                              boxSizing: 'border-box', textAlign: 'center', fontSize: '0.85rem',
+                            }}
+                          />
+                        </td>
+                        <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                          <button
+                            onClick={() => {
+                              const parts = (editForm.sizes || '').split(',');
+                              const removed = parts[idx]?.trim();
+                              parts.splice(idx, 1);
+                              const newStock = { ...(editForm.sizeStock || {}) };
+                              if (removed) delete newStock[removed];
+                              setEditForm(prev => ({ ...prev, sizes: parts.join(','), sizeStock: newStock }));
+                            }}
+                            style={{
+                              background: 'transparent', border: 'none', color: '#e85d5d',
+                              cursor: 'pointer', fontSize: '1rem', padding: '2px 6px', lineHeight: 1,
+                            }}
+                            title="삭제"
+                          >✕</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {(editForm.sizes || '').split(',').length < 6 && (
+                  <button
+                    onClick={() => {
+                      const current = editForm.sizes || '';
+                      const newSizes = current ? current + ',' : ',';
+                      setEditForm(prev => ({ ...prev, sizes: newSizes }));
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '4px',
+                      background: 'transparent', border: '1px dashed var(--gold-dim)',
+                      color: 'var(--gold)', padding: '6px 14px', cursor: 'pointer',
+                      fontSize: '0.8rem', fontFamily: 'var(--font-serif)', width: '100%',
+                      justifyContent: 'center', transition: 'border-color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.borderColor = 'var(--gold)'}
+                    onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--gold-dim)'}
+                  >
+                    + 사이즈 추가 ({(editForm.sizes || '').split(',').length}/6)
+                  </button>
+                )}
               </div>
 
               <div>
@@ -3433,42 +3776,14 @@ function VendorDashboard() {
                 />
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    marginBottom: '0.5rem',
-                    color: 'var(--muted)',
-                  }}
-                >
-                  이미지 파일
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    setImageFile(file);
-                    setImagePreview(URL.createObjectURL(file));
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    backgroundColor: 'var(--bg)',
-                    color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                {imagePreview && (
-                  <img src={imagePreview} style={{ width: 80, height: 80, objectFit: 'cover', marginTop: 8, border: '1px solid var(--gold-dim)' }} />
-                )}
-                {!imagePreview && editTarget.image && (
-                  <img src={editTarget.image} style={{ width: 80, height: 80, objectFit: 'cover', marginTop: 8, border: '1px solid var(--gold-dim)' }} />
-                )}
-              </div>
+              <DragDropImageUpload
+                label="이미지 파일"
+                previewUrl={imagePreview || (editTarget && editTarget.image)}
+                onFileSelect={(file) => {
+                  setImageFile(file);
+                  setImagePreview(URL.createObjectURL(file));
+                }}
+              />
 
               <div>
                 <label
@@ -3553,6 +3868,65 @@ function VendorDashboard() {
                 }}
               >
                 취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── 예약 확정/거절 확인 모달 ── */}
+      {bookingActionConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 2000,
+          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 20,
+        }} onClick={() => setBookingActionConfirm(null)}>
+          <div style={{
+            background: 'var(--bg)', border: '1px solid var(--border)',
+            maxWidth: 400, width: '100%', padding: '32px 28px',
+          }} onClick={(e) => e.stopPropagation()}>
+            <Corners />
+            <div style={{
+              fontFamily: 'var(--font-serif)', fontSize: 16,
+              marginBottom: 20, color: 'var(--text)', textAlign: 'center',
+            }}>
+              {bookingActionConfirm.action === 'confirm'
+                ? (lang === 'ko' ? '이 예약을 확정하시겠습니까?' : 'Confirm this booking?')
+                : (lang === 'ko' ? '이 예약을 거절하시겠습니까?' : 'Reject this booking?')
+              }
+            </div>
+            <div style={{
+              fontSize: 13, color: 'var(--muted)', textAlign: 'center', marginBottom: 24,
+            }}>
+              {bookingActionConfirm.action === 'confirm'
+                ? (lang === 'ko' ? '확정 후 고객에게 알림이 전송됩니다.' : 'The customer will be notified.')
+                : (lang === 'ko' ? '거절 후에는 되돌릴 수 없습니다.' : 'This action cannot be undone.')
+              }
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setBookingActionConfirm(null)}
+                style={{
+                  flex: 1, padding: '12px 0', background: 'transparent',
+                  border: '1px solid var(--border)', color: 'var(--muted)',
+                  fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+                }}
+              >
+                {lang === 'ko' ? '취소' : 'Cancel'}
+              </button>
+              <button
+                onClick={executeBookingAction}
+                style={{
+                  flex: 1, padding: '12px 0', border: 'none',
+                  fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+                  background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
+                  color: bookingActionConfirm.action === 'confirm' ? '#0B0B0B' : '#fff',
+                }}
+              >
+                {bookingActionConfirm.action === 'confirm'
+                  ? (lang === 'ko' ? '확정' : 'Confirm')
+                  : (lang === 'ko' ? '거절' : 'Reject')
+                }
               </button>
             </div>
           </div>

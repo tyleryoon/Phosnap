@@ -1,22 +1,53 @@
 // Vendor Review Storage & Retrieval Utility
-// Supabase 기반: unified reviews는 localStorage에 남아있을 수 있으므로
-// Supabase 우선 조회 + localStorage fallback 제공
+// Supabase vendor_reviews 테이블 우선 + localStorage fallback
 //
-// 향후 stylist_reviews, costume_reviews, venue_reviews 테이블이 생기면
-// 각 벤더별 전용 테이블로 완전 전환
+// vendor_type: 'stylist' | 'costume' | 'venue'
 
-import { getSupabase } from '../lib/supabase';
+import { getSupabase, getVendorReviewsByType, getVendorReviewStats } from '../lib/supabase';
 
 const STORAGE_KEY = 'phosnap_unified_reviews';
 
+// Supabase 사용 가능 여부 체크
+let _sbAvailable = null;
+const isSupabaseAvailable = async () => {
+  if (_sbAvailable !== null) return _sbAvailable;
+  try {
+    const sb = await getSupabase();
+    _sbAvailable = !!sb;
+  } catch {
+    _sbAvailable = false;
+  }
+  return _sbAvailable;
+};
+
 /**
  * Get all reviews for a specific vendor type
- * Supabase unified_reviews가 없으므로 localStorage에서 읽음 (현재)
+ * Supabase 우선 → localStorage fallback
  * @param {string} vendorType - 'stylist' | 'costume' | 'venue'
  * @param {string} vendorId - vendor ID (optional)
- * @returns {array} Array of review objects
+ * @returns {Promise<array>} Array of review objects
  */
-export const getVendorReviews = (vendorType, vendorId = null) => {
+export const getVendorReviews = async (vendorType, vendorId = null) => {
+  // Supabase 우선
+  if (await isSupabaseAvailable()) {
+    const { data } = await getVendorReviewsByType(vendorType, vendorId);
+    if (data && data.length > 0) {
+      return data.map(r => ({
+        id: r.id,
+        bookingId: r.booking_id,
+        photographerId: r.photographer_id,
+        vendorType: r.vendor_type,
+        vendorId: r.vendor_id,
+        stars: r.rating,
+        tags: r.tags || [],
+        text: r.body || '',
+        createdAt: r.created_at,
+        author: 'Guest',
+      }));
+    }
+  }
+
+  // localStorage fallback
   try {
     const allReviews = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const reviews = [];
@@ -48,11 +79,16 @@ export const getVendorReviews = (vendorType, vendorId = null) => {
 
 /**
  * Get average rating for a vendor type
+ * Supabase 우선 → localStorage fallback
  * @param {string} vendorType - 'stylist' | 'costume' | 'venue'
- * @returns {object} { avg: number, count: number }
+ * @returns {Promise<object>} { avg: number, count: number }
  */
-export const getAverageRating = (vendorType) => {
-  const reviews = getVendorReviews(vendorType);
+export const getAverageRating = async (vendorType, vendorId = null) => {
+  if (await isSupabaseAvailable()) {
+    return await getVendorReviewStats(vendorType, vendorId);
+  }
+  // localStorage fallback
+  const reviews = await getVendorReviews(vendorType);
   if (reviews.length === 0) return { avg: 0, count: 0 };
   const sum = reviews.reduce((a, r) => a + (r.stars || 0), 0);
   return {
@@ -78,12 +114,13 @@ export const formatReview = (review, lang = 'ko') => {
 
 /**
  * Get all reviews for all vendor types
- * @returns {object} { stylist: [], costume: [], venue: [] }
+ * @returns {Promise<object>} { stylist: [], costume: [], venue: [] }
  */
-export const getAllVendorReviews = () => {
-  return {
-    stylist: getVendorReviews('stylist'),
-    costume: getVendorReviews('costume'),
-    venue: getVendorReviews('venue'),
-  };
+export const getAllVendorReviews = async () => {
+  const [stylist, costume, venue] = await Promise.all([
+    getVendorReviews('stylist'),
+    getVendorReviews('costume'),
+    getVendorReviews('venue'),
+  ]);
+  return { stylist, costume, venue };
 };

@@ -6,6 +6,7 @@ import { useCurrency } from '../contexts/CurrencyContext';
 import { useAuth } from '../contexts/AuthContext';
 import logoMark from '../assets/logo-mark.svg';
 import LogoText from './LogoText';
+import NotificationBell from './NotificationBell';
 
 // ─── Navigation ────────────────────────────────────────────────────────
 
@@ -22,12 +23,14 @@ const Nav = ({ onAuthOpen }) => {
 
   // ── 같은 페이지 링크 클릭 시 새로고침 ──────────────────────────────
   const handleNavClick = useCallback((e, to) => {
-    // 현재 같은 경로면 강제로 페이지 상태 리셋
+    // 현재 같은 경로면 강제로 페이지 새로고침
     if (pathname === to || (to === '/photographers' && pathname.startsWith('/photographer'))) {
       e.preventDefault();
-      // navigate로 같은 경로에 replace + 상태 변경 → 컴포넌트 리렌더
-      navigate(to, { replace: true, state: { _refresh: Date.now() } });
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      // 대시보드/마이페이지 등 모든 페이지에서 확실하게 데이터 리프레시
+      navigate(to, { replace: true, state: { _refresh: Date.now() } });
+      // 0.05초 후 reload로 확실한 리프레시 (state 기반 리렌더가 안 되는 페이지 대응)
+      setTimeout(() => window.location.reload(), 50);
     }
   }, [pathname, navigate]);
 
@@ -211,6 +214,7 @@ const Nav = ({ onAuthOpen }) => {
 
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <NotificationBell />
               {isAdmin && (
                 <Link to="/admin"
                   style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
@@ -219,18 +223,21 @@ const Nav = ({ onAuthOpen }) => {
               )}
               {isArtist && (
                 <Link to="/artist/dashboard"
+                  onClick={(e) => handleNavClick(e, '/artist/dashboard')}
                   style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
                   {t('nav.dashboard')}
                 </Link>
               )}
               {isVendor && (
                 <Link to="/vendor/dashboard"
+                  onClick={(e) => handleNavClick(e, '/vendor/dashboard')}
                   style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
                   벤더 대시보드
                 </Link>
               )}
               {!isArtist && !isVendor && !isAdmin && (
                 <Link to="/my"
+                  onClick={(e) => handleNavClick(e, '/my')}
                   style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
                   {t('nav.myPage') || '마이페이지'}
                 </Link>
@@ -281,17 +288,17 @@ const Nav = ({ onAuthOpen }) => {
             <>
               <div style={{ fontSize: 13, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>{userName}</div>
               {isArtist && (
-                <Link to="/artist/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/artist/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/artist/dashboard'); setMobileOpen(false); }}>
                   {t('nav.dashboard')}
                 </Link>
               )}
               {isVendor && (
-                <Link to="/vendor/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/vendor/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/vendor/dashboard'); setMobileOpen(false); }}>
                   벤더 대시보드
                 </Link>
               )}
               {!isArtist && !isVendor && (
-                <Link to="/my" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/my" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/my'); setMobileOpen(false); }}>
                   {t('nav.myPage') || '마이페이지'}
                 </Link>
               )}

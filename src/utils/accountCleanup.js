@@ -44,6 +44,11 @@ export const cleanupUserData = async (userId) => {
         .delete().eq('sender_id', userId);
       if (!msgErr) cleaned.messages = 'deleted';
 
+      // vendor_reviews (customer_id = userId)
+      const { error: vrErr } = await sb.from('vendor_reviews')
+        .delete().eq('customer_id', userId);
+      if (!vrErr) cleaned.vendorReviews = 'deleted';
+
       // Supabase auth user 삭제는 AuthContext에서 처리
       // profiles → bookings, reviews 등은 CASCADE로 자동 삭제
       cleaned.supabase = 'cascade_ready';

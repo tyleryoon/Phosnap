@@ -6,6 +6,8 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LocationPicker from '../components/LocationPicker';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
+import { getAvatarUrl } from '../lib/supabase';
+import ProfileAvatar from '../components/ProfileAvatar';
 
 const i18n = {
   ko: {
@@ -982,15 +984,26 @@ export default function StylistDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('bookings');
   const [reviews, setReviews] = useState([]);
+  const [reviewStats, setReviewStats] = useState({ avg: 0, count: 0 });
+  const [avatarUrl, setAvatarUrl] = useState(null);
   const t = i18n[language] || i18n.en;
 
   const stylistId = user?.id;
   const stylistName = user?.name || user?.email;
 
-  // Load stylist reviews on mount
+  // Load stylist reviews + avatar on mount
   useEffect(() => {
-    const stylistReviews = getVendorReviews('stylist');
-    setReviews(stylistReviews);
+    const loadData = async () => {
+      const [stylistReviews, stats, avatar] = await Promise.all([
+        getVendorReviews('stylist'),
+        getAverageRating('stylist'),
+        getAvatarUrl(),
+      ]);
+      setReviews(stylistReviews);
+      setReviewStats(stats);
+      if (avatar) setAvatarUrl(avatar);
+    };
+    loadData();
   }, []);
 
   if (!stylistId) {
@@ -1027,6 +1040,12 @@ export default function StylistDashboard() {
           >
             <ArrowLeftIcon size={20} />
           </button>
+          <ProfileAvatar
+            avatarUrl={avatarUrl}
+            onAvatarChange={(url) => setAvatarUrl(url)}
+            size={60}
+            editable={true}
+          />
           <h1
             style={{
               color: 'var(--text)',
@@ -1114,7 +1133,7 @@ export default function StylistDashboard() {
               </div>
 
               {(() => {
-                const { avg, count } = getAverageRating('stylist');
+                const { avg, count } = reviewStats;
 
                 return (
                   <div>

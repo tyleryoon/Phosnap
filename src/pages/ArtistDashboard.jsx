@@ -19,6 +19,8 @@ import {
   submitReviewReply,
 } from '../lib/supabase';
 import { uploadImage } from '../lib/storage';
+import { getAvatarUrl } from '../lib/supabase';
+import ProfileAvatar from '../components/ProfileAvatar';
 import { PHOTOGRAPHERS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
 import { isTagAllowed, sanitizeTag } from '../utils/tagFilter';
 
@@ -159,6 +161,7 @@ const ArtistDashboard = () => {
   const [profileImages, setProfileImages]         = useState([]);
   const [profileSaving, setProfileSaving]         = useState(false);
   const [profileMsg, setProfileMsg]               = useState('');
+  const [avatarUrl, setAvatarUrl]                 = useState(null);
 
   // 예약 승인/거절
   const [rejectTarget, setRejectTarget] = useState(null);
@@ -267,6 +270,9 @@ const ArtistDashboard = () => {
         setProfileDressSelf(data.dress_self || false);
         setProfileImages(data.profile_images || []);
       }
+      // 아바타 로드
+      const avatar = await getAvatarUrl();
+      if (avatar) setAvatarUrl(avatar);
     } catch (_) { /* silent */ }
   }, [user?.id]);
 
@@ -688,7 +694,14 @@ const ArtistDashboard = () => {
 
         {/* ── 헤더 ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            <ProfileAvatar
+              avatarUrl={avatarUrl}
+              onAvatarChange={(url) => setAvatarUrl(url)}
+              size={68}
+              editable={true}
+            />
+            <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 10 }}>
               Artist Dashboard
             </div>
@@ -711,6 +724,7 @@ const ArtistDashboard = () => {
               </span>
             </div>
           </div>
+          </div>
 
           {/* 스케줄/지역 관리 링크 */}
           <Link to="/artist/schedule" style={{
@@ -728,18 +742,25 @@ const ArtistDashboard = () => {
 
         {/* ── 탭 ── */}
         <div className="tab-nav" style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 40 }}>
-          {TABS.map(tab => (
-            <button key={tab.id}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                color: stats.pending > 0 && tab.id === 'bookings' && activeTab !== 'bookings'
-                  ? '#f0ac2a' : undefined,
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {TABS.map(tab => {
+            const hasBadge = stats.pending > 0 && tab.id === 'bookings' && activeTab !== 'bookings';
+            return (
+              <button key={tab.id}
+                className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+                style={{ position: 'relative' }}
+              >
+                {tab.label}
+                {hasBadge && (
+                  <span style={{
+                    position: 'absolute', top: 8, right: 8,
+                    width: 8, height: 8, borderRadius: '50%',
+                    background: '#e85d5d',
+                  }} />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* 저장 메시지 */}
@@ -936,11 +957,14 @@ const ArtistDashboard = () => {
             {/* ════════════════════════ 탭: 프로필 편집 ════════════════════ */}
             {activeTab === 'profile' && (
               <div>
-                {/* 활동명 */}
+                {/* 활동명 — 고객에게 노출되는 대표 이름 */}
                 <div style={{ marginBottom: 32 }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.1em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 4 }}>
                     {c.displayName}
                   </div>
+                  <p style={{ fontSize: 11, color: 'var(--muted)', margin: '0 0 14px', lineHeight: 1.5, fontStyle: 'italic' }}>
+                    🔒 활동명은 고객이 작가를 검색·예약할 때 표시되는 이름입니다. 실명은 고객에게 노출되지 않습니다.
+                  </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                     <div>
                       <label style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 8, display: 'block' }}>
@@ -1217,51 +1241,6 @@ const ArtistDashboard = () => {
                       </p>
                     </div>
                   </label>
-                </div>
-
-                {/* 대표 이미지 */}
-                <div style={{ marginBottom: 32 }}>
-                  <label style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 12, display: 'block', textTransform: 'uppercase' }}>
-                    {c.profileImages}
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 12, marginBottom: 16 }}>
-                    {profileImages.map((url, idx) => (
-                      <div key={idx} style={{ position: 'relative', paddingBottom: '100%' }}>
-                        <img
-                          src={url}
-                          alt={`Profile ${idx}`}
-                          style={{
-                            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-                            objectFit: 'cover', border: '1px solid var(--border)',
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeProfileImage(idx)}
-                          style={{
-                            position: 'absolute', top: 4, right: 4, width: 24, height: 24,
-                            background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff',
-                            cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                    <label style={{
-                      paddingBottom: '100%', position: 'relative',
-                      border: '2px dashed var(--gold-border)', cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleUploadProfileImage}
-                        style={{ display: 'none' }}
-                      />
-                      <span style={{ position: 'absolute', fontSize: 24, color: 'var(--gold)' }}>+</span>
-                    </label>
-                  </div>
                 </div>
 
                 {/* 메시지 */}

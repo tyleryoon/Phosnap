@@ -2606,6 +2606,9 @@ const ArtistSchedule = () => {
                       onSetCover={(imgIdx) => setCover(idx, imgIdx)}
                       onExpand={() => setExpandedPfId(isExpanded ? null : pf.id)}
                       isExpanded={isExpanded}
+                      featured={pf.featured}
+                      onToggleFeatured={() => toggleFeatured(idx)}
+                      featuredFull={featuredCount >= 5}
                     />
 
                     {/* 우측 정보 패널 */}
@@ -2929,11 +2932,19 @@ const ArtistSchedule = () => {
   };
 
   // ── 포트폴리오 넷플릭스 스타일 슬라이더 ──
-  const PortfolioSlider = ({ images, coverIdx, onSetCover, onExpand, isExpanded }) => {
+  const PortfolioSlider = ({ images, coverIdx, onSetCover, onExpand, isExpanded, featured, onToggleFeatured, featuredFull }) => {
+    // 대표사진(coverIdx)을 맨 앞에 배치한 정렬된 이미지 배열
+    const sortedImages = useMemo(() => {
+      if (!images.length || !coverIdx) return images;
+      const arr = [...images];
+      const [cover] = arr.splice(coverIdx, 1);
+      return [cover, ...arr];
+    }, [images, coverIdx]);
+
     const [slideIdx, setSlideIdx] = useState(0);
     const sliderW = 260;
 
-    if (images.length === 0) return (
+    if (sortedImages.length === 0) return (
       <div onClick={onExpand} style={{
         width: sliderW, minHeight: 180, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'var(--bg2)', border: '1px dashed var(--border)', cursor: 'pointer',
@@ -2947,9 +2958,9 @@ const ArtistSchedule = () => {
 
     return (
       <div style={{ width: sliderW, flexShrink: 0, position: 'relative', overflow: 'hidden', cursor: 'pointer' }} onClick={onExpand}>
-        {/* 이미지 트랙 */}
+        {/* 이미지 트랙 — 대표사진이 항상 첫 번째 */}
         <div style={{ display: 'flex', transition: 'transform 0.3s ease', transform: `translateX(-${slideIdx * 100}%)` }}>
-          {images.map((url, i) => (
+          {sortedImages.map((url, i) => (
             <div key={i} style={{
               width: sliderW, minWidth: sliderW, aspectRatio: '4/3',
               backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center',
@@ -2957,7 +2968,7 @@ const ArtistSchedule = () => {
           ))}
         </div>
         {/* 좌우 화살표 */}
-        {images.length > 1 && (
+        {sortedImages.length > 1 && (
           <>
             {slideIdx > 0 && (
               <button onClick={e => { e.stopPropagation(); setSlideIdx(i => i - 1); }}
@@ -2965,7 +2976,7 @@ const ArtistSchedule = () => {
                 ‹
               </button>
             )}
-            {slideIdx < images.length - 1 && (
+            {slideIdx < sortedImages.length - 1 && (
               <button onClick={e => { e.stopPropagation(); setSlideIdx(i => i + 1); }}
                 style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', width: 26, height: 26, borderRadius: '50%', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
                 ›
@@ -2974,20 +2985,43 @@ const ArtistSchedule = () => {
           </>
         )}
         {/* 인디케이터 */}
-        {images.length > 1 && (
+        {sortedImages.length > 1 && (
           <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
-            {images.map((_, i) => (
+            {sortedImages.map((_, i) => (
               <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === slideIdx ? 'var(--gold)' : 'rgba(255,255,255,0.4)', transition: 'background 0.2s' }} />
             ))}
           </div>
         )}
-        {/* 대표사진 뱃지 */}
-        {slideIdx === coverIdx && (
+        {/* 대표사진 뱃지 — 항상 첫 번째 슬라이드(index 0)가 대표 */}
+        {slideIdx === 0 && (
           <div style={{ position: 'absolute', top: 6, left: 6, background: 'var(--gold)', color: '#000', fontSize: 9, padding: '2px 8px', fontFamily: 'var(--font-serif)', fontWeight: 600, letterSpacing: '0.05em' }}>★ 대표</div>
         )}
-        {/* 편집 힌트 */}
-        <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 10, backdropFilter: 'blur(4px)' }}>
-          {isExpanded ? '접기' : '편집'}
+        {/* 하단 버튼 영역: 대표 게시글 토글 + 편집 힌트 */}
+        <div style={{ position: 'absolute', bottom: 6, left: 6, right: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {/* ★ 대표 게시글 토글 버튼 (접힌 상태에서도 항상 표시) */}
+          {onToggleFeatured && (
+            <button
+              onClick={e => { e.stopPropagation(); if (!featured && featuredFull) return; onToggleFeatured(); }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '3px 10px', fontSize: 10, fontFamily: 'var(--font-serif)', fontWeight: 600,
+                background: featured ? 'var(--gold)' : 'rgba(0,0,0,0.6)',
+                color: featured ? '#000' : '#fff',
+                border: featured ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.2)',
+                cursor: (!featured && featuredFull) ? 'not-allowed' : 'pointer',
+                opacity: (!featured && featuredFull) ? 0.5 : 1,
+                borderRadius: 10, backdropFilter: 'blur(4px)', transition: 'all 0.15s',
+              }}
+              title={featured ? '대표 게시글 해제' : featuredFull ? '최대 5개까지 가능' : '대표 게시글로 지정'}
+            >
+              ★ {featured ? '대표' : '대표설정'}
+            </button>
+          )}
+          {!onToggleFeatured && <span />}
+          {/* 편집 힌트 */}
+          <div style={{ background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, padding: '2px 8px', borderRadius: 10, backdropFilter: 'blur(4px)' }}>
+            {isExpanded ? '접기' : '편집'}
+          </div>
         </div>
       </div>
     );

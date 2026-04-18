@@ -123,6 +123,7 @@ export const AuthProvider = ({ children }) => {
   // 편의 getter — activeRole 기반 (sessionStorage를 먼저 확인하여 race condition 방지)
   const storedRole = typeof window !== 'undefined' ? sessionStorage.getItem('phosnap_active_role') : null;
   const userRole = activeRole ?? storedRole ?? user?.user_metadata?.role ?? 'customer';
+  // ⚠ Privacy: full_name = 활동명(작가) / 업체명(벤더) / 입력이름(고객). 실명(real_name)은 절대 노출 안 함.
   const userName = user?.user_metadata?.full_name ?? user?.email ?? '';
   const isArtist = userRole === 'artist';
   const isVendor = userRole === 'vendor' || userRole === 'dress_vendor';

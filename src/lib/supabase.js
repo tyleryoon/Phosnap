@@ -792,6 +792,7 @@ export const submitReview = async (review) => {
     customer_id:     session.user.id,
     rating:          review.rating,
     text:            review.text || '',
+    // ⚠ Privacy: full_name = 활동명/업체명 (display name), NOT 실명(real_name). Safe for customer display.
     author_name:     review.author_name || session.user.user_metadata?.full_name || 'Anonymous',
     lang:            review.lang || 'ko',
   };
@@ -1756,6 +1757,189 @@ export const subscribeChatMessages = async (roomId, callback) => {
 
 /** Realtime 구독 해제 */
 export const unsubscribeChat = async (channel) => {
+  if (!channel) return;
+  const sb = await getSupabase();
+  if (!sb) return;
+  sb.removeChannel(channel);
+};
+
+// ─── Vendor Reviews (stylist / costume / venue) ──────────────────
+
+/** 벤더 리뷰 저장 */
+export const submitVendorReview = async (review) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return { error: { message: 'Authentication required' } };
+  const { data, error } = await sb.from('vendor_reviews').insert([{
+    booking_id: review.booking_id,
+    customer_id: session.user.id,
+    vendor_type: review.vendor_type,
+    vendor_id: review.vendor_id || null,
+    photographer_id: review.photographer_id || null,
+    rating: review.rating,
+    tags: review.tags || [],
+    body: review.body || '',
+  }]).select().single();
+  return { data, error };
+};
+
+/** 벤더 타입별 리뷰 조회 */
+export const getVendorReviewsByType = async (vendorType, vendorId = null) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  let query = sb.from('vendor_reviews')
+    .select('*')
+    .eq('vendor_type', vendorType)
+    .eq('is_visible', true)
+    .order('created_at', { ascending: false });
+  if (vendorId) query = query.eq('vendor_id', vendorId);
+  const { data, error } = await query;
+  return { data: data || [], error };
+};
+
+/** 특정 예약의 벤더 리뷰 조회 */
+export const getVendorReviewsByBooking = async (bookingId) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb.from('vendor_reviews')
+    .select('*').eq('booking_id', bookingId);
+  return { data: data || [], error };
+};
+
+/** 벤더 타입별 평균 평점 */
+export const getVendorReviewStats = async (vendorType, vendorId = null) => {
+  const sb = await getSupabase();
+  if (!sb) return { avg: 0, count: 0 };
+  let query = sb.from('vendor_reviews')
+    .select('rating')
+    .eq('vendor_type', vendorType)
+    .eq('is_visible', true);
+  if (vendorId) query = query.eq('vendor_id', vendorId);
+  const { data } = await query;
+  if (!data || data.length === 0) return { avg: 0, count: 0 };
+  const sum = data.reduce((a, r) => a + r.rating, 0);
+  return {
+    avg: Math.round((sum / data.length) * 10) / 10,
+    count: data.length,
+  };
+};
+
+// ─── Profile Avatar (Supabase Storage) ────────────────────────────
+
+/** 프로필 아바타 업로드 (Supabase Storage: avatars 버킷) */
+export const uploadAvatar = async (file) => {
+  const sb = await getSupabase();
+  if (!sb) return { url: null, error: { message: 'Supabase 연결 실패' } };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return { url: null, error: { message: 'Auth required' } };
+  const userId = session.user.id;
+  const ext = file.name?.split('.').pop() || 'jpg';
+  const path = `${userId}/avatar.${ext}`;
+  // 기존 파일 덮어쓰기 (upsert)
+  const { error } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+  if (error) return { url: null, error };
+  const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
+  // 캐시 방지용 timestamp
+  const url = `${urlData.publicUrl}?t=${Date.now()}`;
+  // profiles 테이블에도 avatar_url 저장
+  await sb.from('profiles').update({ avatar_url: url }).eq('id', userId);
+  return { url, error: null };
+};
+
+/** 프로필 아바타 URL 조회 */
+export const getAvatarUrl = async () => {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return null;
+  const { data } = await sb.from('profiles').select('avatar_url').eq('id', session.user.id).maybeSingle();
+  return data?.avatar_url || null;
+};
+
+// ─── Notifications ────────────────────────────────────────────────
+
+/** 내 알림 목록 조회 */
+export const getMyNotifications = async (limit = 30) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb.from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data: data || [], error };
+};
+
+/** 읽지 않은 알림 수 */
+export const getUnreadNotificationCount = async () => {
+  const sb = await getSupabase();
+  if (!sb) return 0;
+  const { count } = await sb.from('notifications')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_read', false);
+  return count || 0;
+};
+
+/** 알림 읽음 처리 */
+export const markNotificationRead = async (notificationId) => {
+  const sb = await getSupabase();
+  if (!sb) return;
+  await sb.from('notifications')
+    .update({ is_read: true })
+    .eq('id', notificationId);
+};
+
+/** 전체 알림 읽음 처리 */
+export const markAllNotificationsRead = async () => {
+  const sb = await getSupabase();
+  if (!sb) return;
+  await sb.from('notifications')
+    .update({ is_read: true })
+    .eq('is_read', false);
+};
+
+/** 알림 생성 (자기 자신에게) */
+export const createNotification = async ({ type = 'info', title, body = '', link = '', metadata = {} }) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return { error: { message: 'Auth required' } };
+  const { data, error } = await sb.from('notifications').insert([{
+    user_id: session.user.id,
+    type, title, body, link, metadata,
+  }]).select().single();
+  return { data, error };
+};
+
+/** 다른 사용자에게 알림 전송 (서비스용) */
+export const sendNotificationTo = async (userId, { type = 'info', title, body = '', link = '', metadata = {} }) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.from('notifications').insert([{
+    user_id: userId,
+    type, title, body, link, metadata,
+  }]).select().single();
+  return { data, error };
+};
+
+/** 알림 Realtime 구독 */
+export const subscribeNotifications = async (callback) => {
+  const sb = await getSupabase();
+  if (!sb) return null;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return null;
+  return sb.channel('my-notifications')
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'notifications',
+      filter: `user_id=eq.${session.user.id}`,
+    }, (payload) => callback(payload.new))
+    .subscribe();
+};
+
+/** 알림 Realtime 구독 해제 */
+export const unsubscribeNotifications = async (channel) => {
   if (!channel) return;
   const sb = await getSupabase();
   if (!sb) return;

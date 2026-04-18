@@ -314,25 +314,36 @@ const CustomerDashboard = () => {
             border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)',
             position: 'sticky', top: 80,
           }}>
-            {tabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '0.6rem',
-                  width: '100%', padding: '0.85rem 1.1rem',
-                  border: 'none', borderLeft: `3px solid ${activeTab === tab.id ? 'var(--gold)' : 'transparent'}`,
-                  background: activeTab === tab.id ? 'rgba(212,175,55,0.08)' : 'transparent',
-                  color: activeTab === tab.id ? 'var(--gold)' : 'var(--muted)',
-                  fontFamily: 'var(--font-serif)', fontSize: '0.85rem',
-                  cursor: 'pointer', textAlign: 'left',
-                  transition: 'all 0.2s', letterSpacing: '0.03em',
-                }}
-              >
-                <span style={{ fontSize: '1rem' }}>{tab.icon}</span>
-                {tab.label}
-              </button>
-            ))}
+            {tabs.map(tab => {
+              const pendingCount = bookings.filter(b => b.status === 'pending').length;
+              const hasBadge = tab.id === 'bookings' && pendingCount > 0 && activeTab !== 'bookings';
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.6rem',
+                    width: '100%', padding: '0.85rem 1.1rem',
+                    border: 'none', borderLeft: `3px solid ${activeTab === tab.id ? 'var(--gold)' : 'transparent'}`,
+                    background: activeTab === tab.id ? 'rgba(212,175,55,0.08)' : 'transparent',
+                    color: activeTab === tab.id ? 'var(--gold)' : 'var(--muted)',
+                    fontFamily: 'var(--font-serif)', fontSize: '0.85rem',
+                    cursor: 'pointer', textAlign: 'left',
+                    transition: 'all 0.2s', letterSpacing: '0.03em',
+                    position: 'relative',
+                  }}
+                >
+                  <span style={{ fontSize: '1rem' }}>{tab.icon}</span>
+                  {tab.label}
+                  {hasBadge && (
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: '#e85d5d', marginLeft: 'auto',
+                    }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Content area */}
