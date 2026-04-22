@@ -15,7 +15,6 @@ let _client = null;
 export const getSupabase = async () => {
   if (_client) return _client;
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.warn('[Phosnap] Supabase 환경변수가 설정되지 않았습니다. .env.local을 확인하세요.');
     return null;
   }
   _client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -282,7 +281,6 @@ export const addUserRole = async (userId, role) => {
     );
     if (error) {
       // 테이블 없으면 localStorage fallback
-      console.warn('user_roles table unavailable, using localStorage:', error.message);
       const key = `phosnap_roles_${userId}`;
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
       if (!existing.includes(role)) {
@@ -457,7 +455,6 @@ export const confirmPayment = async ({
     const data = await res.json();
     return data;
   } catch (err) {
-    console.error('[Phosnap] confirmPayment fetch error:', err);
     return { success: false, error: err.message || 'Network error' };
   }
 };
@@ -494,7 +491,6 @@ export const cancelPaymentServer = async (bookingId, reason = '') => {
 
     return await res.json();
   } catch (err) {
-    console.error('[Phosnap] cancelPaymentServer error:', err);
     return { success: false, error: err.message || 'Network error' };
   }
 };
@@ -1372,7 +1368,6 @@ export const sendNotification = async ({ type, bookingId, recipientEmail, recipi
     if (error) throw error;
     return { data: result, error: null };
   } catch (err) {
-    console.warn('[Notification] Failed to send:', err.message);
     return { error: err.message };
   }
 };
@@ -1823,6 +1818,42 @@ export const getVendorReviewStats = async (vendorType, vendorId = null) => {
     avg: Math.round((sum / data.length) * 10) / 10,
     count: data.length,
   };
+};
+
+/** 벤더 리뷰 답글 제출 (업데이트) */
+export const submitVendorReviewReply = async ({ reviewId, body }) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return { error: { message: 'Authentication required' } };
+  const { data, error } = await sb.from('vendor_review_replies').upsert({
+    review_id: reviewId,
+    vendor_id: session.user.id,
+    body,
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'review_id' }).select().single();
+  return { data, error };
+};
+
+/** 특정 벤더의 모든 리뷰 답글 가져오기 */
+export const getVendorReviewRepliesByVendor = async (vendorId) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb.from('vendor_review_replies')
+    .select('*').eq('vendor_id', vendorId)
+    .order('created_at', { ascending: false });
+  return { data: data || [], error };
+};
+
+/** 여러 리뷰 ID에 대한 벤더 답글 가져오기 */
+export const getVendorReviewReplies = async (reviewIds) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  if (!reviewIds?.length) return { data: [], error: null };
+  const { data, error } = await sb.from('vendor_review_replies')
+    .select('*')
+    .in('review_id', reviewIds);
+  return { data: data || [], error };
 };
 
 // ─── Profile Avatar (Supabase Storage) ────────────────────────────

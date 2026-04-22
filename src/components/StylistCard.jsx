@@ -1,8 +1,10 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Corners from './Corners';
 import { MapPinIcon } from './Icons';
 import { fmtStylist } from '../data/stylists';
 import { useLanguage } from '../contexts/LanguageContext';
+import LazyImage from './LazyImage';
 
 // ─── Stylist Card ──────────────────────────────────────────────────────
 // 예약 플로우에서 헤어메이크업 아티스트 선택 카드
@@ -29,6 +31,7 @@ const StylistCard = ({ s, selected, onClick }) => {
           boxShadow: selected ? 'var(--glow-gold)' : 'none',
           background: selected ? 'var(--gold-dim)' : 'var(--bg2)',
           border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius)',
         }}
       >
         <Corners />
@@ -47,14 +50,15 @@ const StylistCard = ({ s, selected, onClick }) => {
         )}
 
         {/* Cover image */}
-        <div style={{ width: '100%', aspectRatio: '4/3', overflow: 'hidden' }}>
-          <div style={{
-            width: '100%', height: '100%',
-            backgroundImage: `url(${s.img})`,
-            backgroundSize: 'cover', backgroundPosition: 'center',
-            transition: 'transform 0.5s ease',
-          }} />
-        </div>
+        <LazyImage
+          src={s.img}
+          alt={displayName}
+          style={{
+            width: '100%',
+            aspectRatio: '4/3',
+            overflow: 'hidden',
+          }}
+        />
 
         <div style={{ padding: '16px 20px 12px' }}>
           {/* Name + languages */}
@@ -63,7 +67,7 @@ const StylistCard = ({ s, selected, onClick }) => {
               {displayName}
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
-              {s.languages.map(l => (
+              {s.languages.slice(0, 2).map(l => (
                 <span key={l} className="lang-chip">{l}</span>
               ))}
             </div>
@@ -76,7 +80,7 @@ const StylistCard = ({ s, selected, onClick }) => {
 
           {/* Tags */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {displayTags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+            {displayTags.slice(0, 3).map(tag => <span key={tag} className="tag">{tag}</span>)}
           </div>
 
           {/* 포트폴리오 썸네일 (있는 경우) */}
@@ -87,10 +91,10 @@ const StylistCard = ({ s, selected, onClick }) => {
                   flex: 1, aspectRatio: '1/1', overflow: 'hidden',
                   borderRadius: 2, border: '1px solid var(--border)',
                 }}>
-                  <img
+                  <LazyImage
                     src={p.url}
                     alt={p.caption}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    style={{ width: '100%', height: '100%', display: 'block' }}
                   />
                 </div>
               ))}
@@ -139,4 +143,4 @@ const StylistCard = ({ s, selected, onClick }) => {
   );
 };
 
-export default StylistCard;
+export default React.memo(StylistCard);

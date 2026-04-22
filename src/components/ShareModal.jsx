@@ -126,7 +126,6 @@ const ShareModal = ({ isOpen, onClose, shareData }) => {
         ],
       });
     } catch (err) {
-      console.error('Kakao share failed:', err);
       // Fallback: open kakao share URL
       window.open(`https://story.kakao.com/share?url=${encodeURIComponent(shareUrl)}`);
     }
@@ -161,7 +160,7 @@ const ShareModal = ({ isOpen, onClose, shareData }) => {
           url: shareUrl,
         });
       } catch (err) {
-        if (err.name !== 'AbortError') console.error(err);
+        // silently handled
       }
     } else {
       handleCopyLink();

@@ -11,6 +11,7 @@ import { fmt } from '../data/photographers';
 import {
   getMyVendorProfile, getVendorDresses, addVendorDress,
   updateVendorDress, getVendorBookings, updateVendorProfile,
+  submitVendorReviewReply, getVendorReviewReplies,
 } from '../lib/supabase';
 import { isTagAllowed, sanitizeTag } from '../utils/tagFilter';
 import { COSTUME_TAG_REGISTRY, VENUE_TAG_REGISTRY, getTagLabel, getAllTagIds } from '../data/tagRegistry';
@@ -18,6 +19,7 @@ import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendo
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
 import DragDropImageUpload from '../components/DragDropImageUpload';
+import ReferralCard from '../components/ReferralCard';
 
 const MOCK_BOOKINGS = [
   { id: 'b1', date: '2026-04-15', hours: '09:00-13:00', rentalType: 'half_am', customer: 'K**', itemName: '클래식 여성 한복', size: 'M', status: 'confirmed', confirmType: 'instant', vendorType: 'costume' },
@@ -73,11 +75,14 @@ const CATEGORY_LABELS = {
   casual: '캐주얼/스타일링',
   accessory: '소품/액세서리',
   // legacy keys for backward compat
-  hanbok: '전통 의상',
+  hanbok: '한복',
+  traditional_jp: '일본 전통 의상',
+  dress: '드레스',
   western_dress: '서양 정장/드레스',
-  tuxedo: '서양 정장/드레스',
-  kimono: '전통 의상',
-  cheongsam: '전통 의상',
+  tuxedo: '턱시도',
+  kimono: '기모노',
+  cheongsam: '치파오',
+  qipao: '치파오',
   // venue categories
   studio: '스튜디오',
   traditional_space: '전통 공간',
@@ -97,7 +102,7 @@ function VendorDashboard() {
 
   const [vendorProfile, setVendorProfile] = useState(null);
   const [dbDresses, setDbDresses] = useState(null);
-  const [bookings, setBookings] = useState(MOCK_BOOKINGS);
+  const [bookings, setBookings] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dataError, setDataError] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -113,12 +118,15 @@ function VendorDashboard() {
   const vendorDresses = useMemo(
     () => {
       if (vendorProfile) return [];
+      // Only show mock dresses if vendorProfile is explicitly null (data loaded but no DB profile)
+      // Don't show while still loading
+      if (dataLoading) return [];
       return DRESS_ITEMS.filter(d => d.vendorId === mockVendor.id);
     },
-    [mockVendor.id, vendorProfile]
+    [mockVendor.id, vendorProfile, dataLoading]
   );
 
-  const [dresses, setDresses] = useState(vendorDresses);
+  const [dresses, setDresses] = useState([]);
   const [activeTab, setActiveTab] = useState('manage');
   const [filterCategory, setFilterCategory] = useState('');
   const [searchText, setSearchText] = useState('');
@@ -152,7 +160,7 @@ function VendorDashboard() {
   const [customTagError, setCustomTagError] = useState('');
 
   // Timeline view
-  const [timelineView, setTimelineView] = useState('gantt');
+  const [timelineView, setTimelineView] = useState('calendar');
   const [expandedTimelineItems, setExpandedTimelineItems] = useState({});
   // Calendar month state (year, month index 0-based)
   const [calendarMonth, setCalendarMonth] = useState(() => {
@@ -163,12 +171,92 @@ function VendorDashboard() {
   // Reviews
   const [reviews, setReviews] = useState({ costume: [], venue: [] });
   const [reviewStats, setReviewStats] = useState({ costume: { avg: 0, count: 0 }, venue: { avg: 0, count: 0 } });
+  const [reviewReplies, setReviewReplies] = useState({});  // { [reviewId]: replyObj }
+  const [replyTarget, setReplyTarget] = useState(null); // { reviewId, existing? }
+  const [replyBody, setReplyBody] = useState('');
+  const [replySaving, setReplySaving] = useState(false);
+  const [replyMsg, setReplyMsg] = useState('');
   const [avatarUrl, setAvatarUrl] = useState(null);
 
   // Vendor type switcher (for vendors with both costume + venue)
-  const [selectedVendorTypes, setSelectedVendorTypes] = useState(['costume']);
+  const [selectedVendorTypes, setSelectedVendorTypes] = useState([]);
   const vendorTypeList = selectedVendorTypes;
-  const [activeDashboard, setActiveDashboard] = useState('costume');
+  const [activeDashboard, setActiveDashboard] = useState('costume'); // Default, will be overridden by vendor data
+
+  // ── 벤더 운영 시간 & 휴무 관리 ──
+  const VENDOR_TIME_SLOTS = [
+    '09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00',
+  ];
+  const vendorScheduleKey = `phosnap_vendor_schedule_${activeDashboard}`;
+  const [vendorSchedule, setVendorSchedule] = useState(() => {
+    try {
+      const raw = localStorage.getItem(`phosnap_vendor_schedule_costume`);
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return { defaultSlots: ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'], holidays: {}, weeklyOff: [] };
+  });
+  const [vendorActiveDate, setVendorActiveDate] = useState(null);
+  const [editingVendorDefault, setEditingVendorDefault] = useState(false);
+  const [draftVendorDefault, setDraftVendorDefault] = useState(vendorSchedule.defaultSlots || []);
+  const [editingWeeklyOff, setEditingWeeklyOff] = useState(false);
+  const [vendorSaveMsg, setVendorSaveMsg] = useState('');
+
+  // 벤더 스케줄 로드/저장
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(vendorScheduleKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setVendorSchedule(parsed);
+        setDraftVendorDefault(parsed.defaultSlots || VENDOR_TIME_SLOTS.slice(0, 10));
+      } else {
+        const defaults = { defaultSlots: VENDOR_TIME_SLOTS.slice(0, 10), holidays: {}, weeklyOff: [] };
+        setVendorSchedule(defaults);
+        setDraftVendorDefault(defaults.defaultSlots);
+      }
+    } catch {}
+  }, [activeDashboard]);
+
+  const saveVendorSchedule = (updated) => {
+    setVendorSchedule(updated);
+    localStorage.setItem(vendorScheduleKey, JSON.stringify(updated));
+  };
+
+  const handleSaveVendorDefault = () => {
+    const updated = { ...vendorSchedule, defaultSlots: draftVendorDefault };
+    saveVendorSchedule(updated);
+    setEditingVendorDefault(false);
+    setVendorSaveMsg('기본 운영 시간이 저장되었습니다 ✓');
+    setTimeout(() => setVendorSaveMsg(''), 2000);
+  };
+
+  const toggleVendorHoliday = (dateStr) => {
+    const updated = { ...vendorSchedule, holidays: { ...vendorSchedule.holidays } };
+    if (updated.holidays[dateStr]) {
+      delete updated.holidays[dateStr];
+    } else {
+      updated.holidays[dateStr] = true;
+    }
+    saveVendorSchedule(updated);
+  };
+
+  const toggleVendorWeeklyOff = (dayIdx) => {
+    const updated = { ...vendorSchedule, weeklyOff: [...(vendorSchedule.weeklyOff || [])] };
+    if (updated.weeklyOff.includes(dayIdx)) {
+      updated.weeklyOff = updated.weeklyOff.filter(d => d !== dayIdx);
+    } else {
+      updated.weeklyOff.push(dayIdx);
+    }
+    saveVendorSchedule(updated);
+  };
+
+  // 날짜별 운영 상태 계산
+  const getVendorDateStatus = (dateStr) => {
+    if (vendorSchedule.holidays?.[dateStr]) return 'off';
+    const d = new Date(dateStr);
+    if ((vendorSchedule.weeklyOff || []).includes(d.getDay())) return 'off';
+    return 'open';
+  };
 
   // Derived profile form based on activeDashboard
   const profileForm = profileForms[activeDashboard] || emptyProfile;
@@ -217,9 +305,10 @@ function VendorDashboard() {
     }));
   };
 
-  // Set initial activeDashboard based on vendorTypeList
+  // Set initial activeDashboard based on vendorTypeList (after vendor data loads)
   useEffect(() => {
     if (vendorTypeList.length > 0 && !vendorTypeList.includes(activeDashboard)) {
+      // If current activeDashboard is not in vendor's types, switch to first available type
       setActiveDashboard(vendorTypeList[0]);
     }
   }, [vendorTypeList]);
@@ -265,6 +354,13 @@ function VendorDashboard() {
   const [bookingModes, setBookingModes] = useState({});
   // Image index per card (fix shared index bug)
   const [cardImageIndices, setCardImageIndices] = useState({});
+
+  // Initialize dresses from vendorDresses when component mounts or data changes
+  useEffect(() => {
+    if (vendorDresses && vendorDresses.length > 0) {
+      setDresses(vendorDresses);
+    }
+  }, [vendorDresses]);
 
   useEffect(() => {
     const loadVendorData = async () => {
@@ -353,10 +449,8 @@ function VendorDashboard() {
           if (bk && bk.length > 0) setBookings(bk);
         } else if (user) {
           setVendorProfile(null);
-          console.log('[VendorDashboard] No DB vendor profile found for user:', user.email);
         }
       } catch (err) {
-        console.error('[VendorDashboard] Load error:', err);
         setDataError(lang === 'ko' ? 'DB 연결에 실패했습니다. Mock 데이터로 표시합니다.' : 'DB connection failed. Showing mock data.');
       } finally {
         setDataLoading(false);
@@ -371,6 +465,20 @@ function VendorDashboard() {
       ]);
       setReviews({ costume: costumeReviews, venue: venueReviews });
       setReviewStats({ costume: costumeStats, venue: venueStats });
+
+      // Load review replies
+      const allReviewIds = [...costumeReviews, ...venueReviews].map(r => r.id);
+      if (allReviewIds.length > 0) {
+        const { data: repliesData } = await getVendorReviewReplies(allReviewIds);
+        const repliesMap = {};
+        if (repliesData) {
+          repliesData.forEach(reply => {
+            repliesMap[reply.review_id] = reply;
+          });
+        }
+        setReviewReplies(repliesMap);
+      }
+
       // 아바타 로드
       const avatar = await getAvatarUrl();
       if (avatar) setAvatarUrl(avatar);
@@ -380,7 +488,8 @@ function VendorDashboard() {
 
   // Booking confirm/reject — 확인 다이얼로그 표시
   const handleBookingAction = (bookingId, action) => {
-    setBookingActionConfirm({ bookingId, action });
+    const booking = bookings.find(b => b.id === bookingId);
+    setBookingActionConfirm({ bookingId, action, booking });
   };
 
   // 실제 확정/거절 실행
@@ -483,7 +592,6 @@ function VendorDashboard() {
           setProfileSaveStatus('error');
         }
       } catch (err) {
-        console.error('[VendorDashboard] updateProfile error:', err);
         setProfileSaveStatus('error');
       }
     } else {
@@ -503,7 +611,7 @@ function VendorDashboard() {
         const { error } = await deleteVendorDress(dressId);
         if (error) throw error;
       } catch (err) {
-        console.error('[VendorDashboard] deleteDress error:', err);
+        // silently handled
       }
     }
     setDresses(prev => prev.filter(d => d.id !== dressId));
@@ -562,6 +670,8 @@ function VendorDashboard() {
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [addFormErrors, setAddFormErrors] = useState({});
+  const [editFormErrors, setEditFormErrors] = useState({});
 
   // Category keys per dashboard type
   const costumeCategoryKeys = Object.keys(COSTUME_CATEGORIES);
@@ -596,8 +706,24 @@ function VendorDashboard() {
     });
   }, [dresses, activeDashboard]);
 
+  const validateAddForm = () => {
+    const errors = {};
+    if (!formData.nameKo || !formData.nameKo.trim()) {
+      errors.nameKo = '의상명(한글)은 필수 입력입니다';
+    }
+    const sizes = (formData.sizes || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (sizes.length === 0) {
+      errors.sizes = '최소 하나의 사이즈를 입력해야 합니다';
+    }
+    if (!imageFile && !imagePreview) {
+      errors.image = '최소 하나의 이미지를 업로드해야 합니다';
+    }
+    setAddFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleAddDress = async () => {
-    if (!formData.nameKo || !formData.price) return;
+    if (!validateAddForm()) return;
     setSaveStatus('saving');
     setUploading(true);
 
@@ -609,7 +735,7 @@ function VendorDashboard() {
         const { url } = await uploadDressImage(imageFile, vendorProfile.id);
         if (url) imageUrl = url;
       } catch (err) {
-        console.error('[VendorDashboard] uploadDressImage error:', err);
+        // silently handled
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
@@ -649,7 +775,7 @@ function VendorDashboard() {
         setDresses(prev => [...prev, mapped]);
         setAvailability(prev => ({ ...prev, [savedDress.id]: true }));
       } else if (error) {
-        console.error('[VendorDashboard] addDress error:', error);
+        // silently handled
       }
     } else {
       const newDress = {
@@ -687,8 +813,24 @@ function VendorDashboard() {
     setTimeout(() => setSaveStatus(null), 2000);
   };
 
+  const validateEditForm = () => {
+    const errors = {};
+    if (!editForm.nameKo || !editForm.nameKo.trim()) {
+      errors.nameKo = '의상명(한글)은 필수 입력입니다';
+    }
+    const sizes = (editForm.sizes || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (sizes.length === 0) {
+      errors.sizes = '최소 하나의 사이즈를 입력해야 합니다';
+    }
+    if (!imageFile && !imagePreview && !editTarget?.image) {
+      errors.image = '최소 하나의 이미지를 업로드해야 합니다';
+    }
+    setEditFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleEditDress = async () => {
-    if (!editTarget || !editForm.nameKo || !editForm.price) return;
+    if (!editTarget || !validateEditForm()) return;
     setSaveStatus('saving');
     setUploading(true);
 
@@ -700,7 +842,7 @@ function VendorDashboard() {
         const { url } = await uploadDressImage(imageFile, vendorProfile.id);
         if (url) imageUrl = url;
       } catch (err) {
-        console.error('[VendorDashboard] uploadDressImage error:', err);
+        // silently handled
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
@@ -722,7 +864,6 @@ function VendorDashboard() {
       });
 
       if (error) {
-        console.error('[VendorDashboard] updateDress error:', error);
         setSaveStatus('error');
       } else {
         const updated = {
@@ -773,10 +914,29 @@ function VendorDashboard() {
     if (vendorProfile) {
       const { error } = await updateVendorDress(dressId, { is_available: newVal });
       if (error) {
-        console.error('[VendorDashboard] toggleAvailability error:', err);
         setAvailability(prev => ({ ...prev, [dressId]: !newVal }));
       }
     }
+  };
+
+  const handleReplySubmit = async () => {
+    if (!replyTarget || !replyBody.trim()) return;
+    setReplySaving(true);
+    setReplyMsg('');
+    try {
+      const { data, error } = await submitVendorReviewReply({
+        reviewId: replyTarget.reviewId,
+        body: replyBody.trim(),
+      });
+      if (error) throw error;
+      // 로컬 상태 업데이트
+      setReviewReplies(prev => ({ ...prev, [replyTarget.reviewId]: data }));
+      setReplyMsg('답글이 저장되었습니다 ✓');
+      setTimeout(() => { setReplyTarget(null); setReplyBody(''); setReplyMsg(''); }, 1200);
+    } catch (err) {
+      setReplyMsg('답글 저장에 실패했습니다.');
+    }
+    setReplySaving(false);
   };
 
   const confirmedCount = dresses.length;
@@ -852,38 +1012,24 @@ function VendorDashboard() {
             <span>돌아가기</span>
           </button>
 
-          {/* Title */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: '2rem' }}>
+          {/* Title — compact */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: '1.25rem' }}>
             <ProfileAvatar
               avatarUrl={avatarUrl}
               onAvatarChange={(url) => setAvatarUrl(url)}
-              size={68}
+              size={52}
               editable={true}
             />
-            <div>
-              <h1
-                style={{
-                  fontSize: '2.5rem',
-                  fontFamily: 'var(--font-serif)',
-                  fontWeight: 'normal',
-                  margin: 0,
-                  marginBottom: '0.5rem',
-                }}
-              >
-                벤더 대시보드
-              </h1>
-              <p
-                style={{
-                  fontSize: '1rem',
-                  fontFamily: 'var(--font-serif)',
-                  color: 'var(--gold)',
-                  margin: 0,
-                  letterSpacing: '1px',
-                }}
-              >
-                Vendor Dashboard
-              </p>
-            </div>
+            <h1
+              style={{
+                fontSize: '1.8rem',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: 'normal',
+                margin: 0,
+              }}
+            >
+              벤더 대시보드
+            </h1>
           </div>
 
           {/* Vendor Type Dashboard Switcher */}
@@ -915,7 +1061,7 @@ function VendorDashboard() {
                     opacity: isEnabled ? 1 : 0.35,
                   }}
                 >
-                  {vt === 'costume' ? '👗 의상 대여 대쉬보드' : '🏛️ 장소 대여 대쉬보드'}
+                  {vt === 'costume' ? '👗 의상 대여 대시보드' : '🏛️ 장소 대여 대시보드'}
                 </button>
               );
             })}
@@ -990,11 +1136,31 @@ function VendorDashboard() {
                 </span>
               )}
             </div>
-            {/* 업체명 미입력 경고 */}
+            {/* 업체명 미입력 경고 + CTA */}
             {!profileForm.nameKo && (
-              <p style={{ fontSize: '0.72rem', color: '#e85d5d', margin: '0.2rem 0 0.4rem', fontStyle: 'italic' }}>
-                ⚠ 업체명을 입력하고 저장해야 고객에게 노출됩니다 (담당자 실명은 노출되지 않습니다)
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', margin: '0.2rem 0 0.4rem' }}>
+                <p style={{ fontSize: '0.72rem', color: '#e85d5d', margin: 0, fontStyle: 'italic' }}>
+                  ⚠ 업체명을 입력하고 저장해야 고객에게 노출됩니다 (담당자 실명은 노출되지 않습니다)
+                </p>
+                <button
+                  onClick={() => setActiveTab('profile')}
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '0.25rem 0.75rem',
+                    background: 'rgba(232,93,93,0.15)',
+                    border: '1px solid rgba(232,93,93,0.4)',
+                    color: '#e85d5d',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-serif)',
+                    transition: 'all 0.2s',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={(e) => { e.target.style.background = '#e85d5d'; e.target.style.color = '#fff'; }}
+                  onMouseLeave={(e) => { e.target.style.background = 'rgba(232,93,93,0.15)'; e.target.style.color = '#e85d5d'; }}
+                >
+                  업체 프로필 등록하기 →
+                </button>
+              </div>
             )}
             {/* 한줄 소개 + 📍 위치 */}
             <div style={{
@@ -1021,7 +1187,7 @@ function VendorDashboard() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               gap: '1rem',
             }}
           >
@@ -1047,7 +1213,7 @@ function VendorDashboard() {
                 style={{
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
-                  color: 'var(--gold)',
+                  color: dashboardDresses.length === 0 ? 'var(--muted)' : 'var(--gold)',
                   margin: 0,
                 }}
               >
@@ -1076,7 +1242,11 @@ function VendorDashboard() {
                 style={{
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
-                  color: 'var(--gold)',
+                  color: dashboardDresses.filter(d => {
+                    const inv = sizeInventory[d.id];
+                    if (!inv) return availability[d.id];
+                    return Object.values(inv).some(s => (s.total || 0) - (s.rented || 0) > 0);
+                  }).length === 0 ? 'var(--muted)' : 'var(--gold)',
                   margin: 0,
                 }}
               >
@@ -1109,7 +1279,7 @@ function VendorDashboard() {
                 style={{
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
-                  color: 'var(--gold)',
+                  color: monthlyRentals === 0 ? 'var(--muted)' : 'var(--gold)',
                   margin: 0,
                 }}
               >
@@ -1146,12 +1316,12 @@ function VendorDashboard() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: activeTab === tab.key ? 'var(--gold)' : 'var(--muted)',
+                  color: activeTab === tab.key ? 'var(--gold)' : 'rgba(212,175,55,0.5)',
                   fontSize: '1rem',
                   fontFamily: 'var(--font-serif)',
                   padding: '1rem 0',
                   cursor: 'pointer',
-                  borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : 'none',
+                  borderBottom: activeTab === tab.key ? '2px solid var(--gold)' : '2px solid transparent',
                   transition: 'all 0.3s',
                   whiteSpace: 'nowrap',
                   position: 'relative',
@@ -1174,9 +1344,7 @@ function VendorDashboard() {
               🔄 {lang === 'ko' ? '새로고침' : 'Refresh'}
             </button>
           )}
-          <span style={{ fontSize: 10, color: vendorProfile ? '#4caf50' : 'var(--muted)', marginLeft: vendorProfile ? 8 : 'auto', marginBottom: 8 }}>
-            {vendorProfile ? '● DB 연결됨' : '○ Mock 데이터'}
-          </span>
+          {/* DB 연결 상태 — 개발자 전용, 프로덕션에서는 숨김 */}
         </div>
 
         {/* Tab Content */}
@@ -1284,18 +1452,37 @@ function VendorDashboard() {
                         overflow: 'hidden',
                       }}
                     >
-                      <img
-                        src={currentImg}
-                        alt={dress.name}
+                      {currentImg && currentImg !== '/default-dress.jpg' ? (
+                        <img
+                          src={currentImg}
+                          alt={dress.name}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                        />
+                      ) : null}
+                      <div
                         style={{
                           position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
+                          top: 0, left: 0, width: '100%', height: '100%',
+                          display: currentImg && currentImg !== '/default-dress.jpg' ? 'none' : 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: 'var(--bg2)',
+                          color: 'var(--muted)',
+                          gap: '0.5rem',
                         }}
-                      />
+                      >
+                        <span style={{ fontSize: '2rem', opacity: 0.4 }}>{activeDashboard === 'venue' ? '🏛️' : '👗'}</span>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.5, fontFamily: 'var(--font-serif)' }}>이미지 없음</span>
+                      </div>
 
                       {/* Image Navigation Arrows */}
                       {imgs.length > 1 && (
@@ -1576,8 +1763,10 @@ function VendorDashboard() {
                         </div>
                       ) : (
                         <button onClick={() => setDeleteConfirm(dress.id)}
-                          style={{ width: '100%', fontSize: '0.75rem', color: '#fff', background: '#e85d5d', border: 'none', padding: '0.4rem', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
-                          ✕ 삭제
+                          style={{ width: '100%', fontSize: '0.7rem', color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '0.3rem', cursor: 'pointer', fontFamily: 'var(--font-serif)', transition: 'all 0.2s' }}
+                          onMouseEnter={(e) => { e.target.style.color = '#e85d5d'; e.target.style.borderColor = '#e85d5d'; }}
+                          onMouseLeave={(e) => { e.target.style.color = 'var(--muted)'; e.target.style.borderColor = 'var(--border)'; }}>
+                          삭제
                         </button>
                       )}
                     </div>
@@ -2065,6 +2254,9 @@ function VendorDashboard() {
 
         {activeTab === 'bookings' && (
           <div>
+            {/* 추천 코드 및 혜택 */}
+            <ReferralCard userId={user?.id} role="vendor" />
+
             {/* Bookings Table */}
             <div style={{ overflowX: 'auto' }}>
               <table
@@ -2093,6 +2285,17 @@ function VendorDashboard() {
                   </tr>
                 </thead>
                 <tbody>
+                  {filteredBookings.length === 0 && (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '48px 1rem', textAlign: 'center', color: 'var(--muted)', fontSize: '0.9rem', fontFamily: 'var(--font-serif)' }}>
+                        <div style={{ fontSize: 28, marginBottom: 12, opacity: 0.3 }}>📋</div>
+                        현재 예약이 없습니다
+                        <div style={{ fontSize: '0.75rem', marginTop: 8, color: 'var(--border)', lineHeight: 1.6 }}>
+                          고객이 예약하면 이곳에 표시됩니다
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                   {filteredBookings.map((booking) => {
                     const statusColors = {
                       confirmed: 'var(--gold)',
@@ -2213,20 +2416,6 @@ function VendorDashboard() {
           <div>
             <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
               <button
-                onClick={() => setTimelineView('gantt')}
-                style={{
-                  backgroundColor: timelineView === 'gantt' ? 'var(--gold)' : 'transparent',
-                  color: timelineView === 'gantt' ? 'var(--bg)' : 'var(--gold)',
-                  border: '1px solid var(--gold)',
-                  padding: '0.5rem 1rem',
-                  fontFamily: 'var(--font-serif)',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s',
-                }}
-              >
-                일정표 보기
-              </button>
-              <button
                 onClick={() => setTimelineView('calendar')}
                 style={{
                   backgroundColor: timelineView === 'calendar' ? 'var(--gold)' : 'transparent',
@@ -2239,6 +2428,20 @@ function VendorDashboard() {
                 }}
               >
                 날짜별 보기
+              </button>
+              <button
+                onClick={() => setTimelineView('gantt')}
+                style={{
+                  backgroundColor: timelineView === 'gantt' ? 'var(--gold)' : 'transparent',
+                  color: timelineView === 'gantt' ? 'var(--bg)' : 'var(--gold)',
+                  border: '1px solid var(--gold)',
+                  padding: '0.5rem 1rem',
+                  fontFamily: 'var(--font-serif)',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s',
+                }}
+              >
+                일정표 보기
               </button>
             </div>
 
@@ -2412,7 +2615,6 @@ function VendorDashboard() {
               </div>
               );
               } catch (err) {
-                console.error('Gantt render error:', err);
                 return (
                   <div style={{ padding: '2rem', textAlign: 'center', color: '#e85d5d', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}>
                     <p style={{ marginBottom: '0.5rem' }}>일정표를 불러오는 중 오류가 발생했습니다.</p>
@@ -2455,6 +2657,7 @@ function VendorDashboard() {
               };
 
               return (
+              <>
               <div style={{ backgroundColor: 'var(--bg2)', border: '1px solid var(--gold-dim)', padding: '1.5rem' }}>
                 {/* Month Navigation */}
                 <div style={{
@@ -2521,6 +2724,9 @@ function VendorDashboard() {
                     const dow = cellIdx % 7; // 0=월 ~ 6=일
                     const isSat = dow === 5;
                     const isSun = dow === 6;
+                    const vendorDateStatus = dateStr ? getVendorDateStatus(dateStr) : 'open';
+                    const isHoliday = vendorDateStatus === 'off';
+                    const isVendorSelected = vendorActiveDate === dateStr;
 
                     // Find rentals that include this date — 아이템별 그룹화
                     const dayRentalsRaw = dateStr ? MOCK_RENTAL_TIMELINE.filter(r => {
@@ -2553,25 +2759,29 @@ function VendorDashboard() {
                     return (
                       <div
                         key={cellIdx}
+                        onClick={() => isValidDay && dateStr && setVendorActiveDate(isVendorSelected ? null : dateStr)}
                         style={{
                           minHeight: '90px',
-                          backgroundColor: isToday ? 'rgba(232,160,32,0.06)' : isValidDay ? 'var(--bg)' : 'rgba(0,0,0,0.2)',
-                          border: isToday ? '2px solid var(--gold)' : '1px solid var(--gold-dim)',
+                          backgroundColor: isHoliday ? 'rgba(232,80,80,0.04)' : isVendorSelected ? 'rgba(232,160,32,0.1)' : isToday ? 'rgba(232,160,32,0.06)' : isValidDay ? 'var(--bg)' : 'rgba(0,0,0,0.2)',
+                          border: isVendorSelected ? '2px solid var(--gold)' : isToday ? '2px solid var(--gold)' : '1px solid var(--gold-dim)',
                           padding: '0.4rem',
                           position: 'relative',
                           transition: 'background 0.2s',
+                          cursor: isValidDay ? 'pointer' : 'default',
                         }}
                       >
                         {isValidDay && (
                           <>
                             <div style={{
                               fontSize: '0.85rem', fontFamily: 'var(--font-serif)',
-                              color: isToday ? 'var(--gold)' : isSun ? '#e85d5d' : isSat ? '#4A9EFF' : 'var(--text)',
+                              color: isHoliday ? 'rgba(232,80,80,0.5)' : isToday ? 'var(--gold)' : isSun ? '#e85d5d' : isSat ? '#4A9EFF' : 'var(--text)',
                               fontWeight: isToday ? '700' : 'normal',
                               marginBottom: '0.3rem',
+                              textDecoration: isHoliday ? 'line-through' : 'none',
                             }}>
                               {dayNum}
                               {isToday && <span style={{ fontSize: '0.55rem', color: 'var(--gold)', marginLeft: 4 }}>오늘</span>}
+                              {isHoliday && <span style={{ fontSize: '0.5rem', color: '#e85d5d', marginLeft: 4 }}>휴무</span>}
                             </div>
                             {/* 아이템별 그룹화된 대여 현황 */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -2625,6 +2835,7 @@ function VendorDashboard() {
                     { label: '확정', color: 'var(--gold)' },
                     { label: '대기', color: '#4A9EFF' },
                     { label: '완료', color: '#4caf50' },
+                    { label: '휴무', color: '#e85d5d' },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <div style={{
@@ -2639,6 +2850,104 @@ function VendorDashboard() {
                   ))}
                 </div>
               </div>
+
+              {/* ── 날짜별 휴무 설정 (날짜 클릭 시) ── */}
+              {vendorActiveDate && (
+                <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.25em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 4 }}>날짜별 관리</div>
+                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '0.04em' }}>{vendorActiveDate}</div>
+                    </div>
+                    <button onClick={() => setVendorActiveDate(null)} style={{
+                      background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)',
+                      padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-serif)',
+                    }}>닫기</button>
+                  </div>
+                  <button onClick={() => toggleVendorHoliday(vendorActiveDate)} style={{
+                    width: '100%', padding: '12px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
+                    background: vendorSchedule.holidays?.[vendorActiveDate] ? 'rgba(232,80,80,0.08)' : 'transparent',
+                    color: vendorSchedule.holidays?.[vendorActiveDate] ? '#e85d5d' : 'var(--muted)',
+                    border: `1px solid ${vendorSchedule.holidays?.[vendorActiveDate] ? 'rgba(232,80,80,0.3)' : 'var(--border)'}`,
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}>
+                    {vendorSchedule.holidays?.[vendorActiveDate] ? '✓ 휴무일 — 운영일로 변경' : '☾ 이 날 휴무로 설정'}
+                  </button>
+                  {!vendorSchedule.holidays?.[vendorActiveDate] && (
+                    <div style={{ marginTop: 12, fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>
+                      이 날은 정상 운영일입니다. 대여 현황은 달력에서 확인하세요.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ── 정기 휴무 요일 설정 ── */}
+              <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>정기 휴무 요일</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.6 }}>
+                  매주 반복되는 정기 휴무일을 설정하세요. 해당 요일은 달력에 휴무로 표시됩니다.
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {['일','월','화','수','목','금','토'].map((label, idx) => {
+                    const active = (vendorSchedule.weeklyOff || []).includes(idx);
+                    return (
+                      <button key={idx} onClick={() => toggleVendorWeeklyOff(idx)} style={{
+                        width: 40, height: 40, fontSize: 12, fontFamily: 'var(--font-serif)',
+                        border: `1px solid ${active ? '#e85d5d' : 'var(--border)'}`,
+                        background: active ? 'rgba(232,80,80,0.12)' : 'transparent',
+                        color: active ? '#e85d5d' : (idx === 0 ? 'rgba(232,80,80,0.7)' : idx === 6 ? 'rgba(100,150,255,0.7)' : 'var(--muted)'),
+                        cursor: 'pointer', transition: 'all 0.15s',
+                      }}>{label}</button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── 기본 운영 시간 ── */}
+              <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>기본 운영 시간</div>
+                  <button
+                    onClick={() => editingVendorDefault ? handleSaveVendorDefault() : setEditingVendorDefault(true)}
+                    style={{
+                      fontSize: 11, padding: '6px 14px', fontFamily: 'var(--font-serif)',
+                      background: editingVendorDefault ? 'var(--gold)' : 'transparent',
+                      color: editingVendorDefault ? '#0B0B0B' : 'var(--gold)',
+                      border: `1px solid ${editingVendorDefault ? 'var(--gold)' : 'var(--gold-dim)'}`,
+                      cursor: 'pointer', transition: 'all 0.2s',
+                    }}>
+                    {editingVendorDefault ? '저장' : '✎ 편집'}
+                  </button>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.6 }}>
+                  대여 운영 시간대를 설정하세요. 고객 예약 시 이 시간대가 기본으로 적용됩니다.
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {VENDOR_TIME_SLOTS.map(time => {
+                    const isOn = (editingVendorDefault ? draftVendorDefault : (vendorSchedule.defaultSlots || [])).includes(time);
+                    return (
+                      <button key={time}
+                        disabled={!editingVendorDefault}
+                        onClick={() => setDraftVendorDefault(prev => prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time].sort())}
+                        style={{
+                          padding: '8px 14px', fontSize: 12, fontFamily: 'var(--font-serif)',
+                          background: isOn ? (editingVendorDefault ? 'var(--gold)' : 'rgba(232,160,32,0.12)') : 'transparent',
+                          color: isOn ? (editingVendorDefault ? '#0B0B0B' : 'var(--gold)') : 'var(--muted)',
+                          border: `1px solid ${isOn ? 'var(--gold-border)' : 'var(--border)'}`,
+                          cursor: editingVendorDefault ? 'pointer' : 'not-allowed', transition: 'all 0.15s',
+                        }}>
+                        {time}
+                      </button>
+                    );
+                  })}
+                </div>
+                {vendorSaveMsg && (
+                  <div style={{ marginTop: 10, padding: '9px 16px', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center' }}>
+                    {vendorSaveMsg}
+                  </div>
+                )}
+              </div>
+              </>
               );
             })()}
           </div>
@@ -2735,14 +3044,14 @@ function VendorDashboard() {
                           }}>
                             {vendorReviews.map((review) => {
                               const formattedReview = formatReview(review, lang);
+                              const reply = reviewReplies[review.id];
+                              const isEditing = replyTarget?.reviewId === review.id;
                               return (
                                 <div
                                   key={review.id}
                                   style={{
-                                    borderLeft: '2px solid var(--gold)',
-                                    paddingLeft: '1rem',
-                                    paddingTop: '0.5rem',
-                                    paddingBottom: '0.5rem',
+                                    border: '1px solid var(--border)', background: 'var(--bg2)',
+                                    padding: '16px 16px 12px', position: 'relative',
                                   }}
                                 >
                                   <div style={{
@@ -2800,9 +3109,115 @@ function VendorDashboard() {
                                       color: 'var(--text)',
                                       lineHeight: 1.5,
                                       fontStyle: 'italic',
+                                      marginBottom: '0.5rem',
                                     }}>
                                       "{review.text}"
                                     </div>
+                                  )}
+
+                                  {/* 기존 답글 표시 */}
+                                  {reply && !isEditing && (
+                                    <div style={{
+                                      marginTop: 10, padding: '12px 14px',
+                                      background: 'rgba(232,160,32,0.04)', borderLeft: '3px solid var(--gold)',
+                                    }}>
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                                        <span style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em' }}>
+                                          ✦ 벤더 답글
+                                        </span>
+                                        <span style={{ fontSize: 9, color: 'var(--muted)' }}>
+                                          {reply.updated_at?.slice(0, 10).replace(/-/g, '.') || reply.created_at?.slice(0, 10).replace(/-/g, '.')}
+                                        </span>
+                                      </div>
+                                      <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.6 }}>
+                                        {reply.body}
+                                      </div>
+                                      <button
+                                        onClick={() => {
+                                          setReplyTarget({ reviewId: review.id, existing: true });
+                                          setReplyBody(reply.body);
+                                        }}
+                                        style={{
+                                          marginTop: 8, padding: '5px 12px', background: 'transparent',
+                                          border: '1px solid var(--border)', color: 'var(--muted)',
+                                          fontSize: 10, fontFamily: 'var(--font-serif)', cursor: 'pointer',
+                                        }}
+                                      >
+                                        수정
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* 답글 작성/수정 영역 */}
+                                  {isEditing && (
+                                    <div style={{
+                                      marginTop: 10, padding: '12px 14px',
+                                      border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+                                    }}>
+                                      <div style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 8 }}>
+                                        {replyTarget.existing ? '답글 수정' : '답글 작성'}
+                                      </div>
+                                      <textarea
+                                        value={replyBody}
+                                        onChange={e => setReplyBody(e.target.value)}
+                                        placeholder="고객의 리뷰에 감사하거나 답변을 남겨주세요..."
+                                        style={{
+                                          width: '100%', background: 'var(--bg)', border: '1px solid var(--border)',
+                                          color: 'var(--text)', fontSize: 12, padding: '10px 12px',
+                                          resize: 'vertical', minHeight: 70, lineHeight: 1.6, boxSizing: 'border-box',
+                                        }}
+                                      />
+                                      {replyMsg && (
+                                        <div style={{
+                                          fontSize: 11, marginTop: 6,
+                                          color: replyMsg.includes('✓') ? '#4ade80' : '#e85d5d',
+                                        }}>
+                                          {replyMsg}
+                                        </div>
+                                      )}
+                                      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                        <button
+                                          onClick={handleReplySubmit}
+                                          disabled={replySaving || !replyBody.trim()}
+                                          style={{
+                                            padding: '7px 18px', background: 'var(--gold)', border: 'none',
+                                            color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 11,
+                                            letterSpacing: '0.08em', cursor: 'pointer',
+                                            opacity: (replySaving || !replyBody.trim()) ? 0.5 : 1,
+                                          }}
+                                        >
+                                          {replySaving ? '저장 중…' : replyTarget.existing ? '수정 완료' : '답글 등록'}
+                                        </button>
+                                        <button
+                                          onClick={() => { setReplyTarget(null); setReplyBody(''); setReplyMsg(''); }}
+                                          style={{
+                                            padding: '7px 18px', background: 'transparent',
+                                            border: '1px solid var(--border)', color: 'var(--muted)',
+                                            fontFamily: 'var(--font-serif)', fontSize: 11, cursor: 'pointer',
+                                          }}
+                                        >
+                                          취소
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* 답글 달기 버튼 (아직 답글 없을 때) */}
+                                  {!reply && !isEditing && (
+                                    <button
+                                      onClick={() => {
+                                        setReplyTarget({ reviewId: review.id, existing: false });
+                                        setReplyBody('');
+                                      }}
+                                      style={{
+                                        marginTop: 10, padding: '6px 14px',
+                                        background: 'rgba(232,160,32,0.08)', border: '1px solid var(--gold-border)',
+                                        color: 'var(--gold)', fontSize: 10, fontFamily: 'var(--font-serif)',
+                                        letterSpacing: '0.06em', cursor: 'pointer',
+                                      }}
+                                    >
+                                      💬 답글 달기
+                                    </button>
                                   )}
 
                                   {/* 원본 리뷰 바로가기 */}
@@ -2831,29 +3246,6 @@ function VendorDashboard() {
                 </div>
               )}
             </div>
-
-            {reviews[activeDashboard]?.length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                padding: '3rem 2rem',
-                backgroundColor: 'var(--bg2)',
-                border: '1px dashed var(--border)',
-              }}>
-                <div style={{
-                  fontSize: 14,
-                  color: 'var(--muted)',
-                  marginBottom: '0.5rem',
-                }}>
-                  {lang === 'ko' ? '아직 받은 리뷰가 없습니다' : 'No reviews received yet'}
-                </div>
-                <div style={{
-                  fontSize: 11,
-                  color: 'var(--muted)',
-                }}>
-                  {lang === 'ko' ? '예약 완료 후 고객의 리뷰가 표시됩니다' : 'Reviews from customers will appear here after completion'}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
@@ -3140,23 +3532,35 @@ function VendorDashboard() {
                     color: 'var(--muted)',
                   }}
                 >
-                  의상명 (한글)
+                  의상명 (한글) <span style={{ color: '#e85d5d' }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.nameKo}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nameKo: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setFormData({ ...formData, nameKo: e.target.value });
+                    if (addFormErrors.nameKo) {
+                      setAddFormErrors(prev => {
+                        const updated = { ...prev };
+                        delete updated.nameKo;
+                        return updated;
+                      });
+                    }
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
+                    border: addFormErrors.nameKo ? '1px solid #e85d5d' : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
+                {addFormErrors.nameKo && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {addFormErrors.nameKo}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -3222,7 +3626,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  사이즈별 재고 수량
+                  사이즈별 재고 수량 <span style={{ color: '#e85d5d' }}>*</span>
                 </label>
                 {/* 2-column table: Size | Quantity */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
@@ -3320,6 +3724,11 @@ function VendorDashboard() {
                 <p style={{ fontSize: '0.7rem', color: 'var(--muted)', margin: '0.3rem 0 0' }}>
                   각 행에 사이즈와 보유 수량을 입력하세요. Free 사이즈의 경우 "Free"를 입력합니다. (최대 6개)
                 </p>
+                {addFormErrors.sizes && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {addFormErrors.sizes}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -3379,14 +3788,31 @@ function VendorDashboard() {
                 />
               </div>
 
-              <DragDropImageUpload
-                label="이미지 파일"
-                previewUrl={imagePreview}
-                onFileSelect={(file) => {
-                  setImageFile(file);
-                  setImagePreview(URL.createObjectURL(file));
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
+                  이미지 파일 <span style={{ color: '#e85d5d' }}>*</span>
+                </label>
+                <DragDropImageUpload
+                  label=""
+                  previewUrl={imagePreview}
+                  onFileSelect={(file) => {
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                    if (addFormErrors.image) {
+                      setAddFormErrors(prev => {
+                        const updated = { ...prev };
+                        delete updated.image;
+                        return updated;
+                      });
+                    }
+                  }}
+                />
+                {addFormErrors.image && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {addFormErrors.image}
+                  </span>
+                )}
+              </div>
 
               <div>
                 <label
@@ -3427,18 +3853,19 @@ function VendorDashboard() {
             >
               <button
                 onClick={handleAddDress}
+                disabled={Object.keys(addFormErrors).length > 0 || uploading}
                 style={{
                   flex: 1,
-                  backgroundColor: 'var(--gold)',
+                  backgroundColor: Object.keys(addFormErrors).length > 0 || uploading ? 'rgba(212,175,55,0.5)' : 'var(--gold)',
                   color: 'var(--bg)',
                   border: 'none',
                   padding: '0.75rem',
                   fontFamily: 'var(--font-serif)',
-                  cursor: 'pointer',
+                  cursor: Object.keys(addFormErrors).length > 0 || uploading ? 'not-allowed' : 'pointer',
                   transition: 'opacity 0.3s',
                 }}
-                onMouseEnter={(e) => (e.target.style.opacity = '0.8')}
-                onMouseLeave={(e) => (e.target.style.opacity = '1')}
+                onMouseEnter={(e) => Object.keys(addFormErrors).length === 0 && !uploading && (e.target.style.opacity = '0.8')}
+                onMouseLeave={(e) => Object.keys(addFormErrors).length === 0 && !uploading && (e.target.style.opacity = '1')}
               >
                 저장
               </button>
@@ -3541,23 +3968,35 @@ function VendorDashboard() {
                     color: 'var(--muted)',
                   }}
                 >
-                  의상명 (한글)
+                  의상명 (한글) <span style={{ color: '#e85d5d' }}>*</span>
                 </label>
                 <input
                   type="text"
                   value={editForm.nameKo || ''}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, nameKo: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setEditForm({ ...editForm, nameKo: e.target.value });
+                    if (editFormErrors.nameKo) {
+                      setEditFormErrors(prev => {
+                        const updated = { ...prev };
+                        delete updated.nameKo;
+                        return updated;
+                      });
+                    }
+                  }}
                   style={{
                     width: '100%',
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
+                    border: editFormErrors.nameKo ? '1px solid #e85d5d' : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
+                {editFormErrors.nameKo && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {editFormErrors.nameKo}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -3623,7 +4062,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  사이즈별 재고 수량
+                  사이즈별 재고 수량 <span style={{ color: '#e85d5d' }}>*</span>
                 </label>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
                   <thead>
@@ -3717,6 +4156,11 @@ function VendorDashboard() {
                     + 사이즈 추가 ({(editForm.sizes || '').split(',').length}/6)
                   </button>
                 )}
+                {editFormErrors.sizes && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {editFormErrors.sizes}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -3776,14 +4220,31 @@ function VendorDashboard() {
                 />
               </div>
 
-              <DragDropImageUpload
-                label="이미지 파일"
-                previewUrl={imagePreview || (editTarget && editTarget.image)}
-                onFileSelect={(file) => {
-                  setImageFile(file);
-                  setImagePreview(URL.createObjectURL(file));
-                }}
-              />
+              <div>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
+                  이미지 파일 <span style={{ color: '#e85d5d' }}>*</span>
+                </label>
+                <DragDropImageUpload
+                  label=""
+                  previewUrl={imagePreview || (editTarget && editTarget.image)}
+                  onFileSelect={(file) => {
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                    if (editFormErrors.image) {
+                      setEditFormErrors(prev => {
+                        const updated = { ...prev };
+                        delete updated.image;
+                        return updated;
+                      });
+                    }
+                  }}
+                />
+                {editFormErrors.image && (
+                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                    {editFormErrors.image}
+                  </span>
+                )}
+              </div>
 
               <div>
                 <label
@@ -3824,19 +4285,19 @@ function VendorDashboard() {
             >
               <button
                 onClick={handleEditDress}
-                disabled={uploading}
+                disabled={Object.keys(editFormErrors).length > 0 || uploading}
                 style={{
                   flex: 1,
-                  backgroundColor: uploading ? 'rgba(212,175,55,0.5)' : 'var(--gold)',
+                  backgroundColor: Object.keys(editFormErrors).length > 0 || uploading ? 'rgba(212,175,55,0.5)' : 'var(--gold)',
                   color: 'var(--bg)',
                   border: 'none',
                   padding: '0.75rem',
                   fontFamily: 'var(--font-serif)',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  cursor: Object.keys(editFormErrors).length > 0 || uploading ? 'not-allowed' : 'pointer',
                   transition: 'opacity 0.3s',
                 }}
-                onMouseEnter={(e) => !uploading && (e.target.style.opacity = '0.8')}
-                onMouseLeave={(e) => !uploading && (e.target.style.opacity = '1')}
+                onMouseEnter={(e) => Object.keys(editFormErrors).length === 0 && !uploading && (e.target.style.opacity = '0.8')}
+                onMouseLeave={(e) => Object.keys(editFormErrors).length === 0 && !uploading && (e.target.style.opacity = '1')}
               >
                 {uploading ? '저장 중...' : '저장'}
               </button>
@@ -3874,64 +4335,111 @@ function VendorDashboard() {
         </div>
       )}
       {/* ── 예약 확정/거절 확인 모달 ── */}
-      {bookingActionConfirm && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 2000,
-          background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          padding: 20,
-        }} onClick={() => setBookingActionConfirm(null)}>
+      {bookingActionConfirm && (() => {
+        const booking = bookingActionConfirm.booking;
+        return (
           <div style={{
-            background: 'var(--bg)', border: '1px solid var(--border)',
-            maxWidth: 400, width: '100%', padding: '32px 28px',
-          }} onClick={(e) => e.stopPropagation()}>
-            <Corners />
+            position: 'fixed', inset: 0, zIndex: 2000,
+            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }} onClick={() => setBookingActionConfirm(null)}>
             <div style={{
-              fontFamily: 'var(--font-serif)', fontSize: 16,
-              marginBottom: 20, color: 'var(--text)', textAlign: 'center',
-            }}>
-              {bookingActionConfirm.action === 'confirm'
-                ? (lang === 'ko' ? '이 예약을 확정하시겠습니까?' : 'Confirm this booking?')
-                : (lang === 'ko' ? '이 예약을 거절하시겠습니까?' : 'Reject this booking?')
-              }
-            </div>
-            <div style={{
-              fontSize: 13, color: 'var(--muted)', textAlign: 'center', marginBottom: 24,
-            }}>
-              {bookingActionConfirm.action === 'confirm'
-                ? (lang === 'ko' ? '확정 후 고객에게 알림이 전송됩니다.' : 'The customer will be notified.')
-                : (lang === 'ko' ? '거절 후에는 되돌릴 수 없습니다.' : 'This action cannot be undone.')
-              }
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button
-                onClick={() => setBookingActionConfirm(null)}
-                style={{
-                  flex: 1, padding: '12px 0', background: 'transparent',
-                  border: '1px solid var(--border)', color: 'var(--muted)',
-                  fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
-                }}
-              >
-                {lang === 'ko' ? '취소' : 'Cancel'}
-              </button>
-              <button
-                onClick={executeBookingAction}
-                style={{
-                  flex: 1, padding: '12px 0', border: 'none',
-                  fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
-                  background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
-                  color: bookingActionConfirm.action === 'confirm' ? '#0B0B0B' : '#fff',
-                }}
-              >
+              background: 'var(--bg)', border: '1px solid var(--border)',
+              maxWidth: 400, width: '100%', padding: '32px 28px',
+            }} onClick={(e) => e.stopPropagation()}>
+              <Corners />
+              <div style={{
+                fontFamily: 'var(--font-serif)', fontSize: 16,
+                marginBottom: 20, color: 'var(--text)', textAlign: 'center',
+              }}>
                 {bookingActionConfirm.action === 'confirm'
-                  ? (lang === 'ko' ? '확정' : 'Confirm')
-                  : (lang === 'ko' ? '거절' : 'Reject')
+                  ? (lang === 'ko' ? '이 예약을 확정하시겠습니까?' : 'Confirm this booking?')
+                  : (lang === 'ko' ? '이 예약을 거절하시겠습니까?' : 'Reject this booking?')
                 }
-              </button>
+              </div>
+
+              {/* 예약 상세 정보 */}
+              {booking && (
+                <div style={{
+                  backgroundColor: 'rgba(232,160,32,0.08)',
+                  border: '1px solid var(--gold-dim)',
+                  padding: '14px 12px',
+                  marginBottom: 20,
+                  fontSize: 13,
+                  lineHeight: 1.8,
+                }}>
+                  <div style={{ color: 'var(--text)', marginBottom: 6 }}>
+                    <strong>{lang === 'ko' ? '고객' : 'Customer'}:</strong> {booking.customer}
+                  </div>
+                  {booking.itemName && (
+                    <div style={{ color: 'var(--text)', marginBottom: 6 }}>
+                      <strong>{lang === 'ko' ? '상품명' : 'Item'}:</strong> {booking.itemName}
+                    </div>
+                  )}
+                  {booking.date && (
+                    <div style={{ color: 'var(--text)' }}>
+                      <strong>{lang === 'ko' ? '예약일시' : 'Date'}:</strong> {booking.date} {booking.hours ? `(${booking.hours})` : ''}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{
+                fontSize: 13, color: 'var(--muted)', textAlign: 'center', marginBottom: 24,
+              }}>
+                {bookingActionConfirm.action === 'confirm'
+                  ? (lang === 'ko' ? '확정 후 고객에게 알림이 전송됩니다.' : 'The customer will be notified.')
+                  : (lang === 'ko' ? '거절 후에는 되돌릴 수 없습니다.' : 'This action cannot be undone.')
+                }
+              </div>
+
+              {/* 예약 거절 시 환불 경고 */}
+              {bookingActionConfirm.action === 'reject' && (
+                <div style={{
+                  backgroundColor: 'rgba(232,85,85,0.15)',
+                  border: '1px solid rgba(232,85,85,0.3)',
+                  padding: '12px 12px',
+                  marginBottom: 20,
+                  fontSize: 12,
+                  color: '#e85d5d',
+                  borderRadius: '2px',
+                  lineHeight: 1.6,
+                }}>
+                  ⚠ {lang === 'ko' ? '예약 거절 시 고객에게 자동으로 전액 환불됩니다' : 'The customer will receive a full refund if this booking is rejected'}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button
+                  onClick={() => setBookingActionConfirm(null)}
+                  style={{
+                    flex: 1, padding: '12px 0', background: 'transparent',
+                    border: '1px solid var(--border)', color: 'var(--muted)',
+                    fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+                  }}
+                >
+                  {lang === 'ko' ? '취소' : 'Cancel'}
+                </button>
+                <button
+                  onClick={executeBookingAction}
+                  style={{
+                    flex: 1, padding: '12px 0', border: 'none',
+                    fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+                    background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
+                    color: bookingActionConfirm.action === 'confirm' ? '#0B0B0B' : '#fff',
+                  }}
+                >
+                  {bookingActionConfirm.action === 'confirm'
+                    ? (lang === 'ko' ? '확정' : 'Confirm')
+                    : (lang === 'ko' ? '거절' : 'Reject')
+                  }
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

@@ -5,12 +5,15 @@ import Footer from '../components/Footer';
 import { ArrowLeftIcon, MapPinIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import { getAllLocationsSorted } from '../data/locationUtils';
 import { ProfileSEO } from '../components/SEO';
 import { getPhotographerReviews, fetchPhotographer, getPackageReviews, getPhotographerReviewsV2, getReviewReplies } from '../lib/supabase';
 import ShareModal from '../components/ShareModal';
 import PortfolioLightbox from '../components/PortfolioLightbox';
 import { normalizePortfolio } from '../utils/portfolioUtils';
+import TrustBadge from '../components/TrustBadge';
+import SentimentTags from '../components/SentimentTags';
 import {
   getRecruitingInstances,
   getActiveBookingCount,
@@ -33,6 +36,7 @@ const Profile = ({ onAuthOpen }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(null); // null = closed, number = open at index
   const [isFavorited, setIsFavorited] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
 
   // Fetch from DB with fallback to mock
   const [dbPhotographer, setDbPhotographer] = useState(null);
@@ -47,30 +51,30 @@ const Profile = ({ onAuthOpen }) => {
           setDbPhotographer(data);
         }
       } catch (err) {
-        console.warn('[Profile] fetchPhotographer failed:', err);
+        // silently handled
       }
       setDbLoading(false);
     };
     loadPhotographer();
   }, [id]);
 
-  // DB 데이터와 Mock 데이터를 병합 (DB 우선, 없는 필드는 Mock에서 보완)
-  // DB에서 null인 필드는 mock 값 유지 (null이 valid array를 덮어쓰는 것 방지)
+  // DB + localStorage + Mock 데이터 병합 (localStorage 작가 저장 > DB > Mock)
   const mockPhotographer = PHOTOGRAPHERS.find(ph => ph.id === Number(id));
+  const localMerged = getMergedProfile(mockPhotographer, 'photographer', Number(id));
   const p = (() => {
-    if (!dbPhotographer) return mockPhotographer;
-    if (!mockPhotographer) return dbPhotographer;
+    if (!dbPhotographer) return localMerged;
+    if (!localMerged) return dbPhotographer;
     // DB의 null/undefined가 아닌 값만 오버라이드
-    const merged = { ...mockPhotographer };
+    const merged = { ...localMerged };
     for (const [key, val] of Object.entries(dbPhotographer)) {
       if (val !== null && val !== undefined) merged[key] = val;
     }
     merged.supabaseId = dbPhotographer.id;
     // 중요 배열 필드 보호 (DB에서 잘못된 타입이 올 경우)
-    if (!Array.isArray(merged.portfolio)) merged.portfolio = mockPhotographer.portfolio || [];
-    if (!Array.isArray(merged.packages)) merged.packages = mockPhotographer.packages || [];
-    if (!Array.isArray(merged.tags)) merged.tags = mockPhotographer.tags || [];
-    if (!Array.isArray(merged.languages)) merged.languages = mockPhotographer.languages || [];
+    if (!Array.isArray(merged.portfolio)) merged.portfolio = localMerged.portfolio || [];
+    if (!Array.isArray(merged.packages)) merged.packages = localMerged.packages || [];
+    if (!Array.isArray(merged.tags)) merged.tags = localMerged.tags || mockPhotographer?.tags || [];
+    if (!Array.isArray(merged.languages)) merged.languages = localMerged.languages || mockPhotographer?.languages || [];
     return merged;
   })();
   // 즐겨찾기 초기화
@@ -90,7 +94,7 @@ const Profile = ({ onAuthOpen }) => {
       seedMockInstances(PHOTOGRAPHERS); // 개발용: 최초 1회 mock 데이터 생성
       evaluateDeadlines(); // 마감 체크
       setTourInstances(getRecruitingInstances(p.id));
-    } catch (err) { console.warn('[Profile] tourInstances error:', err); }
+    } catch (err) { /* silently handled */ }
 
     const handler = () => { try { setTourInstances(getRecruitingInstances(p.id)); } catch {} };
     window.addEventListener('tourInstancesChanged', handler);
@@ -425,8 +429,43 @@ const Profile = ({ onAuthOpen }) => {
               {(p.languages || []).map(l => <span key={l} className="lang-chip">{l}</span>)}
             </div>
 
-            {/* Bio */}
-            <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 24 }}>{bio}</p>
+            {/* Bio with truncation and expand toggle */}
+            <div style={{ marginBottom: 24 }}>
+              <p style={{
+                fontSize: 14,
+                color: 'var(--muted)',
+                lineHeight: 1.8,
+                margin: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                display: bioExpanded ? 'block' : '-webkit-box',
+                WebkitLineClamp: bioExpanded ? 'unset' : 3,
+                WebkitBoxOrient: 'vertical',
+              }}>
+                {bio}
+              </p>
+              {bio && bio.split('\n').length > 3 && (
+                <button
+                  onClick={() => setBioExpanded(!bioExpanded)}
+                  style={{
+                    marginTop: 8,
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--gold)',
+                    fontSize: 13,
+                    fontFamily: 'var(--font-serif)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    letterSpacing: '0.04em',
+                    transition: 'opacity 0.2s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  {bioExpanded ? (lang === 'ko' ? '접기' : lang === 'ja' ? '閉じる' : 'Show less') : (lang === 'ko' ? '더 보기' : lang === 'ja' ? 'もっと見る' : 'Show more')} →
+                </button>
+              )}
+            </div>
 
             {/* Share + Favorite Buttons */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
@@ -489,6 +528,9 @@ const Profile = ({ onAuthOpen }) => {
                 <div className="meta-label">{t('profile.startingPrice')}</div>
               </div>
             </div>
+
+            {/* Trust Badge */}
+            <TrustBadge photographer={p} size="medium" showDetails={false} />
 
             {/* Props */}
             {p.props && (
@@ -961,6 +1003,9 @@ const Profile = ({ onAuthOpen }) => {
                     ))}
                   </div>
                 </div>
+
+                {/* ── Sentiment Tags ── */}
+                <SentimentTags reviews={reviews || artistReviews} lang={lang} mode="full" />
 
                 {/* ── 3) 리뷰 목록 — 쭉 아래로 ── */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>

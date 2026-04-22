@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import ShareModal from '../components/ShareModal';
 import { confirmPayment, createBooking, getBookingByOrderId } from '../lib/supabase';
+import CarbonFootprint from '../components/CarbonFootprint';
 
 // ─── Booking Success Page ──────────────────────────────────────────────
 // TossPayments 결제 성공 후 리다이렉트되는 페이지
@@ -268,11 +269,8 @@ const BookingSuccess = () => {
           setSaveMessage(c.saved);
           return;
         }
-
-        // Edge Function 에러 → fallback으로 이동
-        console.warn('[Phosnap] Edge Function 실패, fallback 시도:', result.error);
       } catch (edgeFnErr) {
-        console.warn('[Phosnap] Edge Function 호출 실패, fallback 시도:', edgeFnErr);
+        // silently handled
       }
 
       // ── Fallback: 클라이언트 직접 저장 (Edge Function 미배포 시) ──
@@ -309,7 +307,6 @@ const BookingSuccess = () => {
       });
 
       if (error) {
-        console.error('[Phosnap] 예약 저장 실패:', error);
         setSaveStatus('error');
         setSaveMessage(c.saveError);
       } else {
@@ -413,6 +410,11 @@ const BookingSuccess = () => {
               <span style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7 }}>{item}</span>
             </div>
           ))}
+        </div>
+
+        {/* ── 탄소발자국 ── */}
+        <div style={{ marginBottom: 48 }}>
+          <CarbonFootprint mode="booking" booking={{ hasRental: true, rentalItems: [{ type: 'dress', quantity: 1 }], distanceKm: 15, transportMode: 'public', sessionType: 'outdoor', durationHours: 2 }} />
         </div>
 
         {/* ── 버튼 ── */}

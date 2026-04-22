@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import { getStylistsByLocation, fmtStylist } from '../data/stylists';
 import { getDressesByVendor, getDressesByCategory } from '../data/dresses';
 import { getVendorsByLocation, getVendorById } from '../data/dressVendors';
@@ -14,11 +15,26 @@ import { getVenueVendorsByLocation, getVenueItemsByVendor, getVenueItemById } fr
 import { getTagLabel } from '../data/tagRegistry';
 import { loadTossPayments, generateOrderId } from '../lib/payment';
 import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules } from '../data/schedules';
+import WeatherGoldenHour from '../components/WeatherGoldenHour';
+import PopularityIndicator from '../components/PopularityIndicator';
 
 // ─── Booking Page ──────────────────────────────────────────────────────
 
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDay   = (year, month) => new Date(year, month, 1).getDay();
+
+// ─── Location to Coordinates Mapping ───────────────────────────────────
+const LOCATION_COORDS = {
+  'Seoul': { lat: 37.5665, lng: 126.9780 },
+  'Tokyo': { lat: 35.6762, lng: 139.6503 },
+  'Osaka': { lat: 34.6937, lng: 135.5023 },
+  'Jeju': { lat: 33.4996, lng: 126.5312 },
+  'Busan': { lat: 35.1796, lng: 129.0756 },
+};
+// Default to Seoul if not found
+const getLocationCoords = (location) => {
+  return LOCATION_COORDS[location] || { lat: 37.5665, lng: 126.9780 };
+};
 
 // ─── 결제 직전 고객 안내 체크리스트 ────────────────────────────────────
 const PRE_PAYMENT_NOTICE = {
@@ -295,7 +311,8 @@ const Booking = () => {
   const { lang, t } = useLanguage();
   const { userName, userRole } = useAuth();
 
-  const p = PHOTOGRAPHERS.find(ph => ph.id === Number(id));
+  const pMock = PHOTOGRAPHERS.find(ph => ph.id === Number(id));
+  const p = getMergedProfile(pMock, 'photographer', Number(id));
 
   // ── 작가/사진작가 role은 예약 불가 ──
   const isArtistRole = userRole === 'artist' || userRole === 'photographer';
@@ -382,7 +399,7 @@ const Booking = () => {
           setDbDresses(mapped);
         }
       } catch (err) {
-        console.log('[Booking] DB load failed, using mock data:', err);
+        // silently handled
       }
     };
     if (p) loadDbData();
@@ -484,9 +501,6 @@ const Booking = () => {
   const [showNoticeModal, setShowNoticeModal] = useState(false);
 
   const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
-  if (!TOSS_CLIENT_KEY) {
-    console.error('[Phosnap] VITE_TOSS_CLIENT_KEY is not set. Payment will not work.');
-  }
 
   const handleConfirm = async () => {
     setPayLoading(true);
@@ -632,6 +646,24 @@ const Booking = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* ─ Weather & Golden Hour Info ─ */}
+                {selectedDate && p?.location && (() => {
+                  const coords = getLocationCoords(p.location);
+                  return (
+                    <WeatherGoldenHour
+                      date={selectedDate}
+                      latitude={coords.lat}
+                      longitude={coords.lng}
+                      locationName={p.location || ''}
+                    />
+                  );
+                })()}
+
+                {/* ─ Popularity Indicator ─ */}
+                {selectedDate && (
+                  <PopularityIndicator bookings={[]} targetDate={selectedDate} compact={false} />
+                )}
 
                 <button
                   className="btn-primary"
@@ -1265,7 +1297,7 @@ const Booking = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 0', borderTop: '1px solid var(--border)', marginBottom: 24 }}>
                   <span style={{ fontFamily: 'var(--font-serif)', fontSize: 13, letterSpacing: '0.1em', color: 'var(--muted)', textTransform: 'uppercase' }}>{t('booking.totalEst')}</span>
-                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--gold)' }}>₩{fmt(totalPrice)}<span style={{ fontSize: 13, color: 'var(--muted)', marginLeft: 4 }}>~</span></span>
+                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: 'var(--gold)' }}>₩{fmt(totalPrice)}</span>
                 </div>
 
                 {/* 취소 정책 타임라인 (GYG 벤치마킹) */}

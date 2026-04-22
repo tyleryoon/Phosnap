@@ -43,7 +43,6 @@ export const processExpiredBookings = async () => {
   try {
     const { count, error } = await expireStaleBookings();
     if (error) {
-      console.warn('[BookingExpiry] RPC error:', error);
       return { processed: 0, expired: 0 };
     }
     return { processed: count, expired: count };

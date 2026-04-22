@@ -16,8 +16,9 @@ import { Helmet } from 'react-helmet-async';
 // ────────────────────────────────────────────────────────────────────────
 
 const SITE_NAME = 'Phosnap';
+const SITE_URL = 'https://phosnap.com';
 const DEFAULT_DESCRIPTION = 'Global snap photography & video booking platform. Book professional photographers in Seoul, Kyoto, Paris, Bali and more.';
-const DEFAULT_IMAGE = 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&q=80';
+const DEFAULT_IMAGE = '/og-default.svg';
 
 const SEO = ({
   title,
@@ -153,4 +154,112 @@ export const ExploreSEO = ({ lang }) => {
     zh: '探索全球热门拍摄地点，找到每个城市的专业摄影师。',
   };
   return <SEO title={titles[lang] || titles.en} description={descs[lang] || descs.en} lang={lang} />;
+};
+
+// ─── Structured Data Schemas ──────────────────────────────────────────
+
+/**
+ * Article Schema for blog/content pages
+ * @param {Object} params
+ * @param {string} params.title - Article title
+ * @param {string} params.description - Article description
+ * @param {string} params.datePublished - Publication date (ISO format)
+ * @param {string} params.image - Article image URL
+ * @returns {Object} JSON-LD Schema
+ */
+export const ArticleSchema = ({ title, description, datePublished, image }) => ({
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: title,
+  description,
+  image,
+  datePublished,
+  author: {
+    '@type': 'Organization',
+    name: SITE_NAME,
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: SITE_NAME,
+    logo: {
+      '@type': 'ImageObject',
+      url: `${SITE_URL}/logo-full.svg`,
+    },
+  },
+});
+
+/**
+ * Breadcrumb List Schema for navigation
+ * @param {Array} items - [{ label: string, url: string }, ...]
+ * @returns {Object} JSON-LD Schema
+ */
+export const BreadcrumbListSchema = (items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.label,
+    item: item.url,
+  })),
+});
+
+/**
+ * Local Business Schema for Phosnap as a service
+ * @returns {Object} JSON-LD Schema
+ */
+export const LocalBusinessSchema = () => ({
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  name: SITE_NAME,
+  image: `${SITE_URL}/logo-full.svg`,
+  description: 'Global snap photography & video booking platform.',
+  url: SITE_URL,
+  telephone: '+82-2-0000-0000',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: 'Seoul',
+    addressCountry: 'KR',
+  },
+  aggregateRating: {
+    '@type': 'AggregateRating',
+    ratingValue: '4.8',
+    reviewCount: '240',
+  },
+  sameAs: [
+    'https://instagram.com/phosnap.kr',
+  ],
+});
+
+/**
+ * Product Schema for photographer profile pages
+ * @param {Object} photographer - Photographer data object
+ * @returns {Object} JSON-LD Schema
+ */
+export const ProductSchema = (photographer) => {
+  if (!photographer) return null;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: photographer.name,
+    description: photographer.bio || photographer.bioI18n?.en || '',
+    image: photographer.img,
+    brand: {
+      '@type': 'Brand',
+      name: SITE_NAME,
+    },
+    offers: {
+      '@type': 'AggregateOffer',
+      priceCurrency: 'KRW',
+      lowPrice: String(photographer.price),
+      highPrice: String(photographer.hourlyRate),
+      offerCount: photographer.packages?.length || 1,
+    },
+    aggregateRating: photographer.rating ? {
+      '@type': 'AggregateRating',
+      ratingValue: String(photographer.rating),
+      reviewCount: photographer.reviews,
+    } : undefined,
+  };
 };

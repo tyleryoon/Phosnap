@@ -8,9 +8,11 @@ import { SearchIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { submitWaitlist } from '../lib/waitlist';
 import { PHOTOGRAPHERS } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import { getAllLocationsSorted } from '../data/locationUtils';
 import { HomeSEO } from '../components/SEO';
 import { fetchFeaturedPhotographers } from '../lib/supabase';
+import CarbonFootprint from '../components/CarbonFootprint';
 
 // ─── Instagram 피드 미리보기 이미지 (포트폴리오에서 큐레이션) ──────────
 const INSTA_IMAGES = [
@@ -312,7 +314,7 @@ const Home = ({ onAuthOpen }) => {
               />
             ))
           ) : (
-            (featuredPhotographers || PHOTOGRAPHERS).map(p => (
+            (featuredPhotographers || PHOTOGRAPHERS.map(ph => getMergedProfile(ph, 'photographer', ph.id))).map(p => (
               <PhotographerCard key={p.id} p={p} />
             ))
           )}
@@ -357,6 +359,13 @@ const Home = ({ onAuthOpen }) => {
 
       {/* ── Waitlist ── */}
       <WaitlistSection />
+
+      {/* ── ESG 환경 기여 ── */}
+      <div className="section">
+        <CarbonFootprint mode="platform" allBookings={[]} />
+      </div>
+
+      <div className="divider" />
 
       <Footer />
     </div>

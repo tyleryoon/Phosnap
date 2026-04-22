@@ -78,7 +78,6 @@ export const uploadImage = async (file, bucket, userId, options = {}) => {
     });
 
   if (error) {
-    console.error(`[Storage] Upload failed (${bucket}/${filePath}):`, error);
     return { url: null, path: null, error: error.message };
   }
 
@@ -102,9 +101,6 @@ export const deleteImage = async (bucket, filePath) => {
   if (!sb) return { error: 'Supabase 연결 실패' };
 
   const { error } = await sb.storage.from(bucket).remove([filePath]);
-  if (error) {
-    console.error(`[Storage] Delete failed (${bucket}/${filePath}):`, error);
-  }
   return { error: error?.message || null };
 };
 

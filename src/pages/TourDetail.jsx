@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import {
   getInstance,
   addBooking,
@@ -44,7 +45,8 @@ const TourDetail = () => {
     const inst = getInstance(instanceId);
     setInstance(inst);
     if (inst) {
-      const p = PHOTOGRAPHERS.find(ph => ph.id === inst.photographerId);
+      const pMock = PHOTOGRAPHERS.find(ph => ph.id === inst.photographerId);
+      const p = getMergedProfile(pMock, 'photographer', inst.photographerId);
       setPhotographer(p);
       setTour(p?.tours?.[inst.tourIndex] || null);
     }

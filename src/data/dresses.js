@@ -77,7 +77,7 @@ export const DRESS_ITEMS = [
     sizes: ['Free'],
     price: 110000,
     images: [
-      { url: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=600&q=80', sizeLabel: 'main', caption: 'Vibrant furisode with traditional patterns' },
+      { url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80', sizeLabel: 'main', caption: 'Vibrant furisode with traditional patterns' },
       { url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80', sizeLabel: 'back', caption: 'Obi detail from behind' },
       { url: 'https://images.unsplash.com/photo-1545048702-79362596cdc9?w=600&q=80', sizeLabel: 'scene', caption: 'Traditional setting' },
       { url: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600&q=80', sizeLabel: 'sleeve', caption: 'Long sleeve detail' },
@@ -109,7 +109,7 @@ export const DRESS_ITEMS = [
     sizes: ['M', 'L', 'XL'],
     price: 125000,
     images: [
-      { url: 'https://images.unsplash.com/photo-1614008375890-cb53b6c5f8d5?w=600&q=80', sizeLabel: 'main', caption: 'Traditional men\'s formal kimono' },
+      { url: 'https://images.unsplash.com/photo-1545048702-79362596cdc9?w=600&q=80', sizeLabel: 'main', caption: 'Traditional men\'s formal kimono' },
       { url: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=600&q=80', sizeLabel: 'full', caption: 'Full formal wear' },
       { url: 'https://images.unsplash.com/photo-1524413840807-0c3cb6fa808d?w=600&q=80', sizeLabel: 'hakama', caption: 'Hakama detail' },
     ],
@@ -174,7 +174,7 @@ export const DRESS_ITEMS = [
     sizes: ['XS', 'S', 'M', 'L', 'XL'],
     price: 280000,
     images: [
-      { url: 'https://images.unsplash.com/photo-1506930477529-9c1f2f1ed5bb?w=600&q=80', sizeLabel: 'main', caption: 'Glamorous mermaid-style wedding dress' },
+      { url: 'https://images.unsplash.com/photo-1595777707802-9b2be8c84e4e?w=600&q=80', sizeLabel: 'main', caption: 'Glamorous mermaid-style wedding dress' },
       { url: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80', sizeLabel: 'back', caption: 'Back silhouette' },
       { url: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=600&q=80', sizeLabel: 'side', caption: 'Side profile' },
     ],

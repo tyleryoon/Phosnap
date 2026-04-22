@@ -76,7 +76,7 @@ const FORM_I18N = {
     agreeVisa: '해외 촬영 시 비자/세금은 본인 책임입니다.',
     agreePayment: '결제 및 수수료 정책을 확인했습니다.',
     agreeTerms: '이용약관, 개인정보 처리방침, 환불 정책에 동의합니다.',
-    agreeMarketing: '등록된 포트폴리오가 Phosnap 플랫폼의 홍보·마케팅(SNS, 광고, 웹사이트 등)에 활용될 수 있음에 동의합니다.',
+    agreeMarketing: '(선택) 포트폴리오가 Phosnap 플랫폼의 마케팅에 활용될 수 있음에 동의합니다.',
     successMsg: '🎉 가입 신청이 완료됐습니다! 관리자 승인 후 작가 서비스 이용이 가능합니다. 이메일을 확인하고 인증을 완료해주세요.',
     goHome: '홈으로 이동',
     hmkSelf: 'H&M 서비스를 직접 제공할 수 있나요?', yes: '네', no: '아니요',
@@ -103,7 +103,7 @@ const FORM_I18N = {
     agreeVisa: 'I take responsibility for visa/tax for overseas shoots.',
     agreePayment: 'I have reviewed the payment and commission policy.',
     agreeTerms: 'I agree to the Terms of Service, Privacy Policy, and Refund Policy.',
-    agreeMarketing: 'I agree that my portfolio may be used for Phosnap platform promotion and marketing (SNS, ads, website, etc.).',
+    agreeMarketing: '(Optional) I agree that my portfolio may be used for Phosnap platform marketing.',
     successMsg: '🎉 Registration submitted! Your account will be activated after admin approval. Please check your email to complete verification.',
     goHome: 'Go Home',
     hmkSelf: 'Can you provide H&M services yourself?', yes: 'Yes', no: 'No',
@@ -130,7 +130,7 @@ const FORM_I18N = {
     agreeVisa: '海外撮影時のビザ・税金は自己責任です。',
     agreePayment: '決済・手数料ポリシーを確認しました。',
     agreeTerms: '利用規約、プライバシーポリシー、返金ポリシーに同意します。',
-    agreeMarketing: '登録されたポートフォリオがPhosnapプラットフォームの広報・マーケティング（SNS、広告、ウェブサイトなど）に活用されることに同意します。',
+    agreeMarketing: '（任意）ポートフォリオがPhosnapプラットフォームのマーケティングに活用されることに同意します。',
     successMsg: '🎉 登録申請が完了しました！管理者の承認後にサービスをご利用いただけます。メールを確認して認証を完了してください。',
     goHome: 'ホームへ',
     hmkSelf: 'H&Mサービスを自分で提供できますか？', yes: 'はい', no: 'いいえ',
@@ -157,7 +157,7 @@ const FORM_I18N = {
     agreeVisa: '海外拍摄时签证/税务由本人负责。',
     agreePayment: '已确认支付及佣金政策。',
     agreeTerms: '同意服务条款、隐私政策和退款政策。',
-    agreeMarketing: '同意已上传的作品集可用于Phosnap平台的推广和营销（SNS、广告、网站等）。',
+    agreeMarketing: '（选填）同意作品集可用于Phosnap平台的营销。',
     successMsg: '🎉 注册申请已完成！管理员审批后即可使用服务。请检查您的邮箱完成验证。',
     goHome: '返回首页',
     hmkSelf: '您能自己提供H&M服务吗？', yes: '是', no: '否',
@@ -229,7 +229,6 @@ const ArtistRegister = () => {
 
   // ── Step 2 상태 ─────────────────────────────────────────────────────
   const [artistType,   setArtistType]   = useState('');
-  const [hmkOption,    setHmkOption]    = useState('solo');
 
   // ── Step 3 상태 (서비스 옵션) ────────────────────────────────────────
   const [hmkSelf, setHmkSelf]         = useState(null);    // null=미선택, true=직접, false=외부
@@ -246,6 +245,8 @@ const ArtistRegister = () => {
   const [agreeVisa,      setAgreeVisa]      = useState(false);
   const [agreePayment,   setAgreePayment]   = useState(false);
   const [agreeTerms,     setAgreeTerms]     = useState(false);
+  const [agreePrivacy,   setAgreePrivacy]   = useState(false);
+  const [agreeRefund,    setAgreeRefund]    = useState(false);
   const [agreeMarketing, setAgreeMarketing] = useState(false);
 
   const [viewingTerms, setViewingTerms] = useState(null);  // 약관 보기 모달
@@ -263,10 +264,13 @@ const ArtistRegister = () => {
   // ── Helper: 이름 유효성 검사 (특수문자/기호 차단) ────────────────────
   // 실명: 한글, 영문, 일본어, 중국어, 공백, 하이픈, 중간점만
   const REAL_NAME_REGEX = /^[가-힣a-zA-Zぁ-んァ-ヶ一-龥\u3400-\u4DBF\s\-·.]+$/;
-  // 활동명: 실명 + 숫자 허용
+  // 한글 활동명: 실명 + 숫자 허용
   const DISPLAY_NAME_REGEX = /^[가-힣a-zA-Z0-9ぁ-んァ-ヶ一-龥\u3400-\u4DBF\s\-·.]+$/;
+  // 영문 활동명: 영문 알파벳 + 공백만 허용 (특수문자, 숫자, 한글 등 차단)
+  const ENGLISH_NAME_REGEX = /^[a-zA-Z\s]+$/;
   const isRealNameValid = (v) => !v || REAL_NAME_REGEX.test(v);
   const isDisplayNameValid = (v) => !v || DISPLAY_NAME_REGEX.test(v);
+  const isEnglishNameValid = (v) => !v || ENGLISH_NAME_REGEX.test(v);
   const [realNameError, setRealNameError] = useState('');
   const [displayNameKoError, setDisplayNameKoError] = useState('');
   const [displayNameEnError, setDisplayNameEnError] = useState('');
@@ -290,12 +294,10 @@ const ArtistRegister = () => {
         .limit(1);
 
       if (error) {
-        console.error('[ArtistRegister] Duplicate check error:', error);
         return false;
       }
       return data && data.length > 0;
     } catch (err) {
-      console.error('[ArtistRegister] Duplicate check exception:', err);
       return false;
     }
   }, []);
@@ -311,14 +313,14 @@ const ArtistRegister = () => {
     !nativeNameError && !englishNameError &&
     emailRegex.test(email) &&
     phone.replace(/\D/g, '').length >= 10 &&
-    otpVerified &&
+    // otpVerified && // TODO: SMS 프로바이더 연동 후 복원
     birthdate && addrBase &&
     pwRegex.test(password) &&
     password === pwConfirm
   );
   const step2Valid = !!artistType;
   const step3Valid = true; // 서비스 옵션은 모두 선택사항이므로 항상 통과
-  const step4Valid = agreeVisa && agreePayment && agreeTerms && agreeMarketing;
+  const step4Valid = agreeVisa && agreePayment && agreeTerms && agreePrivacy && agreeRefund;
 
   // ── 각 단계별 부족한 항목 안내 메시지 생성 ─────────────────────────
   const getStep1Issues = () => {
@@ -359,8 +361,9 @@ const ArtistRegister = () => {
     const issues = [];
     if (!agreeVisa) issues.push({ field: '비자·세금', msg: '비자·체류 자격 및 세금 관련 동의가 필요합니다.' });
     if (!agreePayment) issues.push({ field: '결제·수수료', msg: '결제 및 수수료 정산 방식에 동의해주세요.' });
-    if (!agreeTerms) issues.push({ field: '이용약관', msg: '서비스 이용약관 및 개인정보 처리방침에 동의해주세요.' });
-    if (!agreeMarketing) issues.push({ field: '마케팅 활용', msg: '포트폴리오 마케팅 활용에 동의해주세요.' });
+    if (!agreeTerms) issues.push({ field: '이용약관', msg: '서비스 이용약관에 동의해주세요.' });
+    if (!agreePrivacy) issues.push({ field: '개인정보', msg: '개인정보 처리방침에 동의해주세요.' });
+    if (!agreeRefund) issues.push({ field: '환불정책', msg: '환불/취소 정책에 동의해주세요.' });
     return issues;
   };
 
@@ -475,19 +478,22 @@ const ArtistRegister = () => {
   // ── 프로필 저장 공통 로직 ──
   const saveArtistProfile = async (userId) => {
     const { upsertProfile, addUserRole } = await import('../lib/supabase');
+    const { saveReferralCode, applyReferralCode } = await import('../lib/referral');
     const portfolioUrls = await uploadPortfolioImages();
     const displayName = `${nativeName} (${englishName})`;
-    const myCode = genReferralCode(englishName);
 
     // 역할 추가
     await addUserRole(userId, 'artist');
+
+    // Generate referral code for new artist
+    const myCode = await saveReferralCode(userId, 'artist');
 
     await upsertProfile({
       id:               userId,
       full_name:        displayName,
       role:             'artist',
       artist_type:      artistType,
-      has_hmk_partner:  isPhotoVideo ? hmkOption === 'partner' : false,
+      has_hmk_partner:  false,
       hmk_self:         isPhotoVideo ? (hmkSelf === true) : false,
       hmk_external_connect: isPhotoVideo ? hmkExternalConnect : false,
       hmk_options:      hmkSelf ? hmkMenuItems : [],
@@ -502,6 +508,15 @@ const ArtistRegister = () => {
       instagram:        instagram.trim() || null,
       website:          website.trim() || null,
     });
+
+    // Apply referral code if provided
+    if (referralCode.trim()) {
+      try {
+        const result = await applyReferralCode(userId, referralCode.trim());
+      } catch (err) {
+        // Silently ignore referral code errors
+      }
+    }
   };
 
   // ── 기존 계정으로 로그인하여 작가 역할 추가 ──
@@ -714,16 +729,18 @@ const ArtistRegister = () => {
                   type="text" placeholder="Gildong Hong"
                   value={englishName}
                   onChange={e => {
-                    setEnglishName(e.target.value);
+                    // 입력 시 영문+공백만 허용 (실시간 필터링)
+                    const filtered = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                    setEnglishName(filtered);
                     setEnglishNameError('');
                   }}
                   onBlur={async (e) => {
                     const val = e.target.value;
                     if (!val) return;
 
-                    // Check for special characters
-                    if (!isDisplayNameValid(val)) {
-                      setEnglishNameError(lang === 'ko' ? '특수문자는 사용할 수 없습니다.' : lang === 'ja' ? '特殊文字は使用できません。' : lang === 'zh' ? '不能使用特殊字符。' : 'Special characters are not allowed.');
+                    // 영문 알파벳 + 공백만 허용 (특수문자, 숫자, 한글 등 차단)
+                    if (!isEnglishNameValid(val)) {
+                      setEnglishNameError(lang === 'ko' ? '영문 알파벳과 공백만 입력할 수 있습니다.' : lang === 'ja' ? '英字とスペースのみ使用可能です。' : lang === 'zh' ? '只能输入英文字母和空格。' : 'Only English letters and spaces are allowed.');
                       return;
                     }
 
@@ -1020,58 +1037,6 @@ const ArtistRegister = () => {
               ))}
             </div>
 
-            {/* H&M 동행 여부 — 사진/영상 작가만 */}
-            {isPhotoVideo && (
-              <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 32, position: 'relative' }}>
-                <Corners />
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 14 }}>
-                  {t('artistRegister.hmkTitle')}
-                </div>
-                <h4 style={{ fontSize: 14, fontFamily: 'var(--font-serif)', letterSpacing: '0.03em', marginBottom: 6 }}>
-                  {t('artistRegister.hmkQuestion')}
-                </h4>
-                <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.7 }}>
-                  {t('artistRegister.hmkNote')}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {HMK_OPTIONS.map(opt => (
-                    <div key={opt.id}
-                      onClick={() => setHmkOption(opt.id)}
-                      style={{
-                        display: 'flex', gap: 14, alignItems: 'flex-start',
-                        border: `1px solid ${hmkOption === opt.id ? 'var(--gold)' : 'var(--border)'}`,
-                        padding: '14px 16px', cursor: 'pointer',
-                        background: hmkOption === opt.id ? 'rgba(232,160,32,0.06)' : 'transparent',
-                        transition: 'all 0.2s',
-                      }}
-                    >
-                      <div style={{
-                        width: 18, height: 18, flexShrink: 0, marginTop: 2,
-                        borderRadius: '50%',
-                        border: `2px solid ${hmkOption === opt.id ? 'var(--gold)' : 'var(--border)'}`,
-                        background: hmkOption === opt.id ? 'var(--gold)' : 'transparent',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        {hmkOption === opt.id && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#0B0B0B', display: 'block' }} />}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', marginBottom: 4 }}>{opt.icon} {opt.label}</div>
-                        <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>{opt.desc}</div>
-                        {opt.id === 'partner' && hmkOption === 'partner' && (
-                          <div style={{
-                            marginTop: 10, padding: '8px 12px',
-                            background: 'rgba(96,165,250,0.08)', borderLeft: '2px solid rgba(96,165,250,0.5)',
-                            fontSize: 11, color: '#93c5fd', lineHeight: 1.7,
-                          }}>
-                            동행 H&M 작가와 활동하면서도, 필요시 Phosnap에 등록된 다른 H&M 작가를 별도로 연결할 수 있습니다.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {!step2Valid && <ValidationHints issues={getStep2Issues()} />}
 
@@ -1110,7 +1075,7 @@ const ArtistRegister = () => {
                   </p>
                   <div style={{ display: 'flex', gap: 12 }}>
                     {[
-                      { val: true, icon: '💄', label: '네, 직접 합니다', desc: '촬영과 함께 H&M도 제공' },
+                      { val: true, icon: '💄', label: '네, 직접 합니다', desc: '촬영과 함께 H&M도 제공 (함께 일하는 고정 H&M 작가 포함)' },
                       { val: false, icon: '🤝', label: '아니요', desc: '외부 스타일리스트 연결 또는 고객 자체 준비' },
                     ].map(opt => (
                       <div key={String(opt.val)}
@@ -1344,19 +1309,45 @@ const ArtistRegister = () => {
                 type="text" placeholder="예) MINA1234"
                 value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} />
               <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
-                <span style={{ color: 'var(--gold)' }}>초대 혜택</span> · 초대한 작가 완료 5건 → 수수료 -2%p · 10건 → -5%p · 20건 → -7%p (등급 유효 3개월, 월 3건 유지) · 무제한 초대 가능
+                <span style={{ color: 'var(--gold)' }}>초대 혜택</span> · 초대한 작가 완료 5건 → 수수료 -1%p · 10건 → -2%p · 20건 → -3%p (등급 유효 3개월, 월 3건 유지) · 무제한 초대 가능
               </div>
             </div>
 
             {/* 동의 */}
             <div style={{ marginBottom: 28 }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>{lang === 'ko' ? '필수 동의' : lang === 'ja' ? '必須同意' : lang === 'zh' ? '必须同意' : 'Required Consent'}</div>
+
+              {/* 전체 동의 — (선택) 포함 전부 체크, 하나라도 빠지면 해제 */}
+              {(() => {
+                const allChecked = agreeVisa && agreePayment && agreeTerms && agreePrivacy && agreeRefund && agreeMarketing;
+                return (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '14px 16px', background: 'rgba(232,160,32,0.06)', border: '1px solid var(--gold-border)', marginBottom: 16 }}>
+                    <input type="checkbox"
+                      checked={allChecked}
+                      onChange={(e) => {
+                        const v = e.target.checked;
+                        setAgreeVisa(v);
+                        setAgreePayment(v);
+                        setAgreeTerms(v);
+                        setAgreePrivacy(v);
+                        setAgreeRefund(v);
+                        setAgreeMarketing(v);
+                      }}
+                      style={{ accentColor: 'var(--gold)' }}
+                    />
+                    <span style={{ fontSize: 13, fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}>
+                      {lang === 'ko' ? '전체 동의' : lang === 'ja' ? 'すべてに同意' : lang === 'zh' ? '全部同意' : 'Select All'}
+                    </span>
+                  </label>
+                );
+              })()}
+
               {[
                 { key: 'visa',      checked: agreeVisa,      set: setAgreeVisa,      text: f.agreeVisa, termsData: null },
                 { key: 'payment',   checked: agreePayment,   set: setAgreePayment,   text: f.agreePayment, termsData: null },
                 { key: 'terms',     checked: agreeTerms,     set: setAgreeTerms,     text: f.agreeTerms, termsData: TERMS_ARTIST },
-                { key: 'privacy',   checked: agreeTerms,     set: setAgreeTerms,     text: lang === 'ko' ? '개인정보 처리방침에 동의합니다.' : lang === 'ja' ? 'プライバシーポリシーに同意します。' : lang === 'zh' ? '同意隐私政策。' : 'I agree to the Privacy Policy.', termsData: PRIVACY },
-                { key: 'refund',    checked: agreeTerms,     set: setAgreeTerms,     text: lang === 'ko' ? '환불/취소 정책에 동의합니다.' : lang === 'ja' ? '返金・キャンセルポリシーに同意します。' : lang === 'zh' ? '同意退款/取消政策。' : 'I agree to the Refund/Cancellation Policy.', termsData: REFUND_POLICY },
+                { key: 'privacy',   checked: agreePrivacy,   set: setAgreePrivacy,   text: lang === 'ko' ? '개인정보 처리방침에 동의합니다.' : lang === 'ja' ? 'プライバシーポリシーに同意します。' : lang === 'zh' ? '同意隐私政策。' : 'I agree to the Privacy Policy.', termsData: PRIVACY },
+                { key: 'refund',    checked: agreeRefund,    set: setAgreeRefund,    text: lang === 'ko' ? '환불/취소 정책에 동의합니다.' : lang === 'ja' ? '返金・キャンセルポリシーに同意します。' : lang === 'zh' ? '同意退款/取消政策。' : 'I agree to the Refund/Cancellation Policy.', termsData: REFUND_POLICY },
                 { key: 'marketing', checked: agreeMarketing, set: setAgreeMarketing, text: f.agreeMarketing, termsData: null },
               ].map(item => (
                 <label key={item.key} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', cursor: 'pointer', marginBottom: 14 }}>
@@ -1393,7 +1384,6 @@ const ArtistRegister = () => {
                 { label: '생년월일', value: birthdate },
                 { label: '주소',     value: addrBase },
                 { label: '작가 유형', value: ARTIST_TYPES.find(a => a.id === artistType)?.label || '' },
-                isPhotoVideo ? { label: 'H&M 동행', value: HMK_OPTIONS.find(o => o.id === hmkOption)?.label || '' } : null,
                 isPhotoVideo && hmkSelf ? { label: 'H&M 자체', value: `메뉴 ${hmkMenuItems.length}개` } : null,
                 isPhotoVideo && hmkExternalConnect ? { label: 'H&M 별도 연결', value: '신청' } : null,
                 isPhotoVideo ? { label: '의상 보유', value: dressSelf ? '자체 보유' : '없음 (Phosnap 벤더 이용 가능)' } : null,

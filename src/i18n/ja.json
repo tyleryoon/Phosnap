@@ -402,6 +402,8 @@
     "artistLogin": "作家 · H&M ログイン →",
     "artistSignup": "作家 · H&M 会員登録 →",
     "artistSignupLink": "作家 · H&M 会員登録",
+    "customerLogin": "お客様ログイン →",
+    "customerSignup": "お客様会員登録 →",
     "toggleCustomer": "👤 お客様",
     "toggleArtist": "📷 作家 · 💄 H&M"
   },
@@ -450,6 +452,22 @@
     "hmkSelfQuestion": "撮影時にヘア＆メイクをご自身で行いますか？",
     "dressSelfQuestion": "撮影用衣装を自前で保有していますか？",
     "dressVendorQuestion": "協力する衣装業者はありますか？"
+  },
+  "onboarding": {
+    "skip": "スキップ",
+    "startBtn": "さあ始めましょう",
+    "slide1": {
+      "title": "Phosnapとは？",
+      "desc": "プロフォトグラファーとつながるラグジュアリー撮影予約プラットフォーム"
+    },
+    "slide2": {
+      "title": "フォトグラファーを探す",
+      "desc": "地域、スタイル、価格でフォトグラファーを検索。ポートフォリオとレビューを確認できます"
+    },
+    "slide3": {
+      "title": "予約方法",
+      "desc": "撮影日時を選択し、パッケージを選んで、すぐに予約完了"
+    }
   },
   "terms": {
     "guarantee": "満足保証ポリシー",

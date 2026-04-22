@@ -402,6 +402,8 @@
     "artistLogin": "摄影师 · H&M 登录 →",
     "artistSignup": "摄影师 · H&M 注册 →",
     "artistSignupLink": "摄影师 · H&M 注册",
+    "customerLogin": "客户登录 →",
+    "customerSignup": "客户注册 →",
     "toggleCustomer": "👤 客户",
     "toggleArtist": "📷 摄影师 · 💄 H&M"
   },
@@ -450,6 +452,22 @@
     "hmkSelfQuestion": "拍摄时您自己做发型和化妆吗？",
     "dressSelfQuestion": "您有自己的拍摄服装吗？",
     "dressVendorQuestion": "您有合作的服装商吗？"
+  },
+  "onboarding": {
+    "skip": "跳过",
+    "startBtn": "开始",
+    "slide1": {
+      "title": "什么是Phosnap？",
+      "desc": "连接您与专业摄影师的豪华摄影预约平台"
+    },
+    "slide2": {
+      "title": "查找摄影师",
+      "desc": "按地点、风格和价格搜索摄影师。浏览作品集和评价"
+    },
+    "slide3": {
+      "title": "预约方式",
+      "desc": "选择拍摄日期和时间，选择套餐，即时完成预约"
+    }
   },
   "terms": {
     "guarantee": "满意保证政策",

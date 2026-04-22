@@ -1,38 +1,84 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 
 // Layout
 import Nav from './components/Nav';
 import Toast from './components/Toast';
+import ToastContainer from './components/ToastContainer';
 import AuthModal from './components/AuthModal';
+import InstallPrompt, { installPromptCSS } from './components/InstallPrompt';
+import OnboardingOverlay from './components/OnboardingOverlay';
 import { useAuth } from './contexts/AuthContext';
+import ToastProvider from './contexts/ToastContext';
 
-// Pages
-import Home         from './pages/Home';
-import Explore      from './pages/Explore';
-import Photographers from './pages/Photographers';
-import Profile      from './pages/Profile';
-import Booking      from './pages/Booking';
-import ForArtists   from './pages/ForArtists';
-import Waitlist     from './pages/Waitlist';
-import Terms          from './pages/Terms';
-import Privacy        from './pages/Privacy';
-import Contact        from './pages/Contact';
-import BookingSuccess  from './pages/BookingSuccess';
-import BookingFail     from './pages/BookingFail';
-import ArtistSchedule  from './pages/ArtistSchedule';
-import MyBookings      from './pages/MyBookings';
-import StylistProfile  from './pages/StylistProfile';
-import ArtistRegister  from './pages/ArtistRegister';
-import ArtistDashboard from './pages/ArtistDashboard';
-import VendorRegister  from './pages/VendorRegister';
-import VendorDashboard from './pages/VendorDashboard';
-import Vendors         from './pages/Vendors';
-import CustomerDashboard from './pages/CustomerDashboard';
-import StylistDashboard from './pages/StylistDashboard';
-import AdminDashboard  from './pages/AdminDashboard';
-import TourDetail      from './pages/TourDetail';
-import NotFound        from './pages/NotFound';
+// Loading Fallback Component
+const LoadingFallback = () => (
+  <div style={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '60vh',
+    background: 'var(--bg)',
+  }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '24px',
+    }}>
+      <div style={{
+        width: '48px',
+        height: '48px',
+        borderRadius: '50%',
+        border: '3px solid rgba(232,160,32,0.2)',
+        borderTopColor: 'var(--gold)',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <div style={{
+        fontSize: '12px',
+        color: 'var(--muted)',
+        fontFamily: 'var(--font-serif)',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+      }}>
+        Loading...
+      </div>
+    </div>
+    <style>{`
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
+
+// Lazy-loaded Pages
+const Home         = React.lazy(() => import('./pages/Home'));
+const Explore      = React.lazy(() => import('./pages/Explore'));
+const Photographers = React.lazy(() => import('./pages/Photographers'));
+const Profile      = React.lazy(() => import('./pages/Profile'));
+const Booking      = React.lazy(() => import('./pages/Booking'));
+const ForArtists   = React.lazy(() => import('./pages/ForArtists'));
+const Waitlist     = React.lazy(() => import('./pages/Waitlist'));
+const Terms        = React.lazy(() => import('./pages/Terms'));
+const Privacy      = React.lazy(() => import('./pages/Privacy'));
+const Contact      = React.lazy(() => import('./pages/Contact'));
+const BookingSuccess = React.lazy(() => import('./pages/BookingSuccess'));
+const BookingFail  = React.lazy(() => import('./pages/BookingFail'));
+const ArtistSchedule = React.lazy(() => import('./pages/ArtistSchedule'));
+const MyBookings   = React.lazy(() => import('./pages/MyBookings'));
+const StylistProfile = React.lazy(() => import('./pages/StylistProfile'));
+const ArtistRegister = React.lazy(() => import('./pages/ArtistRegister'));
+const ArtistDashboard = React.lazy(() => import('./pages/ArtistDashboard'));
+const VendorRegister = React.lazy(() => import('./pages/VendorRegister'));
+const VendorDashboard = React.lazy(() => import('./pages/VendorDashboard'));
+const Vendors = React.lazy(() => import('./pages/Vendors'));
+const CustomerDashboard = React.lazy(() => import('./pages/CustomerDashboard'));
+const StylistDashboard = React.lazy(() => import('./pages/StylistDashboard'));
+const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
+const TourDetail = React.lazy(() => import('./pages/TourDetail'));
+const AccountSettings = React.lazy(() => import('./pages/AccountSettings'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 import ProtectedRoute  from './components/ProtectedRoute';
 
 // Styles
@@ -45,8 +91,11 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Nav CSS additions (not in global.css to keep it clean)
+// Nav & Install Prompt CSS additions (not in global.css to keep it clean)
 const navCSS = `
+  ${installPromptCSS}
+
+
   .nav {
     position: fixed; top: 0; left: 0; right: 0;
     z-index: 100; padding: 20px 48px;
@@ -78,7 +127,7 @@ const navCSS = `
   .hero-eyebrow { font-family: 'Cinzel', serif; font-size: clamp(14px, 1.8vw, 20px); letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; margin-bottom: 24px; display: flex; align-items: center; gap: 16px; }
   .hero-eyebrow::before, .hero-eyebrow::after { content: ''; width: 56px; height: 1px; background: var(--gold-border); }
   .hero-title { font-family: 'Cinzel', serif; font-size: clamp(36px, 7vw, 80px); font-weight: 400; letter-spacing: 0.05em; text-align: center; line-height: 1.1; color: var(--text); text-shadow: 0 0 60px rgba(242,242,242,0.1); margin-bottom: 16px; }
-  .hero-subtitle { font-family: 'Cormorant Garamond', serif; font-size: clamp(18px, 2.5vw, 24px); font-weight: 300; font-style: italic; color: var(--muted); text-align: center; margin-bottom: 48px; letter-spacing: 0.02em; }
+  .hero-subtitle { font-family: var(--font-sans); font-size: clamp(18px, 2.5vw, 24px); font-weight: 300; font-style: italic; color: var(--muted); text-align: center; margin-bottom: 48px; letter-spacing: 0.02em; }
   .hero-ctas { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
 
   /* Search */
@@ -193,7 +242,7 @@ const navCSS = `
   @media (max-width: 900px) { .footer-top { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 500px) { .footer-top { grid-template-columns: 1fr; } }
   .footer-logo { font-family: 'Cinzel', serif; font-size: 18px; letter-spacing: 0.2em; margin-bottom: 12px; }
-  .footer-tagline { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--muted); font-size: 15px; }
+  .footer-tagline { font-family: var(--font-sans); font-style: italic; color: var(--muted); font-size: 15px; }
   .footer-col-title { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; color: var(--gold); }
   .footer-link { display: block; font-size: 13px; color: var(--muted); margin-bottom: 8px; cursor: pointer; transition: color 0.2s; }
   .footer-link:hover { color: var(--text); }
@@ -314,13 +363,12 @@ const navCSS = `
 // ─── Role-aware Home: activeRole 기반으로 대시보드 리다이렉트 ────────────
 // 멀티롤 사용자가 고객으로 접속하면 홈 표시, 작가로 접속하면 대시보드로
 const RoleAwareHome = ({ onAuthOpen }) => {
-  const { activeRole, roleLoading, loading, isLoggedIn } = useAuth();
+  const { activeRole, roleLoading, loading } = useAuth();
   if (loading || roleLoading) return null;
   if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
   if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
   if (activeRole === 'admin')                                           return <Navigate to="/admin" replace />;
-  // 고객 로그인 → 작가 찾기 페이지로 (홈화면은 비로그인 전용)
-  if (isLoggedIn)                                                       return <Navigate to="/photographers" replace />;
+  // 고객 로그인 또는 비로그인 → 홈 페이지 표시
   return <Home onAuthOpen={onAuthOpen} />;
 };
 
@@ -336,7 +384,7 @@ const RoleAwareExplore = () => {
 
 // ─── App Root ──────────────────────────────────────────────────────────
 
-const App = () => {
+const AppContent = () => {
   const [authModal, setAuthModal] = useState(null); // null | 'login' | 'signup'
   const [toast, setToast] = useState(null);
 
@@ -348,38 +396,46 @@ const App = () => {
       {/* Scroll to top on every route change */}
       <ScrollToTop />
 
+      {/* Skip to content link for accessibility */}
+      <a href="#main-content" className="skip-link">Skip to content</a>
+
       {/* Navigation */}
       <Nav onAuthOpen={(mode) => setAuthModal(mode)} />
 
-      {/* Routes */}
-      <Routes>
-        <Route path="/"                    element={<RoleAwareHome onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/explore"             element={<RoleAwareExplore />} />
-        <Route path="/photographers"       element={<Photographers onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/photographer/:id"    element={<Profile      onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/booking/:id"         element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><Booking /></ProtectedRoute>} />
-        <Route path="/for-artists"         element={<ForArtists   onAuthOpen={(m) => setAuthModal(m)} />} />
-        <Route path="/waitlist"            element={<Waitlist />} />
-        <Route path="/terms"              element={<Terms />} />
-        <Route path="/privacy"            element={<Privacy />} />
-        <Route path="/contact"            element={<Contact />} />
-        <Route path="/booking/success"    element={<BookingSuccess />} />
-        <Route path="/booking/fail"       element={<BookingFail />} />
-        <Route path="/artist/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistDashboard /></ProtectedRoute>} />
-        <Route path="/artist/schedule"    element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistSchedule /></ProtectedRoute>} />
-        <Route path="/artist/register"    element={<ArtistRegister />} />
-        <Route path="/my"                  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><CustomerDashboard /></ProtectedRoute>} />
-        <Route path="/my-bookings"        element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><MyBookings /></ProtectedRoute>} />
-        <Route path="/stylist/dashboard"  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="stylist"><StylistDashboard /></ProtectedRoute>} />
-        <Route path="/stylist/:id"        element={<StylistProfile />} />
-        <Route path="/vendors"             element={<Vendors />} />
-        <Route path="/vendor/register"    element={<VendorRegister />} />
-        <Route path="/vendor/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="vendor"><VendorDashboard /></ProtectedRoute>} />
-        <Route path="/tour/:instanceId"    element={<TourDetail />} />
-        <Route path="/admin"              element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
-        {/* 404 */}
-        <Route path="*"                    element={<NotFound />} />
-      </Routes>
+      {/* Routes with Suspense */}
+      <Suspense fallback={<LoadingFallback />}>
+        <main id="main-content">
+          <Routes>
+          <Route path="/"                    element={<RoleAwareHome onAuthOpen={(m) => setAuthModal(m)} />} />
+          <Route path="/explore"             element={<RoleAwareExplore />} />
+          <Route path="/photographers"       element={<Photographers onAuthOpen={(m) => setAuthModal(m)} />} />
+          <Route path="/photographer/:id"    element={<Profile      onAuthOpen={(m) => setAuthModal(m)} />} />
+          <Route path="/booking/:id"         element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><Booking /></ProtectedRoute>} />
+          <Route path="/for-artists"         element={<ForArtists   onAuthOpen={(m) => setAuthModal(m)} />} />
+          <Route path="/waitlist"            element={<Waitlist />} />
+          <Route path="/terms"              element={<Terms />} />
+          <Route path="/privacy"            element={<Privacy />} />
+          <Route path="/contact"            element={<Contact />} />
+          <Route path="/booking/success"    element={<BookingSuccess />} />
+          <Route path="/booking/fail"       element={<BookingFail />} />
+          <Route path="/artist/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistDashboard /></ProtectedRoute>} />
+          <Route path="/artist/schedule"    element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="artist"><ArtistSchedule /></ProtectedRoute>} />
+          <Route path="/artist/register"    element={<ArtistRegister />} />
+          <Route path="/my"                  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><CustomerDashboard /></ProtectedRoute>} />
+          <Route path="/my-bookings"        element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><MyBookings /></ProtectedRoute>} />
+          <Route path="/stylist/dashboard"  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="stylist"><StylistDashboard /></ProtectedRoute>} />
+          <Route path="/stylist/:id"        element={<StylistProfile />} />
+          <Route path="/vendors"             element={<Vendors />} />
+          <Route path="/vendor/register"    element={<VendorRegister />} />
+          <Route path="/vendor/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="vendor"><VendorDashboard /></ProtectedRoute>} />
+          <Route path="/tour/:instanceId"    element={<TourDetail />} />
+          <Route path="/account/settings"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><AccountSettings /></ProtectedRoute>} />
+          <Route path="/admin"              element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
+          {/* 404 */}
+          <Route path="*"                    element={<NotFound />} />
+          </Routes>
+        </main>
+      </Suspense>
 
       {/* Auth modal */}
       {authModal && (
@@ -391,7 +447,24 @@ const App = () => {
 
       {/* Toast */}
       {toast && <Toast msg={toast} onDone={() => setToast(null)} />}
+
+      {/* Toast Container (new context-based system) */}
+      <ToastContainer />
+
+      {/* Onboarding Overlay */}
+      <OnboardingOverlay />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </>
+  );
+};
+
+const App = () => {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 };
 

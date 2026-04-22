@@ -402,6 +402,8 @@
     "artistLogin": "Artist · H&M Log In →",
     "artistSignup": "Artist · H&M Sign Up →",
     "artistSignupLink": "Artist · H&M Sign Up",
+    "customerLogin": "Customer Login →",
+    "customerSignup": "Customer Sign Up →",
     "toggleCustomer": "👤 Client",
     "toggleArtist": "📷 Artist · 💄 H&M"
   },
@@ -450,6 +452,22 @@
     "hmkSelfQuestion": "Do you provide hair & makeup yourself?",
     "dressSelfQuestion": "Do you have your own dress collection?",
     "dressVendorQuestion": "Do you have a partner dress vendor?"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "startBtn": "Get Started",
+    "slide1": {
+      "title": "What is Phosnap?",
+      "desc": "A luxury photography booking platform connecting you with professional photographers"
+    },
+    "slide2": {
+      "title": "Find Photographers",
+      "desc": "Search photographers by location, style, and price. Browse portfolios and read reviews"
+    },
+    "slide3": {
+      "title": "How to Book",
+      "desc": "Select your date and time, choose a package, and complete your booking instantly"
+    }
   },
   "terms": {
     "guarantee": "Moment Guarantee",

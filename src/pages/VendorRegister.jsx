@@ -55,8 +55,11 @@ const VendorRegister = () => {
   // ── Helper: 이름 유효성 검사 (특수문자/기호 차단) ────────────────────
   const REAL_NAME_REGEX = /^[가-힣a-zA-Zぁ-んァ-ヶ一-龥\u3400-\u4DBF\s\-·.]+$/;
   const DISPLAY_NAME_REGEX = /^[가-힣a-zA-Z0-9ぁ-んァ-ヶ一-龥\u3400-\u4DBF\s\-·.]+$/;
+  // 영문 업체명: 영문 알파벳 + 공백만 허용
+  const ENGLISH_NAME_REGEX = /^[a-zA-Z\s]+$/;
   const isRealNameValid = (v) => !v || REAL_NAME_REGEX.test(v);
   const isDisplayNameValid = (v) => !v || DISPLAY_NAME_REGEX.test(v);
+  const isEnglishNameValid = (v) => !v || ENGLISH_NAME_REGEX.test(v);
 
   // ── Helper: Check for inappropriate words ────────────────────────────
   const containsInappropriateWord = (text) => {
@@ -77,12 +80,10 @@ const VendorRegister = () => {
         .limit(1);
 
       if (error) {
-        console.error('[VendorRegister] Duplicate check error:', error);
         return false;
       }
       return data && data.length > 0;
     } catch (err) {
-      console.error('[VendorRegister] Duplicate check exception:', err);
       return false;
     }
   }, []);
@@ -102,6 +103,8 @@ const VendorRegister = () => {
   const [realName, setRealName] = useState('');       // 담당자 실명
   const [birthdate, setBirthdate] = useState('');     // 담당자 생년월일
   const [bio, setBio] = useState('');
+  const [addrBase, setAddrBase] = useState('');       // 업체 주소 (기본)
+  const [addrDetail, setAddrDetail] = useState('');   // 업체 주소 (상세)
 
   // Debounce refs for duplicate name checking
   const nameKoDebounceRef = useRef(null);
@@ -109,6 +112,7 @@ const VendorRegister = () => {
 
   // ── Step 2 상태 ─────────────────────────────────────────────────────
   const [vendorTypes, setVendorTypes] = useState([]);  // ['costume'] | ['venue'] | ['costume', 'venue']
+  const [referralCode, setReferralCode] = useState('');   // 추천인 코드
   const [contactInstagram, setContactInstagram] = useState('');
   const [contactWebsite, setContactWebsite] = useState('');
 
@@ -145,10 +149,11 @@ const VendorRegister = () => {
     realName && isRealNameValid(realName) &&
     birthdate &&
     nameKo && isDisplayNameValid(nameKo) &&
-    nameEn && isDisplayNameValid(nameEn) &&
+    nameEn && isEnglishNameValid(nameEn) &&
     !nameKoError && !nameEnError &&
     email && emailRegex.test(email) &&
-    phoneVerified &&
+    addrBase &&
+    // phoneVerified && // TODO: SMS 프로바이더 연동 후 복원
     pwAllPass && password === pwConfirm
   );
 
@@ -165,10 +170,11 @@ const VendorRegister = () => {
     if (!nameKo) issues.push({ field: '업체명 (한글)', msg: '한글 업체명을 입력해주세요.' });
     else if (!isDisplayNameValid(nameKo)) issues.push({ field: '업체명 (한글)', msg: '업체명에 특수문자는 사용할 수 없습니다.' });
     if (!nameEn) issues.push({ field: '업체명 (영문)', msg: '영문 업체명을 입력해주세요.' });
-    else if (!isDisplayNameValid(nameEn)) issues.push({ field: '업체명 (영문)', msg: '업체명에 특수문자는 사용할 수 없습니다.' });
+    else if (!isEnglishNameValid(nameEn)) issues.push({ field: '업체명 (영문)', msg: '영문 알파벳과 공백만 입력할 수 있습니다.' });
     if (!email) issues.push({ field: '이메일', msg: '대표자 이메일을 입력해주세요.' });
     else if (!emailRegex.test(email)) issues.push({ field: '이메일', msg: '이메일 형식이 올바르지 않습니다. 예) vendor@phosnap.com' });
-    if (!phoneVerified) issues.push({ field: '핸드폰 인증', msg: '핸드폰 번호 인증을 완료해주세요.' });
+    if (!addrBase) issues.push({ field: '주소', msg: '업체 주소(기본)를 입력해주세요.' });
+    // if (!phoneVerified) issues.push({ field: '핸드폰 인증', msg: '핸드폰 번호 인증을 완료해주세요.' }); // TODO: SMS 프로바이더 연동 후 복원
     if (!password) issues.push({ field: '비밀번호', msg: '비밀번호를 입력해주세요.' });
     else if (!pwAllPass) issues.push({ field: '비밀번호', msg: '비밀번호 조건을 모두 충족해주세요. (8~16자, 대소문자, 숫자, 특수문자)' });
     if (password && !pwConfirm) issues.push({ field: '비밀번호 확인', msg: '비밀번호 확인을 입력해주세요.' });
@@ -216,9 +222,13 @@ const VendorRegister = () => {
 
   // ── 벤더 프로필 저장 공통 로직 ──
   const saveVendorProfile = async (userId) => {
+    const { saveReferralCode, applyReferralCode } = await import('../lib/referral');
     const displayName = `${nameKo} (${nameEn})`;
 
     await addUserRole(userId, 'dress_vendor');
+
+    // Generate referral code for new vendor
+    const myCode = await saveReferralCode(userId, 'vendor');
 
     await upsertProfile({
       id: userId,
@@ -227,6 +237,10 @@ const VendorRegister = () => {
       phone,
       real_name: realName,
       birthdate,
+      address: addrBase,
+      address_detail: addrDetail,
+      referral_code: myCode,
+      referred_by_code: referralCode?.trim() || null,
     });
 
     // vendor_types: DB에 text[] 컬럼이 없을 수 있으므로, 쉼표 join 문자열로도 저장
@@ -239,6 +253,8 @@ const VendorRegister = () => {
       contact_email: email,
       contact_instagram: contactInstagram || null,
       contact_website: contactWebsite || null,
+      address: addrBase || null,
+      address_detail: addrDetail || null,
     };
     // text[] 컬럼이 있으면 배열로도 저장 시도
     try {
@@ -247,14 +263,19 @@ const VendorRegister = () => {
 
     const { error: vendorErr } = await createDressVendor(vendorPayload);
     if (vendorErr) {
-      console.error('[VendorRegister] dress_vendors insert error:', vendorErr);
       // vendor_types 컬럼이 없어서 실패했을 수 있으므로, 해당 필드 제거 후 재시도
       if (vendorErr.message?.includes('vendor_types') || vendorErr.code === '42703') {
         delete vendorPayload.vendor_types;
         const { error: retryErr } = await createDressVendor(vendorPayload);
-        if (retryErr) {
-          console.error('[VendorRegister] retry insert error:', retryErr);
-        }
+      }
+    }
+
+    // Apply referral code if provided
+    if (referralCode?.trim()) {
+      try {
+        const result = await applyReferralCode(userId, referralCode.trim());
+      } catch (err) {
+        // silently handled
       }
     }
   };
@@ -441,16 +462,18 @@ const VendorRegister = () => {
                 type="text" placeholder="업체명 (영문)"
                 value={nameEn}
                 onChange={e => {
-                  setNameEn(e.target.value);
+                  // 입력 시 영문+공백만 허용 (실시간 필터링)
+                  const filtered = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                  setNameEn(filtered);
                   setNameEnError('');
                 }}
                 onBlur={async (e) => {
                   const val = e.target.value;
                   if (!val) return;
 
-                  // Check for special characters
-                  if (!isDisplayNameValid(val)) {
-                    setNameEnError('특수문자는 사용할 수 없습니다.');
+                  // 영문 알파벳 + 공백만 허용
+                  if (!isEnglishNameValid(val)) {
+                    setNameEnError('영문 알파벳과 공백만 입력할 수 있습니다.');
                     return;
                   }
 
@@ -535,6 +558,16 @@ const VendorRegister = () => {
             )}
             {!pwConfirm && <div style={{ marginBottom: 24 }} />}
 
+            <SectionDivider label="주소" />
+            <div style={{ marginBottom: 12 }}>
+              <input style={{ ...INPUT, marginBottom: 8 }}
+                type="text" placeholder="기본 주소 (예: 서울특별시 강남구)"
+                value={addrBase} onChange={e => setAddrBase(e.target.value)} />
+              <input style={{ ...INPUT }}
+                type="text" placeholder="상세 주소 (동, 호수 등)"
+                value={addrDetail} onChange={e => setAddrDetail(e.target.value)} />
+            </div>
+
             <SectionDivider label="SNS · 웹사이트 (선택)" />
             <input style={{ ...INPUT, marginBottom: 12 }}
               type="text" placeholder="Instagram 핸들 (@ 제외)"
@@ -542,6 +575,11 @@ const VendorRegister = () => {
             <input style={{ ...INPUT, marginBottom: 24 }}
               type="url" placeholder="웹사이트 URL (선택)"
               value={contactWebsite} onChange={e => setContactWebsite(e.target.value)} />
+
+            <SectionDivider label="추천인 코드 (선택)" />
+            <input style={{ ...INPUT, marginBottom: 24 }}
+              type="text" placeholder="추천인 코드가 있으면 입력하세요"
+              value={referralCode} onChange={e => setReferralCode(e.target.value)} />
 
             {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>{error}</p>}
 
@@ -691,7 +729,7 @@ const VendorRegister = () => {
                 <Corners />
                 {[
                   { key: 'terms', checked: agreeTerms, set: setAgreeTerms, text: '벤더 서비스 이용약관에 동의합니다.', required: true, data: TERMS_VENDOR },
-                  { key: 'fee', checked: agreeFee, set: setAgreeFee, text: '수수료 정책에 동의합니다. (의상 대여: 15%/12%/10% · 장소 대여: 10%/8%/6% — 거래량 기반 단계 적용 | 얼리억세스 벤더: 의상 8%, 장소 5% 고정)', required: true, data: TERMS_VENDOR },
+                  { key: 'fee', checked: agreeFee, set: setAgreeFee, text: '수수료 정책에 동의합니다. (의상 대여: 20%/15%/12% · 장소 대여: 18%/14%/10% — 거래량 기반 단계 적용 | 얼리억세스 벤더: 의상 12%, 장소 10% 고정)', required: true, data: TERMS_VENDOR },
                   { key: 'privacy', checked: agreePrivacy, set: setAgreePrivacy, text: '개인정보 처리방침에 동의합니다.', required: true, data: PRIVACY },
                   { key: 'refund', checked: agreeRefund, set: setAgreeRefund, text: '환불/취소 정책에 동의합니다.', required: true, data: REFUND_POLICY },
                   { key: 'marketing', checked: agreeMarketing, set: setAgreeMarketing, text: '등록된 아이템 사진 및 업체 정보가 Phosnap 플랫폼의 홍보·마케팅(SNS, 광고, 웹사이트 등)에 활용될 수 있음에 동의합니다. (선택)', required: false, data: null },
@@ -737,6 +775,7 @@ const VendorRegister = () => {
                 { label: '업체 유형', value: vendorTypes.map(vt => VENDOR_TYPES.find(v => v.id === vt)?.label || vt).join(', ') },
                 { label: '이메일', value: email },
                 { label: '핸드폰', value: phone },
+                addrBase ? { label: '주소', value: `${addrBase}${addrDetail ? ' ' + addrDetail : ''}` } : null,
                 contactInstagram ? { label: 'Instagram', value: contactInstagram } : null,
                 contactWebsite ? { label: 'Website', value: contactWebsite } : null,
               ].filter(Boolean).map(item => (

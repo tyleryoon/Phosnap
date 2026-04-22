@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Corners from './Corners';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import ChatTranslator from './ChatTranslator';
 import {
   getChannelMessages,
   sendChannelMessage,
@@ -124,7 +125,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           await loadOneOnOneChat();
         }
       } catch (err) {
-        console.error('Chat init error:', err);
         if (isMounted) setError('Failed to initialize chat');
       }
     };
@@ -143,7 +143,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           }
         }
       } catch (err) {
-        console.error('Error loading channel messages:', err);
+        // silently handled
       }
     };
 
@@ -164,7 +164,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           .maybeSingle();
 
         if (roomError && roomError.code !== 'PGRST116') {
-          console.error('Error fetching room:', roomError);
           if (isMounted) setError('Failed to load chat room');
           return;
         }
@@ -177,7 +176,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
             .single();
 
           if (bookingError || !booking) {
-            console.error('Error fetching booking:', bookingError);
             if (isMounted) setError('Booking not found');
             return;
           }
@@ -193,7 +191,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
             .single();
 
           if (createError) {
-            console.error('Error creating room:', createError);
             if (isMounted) setError('Failed to create chat room');
             return;
           }
@@ -221,10 +218,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           .eq('room_id', room.id)
           .order('created_at', { ascending: true });
 
-        if (msgsError) {
-          console.error('Error fetching messages:', msgsError);
-        }
-
         if (isMounted) {
           setMessages(msgs || []);
           setLoading(false);
@@ -250,7 +243,6 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
 
         subscriptionRef.current = subscription;
       } catch (err) {
-        console.error('1:1 chat init error:', err);
         if (isMounted) setError('Failed to initialize chat');
       }
     };
@@ -303,14 +295,12 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
         });
 
         if (sendError) {
-          console.error('Error sending message:', sendError);
           setError(c.error);
         } else {
           setNewMsg('');
         }
       }
     } catch (err) {
-      console.error('Send error:', err);
       setError(c.error);
     } finally {
       setSending(false);
@@ -601,6 +591,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
                           {formatTime(msg.created_at)}
                         </div>
                       </div>
+                      <ChatTranslator text={msg.content || msg.text} sourceLang="auto" targetLang={lang} />
                     </div>
                   </div>
                 );

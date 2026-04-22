@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Corners from './Corners';
 import SizeSelector from './SizeSelector';
 import { useLanguage } from '../contexts/LanguageContext';
 import { fmt } from '../data/photographers';
+import LazyImage from './LazyImage';
 
 // ─── Dress Card ────────────────────────────────────────────────────────
 // 의상 카드 컴포넌트 — Booking 및 VendorDashboard에서 사용
@@ -68,6 +69,7 @@ const DressCard = ({
           background: selected ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
           cursor: 'pointer', transition: 'all 0.2s',
           position: 'relative',
+          borderRadius: 'var(--radius)',
         }}
       >
         {selected && (
@@ -80,11 +82,15 @@ const DressCard = ({
           </div>
         )}
         {currentImg && (
-          <div style={{
-            width: 64, height: 80, flexShrink: 0,
-            backgroundImage: `url(${currentImg})`,
-            backgroundSize: 'cover', backgroundPosition: 'center',
-          }} />
+          <LazyImage
+            src={currentImg}
+            alt={name}
+            style={{
+              width: 64,
+              height: 80,
+              flexShrink: 0,
+            }}
+          />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
@@ -118,17 +124,21 @@ const DressCard = ({
       background: selected ? 'rgba(232,160,32,0.04)' : 'var(--bg2)',
       transition: 'all 0.3s', position: 'relative',
       overflow: 'hidden',
+      borderRadius: 'var(--radius)',
     }}>
       <Corners />
 
       {/* 이미지 영역 */}
       {images.length > 0 && (
         <div style={{ position: 'relative' }}>
-          <div style={{
-            width: '100%', paddingTop: '120%',
-            backgroundImage: `url(${currentImg})`,
-            backgroundSize: 'cover', backgroundPosition: 'center',
-          }} />
+          <LazyImage
+            src={currentImg}
+            alt={name}
+            style={{
+              width: '100%',
+              paddingTop: '120%',
+            }}
+          />
 
           {/* 이미지 네비게이션 dots */}
           {images.length > 1 && (
@@ -237,4 +247,4 @@ const DressCard = ({
 };
 
 export { CATEGORY_LABELS };
-export default DressCard;
+export default React.memo(DressCard);

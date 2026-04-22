@@ -61,9 +61,9 @@ const save = (data) => {
 /** 모든 투어 인스턴스 조회 */
 export const getAllInstances = () => load();
 
-/** 특정 작가의 투어 인스턴스 */
+/** 특정 작가의 투어 인스턴스 (타입 무관 비교: 숫자/문자열 모두 매칭) */
 export const getInstancesByPhotographer = (photographerId) =>
-  load().filter(i => i.photographerId === photographerId);
+  load().filter(i => String(i.photographerId) === String(photographerId));
 
 /** 특정 인스턴스 */
 export const getInstance = (instanceId) =>
@@ -149,8 +149,6 @@ export const addBooking = (instanceId, { guestName, guestEmail, guestPhone = '',
   const newCount = getActiveBookingCount(inst);
   if (newCount >= inst.maxGuests) {
     inst.status = 'confirmed';
-    // 알림 트리거 (mock — 실제로는 push/email)
-    console.log(`[TOUR] 🎉 투어 "${inst.tourName}" (${inst.scheduledDate}) 자동 확정! ${newCount}/${inst.maxGuests}명`);
   }
 
   save(all);
@@ -174,7 +172,6 @@ export const cancelBooking = (instanceId, bookingId) => {
     const today = new Date().toISOString().slice(0, 10);
     if (today <= inst.deadline) {
       inst.status = 'recruiting';
-      console.log(`[TOUR] 🔄 투어 "${inst.tourName}" 빈자리 발생 → 재모집 전환`);
     }
   }
 
@@ -198,7 +195,6 @@ export const evaluateDeadlines = () => {
       // 이미 풀 → 확정
       inst.status = 'confirmed';
       changed = true;
-      console.log(`[TOUR] ✅ "${inst.tourName}" 마감 → 인원 충족 → 확정`);
     } else if (count >= inst.minGuests) {
       // 과반 이상 모임 → adjusting (가격 재계산 후 확인 요청)
       inst.status = 'adjusting';
@@ -211,12 +207,10 @@ export const evaluateDeadlines = () => {
         if (b.status === 'active') b.status = 'pendingConfirm';
       });
       changed = true;
-      console.log(`[TOUR] ⚠️ "${inst.tourName}" 마감 → ${count}/${inst.maxGuests}명 → 가격 조정 확인 요청`);
     } else {
       // 최소 인원 미달 → 취소
       inst.status = 'cancelled';
       changed = true;
-      console.log(`[TOUR] ❌ "${inst.tourName}" 마감 → ${count}/${inst.minGuests} 최소인원 미달 → 취소`);
     }
   });
 
@@ -240,7 +234,6 @@ export const confirmAdjustedPrice = (instanceId, bookingId) => {
   const pending = inst.bookings.filter(b => b.status === 'pendingConfirm');
   if (pending.length === 0) {
     inst.status = 'confirmed';
-    console.log(`[TOUR] 🎉 "${inst.tourName}" 전원 새 가격 수락 → 확정!`);
   }
 
   save(all);
@@ -265,7 +258,6 @@ export const declineAdjustedPrice = (instanceId, bookingId) => {
   if (remainCount < inst.minGuests) {
     // 최소인원 미달 → 전체 취소
     inst.status = 'cancelled';
-    console.log(`[TOUR] ❌ "${inst.tourName}" 인원 미달 → 전체 취소`);
   } else {
     // 다시 가격 재계산
     if (inst.pricingType === 'total') {

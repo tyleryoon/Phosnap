@@ -448,12 +448,30 @@
     "artistLogin": "작가 · H&M 로그인 →",
     "artistSignup": "작가 · H&M 회원가입 →",
     "artistSignupLink": "작가 · H&M 회원가입",
+    "customerLogin": "고객 로그인 →",
+    "customerSignup": "고객 회원가입 →",
     "toggleCustomer": "👤 고객",
     "toggleArtist": "📷 작가 · 💄 H&M"
   },
   "terms": {
     "guarantee": "만족 보증 정책",
     "guaranteeDesc": "Phosnap은 모든 고객의 만족을 보장합니다."
+  },
+  "onboarding": {
+    "skip": "건너뛰기",
+    "startBtn": "시작하기",
+    "slide1": {
+      "title": "Phosnap이란?",
+      "desc": "프로페셔널 사진작가와 연결되는 럭셔리 포토그래피 예약 플랫폼"
+    },
+    "slide2": {
+      "title": "작가 찾기",
+      "desc": "지역, 스타일, 가격으로 사진작가를 검색하고 포트폴리오와 후기를 확인하세요"
+    },
+    "slide3": {
+      "title": "예약 방법",
+      "desc": "촬영 날짜와 시간을 선택하고 패키지를 고르면 바로 예약이 완료됩니다"
+    }
   },
   "artistSchedule": {
     "overseasPhotographer": {

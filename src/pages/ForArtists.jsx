@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
+import SEO from '../components/SEO';
 
 // ─── For Artists Page ──────────────────────────────────────────────────
 
@@ -23,8 +24,28 @@ const ForArtists = ({ onAuthOpen }) => {
     { n: '04', title: t('forartists.s4Title'), desc: t('forartists.s4Desc') },
   ];
 
+  // SEO
+  const { lang } = useLanguage();
+  const seoTitles = {
+    ko: '작가로 참여하기',
+    en: 'For Photographers',
+    ja: 'フォトグラファーの方へ',
+    zh: '摄影师专区',
+  };
+  const seoDescs = {
+    ko: 'Phosnap 작가 커뮤니티에 참여하여 수익을 창출하고 클라이언트와 직접 연결되세요. 수수료 10~20%, 투명한 정산 시스템.',
+    en: 'Join Phosnap photographer community. Earn money, connect with clients directly. Commission 10–20%, transparent settlement system.',
+    ja: 'Phosnap 写真家コミュニティに参加。直接クライアントと繋がり、収入を増やしましょう。手数料10〜20%、透明な精算システム。',
+    zh: '加入Phosnap摄影师社区。直接与客户联系，增加收入。佣金10~20%，透明清晰的结算系统。',
+  };
+
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      <SEO
+        title={seoTitles[lang] || seoTitles.en}
+        description={seoDescs[lang] || seoDescs.en}
+        lang={lang}
+      />
 
       {/* Hero */}
       <div className="hero" style={{ minHeight: '60vh' }}>

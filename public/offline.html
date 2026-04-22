@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phosnap - Offline</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0B0B0B;
+      color: #F2F2F2;
+      font-family: 'Cormorant Garamond', 'Noto Sans KR', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .offline-container {
+      text-align: center;
+      max-width: 500px;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .offline-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      color: #F2F2F2;
+      margin-bottom: 48px;
+    }
+
+    .offline-icon {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 40px;
+      animation: wifiPulse 2s infinite;
+    }
+
+    @keyframes wifiPulse {
+      0%, 100% {
+        opacity: 0.4;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+
+    .offline-title {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+      color: #F2F2F2;
+    }
+
+    .offline-subtitle {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 16px;
+      font-weight: 300;
+      color: #A8A8A8;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .offline-action {
+      display: flex;
+      gap: 12px;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .retry-btn {
+      background: #E8A020;
+      color: #0B0B0B;
+      border: none;
+      padding: 16px 40px;
+      font-family: 'Cinzel', serif;
+      font-size: 12px;
+      letter-spacing: 0.15em;
+      font-weight: 500;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.3s ease;
+      border-radius: 2px;
+      box-shadow: 0 8px 24px rgba(232, 160, 32, 0.2);
+    }
+
+    .retry-btn:hover {
+      background: #F0AC2A;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(232, 160, 32, 0.3);
+    }
+
+    .retry-btn:active {
+      transform: translateY(0);
+    }
+
+    .offline-footer {
+      margin-top: 48px;
+      padding-top: 32px;
+      border-top: 1px solid rgba(242, 242, 242, 0.1);
+      font-size: 12px;
+      color: #808080;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .offline-logo {
+        font-size: 24px;
+        margin-bottom: 32px;
+      }
+
+      .offline-icon {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 32px;
+      }
+
+      .offline-title {
+        font-size: 20px;
+      }
+
+      .offline-subtitle {
+        font-size: 14px;
+      }
+
+      .retry-btn {
+        padding: 14px 32px;
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-logo">PHOSNAP</div>
+
+    <svg class="offline-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M1 9L3 7M23 9L21 7M6 13L8 11M18 13L16 11M12 17V19M12 5V3" stroke="#E8A020" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+      <circle cx="12" cy="12" r="3" stroke="#E8A020" stroke-width="2" opacity="0.5"/>
+      <path d="M12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12" stroke="#E8A020" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    </svg>
+
+    <h1 class="offline-title">오프라인 상태입니다</h1>
+    <p class="offline-subtitle">You are currently offline</p>
+
+    <p class="offline-subtitle" style="font-size: 14px; margin-bottom: 40px; color: #959595;">
+      네트워크 연결 후 다시 시도해주세요<br>
+      Please reconnect to the network and try again
+    </p>
+
+    <div class="offline-action">
+      <button class="retry-btn" onclick="location.reload()">다시 시도 / RETRY</button>
+    </div>
+
+    <div class="offline-footer">
+      <p>Phosnap - Light captured. Moments made.</p>
+    </div>
+  </div>
+
+  <script>
+    // Simple online/offline detection
+    window.addEventListener('online', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>

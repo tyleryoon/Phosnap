@@ -1,11 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useSearchParams, useNavigate } from 'react-router-dom';
 import PhotographerCard from '../components/PhotographerCard';
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { PHOTOGRAPHERS, ALL_TAG_KEYS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import { fetchPhotographers } from '../lib/supabase';
+import SEO from '../components/SEO';
 import {
   getDomesticLocations,
   getOverseasLocations,
@@ -15,6 +17,8 @@ import {
   getLocationsByCountry,
   getCountriesFromPortfolio,
 } from '../data/locationUtils';
+import MatchingRecommendation from '../components/MatchingRecommendation';
+import StyleMatcher from '../components/StyleMatcher';
 
 // ─── i18n Translations for Advanced Filters ────────────────────────────
 const FILTER_LABELS = {
@@ -144,12 +148,15 @@ const EXPANDED_TAGS = {
 // ─── Photographers List Page ───────────────────────────────────────────
 // Advanced filtering with country/city cascading, price, rating, sorting, and URL sync
 
+const PHOTOGRAPHERS_PER_PAGE = 20;
+
 const Photographers = ({ onAuthOpen }) => {
   const { t, lang } = useLanguage();
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const sentinelRef = useRef(null);
 
   // Explore/Home에서 넘어온 state 수신
   const initialLocation = location.state?.locationId || 'all';
@@ -173,6 +180,10 @@ const Photographers = ({ onAuthOpen }) => {
   // Database state
   const [dbPhotographers, setDbPhotographers] = useState(null);
   const [dbLoading, setDbLoading] = useState(false);
+
+  // Infinite scroll state
+  const [displayedCount, setDisplayedCount] = useState(PHOTOGRAPHERS_PER_PAGE);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const toggleSnapFilter = (key) => {
     setActiveSnapFilters(prev => {
@@ -248,8 +259,40 @@ const Photographers = ({ onAuthOpen }) => {
 
   // TASK 1C: 마운트 시 DB에서 지역 레지스트리 새로고침
   useEffect(() => {
-    refreshRegistryFromDB().catch(err => console.warn('[Photographers] Registry refresh failed:', err));
+    refreshRegistryFromDB().catch(() => {});
   }, []);
+
+  // ─── Infinite scroll observer ──────────────────────────────────────────
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !isLoadingMore) {
+          setIsLoadingMore(true);
+          // Simulate loading delay for UX
+          setTimeout(() => {
+            setDisplayedCount(prev => prev + PHOTOGRAPHERS_PER_PAGE);
+            setIsLoadingMore(false);
+          }, 300);
+        }
+      },
+      { rootMargin: '100px' }
+    );
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [isLoadingMore]);
+
+  // Reset displayed count when filters change
+  useEffect(() => {
+    setDisplayedCount(PHOTOGRAPHERS_PER_PAGE);
+  }, [selectedCountry, selectedCity, activeFilter, activeLanguage, minPrice, maxPrice, sortBy, searchQuery, activeSnapFilters]);
 
   // ─── Fetch photographers from Supabase with current filters ──────────────
   useEffect(() => {
@@ -344,7 +387,7 @@ const Photographers = ({ onAuthOpen }) => {
   };
 
   // Use DB data with fallback to mock data
-  const photographersSource = dbPhotographers || PHOTOGRAPHERS;
+  const photographersSource = dbPhotographers || PHOTOGRAPHERS.map(ph => getMergedProfile(ph, 'photographer', ph.id));
 
   // Filter logic - chain all filters together
   const filtered = photographersSource.filter(p => {
@@ -458,8 +501,27 @@ const Photographers = ({ onAuthOpen }) => {
 
   const filterLabelsForLang = FILTER_LABELS[lang] || FILTER_LABELS.en;
 
+  // SEO translations
+  const seoTitles = {
+    ko: '프로 스냅 작가 찾기',
+    en: 'Book Professional Photographers',
+    ja: 'プロフォトグラファーを検索',
+    zh: '寻找专业摄影师',
+  };
+  const seoDescs = {
+    ko: '서울, 교토, 파리 등 세계 주요 도시에서 전문 스냅 작가를 찾아보세요. 웨딩, 커플, 가족 촬영 전문가를 만날 수 있습니다.',
+    en: 'Find professional snap photographers worldwide. Browse experts in wedding, couple, family photography and more.',
+    ja: '世界中のプロフォトグラファーを検索。ウェディング、カップル、家族撮影などの専門家を見つけましょう。',
+    zh: '全球寻找专业摄影师。婚纱、情侣、家庭摄影等专家尽在这里。',
+  };
+
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      <SEO
+        title={seoTitles[lang] || seoTitles.en}
+        description={seoDescs[lang] || seoDescs.en}
+        lang={lang}
+      />
       <div className="section">
         <div className="section-label">Visual Artists</div>
         <h2 className="section-title">{t('nav.photographers')}</h2>
@@ -847,11 +909,19 @@ const Photographers = ({ onAuthOpen }) => {
           </select>
         </div>
 
-        {/* Grid — 비로그인 사용자는 상위 3명만 표시 */}
+        {/* ── AI 작가 매칭 추천 ── */}
+        <MatchingRecommendation photographers={sorted} onAuthOpen={onAuthOpen} />
+
+        {/* ── 참고 사진으로 작가 찾기 ── */}
+        <StyleMatcher photographers={sorted} onMatch={() => {}} />
+
+        {/* Grid — infinite scroll with login restriction */}
         {(() => {
           const MAX_PREVIEW = 3;
-          const visibleList = isLoggedIn ? sorted : sorted.slice(0, MAX_PREVIEW);
-          const hasMore = !isLoggedIn && sorted.length > MAX_PREVIEW;
+          const fullList = isLoggedIn ? sorted : sorted.slice(0, MAX_PREVIEW);
+          const hasMorePages = isLoggedIn && displayedCount < sorted.length;
+          const visibleList = fullList.slice(0, displayedCount);
+          const hasLoginPrompt = !isLoggedIn && sorted.length > MAX_PREVIEW;
 
           const handleCardClick = (p) => {
             if (!isLoggedIn) {
@@ -866,8 +936,38 @@ const Photographers = ({ onAuthOpen }) => {
               <div className="photo-grid">
                 {visibleList.map(p => <PhotographerCard key={p.id} p={p} onClick={handleCardClick} blurred={!isLoggedIn} />)}
               </div>
+
+              {/* Infinite scroll sentinel */}
+              {hasMorePages && <div ref={sentinelRef} style={{ height: '1px' }} />}
+
+              {/* Loading indicator for infinite scroll */}
+              {isLoadingMore && isLoggedIn && (
+                <div style={{
+                  marginTop: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '50%',
+                    border: '2px solid rgba(232,160,32,0.2)', borderTopColor: 'var(--gold)',
+                    animation: 'spin 0.8s linear infinite',
+                  }} />
+                  <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
+                    {lang === 'ko' ? '더 불러오는 중...' : lang === 'ja' ? '読み込み中...' : lang === 'zh' ? '加载中...' : 'Loading...'}
+                  </span>
+                </div>
+              )}
+
+              {/* End of list message */}
+              {isLoggedIn && displayedCount >= sorted.length && sorted.length > PHOTOGRAPHERS_PER_PAGE && (
+                <div style={{
+                  marginTop: 40, textAlign: 'center', padding: '24px', fontSize: 12,
+                  color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
+                }}>
+                  {lang === 'ko' ? '모든 작가를 확인했습니다' : lang === 'ja' ? 'すべてのアーティストを確認しました' : lang === 'zh' ? '已显示所有摄影师' : 'All photographers loaded'}
+                </div>
+              )}
+
               {/* 비로그인 시 로그인 유도 배너 */}
-              {hasMore && (
+              {hasLoginPrompt && (
                 <div
                   onClick={() => onAuthOpen ? onAuthOpen('login') : navigate('/login')}
                   style={{
@@ -896,6 +996,13 @@ const Photographers = ({ onAuthOpen }) => {
                   </button>
                 </div>
               )}
+
+              {/* Spinner animation */}
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)' }}>

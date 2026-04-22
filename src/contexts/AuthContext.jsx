@@ -98,7 +98,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await switchUserRole(role);
     } catch (e) {
-      console.warn('switchUserRole failed:', e);
+      // Silently ignore role switch errors
     }
   }, [user, roles]);
 

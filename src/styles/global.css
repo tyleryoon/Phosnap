@@ -10,7 +10,6 @@
 
 html {
   scroll-behavior: smooth;
-  zoom: 1.1;           /* 전체 UI 110% 확대 — 1.15 or 1.2 로 조절 가능 */
 }
 
 body {
@@ -22,54 +21,173 @@ body {
   overflow-x: hidden;
 }
 
-/* Film grain overlay */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: var(--z-grain);
-  opacity: 0.4;
+/* Accessibility — focus-visible outline */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
+
+/* Remove outline for mouse clicks */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Skip to content link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 16px;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--gold);
+  color: #0B0B0B;
+  font-weight: 600;
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 16px;
+}
+
+/* Film grain overlay — REMOVED for clean modern aesthetic */
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--gold-border); border-radius: 2px; }
 
+/* Dark mode date/time pickers — ensure calendar icon & popup visible */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+/* ─── Navigation ─────────────────────────────────────────────────────── */
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  height: 56px;
+  transition: background 0.4s ease, box-shadow 0.4s ease;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  white-space: nowrap;
+}
+
+.nav-link {
+  font-family: var(--font-serif);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color 0.2s;
+  padding: 4px 0;
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--text); }
+.nav-link.active {
+  color: var(--gold);
+  border-bottom: 1px solid var(--gold);
+}
+
+/* Mobile menu button */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px;
+}
+
+/* Mobile fullscreen menu */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(11, 11, 11, 0.98);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+  animation: fadeIn 0.2s ease;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.mobile-nav-link:hover { color: var(--gold); }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Responsive: hide desktop links, show hamburger on mobile */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .mobile-menu-btn { display: block; }
+  .nav { padding: 0 16px; }
+}
+
 /* ─── Typography helpers ─────────────────────────────────────────────── */
 .font-cinzel     { font-family: var(--font-serif); letter-spacing: 0.1em; }
-.font-cormorant  { font-family: var(--font-elegant); }
+.font-cormorant  { font-family: var(--font-serif); }
 .text-gold       { color: var(--gold); }
 .text-muted      { color: var(--muted); }
-.text-glow       { text-shadow: var(--text-glow); }
+.text-glow       { /* removed for clean aesthetic */ }
 
 /* ─── Utility ────────────────────────────────────────────────────────── */
-.glow-gold { box-shadow: var(--glow-gold); }
+.glow-gold { /* simplified — use on hover only */ }
 
 .divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-border), transparent);
+  background: var(--border);
 }
 
-/* ─── Corner marks (brand signature) ────────────────────────────────── */
-.corner-mark {
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  border-color: var(--gold);
-  border-style: dotted;
-  opacity: 0.6;
-  z-index: 2;
-  pointer-events: none;
-}
-.corner-mark.tl { top: 0;    left: 0;  border-width: 1px 0 0 1px; }
-.corner-mark.tr { top: 0;    right: 0; border-width: 1px 1px 0 0; }
-.corner-mark.bl { bottom: 0; left: 0;  border-width: 0 0 1px 1px; }
-.corner-mark.br { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+/* ─── Corner marks — HIDDEN for clean modern aesthetic ───────────────── */
+.corner-mark { display: none; }
 
 /* ─── Buttons ────────────────────────────────────────────────────────── */
+/* Ensure buttons have pointer cursor */
+button, [role="button"] {
+  cursor: pointer;
+}
+
+/* Disabled state */
+button:disabled, [role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -82,6 +200,7 @@ body::before {
   font-weight: 600;
   padding: 14px 28px;
   border: none;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--ease);
   text-transform: uppercase;
@@ -89,7 +208,7 @@ body::before {
 }
 .btn-primary:hover {
   background: #f0ac2a;
-  box-shadow: 0 0 20px rgba(232, 160, 32, 0.3);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-outline {
@@ -104,6 +223,7 @@ body::before {
   font-weight: 500;
   padding: 13px 28px;
   border: 1px solid var(--border-hover);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--ease);
   text-transform: uppercase;
@@ -121,6 +241,7 @@ body::before {
   font-size: 13px;
   padding: 8px 16px;
   border: none;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: color var(--ease-fast);
 }
@@ -155,7 +276,7 @@ body::before {
 }
 
 .section-sub {
-  font-family: var(--font-elegant);
+  font-family: var(--font-sans);
   font-size: 18px;
   font-style: italic;
   color: var(--muted);
@@ -451,10 +572,30 @@ body::before {
   transition: all var(--ease);
   background: var(--bg2);
 }
-.package:hover,
-.package.selected {
+.package:hover {
   border-color: var(--gold-border);
   background: var(--gold-dim);
+}
+.package.selected {
+  border-color: var(--gold);
+  background: var(--gold-dim);
+  box-shadow: 0 0 0 1px var(--gold), 0 0 16px rgba(232,160,32,0.15);
+}
+.package.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gold);
+  color: #0B0B0B;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: 50%;
 }
 .package.recommended::before {
   content: 'POPULAR';
@@ -486,7 +627,7 @@ body::before {
   background: var(--bg2);
 }
 .review-stars  { color: var(--gold); font-size: 13px; margin-bottom: 12px; letter-spacing: 2px; }
-.review-text   { font-family: var(--font-elegant); font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 16px; font-style: italic; }
+.review-text   { font-family: var(--font-sans); font-size: 15px; color: var(--muted); line-height: 1.7; margin-bottom: 16px; font-style: italic; }
 .review-author { font-size: 11px; color: var(--text); font-family: var(--font-serif); letter-spacing: 0.1em; }
 .review-date   { font-size: 11px; color: var(--muted); margin-top: 2px; }
 
@@ -530,6 +671,14 @@ body::before {
 }
 .gallery-item:hover .gallery-item-inner { transform: scale(1.05); }
 .gallery-item:hover .portfolio-loc-badge { opacity: 1 !important; }
+
+/* ── Vendor Dashboard — profile form label hover ── */
+label {
+  transition: color 0.2s;
+}
+label:hover {
+  color: var(--gold) !important;
+}
 
 /* ── Spinner ── */
 @keyframes spin { to { transform: rotate(360deg); } }

@@ -1,6 +1,7 @@
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { TERMS } from '../data/legal';
+import SEO from '../components/SEO';
 
 const Terms = () => {
   const { lang } = useLanguage();
@@ -8,6 +9,12 @@ const Terms = () => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      <SEO
+        title="Terms of Service"
+        description="Phosnap terms of service and user agreement. Please read our terms before using our photography booking platform."
+        lang={lang}
+        noIndex={false}
+      />
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '60px 24px 80px' }}>
 
         {/* Header */}

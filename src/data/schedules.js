@@ -106,8 +106,9 @@ export const getSchedule = (type, id) => {
     const raw = localStorage.getItem(storageKey(type, id));
     if (raw) return JSON.parse(raw);
   } catch {}
-  // 기본값
-  return { defaultSlots: DEFAULT_TIME_SLOTS.slice(), dates: {} };
+  // 기본값: 모든 시간 슬롯이 닫혀있음 (모두 차단 상태)
+  // 작가가 필요한 시간대만 수동으로 오픈하도록 변경
+  return { defaultSlots: [], dates: {} };
 };
 
 /** 작가 스케줄 전체를 저장합니다 */

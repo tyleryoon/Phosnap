@@ -81,6 +81,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
   });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
+  const [pointAnimation, setPointAnimation] = useState(null);
 
   const updateSection = (key, field, value) => {
     setReviewData(prev => ({
@@ -144,6 +145,19 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
         }).catch(() => {}));
       await Promise.all(vendorPromises);
 
+      // Calculate and award points
+      try {
+        const { calculateReviewPoints, addPoints } = await import('../lib/points');
+        const pointResult = calculateReviewPoints(reviewData);
+        if (pointResult.total > 0 && (booking?.userId || booking?.user_id)) {
+          const userId = booking.userId || booking.user_id;
+          await addPoints(userId, pointResult.total, 'review_reward', booking.id);
+          setPointAnimation(pointResult);
+        }
+      } catch (err) {
+        // silently handled
+      }
+
       setSavedMsg(lang === 'ko' ? '리뷰가 저장되었습니다! 감사합니다 ✓' :
                   lang === 'ja' ? 'レビューが保存されました！ありがとうございます ✓' :
                   lang === 'zh' ? '评价已保存！谢谢 ✓' :
@@ -151,7 +165,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
       setTimeout(() => {
         onSaved?.();
         onClose();
-      }, 1500);
+      }, 2500);
     } catch (err) {
       setSavedMsg(lang === 'ko' ? '저장에 실패했습니다.' : 'Save failed.');
     }
@@ -296,6 +310,11 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
             border: `1px solid ${savedMsg.includes('✓') ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
           }}>
             {savedMsg}
+            {pointAnimation && (
+              <div style={{ fontSize: 12, marginTop: 6, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+                ✨ +{pointAnimation.total}P {lang === 'ko' ? '적립되었습니다!' : lang === 'ja' ? 'ポイント獲得！' : lang === 'zh' ? '积分已获得！' : 'Points earned!'}
+              </div>
+            )}
           </div>
         )}
 

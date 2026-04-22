@@ -2,32 +2,33 @@
 // Phosnap 벤더 수수료 정책 상수
 // 변경 시 legal.js TERMS_VENDOR 제3조와 VendorRegister.jsx 동의 텍스트도 함께 업데이트
 // ═══════════════════════════════════════════════════════════════════════
+import { EARLY_ACCESS_DURATION_MONTHS } from '../lib/commission';
 
 /**
  * 의상대여 수수료 단계 (단가 낮음 · 건수 많음)
  */
 export const COSTUME_FEE_TIERS = [
-  { tier: '월 10건 이하',   maxBookings: 10,       rate: 15 },
-  { tier: '월 11~30건',     maxBookings: 30,       rate: 12 },
-  { tier: '월 31건 이상',   maxBookings: Infinity, rate: 10 },
+  { tier: '월 10건 이하',   maxBookings: 10,       rate: 20 },
+  { tier: '월 11~30건',     maxBookings: 30,       rate: 15 },
+  { tier: '월 31건 이상',   maxBookings: Infinity, rate: 12 },
 ];
 
 /**
  * 장소대여 수수료 단계 (단가 높음 · 건수 적음)
  */
 export const VENUE_FEE_TIERS = [
-  { tier: '월 10건 이하',   maxBookings: 10,       rate: 10 },
-  { tier: '월 11~30건',     maxBookings: 30,       rate: 8 },
-  { tier: '월 31건 이상',   maxBookings: Infinity, rate: 6 },
+  { tier: '월 10건 이하',   maxBookings: 10,       rate: 18 },
+  { tier: '월 11~30건',     maxBookings: 30,       rate: 14 },
+  { tier: '월 31건 이상',   maxBookings: Infinity, rate: 10 },
 ];
 
 /**
  * 런칭 프로모션 (얼리억세스)
  */
 export const VENDOR_EARLY_ACCESS = {
-  durationMonths: 6,         // 런칭 후 6개월 이내 가입
-  costumeRate: 8,            // 의상대여 프로모션 수수료 %
-  venueRate: 5,              // 장소대여 프로모션 수수료 %
+  durationMonths: EARLY_ACCESS_DURATION_MONTHS, // 런칭 후 6개월 이내 가입
+  costumeRate: 12,           // 의상대여 프로모션 수수료 %
+  venueRate: 10,             // 장소대여 프로모션 수수료 %
 };
 
 /**

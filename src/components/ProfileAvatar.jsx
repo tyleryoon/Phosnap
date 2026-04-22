@@ -73,7 +73,7 @@ const ProfileAvatar = ({ avatarUrl, onAvatarChange, size = 64, editable = true }
         onAvatarChange?.(url);
       }
     } catch (err) {
-      console.error('[ProfileAvatar] Upload error:', err);
+      // silently handled
     }
     setUploading(false);
     setShowCropModal(false);

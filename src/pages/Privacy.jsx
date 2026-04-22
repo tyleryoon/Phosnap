@@ -1,6 +1,7 @@
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PRIVACY } from '../data/legal';
+import SEO from '../components/SEO';
 
 const Privacy = () => {
   const { lang } = useLanguage();
@@ -8,6 +9,12 @@ const Privacy = () => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      <SEO
+        title="Privacy Policy"
+        description="Phosnap privacy policy. Learn how we collect, use, and protect your personal information."
+        lang={lang}
+        noIndex={false}
+      />
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '60px 24px 80px' }}>
 
         {/* Header */}

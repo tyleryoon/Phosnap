@@ -15,7 +15,7 @@ const Explore = () => {
 
   // TASK 1C: 마운트 시 DB에서 지역 레지스트리 새로고침
   useEffect(() => {
-    refreshRegistryFromDB().catch(err => console.warn('[Explore] Registry refresh failed:', err));
+    refreshRegistryFromDB().catch(() => {});
   }, []);
 
   const domestic = getDomesticLocations();

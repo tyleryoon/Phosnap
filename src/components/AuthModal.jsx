@@ -64,7 +64,6 @@ const RoleSelectModal = ({ user, onRoleSelected }) => {
 
       onRoleSelected(roleId);
     } catch (err) {
-      console.error('Role selection error:', err);
       setLoading(false);
       setSelectedRole(null);
     }
@@ -300,6 +299,9 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
   const [success, setSuccess]     = useState('');
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
+  // 기존 계정 연결 (멀티롤 가입)
+  const [showExistingLogin, setShowExistingLogin] = useState(false);
+  const [existingPassword, setExistingPassword] = useState('');
   // 멀티롤 선택
   const [showRolePicker, setShowRolePicker] = useState(false);
   const [loginUserRoles, setLoginUserRoles] = useState([]);
@@ -342,15 +344,62 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
     if (!birthdate) issues.push('생년월일을 선택해주세요.');
     if (!email) issues.push('이메일 주소를 입력해주세요.');
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) issues.push('이메일 형식이 올바르지 않습니다. 예) hello@phosnap.com');
-    if (!phone) issues.push('핸드폰 번호를 입력해주세요.');
-    else if (phone.replace(/\D/g, '').length < 10) issues.push('핸드폰 번호는 최소 10자리여야 합니다.');
-    if (phone && !phoneVerified) issues.push('핸드폰 인증을 완료해주세요.');
+    // 핸드폰: 입력했으면 형식 검증, 미입력이면 스킵 (선택사항)
+    if (phone && phone.replace(/\D/g, '').length < 10) issues.push('핸드폰 번호는 최소 10자리여야 합니다.');
     if (!password) issues.push('비밀번호를 입력해주세요.');
     else if (!pwAllPass) issues.push('비밀번호 조건을 모두 충족해주세요. (8~16자, 대소문자, 숫자, 특수문자)');
     if (password && pwConfirm && password !== pwConfirm) issues.push('비밀번호가 일치하지 않습니다.');
     else if (!pwConfirm) issues.push('비밀번호 확인을 입력해주세요.');
     if (!requiredTermsOk) issues.push('필수 약관에 동의해주세요.');
     return issues;
+  };
+
+  // ── 기존 계정에 고객 역할 추가 (이미 작가/벤더로 가입된 이메일) ──
+  const handleExistingLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      const { error: loginErr, data } = await signIn({ email, password: existingPassword });
+      if (loginErr) {
+        setError(loginErr.message === 'Invalid login credentials'
+          ? '비밀번호가 올바르지 않습니다.'
+          : loginErr.message);
+        setLoading(false);
+        return;
+      }
+      const userId = data?.user?.id || data?.session?.user?.id;
+      if (userId) {
+        // 이미 customer 역할이 있는지 확인
+        const userRoles = await getUserRolesWithFallback(userId);
+        if (userRoles.includes('customer')) {
+          // 이미 고객 역할 있음 → 그냥 로그인
+          sessionStorage.setItem('phosnap_active_role', 'customer');
+          try { await switchUserRole('customer'); } catch (e) { /* Silently ignore role switch errors */ }
+          onClose();
+          setLoading(false);
+          return;
+        }
+        // customer 역할 추가
+        await addUserRole(userId, 'customer');
+        const { upsertProfile } = await import('../lib/supabase');
+        await upsertProfile({
+          id: userId,
+          role: 'customer',
+          phone: phone.trim() || undefined,
+          birthdate: birthdate || undefined,
+        });
+        // 추천 코드 생성
+        const { saveReferralCode } = await import('../lib/referral');
+        await saveReferralCode(userId, 'customer');
+        sessionStorage.setItem('phosnap_active_role', 'customer');
+        try { await switchUserRole('customer'); } catch (e) { /* Silently ignore role switch errors */ }
+      }
+      onClose();
+    } catch (err) {
+      setError(err.message || '가입 중 오류가 발생했습니다.');
+    }
+    setLoading(false);
   };
 
   const handleSubmit = async (e) => {
@@ -370,8 +419,13 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
         });
         if (err) {
           const m = err.message?.toLowerCase() ?? '';
-          if (m.includes('already registered') || m.includes('already exists'))
-            setError('이미 등록된 이메일입니다. 로그인을 시도해주세요.');
+          if (m.includes('already registered') || m.includes('already exists')) {
+            // 이미 가입된 이메일 → 기존 계정에 고객 역할 추가 모드
+            setShowExistingLogin(true);
+            setError('');
+            setLoading(false);
+            return;
+          }
           else if (m.includes('password'))
             setError('비밀번호가 보안 요건을 충족하지 않습니다. 8자 이상, 영문+숫자 조합을 권장합니다.');
           else
@@ -387,32 +441,42 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               phone: phone.trim(),
               birthdate: birthdate || null,
             });
+            // 추천 코드 생성
+            const { saveReferralCode } = await import('../lib/referral');
+            await saveReferralCode(data.user.id, 'customer');
           }
-          try { await switchUserRole('customer'); } catch (e) { console.warn('switchUserRole failed:', e); }
+          try { await switchUserRole('customer'); } catch (e) { /* Silently ignore role switch errors */ }
           onClose();
         }
       } else {
         // ── 로그인 ──
-        // CustomerAuth → 고객 역할로 진입 의도를 먼저 sessionStorage에 기록
-        // (signIn이 onAuthChange를 트리거하기 전에 설정해야 race condition 방지)
-        sessionStorage.setItem('phosnap_active_role', 'customer');
-
         const { error: err, data } = await signIn({ email, password });
         if (err) {
-          sessionStorage.removeItem('phosnap_active_role'); // 로그인 실패 시 롤백
           setError(err.message === 'Invalid login credentials'
             ? t('auth.loginInvalid')
             : err.message);
         } else {
-          // CustomerAuth → 항상 고객 역할로 진입
-          // sessionStorage에 이미 'customer'가 설정되어 있으므로 덮어쓰지 않음
-          try { await switchUserRole('customer'); } catch (e) { console.warn('switchUserRole failed:', e); }
-          // sessionStorage는 signIn 전에 이미 'customer'로 설정됨 — 건드리지 않음
-          onClose();
+          // ── 역할 검증: 이 계정이 실제로 customer 역할을 가지고 있는지 확인 ──
+          const userRoles = await getUserRolesWithFallback(data.user.id);
+          const hasCustomer = userRoles.includes('customer');
+          // artist/vendor/stylist 전용 계정이면 고객 로그인 차단
+          const isProAccount = userRoles.some(r => ['artist', 'vendor', 'dress_vendor', 'stylist'].includes(r));
+          if (!hasCustomer && isProAccount) {
+            // 로그아웃 후 에러 표시
+            const { getSupabase } = await import('../lib/supabase');
+            const sb = await getSupabase();
+            if (sb) await sb.auth.signOut();
+            sessionStorage.removeItem('phosnap_active_role');
+            const roleLabel = userRoles.includes('artist') ? '작가' : userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '전문가';
+            setError(`이 계정은 ${roleLabel} 전용 계정입니다. 고객으로도 이용하시려면 상단의 '고객 회원가입' 버튼으로 고객 역할을 추가해주세요.`);
+          } else {
+            sessionStorage.setItem('phosnap_active_role', 'customer');
+            try { await switchUserRole('customer'); } catch (e) { /* Silently ignore role switch errors */ }
+            onClose();
+          }
         }
       }
     } catch (e) {
-      console.error('Auth error:', e);
       setError(e.message || '로그인 중 오류가 발생했습니다.');
     }
     setLoading(false);
@@ -461,7 +525,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
     try {
       await switchUserRole(role);
       sessionStorage.setItem('phosnap_active_role', role);
-    } catch (e) { console.warn('switchUserRole failed:', e); }
+    } catch (e) { /* Silently ignore role switch errors */ }
     if (onPendingLogin) onPendingLogin(false);
     onClose();
   };
@@ -574,7 +638,63 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
       </div>
 
-      <form onSubmit={handleSubmit}>
+      {/* ── 기존 계정 연결 (이미 작가/벤더로 가입된 이메일에 고객 역할 추가) ── */}
+      {tab === 'signup' && showExistingLogin && (
+        <form onSubmit={handleExistingLogin}>
+          <div style={{
+            padding: '20px 24px', marginBottom: 20,
+            border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+            borderRadius: 4,
+          }}>
+            <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)', marginBottom: 10 }}>
+              이미 가입된 이메일입니다
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 16 }}>
+              <strong style={{ color: 'var(--gold)' }}>{email}</strong> 은 이미 Phosnap에 가입되어 있어요.<br />
+              기존 비밀번호를 입력하면 이 계정에 <strong style={{ color: 'var(--gold)' }}>고객 역할</strong>을 추가합니다.
+            </p>
+            <input
+              type="password"
+              placeholder="기존 비밀번호 입력"
+              value={existingPassword}
+              onChange={e => setExistingPassword(e.target.value)}
+              required
+              className="form-input"
+              style={{ width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, whiteSpace: 'pre-line' }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              type="button"
+              onClick={() => { setShowExistingLogin(false); setError(''); setExistingPassword(''); }}
+              style={{
+                flex: 1, padding: '12px', background: 'transparent',
+                border: '1px solid var(--border)', color: 'var(--muted)',
+                fontSize: 12, cursor: 'pointer', borderRadius: 4,
+              }}
+            >
+              뒤로
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !existingPassword}
+              className="btn-primary"
+              style={{
+                flex: 2, justifyContent: 'center',
+                opacity: (loading || !existingPassword) ? 0.5 : 1,
+              }}
+            >
+              {loading ? '처리 중…' : '고객 역할 추가 및 로그인'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── 일반 로그인/회원가입 폼 ── */}
+      <form onSubmit={handleSubmit} style={{ display: (tab === 'signup' && showExistingLogin) ? 'none' : 'block' }}>
         {tab === 'signup' && (
           <>
             {/* 실명 */}
@@ -725,18 +845,30 @@ const ArtistAuth = ({ onClose }) => {
     setError(''); setSuccess('');
     setLoading(true);
     try {
-      const { error: err } = await signIn({ email, password });
+      const { error: err, data } = await signIn({ email, password });
       if (err) {
         setError(err.message === 'Invalid login credentials'
           ? t('auth.loginInvalid')
           : err.message);
       } else {
-        try { await switchUserRole('artist'); } catch (e) { console.warn('switchUserRole failed:', e); }
-        onClose();
-        navigate('/artist/dashboard');
+        // ── 역할 검증: 작가 역할 확인 ──
+        const userRoles = await getUserRolesWithFallback(data.user.id);
+        const hasArtist = userRoles.includes('artist');
+        if (!hasArtist) {
+          const { getSupabase } = await import('../lib/supabase');
+          const sb = await getSupabase();
+          if (sb) await sb.auth.signOut();
+          sessionStorage.removeItem('phosnap_active_role');
+          const roleLabel = userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '고객';
+          setError(`이 계정은 ${roleLabel} 전용 계정입니다. 작가로도 활동하시려면 '작가 회원가입' 페이지에서 작가 역할을 추가해주세요.`);
+        } else {
+          sessionStorage.setItem('phosnap_active_role', 'artist');
+          try { await switchUserRole('artist'); } catch (e) { /* Silently ignore role switch errors */ }
+          onClose();
+          navigate('/artist/dashboard');
+        }
       }
     } catch (e) {
-      console.error('Auth error:', e);
       setError(e.message || '로그인 중 오류가 발생했습니다.');
     }
     setLoading(false);
@@ -917,18 +1049,30 @@ const VendorAuth = ({ onClose }) => {
     setError(''); setSuccess('');
     setLoading(true);
     try {
-      const { error: err } = await signIn({ email, password });
+      const { error: err, data } = await signIn({ email, password });
       if (err) {
         setError(err.message === 'Invalid login credentials'
           ? t('auth.loginInvalid')
           : err.message);
       } else {
-        try { await switchUserRole('vendor'); } catch (e) { console.warn('switchUserRole failed:', e); }
-        onClose();
-        navigate('/vendor/dashboard');
+        // ── 역할 검증: 벤더 역할 확인 ──
+        const userRoles = await getUserRolesWithFallback(data.user.id);
+        const hasVendor = userRoles.includes('vendor') || userRoles.includes('dress_vendor');
+        if (!hasVendor) {
+          const { getSupabase } = await import('../lib/supabase');
+          const sb = await getSupabase();
+          if (sb) await sb.auth.signOut();
+          sessionStorage.removeItem('phosnap_active_role');
+          const roleLabel = userRoles.includes('artist') ? '작가' : '고객';
+          setError(`이 계정은 ${roleLabel} 전용 계정입니다. 벤더로도 활동하시려면 '벤더 회원가입' 페이지에서 벤더 역할을 추가해주세요.`);
+        } else {
+          sessionStorage.setItem('phosnap_active_role', 'vendor');
+          try { await switchUserRole('vendor'); } catch (e) { /* Silently ignore role switch errors */ }
+          onClose();
+          navigate('/vendor/dashboard');
+        }
       }
     } catch (e) {
-      console.error('Auth error:', e);
       setError(e.message || '로그인 중 오류가 발생했습니다.');
     }
     setLoading(false);

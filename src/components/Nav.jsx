@@ -15,6 +15,7 @@ const Nav = ({ onAuthOpen }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
@@ -61,6 +62,8 @@ const Nav = ({ onAuthOpen }) => {
     <>
       <nav
         className="nav"
+        aria-label="Main navigation"
+        role="navigation"
         style={{
           background: scrolled
             ? 'rgba(11,11,11,0.97)'
@@ -83,6 +86,7 @@ const Nav = ({ onAuthOpen }) => {
               key={to}
               to={to}
               className={`nav-link ${isActive(to) ? 'active' : ''}`}
+              aria-current={isActive(to) ? 'page' : undefined}
               style={{ textDecoration: 'none' }}
               onClick={(e) => handleNavClick(e, to)}
             >
@@ -90,31 +94,80 @@ const Nav = ({ onAuthOpen }) => {
             </Link>
           ))}
 
-          {/* Divider */}
-          <span style={{ width: '1px', height: '16px', background: 'var(--border-hover)', display: 'inline-block' }} />
+          {/* Language dropdown */}
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 10,
+                letterSpacing: '0.1em',
+                color: langDropdownOpen ? 'var(--gold)' : 'var(--muted)',
+                cursor: 'pointer',
+                padding: '4px 8px',
+                transition: 'color 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 3,
+              }}
+              onMouseEnter={e => !langDropdownOpen && (e.currentTarget.style.color = 'var(--gold)')}
+              onMouseLeave={e => !langDropdownOpen && (e.currentTarget.style.color = 'var(--muted)')}
+            >
+              {lang.toUpperCase()}
+              <span style={{ fontSize: 8, marginTop: 1 }}>▼</span>
+            </button>
 
-          {/* Language switcher */}
-          <div style={{ display: 'flex', gap: 2 }}>
-            {LANG_LABELS.map(({ code, label }) => (
-              <button
-                key={code}
-                onClick={() => setLang(code)}
+            {langDropdownOpen && (
+              <div
                 style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 11,
-                  letterSpacing: '0.1em',
-                  color: lang === code ? 'var(--gold)' : 'var(--muted)',
-                  cursor: 'pointer',
-                  padding: '4px 6px',
-                  transition: 'color 0.2s',
-                  borderBottom: lang === code ? '1px solid var(--gold)' : '1px solid transparent',
+                  position: 'absolute',
+                  top: '100%',
+                  right: 0,
+                  marginTop: 8,
+                  background: 'var(--bg2)',
+                  border: '1px solid var(--border-hover)',
+                  borderRadius: 4,
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+                  zIndex: 200,
+                  minWidth: 100,
+                  overflow: 'hidden',
                 }}
               >
-                {label}
-              </button>
-            ))}
+                {LANG_LABELS.map(({ code, label }) => (
+                  <button
+                    key={code}
+                    onClick={() => {
+                      setLang(code);
+                      setLangDropdownOpen(false);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      background: lang === code ? 'rgba(232,160,32,0.1)' : 'transparent',
+                      border: 'none',
+                      borderBottom: code !== LANG_LABELS[LANG_LABELS.length - 1].code ? '1px solid var(--border)' : 'none',
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 11,
+                      letterSpacing: '0.1em',
+                      color: lang === code ? 'var(--gold)' : 'var(--muted)',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => {
+                      if (lang !== code) e.currentTarget.style.background = 'rgba(232,160,32,0.05)';
+                    }}
+                    onMouseLeave={e => {
+                      if (lang !== code) e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Currency selector */}
@@ -193,24 +246,6 @@ const Nav = ({ onAuthOpen }) => {
             )}
           </div>
 
-          {/* Instagram icon */}
-          <a
-            href="https://instagram.com/phosnap.kr"
-            target="_blank"
-            rel="noreferrer"
-            style={{ display: 'flex', alignItems: 'center', color: 'var(--muted)', transition: 'color 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <circle cx="12" cy="12" r="4"/>
-              <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
-            </svg>
-          </a>
-
-          {/* Divider */}
-          <span style={{ width: '1px', height: '16px', background: 'var(--border-hover)', display: 'inline-block' }} />
 
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -245,6 +280,13 @@ const Nav = ({ onAuthOpen }) => {
               <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {userName.split(' ')[0]}
               </div>
+              <Link to="/account/settings"
+                onClick={(e) => handleNavClick(e, '/account/settings')}
+                style={{ fontSize: 18, color: 'var(--muted)', textDecoration: 'none', lineHeight: 1, padding: '2px 4px', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--muted)'}>
+                ⚙
+              </Link>
               <button className="btn-ghost" style={{ fontSize: '11px' }} onClick={async () => { await logout(); navigate('/'); }}>{t('nav.logout')}</button>
             </div>
           ) : (
@@ -258,7 +300,7 @@ const Nav = ({ onAuthOpen }) => {
         </div>
 
         {/* Mobile hamburger */}
-        <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)}>
+        <button className="mobile-menu-btn" onClick={() => setMobileOpen(true)} aria-expanded={mobileOpen} aria-label="Toggle navigation menu">
           <MenuIcon />
         </button>
       </nav>
@@ -302,6 +344,9 @@ const Nav = ({ onAuthOpen }) => {
                   {t('nav.myPage') || '마이페이지'}
                 </Link>
               )}
+              <Link to="/account/settings" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/account/settings'); setMobileOpen(false); }}>
+                {lang === 'ko' ? '⚙ 개인정보 관리' : lang === 'ja' ? '⚙ アカウント設定' : '⚙ Account Settings'}
+              </Link>
               <button className="btn-ghost" onClick={async () => { await logout(); setMobileOpen(false); navigate('/'); }}>{t('nav.logout')}</button>
             </>
           ) : (

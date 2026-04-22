@@ -5,8 +5,12 @@ import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { getMergedProfile } from '../data/artistProfile';
 import { getTagLabel } from '../data/tagRegistry';
 import UnifiedReviewModal from '../components/UnifiedReviewModal';
+import CarbonFootprint from '../components/CarbonFootprint';
+import ReferralCard from '../components/ReferralCard';
+import PointsCard from '../components/PointsCard';
 
 // ─── Customer Dashboard (/my) ─────────────────────────────────────────
 // 고객 전용 대시보드: 즐겨찾기, 예약, 리뷰, 쿠폰, 프로필, 설정
@@ -236,7 +240,8 @@ const CustomerDashboard = () => {
     try { return JSON.parse(localStorage.getItem('phosnap_fav_artists') || '[]'); } catch { return []; }
   });
   const favArtists = useMemo(() =>
-    PHOTOGRAPHERS.filter(p => favArtistIds.includes(p.id)),
+    PHOTOGRAPHERS.filter(p => favArtistIds.includes(p.id))
+      .map(p => getMergedProfile(p, 'photographer', p.id)),
     [favArtistIds]
   );
   const removeFav = (id) => {
@@ -367,6 +372,9 @@ const CustomerDashboard = () => {
                   </button>
                 </div>
 
+                {/* Points & Membership Card */}
+                <PointsCard userId={user?.id} />
+
                 {/* Upcoming */}
                 <div style={sectionStyle}>
                   <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: 'var(--text)', margin: '0 0 1rem', letterSpacing: '0.04em' }}>
@@ -395,32 +403,6 @@ const CustomerDashboard = () => {
                   )}
                 </div>
 
-                {/* Quick links */}
-                <div style={sectionStyle}>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1rem', color: 'var(--text)', margin: '0 0 1rem', letterSpacing: '0.04em' }}>
-                    ⚡ {m.quickLinks}
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '0.75rem' }}>
-                    {tabs.filter(t => t.id !== 'overview').map(tab => (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        style={{
-                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                          padding: '1.2rem 0.5rem', border: '1px solid var(--border)',
-                          background: 'transparent', color: 'var(--muted)',
-                          fontFamily: 'var(--font-serif)', fontSize: '0.8rem',
-                          cursor: 'pointer', transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
-                      >
-                        <span style={{ fontSize: '1.5rem' }}>{tab.icon}</span>
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Stats summary */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem' }}>
@@ -437,6 +419,12 @@ const CustomerDashboard = () => {
                     </div>
                   ))}
                 </div>
+
+                {/* 나의 친환경 스냅 지수 */}
+                <CarbonFootprint mode="dashboard" bookings={bookings || []} />
+
+                {/* 추천 코드 및 혜택 */}
+                <ReferralCard userId={user?.id} role="customer" />
               </>
             )}
 

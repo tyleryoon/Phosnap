@@ -6,6 +6,7 @@ node_modules/
 # Build output
 dist/
 dist-ssr/
+build/
 
 # Environment variables
 .env
@@ -25,6 +26,8 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Vite
 *.local

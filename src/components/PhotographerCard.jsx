@@ -1,9 +1,9 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Corners from './Corners';
 import { MapPinIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { fmt } from '../data/photographers';
+import LazyImage from './LazyImage';
 
 // ─── 대표 포트폴리오 최대 장수 ────────────────────────────────────────
 const MAX_FEATURED = 5;
@@ -82,8 +82,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
   const locationLabel = p.locationNames?.[lang] ?? p.location;
 
   return (
-    <div className="photo-card" onClick={handleClick} style={blurred ? { position: 'relative' } : undefined}>
-      <Corners />
+    <div className="photo-card" onClick={handleClick} style={blurred ? { position: 'relative', borderRadius: 'var(--radius)' } : { borderRadius: 'var(--radius)' }}>
       {blurred && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 10,
@@ -111,10 +110,11 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
           style={{ transform: `translateX(-${currentIdx * 100}%)` }}
         >
           {slides.map((url, i) => (
-            <div
+            <LazyImage
               key={i}
-              className="photo-card-slide"
-              style={{ backgroundImage: `url(${url})` }}
+              src={url}
+              alt={`${displayName} - portfolio ${i + 1}`}
+              style={{ minWidth: '100%', height: '100%' }}
             />
           ))}
         </div>
@@ -153,9 +153,17 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
         {/* 프로필 아바타 (이미지 위 좌측 하단) */}
         {p.img && featured.length > 0 && (
           <div className="photo-card-avatar">
-            <div
-              className="photo-card-avatar-img"
-              style={{ backgroundImage: `url(${p.img})` }}
+            <LazyImage
+              src={p.img}
+              alt={displayName}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.85)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+                display: 'block'
+              }}
             />
           </div>
         )}
@@ -166,7 +174,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
           <div className="photo-card-name">{displayName}</div>
           <div className="lang-chips">
-            {p.languages.map(l => (
+            {p.languages.slice(0, 2).map(l => (
               <span key={l} className="lang-chip">{l}</span>
             ))}
           </div>
@@ -177,31 +185,13 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
         </div>
 
         <div className="photo-card-tags">
-          {p.tags.map(tagKey => (
+          {p.tags.slice(0, 3).map(tagKey => (
             <span key={tagKey} className="tag">{t(`tags.${tagKey}`)}</span>
           ))}
-          {p.hmk && <span className="tag gold">{t('tags.hmk')}</span>}
-          {p.instantBooking && (
-            <span className="tag" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--gold)', border: '1px solid rgba(232,160,32,0.25)', fontWeight: 500 }}>
-              ⚡ {lang === 'ko' ? '즉시 예약' : lang === 'ja' ? '即時予約' : lang === 'zh' ? '即时预订' : 'Instant'}
-            </span>
-          )}
-          {p.tours?.length > 0 && (
-            <span className="tag" style={{ background: 'rgba(232,160,32,0.1)', color: 'var(--gold)', border: '1px solid rgba(232,160,32,0.2)' }}>
-              🗺️ {lang === 'ko' ? '포토투어' : lang === 'ja' ? 'フォトツアー' : 'Photo Tour'}
-            </span>
-          )}
         </div>
 
         <div className="photo-card-footer">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            <div className="photo-card-price">₩{fmt(p.price)}<span>~</span></div>
-            {p.hourlyRate && p.hourlyRateEnabled !== false && (
-              <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-sans)', letterSpacing: '0.02em' }}>
-                ₩{fmt(p.hourlyRate)}<span style={{ opacity: 0.6 }}>/{lang === 'ko' ? '시간' : lang === 'ja' ? '時間' : 'hr'}</span>
-              </div>
-            )}
-          </div>
+          <div className="photo-card-price">₩{fmt(p.price)}<span>~</span></div>
           <div className="photo-card-rating">
             <span className="star">★</span> {displayRating} ({displayReviews})
           </div>
@@ -211,4 +201,4 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
   );
 };
 
-export default PhotographerCard;
+export default React.memo(PhotographerCard);

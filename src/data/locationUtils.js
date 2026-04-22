@@ -408,6 +408,6 @@ export const refreshRegistryFromDB = async () => {
     // 캐시 무효화
     invalidateRegistry();
   } catch (err) {
-    console.warn('[locationUtils] refreshRegistryFromDB failed:', err.message);
+    // Silent failure
   }
 };

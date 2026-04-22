@@ -39,7 +39,7 @@ const generateSeedSales = (artistId, basePrice, reviewCount) => {
         id: `sale-${artistId}-${dateStr}-${i}`,
         date: dateStr,
         amount,
-        netAmount: collaboDiscount ? Math.round(amount * 0.87) : Math.round(amount * 0.85), // 수수료 차감 후
+        netAmount: collaboDiscount ? Math.round(amount * 0.82) : Math.round(amount * 0.80), // 수수료 차감 후 (콜라보 18%, 일반 20%)
         type,
         status: m >= 1 ? 'settled' : (day <= now.getDate() - 5 ? 'settled' : 'pending'), // 최근 5일은 정산 대기
         isCollabo: collaboDiscount,

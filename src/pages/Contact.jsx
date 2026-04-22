@@ -123,8 +123,6 @@ const Contact = () => {
           body: JSON.stringify({ name, email, type, message, _subject: `[Phosnap Contact] ${type} — ${name}`, _language: lang }),
         });
         if (!res.ok) throw new Error();
-      } else {
-        console.warn('[Phosnap] VITE_FORMSPREE_CONTACT_ID not set');
       }
       setDone(true);
     } catch {

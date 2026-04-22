@@ -20,10 +20,10 @@ export const COLLABO_RULES = {
 // ── 작가 등급 시스템 (Badge Progress) ──
 // 기준: 누적 완료 건수 + 평균 평점
 export const ARTIST_TIERS = {
-  rising:      { ko: 'Rising',      en: 'Rising',      icon: '✦',    stars: '✦',       minShoots: 0,   minRating: 0,   feeNormal: 18, feeCollabo: 15, benefits: '기본 프로필 노출, 예약 수신' },
-  established: { ko: 'Established', en: 'Established', icon: '✦✦',   stars: '✦✦',      minShoots: 20,  minRating: 4.0, feeNormal: 15, feeCollabo: 13, benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월' },
+  rising:      { ko: 'Rising',      en: 'Rising',      icon: '✦',    stars: '✦',       minShoots: 0,   minRating: 0,   feeNormal: 20, feeCollabo: 18, benefits: '기본 프로필 노출, 예약 수신' },
+  established: { ko: 'Established', en: 'Established', icon: '✦✦',   stars: '✦✦',      minShoots: 30,  minRating: 4.0, feeNormal: 15, feeCollabo: 13, benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월' },
   premier:     { ko: 'Premier',     en: 'Premier',     icon: '✦✦✦',  stars: '✦✦✦',     minShoots: 100, minRating: 4.5, feeNormal: 12, feeCollabo: 10, benefits: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
-  elite:       { ko: 'Elite',       en: 'Elite',       icon: '✦✦✦✦', stars: '✦✦✦✦',    minShoots: 300, minRating: 4.7, feeNormal: 10, feeCollabo: 8,  benefits: '최우선 노출, 수수료 10%, 전용 매니저 배정' },
+  elite:       { ko: 'Elite',       en: 'Elite',       icon: '✦✦✦✦', stars: '✦✦✦✦',    minShoots: 300, minRating: 4.7, feeNormal: 12, feeCollabo: 10, benefits: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
 };
 
 // 등급 색상
@@ -38,7 +38,7 @@ export const TIER_COLORS = {
 export const getArtistTier = (shoots, rating = 0) => {
   if (shoots >= 300 && rating >= 4.7) return 'elite';
   if (shoots >= 100 && rating >= 4.5) return 'premier';
-  if (shoots >= 20  && rating >= 4.0) return 'established';
+  if (shoots >= 30  && rating >= 4.0) return 'established';
   return 'rising';
 };
 

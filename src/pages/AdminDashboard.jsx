@@ -292,7 +292,6 @@ const AdminDashboard = () => {
           activePhotographers: activePhots,
         });
       } catch (err) {
-        console.error('Error loading admin data:', err);
         // Use mock data on error
         setBookings(getMockBookings());
         setProfiles(getMockProfiles());

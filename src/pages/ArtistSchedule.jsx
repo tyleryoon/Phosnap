@@ -5,6 +5,7 @@ import Corners from '../components/Corners';
 import CollaboChat from '../components/CollaboChat';
 import DatePicker from '../components/DatePicker';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { PHOTOGRAPHERS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
 import {
   DEFAULT_TIME_SLOTS,
@@ -93,6 +94,9 @@ import {
 // ─── Artist Schedule & Profile Management Dashboard ───────────────────
 // 탭: 스케줄 관리 | 활동 지역 | 작가 정보 | 결제 정보 | 예약 요청 | 실적
 // MVP: localStorage 기반
+
+// ─── 초기 기본 영업시간 (9~12, 13~18) ────────────────────────────────
+const INITIAL_DEFAULT_HOURS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'];
 
 // ─── 국내/해외 지역 데이터 ────────────────────────────────────────────
 const DOMESTIC_REGIONS = [
@@ -278,11 +282,13 @@ const TourInstanceManager = ({ photographerId, tours }) => {
   const [instances, setInstances] = useState([]);
   const [showCreate, setShowCreate] = useState(false);
   const [newForm, setNewForm] = useState({ tourIndex: 0, scheduledDate: '', scheduledTime: '10:00', deadlineDays: 7 });
+  const [dateError, setDateError] = useState('');
 
   const refresh = useCallback(() => {
-    if (!photographerId) return;
+    const pid = photographerId ? (Number(photographerId) || photographerId) : null;
+    if (!pid) return;
     evaluateDeadlines(); // 마감 체크
-    setInstances(getInstancesByPhotographer(photographerId));
+    setInstances(getInstancesByPhotographer(pid));
   }, [photographerId]);
 
   useEffect(() => { refresh(); }, [refresh]);
@@ -298,11 +304,18 @@ const TourInstanceManager = ({ photographerId, tours }) => {
     const tour = tours[newForm.tourIndex];
     if (!tour || !newForm.scheduledDate) return;
 
+    const today = new Date().toISOString().split('T')[0];
+    if (newForm.scheduledDate < today) {
+      setDateError('현재 날짜보다 이전은 선택할 수 없습니다');
+      return;
+    }
+
+    const pid = photographerId ? (Number(photographerId) || photographerId) : photographerId;
     const deadlineDate = new Date(newForm.scheduledDate);
     deadlineDate.setDate(deadlineDate.getDate() - (newForm.deadlineDays || tour.deadlineDays || 7));
 
     createInstance({
-      photographerId,
+      photographerId: pid,
       tourIndex: newForm.tourIndex,
       tourName: tour.name,
       scheduledDate: newForm.scheduledDate,
@@ -339,7 +352,11 @@ const TourInstanceManager = ({ photographerId, tours }) => {
     display: 'block', marginTop: 6, width: '100%',
     background: 'var(--bg)', border: '1px solid var(--border)',
     color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
+    colorScheme: 'dark',
   };
+
+  // photographerId를 Number로 정규화하여 타입 일관성 보장
+  const normalizedPid = photographerId ? Number(photographerId) || photographerId : null;
 
   return (
     <div style={{ border: '1px solid rgba(76,175,80,0.2)', background: 'rgba(76,175,80,0.02)', padding: '24px 28px', position: 'relative' }}>
@@ -442,6 +459,19 @@ const TourInstanceManager = ({ photographerId, tours }) => {
         })}
       </div>
 
+      {/* 현재 오픈 중인 날짜 요약 */}
+      {instances.filter(i => i.status === 'recruiting').length > 0 && (
+        <div style={{ padding: '12px 16px', background: 'rgba(76,175,80,0.04)', border: '1px solid rgba(76,175,80,0.15)', marginBottom: 16, fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+          <span style={{ color: '#4caf50', fontFamily: 'var(--font-serif)' }}>현재 오픈 날짜:</span>{' '}
+          {instances.filter(i => i.status === 'recruiting')
+            .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
+            .map(i => {
+              const dt = new Date(i.scheduledDate + 'T00:00:00');
+              return `${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})`;
+            }).join(' · ')}
+        </div>
+      )}
+
       {/* 새 일정 오픈 폼 */}
       {showCreate ? (
         <div style={{ border: '1px solid rgba(76,175,80,0.3)', padding: '16px 20px', background: 'rgba(76,175,80,0.03)' }}>
@@ -457,7 +487,20 @@ const TourInstanceManager = ({ photographerId, tours }) => {
             </label>
             <label style={{ fontSize: 11, color: 'var(--muted)' }}>
               투어 날짜
-              <input type="date" value={newForm.scheduledDate} onChange={e => setNewForm({ ...newForm, scheduledDate: e.target.value })} style={inputStyle} />
+              <input type="date" value={newForm.scheduledDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => {
+                  const val = e.target.value;
+                  const today = new Date().toISOString().split('T')[0];
+                  if (val && val < today) {
+                    setDateError('현재 날짜보다 이전은 선택할 수 없습니다');
+                    return;
+                  }
+                  setDateError('');
+                  setNewForm({ ...newForm, scheduledDate: val });
+                }}
+                style={{ ...inputStyle, borderColor: dateError ? '#e85d5d' : undefined }} />
+              {dateError && <div style={{ fontSize: 10, color: '#e85d5d', marginTop: 4 }}>{dateError}</div>}
             </label>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
@@ -498,19 +541,23 @@ const TABS = ['schedule', 'locations', 'info', 'products', 'payment', 'collabo']
 // ────────────────────────────────────────────────────────────────────
 const ArtistSchedule = () => {
   const { lang, t } = useLanguage();
+  const { user } = useAuth();
   const routerLocation = useLocation();
 
   // Build overseas notice based on current language
   const OVERSEAS_NOTICE = useMemo(() => buildOverseasNotice(t), [t]);
 
-  // 작가 선택: Supabase auth 유저 기반 또는 데모 드롭다운
+  // 작가 ID — 로그인 유저의 legacy ID 기반, Supabase 조회로 업데이트
   const [artistId, setArtistId] = useState(() => {
-    // 실제 환경에서는 auth context에서 가져옴
+    // user_metadata에서 legacy ID 확인
+    const legacyId = user?.user_metadata?.artist_legacy_id || user?.user_metadata?.legacy_id;
+    if (legacyId) return Number(legacyId) || legacyId;
+    // sessionStorage fallback
     try {
       const stored = sessionStorage.getItem('phosnap_artist_id');
-      if (stored) return Number(stored) || 1;
+      if (stored) return Number(stored) || stored;
     } catch (_) {}
-    return 1;
+    return null; // null = 아직 미확인 (fallback 제거)
   });
   const artist = PHOTOGRAPHERS.find(p => p.id === artistId);
 
@@ -518,6 +565,9 @@ const ArtistSchedule = () => {
   const [activeTab, setActiveTab] = useState(() => {
     return routerLocation.state?.openTab || 'schedule';
   });
+
+  // 필수 항목 경고 배너 확장/축소 상태
+  const [requiredItemsExpanded, setRequiredItemsExpanded] = useState(false);
 
   // 실적 탭 상태
   const [perfDateStart, setPerfDateStart] = useState('');
@@ -557,7 +607,7 @@ const ArtistSchedule = () => {
 
   // ── H&M 동행 여부 팝업 (자체 H&M 동행 작가 전용) ──
   const [hmkLocNotice, setHmkLocNotice]     = useState(null); // { step:'ask'|'warn', pendingLoc }
-  const [demoHmkPartner, setDemoHmkPartner] = useState(false); // 데모: 자체 H&M 동행 작가 시뮬레이션
+  // demoHmkPartner 제거 — 실제 profile.has_hmk_partner만 사용
 
   // ── 예약 요청 상태 ──
   const [pendingBookings, setPendingBookings] = useState([]);
@@ -572,7 +622,7 @@ const ArtistSchedule = () => {
   const [propImages, setPropImages] = useState({});  // {propIdx: [urls]}
   const [costumeImages, setCostumeImages] = useState({});  // {costumeIdx: [urls]}
   const [snapImages, setSnapImages] = useState({});  // {snapIdx: [urls]}
-
+  const [paymentDraft, setPaymentDraft] = useState(null);
 
   // ── 콜라보 상태 ──
   const [collaboReceived, setCollaboReceived] = useState([]);
@@ -610,6 +660,15 @@ const ArtistSchedule = () => {
         if (session?.user) {
           const { data: photog } = await sb.from('photographers')
             .select('id').eq('user_id', session.user.id).maybeSingle();
+
+          // profiles에서 legacy_id 조회하여 artistId 업데이트
+          const { data: prof } = await sb.from('profiles')
+            .select('artist_legacy_id').eq('id', session.user.id).maybeSingle();
+          if (prof?.artist_legacy_id) {
+            setArtistId(prof.artist_legacy_id);
+            try { sessionStorage.setItem('phosnap_artist_id', String(prof.artist_legacy_id)); } catch (_) {}
+          }
+
           if (photog?.id) {
             setDbPhotographerId(photog.id);
             setDbConnected(true);
@@ -644,19 +703,27 @@ const ArtistSchedule = () => {
         }
       }
     } catch (e) {
-      console.warn('[Phosnap] Supabase 로드 실패, localStorage fallback:', e);
+      // Silently fall back to localStorage
     }
 
-    // localStorage fallback (항상 실행)
+    // localStorage fallback (항상 실행) — artistId가 없으면 빈 프로필로 초기화
+    if (!artistId) {
+      // artistId가 없어도 빈 프로필로 초기화하여 상품 관리 등 탭이 동작하도록 함
+      setProfileState(prev => prev || { locations: [], portfolio: [], paymentInfo: {}, tours: [], hmk: { selfAvailable: false, note: '', menus: [] } });
+      // 스케줄도 기본값으로 초기화
+      setSchedule(prev => prev || { defaultSlots: INITIAL_DEFAULT_HOURS, dates: {} });
+      setDraftDefault(prev => prev.length > 0 ? prev : []);
+      return;
+    }
     const s = getSchedule('photographer', artistId);
     setSchedule(s);
     if (!dbConnected) {
-      setDraftDefault(s.defaultSlots ?? DEFAULT_TIME_SLOTS);
+      setDraftDefault(s.defaultSlots ?? INITIAL_DEFAULT_HOURS);
     }
     // 2주 이상 미로그인 체크 → 자동 노출 OFF
     const wasAutoOff = checkInactiveAutoOff('photographer', artistId);
     const loadedProfile = getProfile('photographer', artistId);
-    setProfileState(loadedProfile);
+    setProfileState(loadedProfile || { locations: [], portfolio: [], paymentInfo: {}, tours: [], hmk: { selfAvailable: false, note: '', menus: [] } });
     if (wasAutoOff) {
       showSaved('⚠ 2주 이상 미로그인으로 전체 활동 지역이 노출 OFF 처리되었습니다. 활동 지역 탭에서 다시 ON 해주세요.');
     } else {
@@ -707,7 +774,7 @@ const ArtistSchedule = () => {
           }).eq('id', dbPhotographerId);
         }
       } catch (e) {
-        console.warn('[Phosnap] Supabase 프로필 동기화 실패:', e);
+        // Silently ignore sync errors
       }
     }
     showSaved();
@@ -838,6 +905,42 @@ const ArtistSchedule = () => {
     showSaved(`${rangeStart} ~ ${rangeEnd} 일괄 클로즈 완료 ✓`);
   };
 
+  // ── 상시 오픈 (오늘 ~ 6개월) ──
+  const handleAlwaysOpen = async () => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const endDate = new Date(today);
+    endDate.setMonth(endDate.getMonth() + 6);
+    const endStr = endDate.toISOString().split('T')[0];
+    const slots = [...DEFAULT_TIME_SLOTS];
+    openDateRange('photographer', artistId, todayStr, endStr, slots, []);
+    if (dbConnected && dbPhotographerId) {
+      const entries = [];
+      let cur = new Date(todayStr);
+      const end = new Date(endStr);
+      while (cur <= end) {
+        entries.push({ date: cur.toISOString().split('T')[0], dayOff: false, slots: slots, blocked: [] });
+        cur.setDate(cur.getDate() + 1);
+      }
+      if (entries.length) await upsertScheduleBatch(dbPhotographerId, entries);
+    }
+    load();
+    showSaved(`상시 오픈 완료 — ${todayStr} ~ ${endStr} ✓`);
+  };
+
+  // ── 모든 일정 클로즈 ──
+  const handleCloseAll = () => {
+    if (!confirm('모든 오픈 일정을 클로즈하시겠습니까?')) return;
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const endDate = new Date(today);
+    endDate.setMonth(endDate.getMonth() + 12);
+    const endStr = endDate.toISOString().split('T')[0];
+    closeDateRange('photographer', artistId, todayStr, endStr, []);
+    load();
+    showSaved('모든 일정이 클로즈되었습니다 ✓');
+  };
+
   // ─────────────────────────────────────────────────────────────────
   // 탭 컨텐츠 렌더
   // ─────────────────────────────────────────────────────────────────
@@ -921,6 +1024,16 @@ const ArtistSchedule = () => {
             onClick={handleCloseRange}
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
             선택 기간 전체 클로즈 ×
+          </button>
+        </div>
+        <div style={{ width: '100%', borderTop: '1px solid rgba(232,160,32,0.15)', marginTop: 12, paddingTop: 12, display: 'flex', gap: 12 }}>
+          <button style={{ fontSize: 11, padding: '8px 16px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', color: '#4caf50', cursor: 'pointer' }}
+            onClick={handleAlwaysOpen}>
+            ✓ 상시 오픈 (오늘~6개월)
+          </button>
+          <button style={{ fontSize: 11, padding: '8px 16px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.3)', color: '#e85d5d', cursor: 'pointer' }}
+            onClick={handleCloseAll}>
+            × 모든 일정 클로즈
           </button>
         </div>
         <p style={{ fontSize: 11, color: 'rgba(232,160,32,0.6)', marginTop: 12, lineHeight: 1.7 }}>
@@ -1091,7 +1204,7 @@ const ArtistSchedule = () => {
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {DEFAULT_TIME_SLOTS.map(time => {
-                const isOn = (editingDefault ? draftDefault : (schedule?.defaultSlots ?? DEFAULT_TIME_SLOTS)).includes(time);
+                const isOn = (editingDefault ? draftDefault : (schedule?.defaultSlots ?? INITIAL_DEFAULT_HOURS)).includes(time);
                 return (
                   <button key={time}
                     disabled={!editingDefault}
@@ -1346,7 +1459,7 @@ const ArtistSchedule = () => {
       delete nextPending[id];
       setPendingPeriods(nextPending);
     };
-    const isHmkPartnerArtist = demoHmkPartner || !!profile?.has_hmk_partner;
+    const isHmkPartnerArtist = !!profile?.has_hmk_partner;
 
     // ── 타 지역 추가 시 메인 활동지 중단 확인 ──
     // cross-type: 국내 메인 → 해외 추가 / 해외 메인 → 국내 추가
@@ -1861,23 +1974,13 @@ const ArtistSchedule = () => {
 
     return (
       <div>
-        {/* 작가 유형 변경 안내 */}
-        <div style={{ marginBottom: 24, padding: '14px 20px', background: 'var(--bg2)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-            현재 작가 유형: <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
-              {artistType === 'hmua' ? '💄 헤어메이크업 아티스트' : '📸 사진·영상 작가'}
-            </span>
+        <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 28, maxWidth: 620, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          {!mainLoc && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0, marginTop: 6 }} />}
+          <div>
+            <strong style={{ color: 'var(--gold)' }}>메인 활동지</strong>를 반드시 1곳 지정해주세요 (항상 상주하며 촬영하는 곳).<br/>
+            출장 지역은 날짜 범위를 설정하여 해당 기간에만 고객에게 노출됩니다.<br/>
+            <strong style={{ color: 'var(--text)' }}>국내 최대 3곳, 해외 최대 3곳</strong>까지 추가 가능합니다.
           </div>
-          <span style={{ fontSize: 11, color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3 }}
-            onClick={() => window.open('mailto:support@phosnap.com?subject=작가 유형 변경 요청', '_blank')}>
-            유형 변경 문의 →
-          </span>
-        </div>
-
-        <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 28, maxWidth: 620 }}>
-          <strong style={{ color: 'var(--gold)' }}>메인 활동지</strong>를 반드시 1곳 지정해주세요 (항상 상주하며 촬영하는 곳).<br/>
-          출장 지역은 날짜 범위를 설정하여 해당 기간에만 고객에게 노출됩니다.<br/>
-          <strong style={{ color: 'var(--text)' }}>국내 최대 3곳, 해외 최대 3곳</strong>까지 추가 가능합니다.
         </div>
 
         {/* 메인 활동지 미지정 경고 */}
@@ -2487,8 +2590,9 @@ const ArtistSchedule = () => {
         <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
               전체 포트폴리오 ({portfolio.length}개)
+              {portfolio.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ fontSize: 11, padding: '5px 12px' }}
@@ -3125,11 +3229,9 @@ const ArtistSchedule = () => {
           for (let i = 0; i < maxNew; i++) {
             const { url, error } = await uploadImage(files[i], bucket, dbPhotographerId);
             if (url) uploadedUrls.push(url);
-            else console.warn('[Storage] Upload error:', error);
           }
           if (uploadedUrls.length) onUpload(uploadedUrls);
         } catch (e) {
-          console.warn('[Storage] Fallback to blob URL:', e);
           const urls = [];
           for (let i = 0; i < maxNew; i++) urls.push(URL.createObjectURL(files[i]));
           onUpload(urls);
@@ -3188,6 +3290,11 @@ const ArtistSchedule = () => {
   };
 
   const renderProductsTab = () => {
+    if (!profile) return (
+      <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--muted)', fontSize: 13 }}>
+        프로필 데이터를 불러오는 중...
+      </div>
+    );
     // H&M 연계 (포트폴리오 관리에서 이동)
     const hmk = profile?.hmk ?? { selfAvailable: false, note: '', menus: [] };
     const hmkMenus = hmk.menus ?? [];
@@ -3270,8 +3377,17 @@ const ArtistSchedule = () => {
       updateSnapProduct(idx, 'regionIds', next);
     };
 
+    // ── 상품 저장 함수 ──────────────────────────────────────────────
+    const handleSaveProducts = () => {
+      const mergedSnap = snapProducts.map((p, i) => ({ ...p, images: snapImages[i] || p.images || [] }));
+      const mergedProps = props.map((p, i) => ({ ...p, images: propImages[i] || p.images || [] }));
+      const mergedCostumes = costumes.map((c, i) => ({ ...c, images: costumeImages[i] || c.images || [] }));
+      saveProfileData({ ...profile, snapProducts: mergedSnap, props: mergedProps, costumes: mergedCostumes, tours: profile?.tours || [] });
+      showSaved('저장되었습니다 ✓');
+    };
+
     // ── 포토 투어 CRUD ─────────────────────────────────────────────
-    const tours = profile.tours || [];
+    const tours = profile?.tours || [];
     const setTours = (newTours) => saveProfileData({ ...profile, tours: newTours });
     const addTour = () => {
       setTours([...tours, { name: '', price: '', durationMin: 90, photos: '', desc: '', spots: [], route: { departure: '', waypoints: [''], destination: '' } }]);
@@ -3300,6 +3416,7 @@ const ArtistSchedule = () => {
       display: 'block', marginTop: 6, width: '100%',
       background: 'var(--bg)', border: '1px solid var(--border)',
       color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
+      colorScheme: 'dark',
     };
 
     return (
@@ -3330,8 +3447,11 @@ const ArtistSchedule = () => {
                   <button className="btn-ghost" style={{ fontSize: 11, padding: '4px 12px' }} onClick={addHmkMenu}>+ 메뉴 추가</button>
                 </div>
                 {hmkMenus.length === 0 && (
-                  <div style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', padding: '12px 0' }}>
-                    아직 등록된 H&M 메뉴가 없습니다. 메뉴를 추가하면 고객이 예약 시 선택할 수 있습니다.
+                  <div style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', padding: '12px 0', lineHeight: 1.8 }}>
+                    아직 등록된 H&M 메뉴가 없습니다. 메뉴를 추가하면 고객이 예약 시 선택할 수 있습니다.<br/>
+                    <span style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.8 }}>
+                      💡 H&M 메뉴를 개별 상품으로 올리지 않아도 됩니다. 스냅 촬영 상품 안에 H&M을 포함하여 판매하셔도 괜찮습니다. (선택사항)
+                    </span>
                   </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -3357,178 +3477,17 @@ const ArtistSchedule = () => {
           )}
         </div>
 
-        {/* Section A: 소품 목록 */}
-        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
-          <Corners />
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>소품 목록</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
-            {props.map((prop, idx) => (
-              <div key={prop.id} style={{ border: '1px solid var(--border)', padding: '14px 18px', position: 'relative' }}>
-                <button onClick={() => removeProp(idx)} style={{ position: 'absolute', top: 8, right: 10, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginBottom: 10 }}>
-                  <input value={prop.name} onChange={e => updateProp(idx, 'name', e.target.value)}
-                    placeholder="소품명 (예: 베일)" style={inputStyle} />
-                  <input value={prop.desc} onChange={e => updateProp(idx, 'desc', e.target.value)}
-                    placeholder="설명 (예: 화이트 플로팅 베일)" style={inputStyle} />
-                </div>
-                <ImageDropZone
-                  images={propImages[idx] || []}
-                  onUpload={urls => handlePropImageUpload(idx, urls)}
-                  onRemove={imgIdx => removePropImage(idx, imgIdx)}
-                  label="소품 사진"
-                />
-              </div>
-            ))}
-          </div>
-          <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addProp}>+ 소품 추가</button>
-        </div>
-
-        {/* Section B: 의상 정보 */}
-        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
-          <Corners />
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>의상 정보</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
-            {costumes.map((costume, idx) => (
-              <div key={costume.id} style={{ border: '1px solid var(--border)', padding: '16px 20px', position: 'relative' }}>
-                <button onClick={() => removeCostume(idx)} style={{ position: 'absolute', top: 10, right: 12, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
-                <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 10 }}>
-                  의상명
-                  <input value={costume.name} onChange={e => updateCostume(idx, 'name', e.target.value)}
-                    placeholder="예: 아이보리 드레스 A" style={inputStyle} />
-                </label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    성별
-                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                      {['남성', '여성', '공용'].map(g => (
-                        <label key={g} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 12 }}>
-                          <input type="radio" name={`gender-${idx}`} checked={costume.gender === g} onChange={() => updateCostume(idx, 'gender', g)} style={{ accentColor: 'var(--gold)', width: 14, height: 14 }} />
-                          {g}
-                        </label>
-                      ))}
-                    </div>
-                  </label>
-                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    카테고리
-                    <select value={costume.category} onChange={e => updateCostume(idx, 'category', e.target.value)}
-                      style={{ display: 'block', marginTop: 6, width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13 }}>
-                      <option>한복</option><option>드레스</option><option>정장</option><option>캐주얼</option><option>기타</option>
-                    </select>
-                  </label>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 10 }}>
-                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    금액 (원)
-                    <input type="number" value={costume.price} onChange={e => updateCostume(idx, 'price', e.target.value)} placeholder="0" style={inputStyle} />
-                  </label>
-                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
-                    설명
-                    <input value={costume.desc} onChange={e => updateCostume(idx, 'desc', e.target.value)} placeholder="예: 플로우 라인, 끈 조절 가능" style={inputStyle} />
-                  </label>
-                </div>
-                <ImageDropZone
-                  images={costumeImages[idx] || []}
-                  onUpload={urls => handleCostumeImageUpload(idx, urls)}
-                  onRemove={imgIdx => removeCostumeImage(idx, imgIdx)}
-                  label="의상 사진"
-                />
-              </div>
-            ))}
-          </div>
-          <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addCostume}>+ 의상 추가</button>
-        </div>
-
-        {/* Section B-2: 시간 단위 가격 설정 */}
-        <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative', marginBottom: 20 }}>
-          <Corners />
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase' }}>
-              ⏱ 시간 단위 가격
-            </div>
-            {/* 활성/비활성 토글 */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11 }}>
-              <span style={{ color: profile.hourlyRateEnabled === false ? '#e85d5d' : 'var(--muted)' }}>
-                {profile.hourlyRateEnabled === false ? '비활성' : '활성'}
-              </span>
-              <div
-                onClick={(e) => {
-                  e.preventDefault();
-                  const next = !(profile.hourlyRateEnabled !== false);
-                  // 가격 미입력 시 활성화 차단
-                  if (next && !profile.hourlyRate) {
-                    alert('시간당 가격을 먼저 입력해주세요.');
-                    return;
-                  }
-                  saveProfileData({ ...profile, hourlyRateEnabled: next });
-                }}
-                style={{
-                  width: 40, height: 22, borderRadius: 11,
-                  background: profile.hourlyRateEnabled === false ? 'rgba(136,136,136,0.3)' : 'var(--gold)',
-                  position: 'relative', transition: 'background 0.2s', cursor: 'pointer',
-                }}
-              >
-                <div style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: '#fff', position: 'absolute', top: 2,
-                  left: profile.hourlyRateEnabled === false ? 2 : 20,
-                  transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                }} />
-              </div>
-            </label>
-          </div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.6 }}>
-            패키지 외에 시간 단위로 예약받고 싶다면 시간당 가격을 설정하세요. 토글을 끄면 가격이 저장된 채로 고객에게 노출되지 않습니다.
-          </div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
-            transition: 'opacity 0.2s',
-          }}>
-            <div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>시간당 가격 (원)</div>
-              <input
-                type="number"
-                value={profile.hourlyRate || ''}
-                onChange={e => {
-                  const val = e.target.value ? Number(e.target.value) : null;
-                  const updated = { ...profile, hourlyRate: val };
-                  saveProfileData(updated);
-                }}
-                placeholder="예: 150000"
-                style={inputStyle}
-              />
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'flex-end', paddingBottom: 4 }}>
-              {profile.hourlyRate ? (
-                <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontSize: 13 }}>
-                  ₩{Number(profile.hourlyRate).toLocaleString('ko-KR')} / 시간
-                </span>
-              ) : (
-                <span style={{ opacity: 0.5 }}>가격 미설정</span>
-              )}
-            </div>
-          </div>
-          {profile.hourlyRateEnabled === false && profile.hourlyRate && (
-            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.15)', fontSize: 10, color: 'rgba(232,80,80,0.8)', lineHeight: 1.6 }}>
-              🔒 시간 단위 예약이 비활성화되었습니다. 가격(₩{Number(profile.hourlyRate).toLocaleString('ko-KR')})은 저장된 상태이며, 토글을 켜면 즉시 활성화됩니다.
-            </div>
-          )}
-          {profile.hourlyRateEnabled !== false && profile.hourlyRate && (
-            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)', fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
-              💡 고객이 프로필에서 "시간 단위 예약" 옵션을 볼 수 있습니다. 최소 1시간부터 예약 가능합니다.
-            </div>
-          )}
-        </div>
-
         {/* Section C: 스냅 촬영 상품 (포트폴리오와 동일 형태) */}
         <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
               스냅 촬영 상품 ({snapProducts.length}개)
+              {snapProducts.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ fontSize: 11, padding: '5px 12px' }}
-                onClick={() => setSnapPreview(snapPreview ? null : 0)}>
+                onClick={() => setSnapPreview(snapPreview !== null ? null : 0)}>
                 {snapPreview !== null ? '편집 모드' : '👁 고객 미리보기'}
               </button>
               <button className="btn-primary" style={{ fontSize: 11, padding: '8px 16px' }} onClick={addSnapProduct}>+ 상품 추가</button>
@@ -3613,8 +3572,8 @@ const ArtistSchedule = () => {
                             placeholder="가격 (원)" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '6px 8px', fontSize: 11, fontFamily: 'var(--font-serif)' }} />
                         </div>
                         <textarea value={product.desc} onChange={e => updateSnapProduct(idx, 'desc', e.target.value)}
-                          placeholder="상품 설명" rows={2}
-                          style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '7px 10px', fontSize: 11, fontFamily: 'var(--font-serif)', resize: 'vertical', boxSizing: 'border-box' }} />
+                          placeholder="상품 설명 (사진 셀렉 안내, 보정 작업 안내, 수정 요청 관련, 파일 전달 방법 관련, 파일 보관 기간 안내 등)" rows={4}
+                          style={{ width: '100%', background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', fontSize: 11, fontFamily: 'var(--font-serif)', resize: 'vertical', boxSizing: 'border-box', minHeight: 80 }} />
                         {/* 지역 태그 */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                           {allLocations.map(loc => {
@@ -3675,6 +3634,14 @@ const ArtistSchedule = () => {
               })}
             </div>
           )}
+        </div>
+
+        {/* 스냅 촬영 상품 저장 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
+            onClick={handleSaveProducts}>
+            스냅 촬영 상품 저장
+          </button>
         </div>
 
         {/* Section D: 포토 투어 상품 */}
@@ -3872,16 +3839,203 @@ const ArtistSchedule = () => {
           <button className="btn-ghost" style={{ fontSize: 12, color: 'var(--gold)' }} onClick={addTour}>+ 투어 추가</button>
         </div>
 
+        {/* 포토 투어 저장 버튼 */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
+            onClick={() => {
+              saveProfileData({ ...profile, tours });
+              showSaved('포토 투어가 저장되었습니다 ✓');
+            }}>
+            포토 투어 저장
+          </button>
+        </div>
+
         {/* Section E: 투어 일정 오픈 (크라우드펀딩/모집 시스템) */}
         {tours.length > 0 && <TourInstanceManager photographerId={profile.id || artistId} tours={tours} />}
+
+        {/* Section B-2: 시간 단위 가격 설정 */}
+        <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative', marginBottom: 20 }}>
+          <Corners />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase' }}>
+              ⏱ 시간 단위 가격
+            </div>
+            {/* 활성/비활성 토글 */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11 }}>
+              <span style={{ color: profile.hourlyRateEnabled === false ? '#e85d5d' : 'var(--muted)' }}>
+                {profile.hourlyRateEnabled === false ? '비활성' : '활성'}
+              </span>
+              <div
+                onClick={(e) => {
+                  e.preventDefault();
+                  const next = !(profile.hourlyRateEnabled !== false);
+                  // 가격 미입력 시 활성화 차단
+                  if (next && !profile.hourlyRate) {
+                    alert('시간당 가격을 먼저 입력해주세요.');
+                    return;
+                  }
+                  saveProfileData({ ...profile, hourlyRateEnabled: next });
+                }}
+                style={{
+                  width: 40, height: 22, borderRadius: 11,
+                  background: profile.hourlyRateEnabled === false ? 'rgba(136,136,136,0.3)' : 'var(--gold)',
+                  position: 'relative', transition: 'background 0.2s', cursor: 'pointer',
+                }}
+              >
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: '#fff', position: 'absolute', top: 2,
+                  left: profile.hourlyRateEnabled === false ? 2 : 20,
+                  transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </div>
+            </label>
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.6 }}>
+            패키지 외에 시간 단위로 예약받고 싶다면 시간당 가격을 설정하세요. 토글을 끄면 가격이 저장된 채로 고객에게 노출되지 않습니다.
+          </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
+            transition: 'opacity 0.2s',
+          }}>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>시간당 가격 (원)</div>
+              <input
+                type="number"
+                value={profile.hourlyRate || ''}
+                onChange={e => {
+                  const val = e.target.value ? Number(e.target.value) : null;
+                  const updated = { ...profile, hourlyRate: val };
+                  saveProfileData(updated);
+                }}
+                placeholder="예: 150000"
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'flex-end', paddingBottom: 4 }}>
+              {profile.hourlyRate ? (
+                <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontSize: 13 }}>
+                  ₩{Number(profile.hourlyRate).toLocaleString('ko-KR')} / 시간
+                </span>
+              ) : (
+                <span style={{ opacity: 0.5 }}>가격 미설정</span>
+              )}
+            </div>
+          </div>
+          {profile.hourlyRateEnabled === false && profile.hourlyRate && (
+            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.15)', fontSize: 10, color: 'rgba(232,80,80,0.8)', lineHeight: 1.6 }}>
+              🔒 시간 단위 예약이 비활성화되었습니다. 가격(₩{Number(profile.hourlyRate).toLocaleString('ko-KR')})은 저장된 상태이며, 토글을 켜면 즉시 활성화됩니다.
+            </div>
+          )}
+          {profile.hourlyRateEnabled !== false && profile.hourlyRate && (
+            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)', fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
+              💡 고객이 프로필에서 "시간 단위 예약" 옵션을 볼 수 있습니다. 최소 1시간부터 예약 가능합니다.
+            </div>
+          )}
+        </div>
+
+        {/* Section A: 소품 목록 */}
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
+          <Corners />
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>소품 목록</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
+            {props.map((prop, idx) => (
+              <div key={prop.id} style={{ border: '1px solid var(--border)', padding: '14px 18px', position: 'relative' }}>
+                <button onClick={() => removeProp(idx)} style={{ position: 'absolute', top: 8, right: 10, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginBottom: 10 }}>
+                  <input value={prop.name} onChange={e => updateProp(idx, 'name', e.target.value)}
+                    placeholder="소품명 (예: 베일)" style={inputStyle} />
+                  <input value={prop.desc} onChange={e => updateProp(idx, 'desc', e.target.value)}
+                    placeholder="설명 (예: 화이트 플로팅 베일)" style={inputStyle} />
+                </div>
+                <ImageDropZone
+                  images={propImages[idx] || []}
+                  onUpload={urls => handlePropImageUpload(idx, urls)}
+                  onRemove={imgIdx => removePropImage(idx, imgIdx)}
+                  label="소품 사진"
+                />
+              </div>
+            ))}
+          </div>
+          <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addProp}>+ 소품 추가</button>
+        </div>
+
+        {/* Section B: 의상 목록 */}
+        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
+          <Corners />
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 16 }}>의상 목록</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+            {costumes.map((costume, idx) => (
+              <div key={costume.id} style={{ border: '1px solid var(--border)', padding: '16px 20px', position: 'relative' }}>
+                <button onClick={() => removeCostume(idx)} style={{ position: 'absolute', top: 10, right: 12, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 10 }}>
+                  의상명
+                  <input value={costume.name} onChange={e => updateCostume(idx, 'name', e.target.value)}
+                    placeholder="예: 아이보리 드레스 A" style={inputStyle} />
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    성별
+                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                      {['남성', '여성', '공용'].map(g => (
+                        <label key={g} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', fontSize: 12 }}>
+                          <input type="radio" name={`gender-${idx}`} checked={costume.gender === g} onChange={() => updateCostume(idx, 'gender', g)} style={{ accentColor: 'var(--gold)', width: 14, height: 14 }} />
+                          {g}
+                        </label>
+                      ))}
+                    </div>
+                  </label>
+                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    카테고리
+                    <select value={costume.category} onChange={e => updateCostume(idx, 'category', e.target.value)}
+                      style={{ display: 'block', marginTop: 6, width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13 }}>
+                      <option>한복</option><option>드레스</option><option>정장</option><option>캐주얼</option><option>기타</option>
+                    </select>
+                  </label>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 10, marginBottom: 10 }}>
+                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    금액 (원)
+                    <input type="number" value={costume.price} onChange={e => updateCostume(idx, 'price', e.target.value)} placeholder="0" style={inputStyle} />
+                  </label>
+                  <label style={{ fontSize: 11, color: 'var(--muted)' }}>
+                    설명
+                    <input value={costume.desc} onChange={e => updateCostume(idx, 'desc', e.target.value)} placeholder="예: 플로우 라인, 끈 조절 가능" style={inputStyle} />
+                  </label>
+                </div>
+                <ImageDropZone
+                  images={costumeImages[idx] || []}
+                  onUpload={urls => handleCostumeImageUpload(idx, urls)}
+                  onRemove={imgIdx => removeCostumeImage(idx, imgIdx)}
+                  label="의상 사진"
+                />
+              </div>
+            ))}
+          </div>
+          <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addCostume}>+ 의상 추가</button>
+        </div>
+
+        {/* 소품 · 의상 저장 버튼 */}
+        <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
+            onClick={handleSaveProducts}>
+            소품 · 의상 저장
+          </button>
+        </div>
       </div>
     );
   };
 
   // ── TAB 5: 결제 정보 ────────────────────────────────────────────
   const renderPaymentTab = () => {
-    const pi = profile?.paymentInfo ?? { bankName: '', accountNumber: '', accountHolder: '', note: '' };
-    const update = (field, val) => saveProfileData({ ...profile, paymentInfo: { ...pi, [field]: val } });
+    const pi = paymentDraft ?? profile?.paymentInfo ?? { bankName: '', accountNumber: '', accountHolder: '', note: '' };
+    const update = (field, val) => setPaymentDraft({ ...pi, [field]: val });
+    const handleSavePayment = () => {
+      saveProfileData({ ...profile, paymentInfo: pi });
+      setPaymentDraft(null);
+      showSaved('정산 계좌가 저장되었습니다 ✓');
+    };
+    const paymentDirty = paymentDraft !== null;
 
     return (
       <div style={{ maxWidth: 600 }}>
@@ -3892,7 +4046,7 @@ const ArtistSchedule = () => {
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>💡 Phosnap 정산 구조</div>
           {[
             { step: '01', title: '고객 결제', desc: '카드 · 카카오페이 · 네이버페이 · 토스페이 → TossPayments로 수령' },
-            { step: '02', title: 'Phosnap 수수료 차감', desc: '등급별 플랫폼 수수료 차감 (Rising 18% ~ Elite 10%, 얼리억세스 작가는 정식 런칭까지 무료)' },
+            { step: '02', title: 'Phosnap 수수료 차감', desc: '등급별 플랫폼 수수료 차감 (Rising 20% ~ Elite 12%, 얼리억세스 작가 10% 고정 · 6개월)' },
             { step: '03', title: '작가 정산', desc: '촬영 완료 확인 후 D+3 영업일 이내 작가 계좌로 자동 입금' },
           ].map(item => (
             <div key={item.step} style={{ display: 'flex', gap: 16, marginBottom: 14, alignItems: 'flex-start' }}>
@@ -3912,8 +4066,9 @@ const ArtistSchedule = () => {
         {/* 정산 계좌 (내부용) */}
         <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 20 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
             정산 계좌 등록 <span style={{ color: 'rgba(136,136,136,0.4)' }}>— 고객에게 노출되지 않습니다</span>
+            {!(pi.bankName && pi.accountNumber && pi.accountHolder) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 정산 계좌 등록" />}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <label style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -3938,6 +4093,19 @@ const ArtistSchedule = () => {
           <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 16, lineHeight: 1.7 }}>
             정산 계좌는 Phosnap 운영팀 검토 후 확인됩니다. 라이브 모드 전환 시 사업자등록증 또는 신분증 사본이 필요합니다.
           </p>
+          <div style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button className="btn-primary" style={{ fontSize: 12, padding: '10px 24px' }}
+              onClick={handleSavePayment}
+              disabled={!paymentDirty}>
+              {paymentDirty ? '정산 계좌 저장' : '변경 사항 없음'}
+            </button>
+            {paymentDirty && (
+              <button style={{ fontSize: 11, color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '8px 16px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}
+                onClick={() => setPaymentDraft(null)}>
+                취소
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -4114,6 +4282,29 @@ const ArtistSchedule = () => {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* 이번 달 예약 예측 */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 14 }}>이번 달 예약 예측</div>
+          {thisMonth.count === 0 ? (
+            <div style={{ padding: '32px 24px', background: 'var(--bg2)', border: '1px solid var(--border)', position: 'relative', textAlign: 'center' }}>
+              <Corners />
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+                첫 예약을 받으면 AI 예측이 시작됩니다
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--gold)', cursor: 'pointer' }}>
+                프로필을 완성하고 첫 고객을 만나보세요 →
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '20px 24px', background: 'var(--bg2)', border: '1px solid var(--border)', position: 'relative' }}>
+              <Corners />
+              <div style={{ fontSize: 12, color: 'var(--text)' }}>
+                예측 데이터 분석 중...
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 인사이트 */}
@@ -4465,110 +4656,6 @@ const ArtistSchedule = () => {
 
     return (
       <div>
-        {/* ── BADGE PROGRESS ── */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>
-            Badge Progress
-          </div>
-          {/* 현재 등급 + 프로그레스 */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-            <div style={{ minWidth: 160 }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 28, color: myTierColor, letterSpacing: '0.06em', marginBottom: 4 }}>
-                {myTierInfo.stars} {myTierInfo.ko}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                누적 완료 {myShoots}건 · 평점 ★{myRating.toFixed(1)}
-              </div>
-            </div>
-            {nextProgress && (
-              <div style={{ flex: 1, minWidth: 260, borderLeft: '1px solid var(--border)', paddingLeft: 20 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    다음 등급: <span style={{ color: TIER_COLORS[nextProgress.nextTier] }}>{nextProgress.nextTierInfo.stars} {nextProgress.nextTierInfo.ko}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
-                    {myShoots} / {nextProgress.nextTierInfo.minShoots}건 · ★{myRating.toFixed(1)} / {nextProgress.nextTierInfo.minRating}
-                  </div>
-                </div>
-                {/* 프로그레스 바 (건수) */}
-                <div style={{ height: 6, background: 'var(--border)', marginBottom: 4 }}>
-                  <div style={{ height: '100%', background: TIER_COLORS[nextProgress.nextTier] || 'var(--gold)', width: `${Math.min(100, (myShoots / nextProgress.nextTierInfo.minShoots) * 100)}%`, transition: 'width 0.3s' }} />
-                </div>
-                {/* 프로그레스 바 (평점) */}
-                <div style={{ height: 4, background: 'var(--border)', marginBottom: 8 }}>
-                  <div style={{ height: '100%', background: '#facc15', width: `${Math.min(100, nextProgress.nextTierInfo.minRating > 0 ? (myRating / nextProgress.nextTierInfo.minRating) * 100 : 100)}%`, transition: 'width 0.3s' }} />
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  {nextProgress.shootsNeeded > 0 ? `${nextProgress.shootsNeeded}건 더 완료` : '건수 충족 ✓'}
-                  {nextProgress.shootsNeeded > 0 && nextProgress.ratingNeeded > 0 ? ' + ' : ''}
-                  {nextProgress.ratingNeeded > 0 ? `평점 ${nextProgress.ratingNeeded} 더 필요` : (nextProgress.shootsNeeded > 0 ? '' : ' · 평점 충족 ✓')}
-                  {nextProgress.shootsNeeded > 0 || nextProgress.ratingNeeded > 0 ? '' : ' — 등급 상승 조건 충족!'}
-                </div>
-              </div>
-            )}
-            {!nextProgress && (
-              <div style={{ flex: 1, minWidth: 260, borderLeft: '1px solid var(--border)', paddingLeft: 20, display: 'flex', alignItems: 'center' }}>
-                <div style={{ fontSize: 12, color: myTierColor }}>최고 등급 달성 — 최저 수수료 혜택 적용 중</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── 등급별 혜택 안내 ── */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 12 }}>등급별 혜택 안내</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-            {Object.entries(ARTIST_TIERS).map(([key, tier]) => {
-              const isCurrent = myFees.tier === key;
-              const color = TIER_COLORS[key];
-              return (
-                <div key={key} style={{
-                  padding: '16px 14px',
-                  background: isCurrent ? 'var(--bg2)' : 'var(--bg)',
-                  border: `1px solid ${isCurrent ? color : 'var(--border)'}`,
-                }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, color, letterSpacing: '0.08em', marginBottom: 8 }}>
-                    {tier.stars} {tier.ko}
-                  </div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8 }}>
-                    {key === 'rising' ? '0건+' : key === 'established' ? '20건+ · ★4.0+' : key === 'premier' ? '100건+ · ★4.5+' : '300건+ · ★4.7+'}
-                  </div>
-                  <div style={{ fontSize: 11, color: isCurrent ? 'var(--text)' : 'var(--muted)', lineHeight: 1.7 }}>
-                    {tier.benefits}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── 수수료 정책 ── */}
-        <div style={{ marginBottom: 28, padding: '16px 20px', background: 'var(--bg2)', border: '1px solid var(--border)' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>수수료 정책</div>
-          <div style={{ fontSize: 13, color: 'var(--text)', lineHeight: 2.0 }}>
-            <div>
-              <span style={{ color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>Rising: 18%</span>
-              <span style={{ color: 'var(--muted)' }}> → </span>
-              <span style={{ color: TIER_COLORS.established, fontFamily: 'var(--font-serif)' }}>Established: 15%</span>
-              <span style={{ color: 'var(--muted)' }}> → </span>
-              <span style={{ color: TIER_COLORS.premier, fontFamily: 'var(--font-serif)' }}>Premier: 12%</span>
-              <span style={{ color: 'var(--muted)' }}> → </span>
-              <span style={{ color: TIER_COLORS.elite, fontFamily: 'var(--font-serif)' }}>Elite: 10%</span>
-            </div>
-            <div>
-              <span style={{ color: '#22c55e', fontFamily: 'var(--font-serif)' }}>콜라보 촬영:</span>
-              <span style={{ color: 'var(--muted)' }}> 등급별 할인 적용 (15% / 13% / 10% / 8%)</span>
-            </div>
-            <div>
-              <span style={{ color: '#f472b6', fontFamily: 'var(--font-serif)' }}>얼리엑세스 작가:</span>
-              <span style={{ color: 'var(--muted)' }}> 정식 런칭 전까지 수수료 0% (무료)</span>
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-              정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 5~7일 내 등록 계좌로 자동 입금
-            </div>
-          </div>
-        </div>
-
         {/* 상단: 제의 현황 요약 */}
         {(() => {
           const dailyUsed = getDailyProposalCount(artistId);
@@ -4581,13 +4668,13 @@ const ArtistSchedule = () => {
                 <Corners />
                 <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: 'var(--gold)', marginBottom: 4 }}>{remaining}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>이번 달 남은 수락</div>
-                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>월 {COLLABO_RULES.maxProposalsPerMonth}회</div>
+                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>콜라보 수락 월 {COLLABO_RULES.maxProposalsPerMonth}회 제한</div>
               </div>
               <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '18px 16px', position: 'relative', textAlign: 'center' }}>
                 <Corners />
                 <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: dailyRemaining <= 0 ? '#e85d5d' : 'var(--text)', marginBottom: 4 }}>{dailyRemaining}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>오늘 남은 제안</div>
-                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>일 {COLLABO_RULES.maxDailyProposals}회</div>
+                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>확장형 콜라보 제안 1일 {COLLABO_RULES.maxDailyProposals}회 제한</div>
               </div>
               <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '18px 16px', position: 'relative', textAlign: 'center' }}>
                 <Corners />
@@ -4611,7 +4698,7 @@ const ArtistSchedule = () => {
           · <strong>확장형 (동종)</strong>: 사진+사진, 영상+영상 등 — 월 {COLLABO_RULES.maxSameTypePerMonth}회 제한, 메인/서브 역할 지정 필수<br/>
           · 제안 발송: 하루 {COLLABO_RULES.maxDailyProposals}회 / 제안 수락: 월 {COLLABO_RULES.maxProposalsPerMonth}회 (연속일 = 1회)<br/>
           · 동일 작가 재요청: {COLLABO_RULES.cooldownSamePerson}일 쿨타임 · 거절·미응답 시 차감 없음 · {COLLABO_RULES.autoExpireDays}일 미응답 자동 만료<br/>
-          · 수수료: 등급별 차등 (Rising 18% → Elite 10%) · 콜라보 촬영 시 할인 적용 (15% → 8%)
+          · 수수료: 등급별 차등 (Rising 20% → Elite 12%) · 콜라보 촬영 시 할인 적용 (18% → 10%)
         </div>
 
         {/* 서브 탭 */}
@@ -5041,25 +5128,11 @@ const ArtistSchedule = () => {
           <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(24px, 4vw, 40px)', letterSpacing: '0.05em', marginBottom: 16 }}>
             작가 대시보드
           </h1>
-          <div style={{ display: 'inline-flex', gap: 8, padding: '7px 14px', border: '1px solid var(--gold-border)', background: 'var(--gold-dim)', fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.04em' }}>
-            ⚠ 데모 모드 — 실제 서비스에서는 로그인한 작가 계정과 연동됩니다
-          </div>
-        </div>
-
-        {/* ── 작가 선택 (데모) ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 36, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>작가 선택</span>
-          {PHOTOGRAPHERS.map(ph => (
-            <button key={ph.id} onClick={() => setArtistId(ph.id)} style={{
-              padding: '7px 16px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
-              background: artistId === ph.id ? 'var(--gold)' : 'var(--bg2)',
-              color: artistId === ph.id ? '#0B0B0B' : 'var(--muted)',
-              border: `1px solid ${artistId === ph.id ? 'var(--gold)' : 'var(--border)'}`,
-              cursor: 'pointer', transition: 'all 0.2s',
-            }}>
-              {ph.nameKo || ph.name}
-            </button>
-          ))}
+          {artist && (
+            <div style={{ display: 'inline-flex', gap: 8, padding: '7px 14px', border: '1px solid var(--gold-border)', background: 'var(--gold-dim)', fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.04em' }}>
+              {artist.nameKo || artist.name}
+            </div>
+          )}
         </div>
 
         {/* ── 대시보드 홈 요약 카드 ── */}
@@ -5097,31 +5170,141 @@ const ArtistSchedule = () => {
           );
         })()}
 
-        {/* ── 탭 네비 ── */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 36, gap: 0, flexWrap: 'wrap' }}>
-          {[
-            { key: 'schedule',     label: '스케줄 관리' },
-            { key: 'locations',    label: '활동 지역' },
-            { key: 'info',         label: '포트폴리오 관리' },
-            { key: 'products',     label: '상품 관리' },
-            { key: 'payment',      label: '결제·정산' },
-            { key: 'performance',  label: '상세 실적' },
-            { key: 'collabo',      label: `콜라보${collaboReceived.length > 0 ? ` (${collaboReceived.length})` : ''}` },
-            { key: 'bookings',     label: `예약 요청${pendingBookings.length > 0 ? ` (${pendingBookings.length})` : ''}` },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-              padding: '12px 20px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
-              background: 'transparent',
-              color: activeTab === tab.key ? 'var(--gold)' : tab.key === 'bookings' && pendingBookings.length > 0 ? '#f0ac2a' : 'var(--muted)',
-              border: 'none',
-              borderBottom: `2px solid ${activeTab === tab.key ? 'var(--gold)' : 'transparent'}`,
-              cursor: 'pointer', transition: 'all 0.2s',
-              marginBottom: -1,
-            }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* ── 탭 빨간점 알림 (필수 정보 미입력) ── */}
+        {(() => {
+          const locs = profile?.locations ?? [];
+          const hasMainLoc = locs.some(l => l.isMain);
+          const hasPortfolio = (profile?.portfolio ?? []).length > 0;
+          const hasSnapProduct = snapProducts.length > 0;
+          const pi = profile?.paymentInfo;
+          const hasPayment = !!(pi?.bankName && pi?.accountNumber && pi?.accountHolder);
+          const hasPendingBookings = pendingBookings.length > 0;
+          const hasCollaboReq = collaboReceived.length > 0;
+
+          // 각 탭별 빨간점 여부
+          const tabAlerts = {
+            locations: !hasMainLoc,
+            info: !hasPortfolio,
+            products: !hasSnapProduct,
+            payment: !hasPayment,
+            bookings: hasPendingBookings,
+            collabo: hasCollaboReq,
+          };
+
+          // 전체 미완료 수 (상단에 안내 배너)
+          const setupMissing = [!hasMainLoc, !hasPortfolio, !hasSnapProduct, !hasPayment].filter(Boolean).length;
+
+          // 필수 항목 체크리스트
+          const requiredItems = [
+            { name: '활동 지역', completed: hasMainLoc },
+            { name: '포트폴리오', completed: hasPortfolio },
+            { name: '상품 관리', completed: hasSnapProduct },
+            { name: '결제·정산', completed: hasPayment },
+          ];
+
+          return (
+            <>
+              {setupMissing > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <button
+                    onClick={() => setRequiredItemsExpanded(!requiredItemsExpanded)}
+                    style={{
+                      width: '100%',
+                      padding: '12px 18px',
+                      background: 'rgba(232,80,80,0.06)',
+                      border: '1px solid rgba(232,80,80,0.15)',
+                      fontSize: 12,
+                      color: 'rgba(232,80,80,0.85)',
+                      lineHeight: 1.6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      borderRadius: '4px',
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = 'rgba(232,80,80,0.1)'}
+                    onMouseLeave={(e) => e.target.style.background = 'rgba(232,80,80,0.06)'}
+                  >
+                    <span style={{ fontSize: 16 }}>⚠️</span>
+                    <span style={{ flex: 1, textAlign: 'left' }}>고객에게 노출되려면 <strong>{setupMissing}개</strong> 필수 항목을 입력해주세요. 빨간 점이 표시된 탭을 확인하세요.</span>
+                    <span style={{ fontSize: 14, transition: 'transform 0.2s', transform: requiredItemsExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                  </button>
+
+                  {requiredItemsExpanded && (
+                    <div style={{
+                      marginTop: 8,
+                      padding: '12px 18px',
+                      background: 'rgba(232,80,80,0.03)',
+                      border: '1px solid rgba(232,80,80,0.1)',
+                      borderTop: 'none',
+                      borderBottomLeftRadius: '4px',
+                      borderBottomRightRadius: '4px',
+                    }}>
+                      <div style={{ fontSize: 11, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10, fontFamily: 'var(--font-serif)' }}>필수 항목 체크리스트</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {requiredItems.map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 }}>
+                            <span style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 18,
+                              height: 18,
+                              borderRadius: '50%',
+                              background: item.completed ? 'rgba(76,181,100,0.2)' : 'rgba(232,80,80,0.2)',
+                              color: item.completed ? '#4cb564' : '#e85d5d',
+                              fontWeight: 'bold',
+                              fontSize: 11,
+                            }}>
+                              {item.completed ? '✓' : '✗'}
+                            </span>
+                            <span style={{ color: item.completed ? 'var(--muted)' : 'rgba(232,80,80,0.85)' }}>
+                              {item.name}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: 36, gap: 0, flexWrap: 'wrap' }}>
+                {[
+                  { key: 'schedule',     label: '스케줄 관리' },
+                  { key: 'locations',    label: '활동 지역' },
+                  { key: 'info',         label: '포트폴리오 관리' },
+                  { key: 'products',     label: '상품 관리' },
+                  { key: 'payment',      label: '결제·정산' },
+                  { key: 'performance',  label: '상세 실적' },
+                  { key: 'collabo',      label: `콜라보${collaboReceived.length > 0 ? ` (${collaboReceived.length})` : ''}` },
+                  { key: 'bookings',     label: `예약 요청${pendingBookings.length > 0 ? ` (${pendingBookings.length})` : ''}` },
+                ].map(tab => (
+                  <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                    padding: '12px 20px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
+                    background: 'transparent',
+                    color: activeTab === tab.key ? 'var(--gold)' : tab.key === 'bookings' && pendingBookings.length > 0 ? '#f0ac2a' : 'var(--muted)',
+                    border: 'none',
+                    borderBottom: `2px solid ${activeTab === tab.key ? 'var(--gold)' : 'transparent'}`,
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    marginBottom: -1,
+                    position: 'relative',
+                  }}>
+                    {tab.label}
+                    {tabAlerts[tab.key] && (
+                      <span style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: tab.key === 'bookings' || tab.key === 'collabo' ? '#f0ac2a' : '#e85d5d',
+                        display: 'inline-block',
+                      }} />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
         {/* ── 탭 컨텐츠 ── */}
         {activeTab === 'schedule'    && renderScheduleTab()}

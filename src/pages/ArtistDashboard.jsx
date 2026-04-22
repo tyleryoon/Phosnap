@@ -23,6 +23,10 @@ import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
 import { PHOTOGRAPHERS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
 import { isTagAllowed, sanitizeTag } from '../utils/tagFilter';
+import DemandForecast from '../components/DemandForecast';
+import ImageVerification from '../components/ImageVerification';
+import ReferralCard from '../components/ReferralCard';
+import ArtistInsights from '../components/ArtistInsights';
 
 // ─── Artist Dashboard ─────────────────────────────────────────────────
 // 탭: 홈 | 예약 관리 | 실적 | 초대 현황
@@ -457,6 +461,7 @@ const ArtistDashboard = () => {
     { id: 'home',     label: '홈' },
     { id: 'reviews',  label: `리뷰 관리${totalReviews > 0 ? ` (${totalReviews})` : ''}` },
     { id: 'profile',  label: c.profileTab },
+    { id: 'insights', label: '인사이트', icon: '📊' },
     { id: 'stats',    label: '실적' },
     { id: 'referral', label: '초대 현황' },
   ];
@@ -727,17 +732,35 @@ const ArtistDashboard = () => {
           </div>
 
           {/* 스케줄/지역 관리 링크 */}
-          <Link to="/artist/schedule" style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
-            border: '1px solid var(--border)', color: 'var(--muted)',
-            fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.08em',
-            textDecoration: 'none', transition: 'border-color 0.2s',
-          }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold-border)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-          >
-            📅 스케줄 · 지역 · 상품 · 결제 · 예약 관리 →
-          </Link>
+          {(() => {
+            // 빨간점: 필수 설정 미완료 또는 대기 예약 존재
+            const hasPendingBookings = (bookings || []).some(b => b.status === 'pending' || b.status === 'requested');
+            const hasNoLocations = !(artistData?.locations?.length > 0);
+            const hasNoPortfolio = !(artistData?.portfolio?.length > 0);
+            const needsAttention = hasPendingBookings || hasNoLocations || hasNoPortfolio;
+
+            return (
+              <Link to="/artist/schedule" style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+                border: '1px solid var(--border)', color: 'var(--muted)',
+                fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.08em',
+                textDecoration: 'none', transition: 'border-color 0.2s',
+                position: 'relative',
+              }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold-border)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                📅 스케줄 · 지역 · 상품 · 결제 · 예약 관리 →
+                {needsAttention && (
+                  <span style={{
+                    position: 'absolute', top: -3, right: -3,
+                    width: 10, height: 10, borderRadius: '50%',
+                    background: '#e85d5d', border: '2px solid var(--bg)',
+                  }} />
+                )}
+              </Link>
+            );
+          })()}
         </div>
 
         {/* ── 탭 ── */}
@@ -819,18 +842,18 @@ const ArtistDashboard = () => {
                       <div style={{ flex: 1, minWidth: 200 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
                           <span>다음 등급: {nextBadge.symbol} {nextBadge.label}</span>
-                          <span>{completedCount} / {nextBadge.min}건</span>
+                          <span>{completedCount} / {nextBadge.minShoots}건</span>
                         </div>
                         <div style={{ height: 4, background: 'var(--border)', borderRadius: 2 }}>
                           <div style={{
                             height: '100%', borderRadius: 2,
-                            width: `${Math.min(100, (completedCount / nextBadge.min) * 100)}%`,
+                            width: `${Math.min(100, (completedCount / nextBadge.minShoots) * 100)}%`,
                             background: `linear-gradient(90deg, ${badge.color}, ${nextBadge.color})`,
                             transition: 'width 0.5s',
                           }} />
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
-                          {nextBadge.min - completedCount}건 더 완료하면 등급 상승
+                          {nextBadge.minShoots - completedCount}건 더 완료하면 등급 상승
                         </div>
                       </div>
                     )}
@@ -848,10 +871,10 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
                       {[
-                        { symbol: '✦', label: 'Rising', range: '0~9건', color: '#9ca3af', perks: '기본 프로필 노출, 예약 수신' },
-                        { symbol: '✦✦', label: 'Established', range: '10~29건', color: '#60a5fa', perks: '검색 우선 노출, 배지 표시, 콜라보 제의 +2회/월' },
-                        { symbol: '✦✦✦', label: 'Premier', range: '30~59건', color: 'var(--gold)', perks: '홈 추천 등록, 수수료 8%, 즉시예약 활성화' },
-                        { symbol: '✦✦✦✦', label: 'Elite', range: '60건+', color: '#f472b6', perks: '최우선 노출, 수수료 6%, 전용 매니저 배정' },
+                        { symbol: '✦', label: 'Rising', range: '0~29건', color: '#9ca3af', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
+                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: '#60a5fa', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
+                        { symbol: '✦✦✦', label: 'Premier', range: '100~299건', color: 'var(--gold)', perks: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
+                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: '#f472b6', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
                       ].map(tier => (
                         <div key={tier.label} style={{
                           padding: '12px 14px', border: `1px solid ${badge.label === tier.label ? tier.color + '55' : 'var(--border)'}`,
@@ -874,14 +897,14 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ fontSize: 12, color: 'rgba(242,242,242,0.6)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 10%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
+                        <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 20%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: '#60a5fa' }}>Premier 등급:</span> 수수료 8% |{' '}
-                        <span style={{ color: '#f472b6' }}>Elite 등급:</span> 수수료 6%
+                        <span style={{ color: '#60a5fa' }}>30건 이상:</span> 수수료 15% |{' '}
+                        <span style={{ color: 'var(--gold)' }}>100건 이상:</span> 수수료 12%
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'rgba(232,160,32,0.8)' }}>얼리억세스 작가:</span> 정식 런칭 전까지 수수료 0% (무료)
+                        <span style={{ color: 'rgba(232,160,32,0.8)' }}>얼리억세스 작가:</span> 론칭 초기 가입 시 수수료 10% 고정 (6개월)
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                         정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 5~7일 내 등록 계좌로 자동 입금
@@ -1243,6 +1266,14 @@ const ArtistDashboard = () => {
                   </label>
                 </div>
 
+                {/* 포트폴리오 진위 검증 */}
+                <div style={{ marginBottom: 32 }}>
+                  <ImageVerification
+                    images={(artistData?.portfolio || []).map((url, i) => ({ url, id: `portfolio-${i}` }))}
+                    onVerified={(results) => {}}
+                  />
+                </div>
+
                 {/* 메시지 */}
                 {profileMsg && (
                   <div style={{
@@ -1272,15 +1303,23 @@ const ArtistDashboard = () => {
               </div>
             )}
 
+            {/* ════════════════════════ 탭: 인사이트 ════════════════════════ */}
+            {activeTab === 'insights' && (
+              <ArtistInsights artistData={artistData} />
+            )}
+
             {/* ════════════════════════ 탭: 실적 ════════════════════════ */}
             {activeTab === 'stats' && (
               <div>
+                {/* 수요 예측 */}
+                <DemandForecast bookings={bookings || []} currentPrice={artistData?.price || 300000} />
+
                 {/* 상세 실적 이동 버튼 */}
                 <div
                   onClick={() => navigate('/artist/schedule', { state: { openTab: 'performance' } })}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '16px 20px', marginBottom: 28,
+                    padding: '16px 20px', marginBottom: 20,
                     border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
                     cursor: 'pointer', transition: 'background 0.2s',
                   }}
@@ -1297,6 +1336,32 @@ const ArtistDashboard = () => {
                   </div>
                   <span style={{ fontSize: 18, color: 'var(--gold)', marginLeft: 12 }}>→</span>
                 </div>
+
+                {/* 등급 시스템 안내 링크 */}
+                <div
+                  onClick={() => navigate('/artist/grade-system')}
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '14px 20px', marginBottom: 28,
+                    border: '1px solid var(--border)', background: 'var(--bg2)',
+                    cursor: 'pointer', transition: 'background 0.2s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,160,32,0.06)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--bg2)'}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', color: 'var(--text)', marginBottom: 4 }}>
+                      🏅 작가 등급 시스템
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                      등급별 혜택, 승급 조건, 현재 나의 등급 정보를 확인하세요
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 18, color: 'var(--gold)', marginLeft: 12 }}>→</span>
+                </div>
+
+                {/* 추천 코드 및 혜택 */}
+                <ReferralCard userId={user?.id} role="artist" />
 
                 {/* 주요 지표 */}
                 <SectionLabel>이번달 실적</SectionLabel>
@@ -1390,8 +1455,21 @@ const ArtistDashboard = () => {
                   const type = reviewTab === 'photographer' ? 'photographer' : 'package';
                   if (reviews.length === 0) {
                     return (
-                      <div style={{ padding: '48px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-                        아직 등록된 리뷰가 없습니다.
+                      <div style={{ padding: '48px 20px', textAlign: 'center' }}>
+                        {/* Icon */}
+                        <div style={{ marginBottom: 16 }}>
+                          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" style={{ margin: '0 auto', opacity: 0.6 }}>
+                            <path d="M12 2L15.09 8.26H22L17.82 12.88L19.91 19.12L12 15.77L4.09 19.12L6.18 12.88L2 8.26H8.91L12 2Z" />
+                          </svg>
+                        </div>
+                        {/* Main text */}
+                        <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 6, fontFamily: 'var(--font-serif)' }}>
+                          아직 등록된 리뷰가 없습니다
+                        </div>
+                        {/* Sub text */}
+                        <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
+                          첫 촬영을 완료하면 고객이 리뷰를 남길 수 있습니다
+                        </div>
                       </div>
                     );
                   }
@@ -1600,7 +1678,7 @@ const ArtistDashboard = () => {
                   {[
                     { label: '초대한 작가 수',   value: profile?.referral_count     || 0, suffix: '명', color: '#60a5fa'       },
                     { label: '초대 완료 건수',   value: profile?.referral_completed || 0, suffix: '건', color: '#22c55e'       },
-                    { label: '현재 수수료 할인', value: profile?.referral_completed >= 20 ? '7%p' : profile?.referral_completed >= 10 ? '5%p' : profile?.referral_completed >= 5 ? '2%p' : '0%', suffix: '', color: 'var(--gold)' },
+                    { label: '현재 수수료 할인', value: profile?.referral_completed >= 20 ? '3%p' : profile?.referral_completed >= 10 ? '2%p' : profile?.referral_completed >= 5 ? '1%p' : '0%', suffix: '', color: 'var(--gold)' },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
                       <Corners />
@@ -1624,9 +1702,9 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                       {[
-                        { cond: '초대한 작가 완료 5건', reward: '수수료 -2%p', active: (profile?.referral_completed || 0) >= 5 && (profile?.referral_completed || 0) < 10 },
-                        { cond: '초대한 작가 완료 10건', reward: '수수료 -5%p', active: (profile?.referral_completed || 0) >= 10 && (profile?.referral_completed || 0) < 20 },
-                        { cond: '초대한 작가 완료 20건', reward: '수수료 -7%p', active: (profile?.referral_completed || 0) >= 20 },
+                        { cond: '초대한 작가 완료 5건', reward: '수수료 -1%p', active: (profile?.referral_completed || 0) >= 5 && (profile?.referral_completed || 0) < 10 },
+                        { cond: '초대한 작가 완료 10건', reward: '수수료 -2%p', active: (profile?.referral_completed || 0) >= 10 && (profile?.referral_completed || 0) < 20 },
+                        { cond: '초대한 작가 완료 20건', reward: '수수료 -3%p', active: (profile?.referral_completed || 0) >= 20 },
                       ].map((row, i) => (
                         <div key={i} style={{
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center',

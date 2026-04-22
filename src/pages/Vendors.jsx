@@ -11,6 +11,7 @@ import { getTagLabel, getAllTagIds, COSTUME_TAG_REGISTRY, VENUE_TAG_REGISTRY } f
 const Vendors = () => {
   const navigate = useNavigate();
   const { lang } = useLanguage();
+  const [imageErrors, setImageErrors] = useState(new Set());
 
   // Tab: 의상 / 장소
   const [vendorTab, setVendorTab] = useState('costume');
@@ -240,10 +241,63 @@ const Vendors = () => {
                 <div style={{
                   width: '100%',
                   height: 200,
-                  backgroundImage: `url(${vendor.img})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }} />
+                  position: 'relative',
+                  overflow: 'hidden',
+                  backgroundColor: 'var(--bg2)',
+                }}>
+                  {imageErrors.has(vendor.id) ? (
+                    <div style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: 'var(--bg2)',
+                    }}>
+                      <div style={{
+                        textAlign: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}>
+                        <svg
+                          width="48"
+                          height="48"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="var(--muted)"
+                          strokeWidth="1"
+                          opacity="0.6"
+                        >
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--muted)',
+                          fontFamily: 'var(--font-serif)',
+                          letterSpacing: '0.02em',
+                        }}>
+                          이미지 없음
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <img
+                      src={vendor.img}
+                      alt={vendor.nameI18n?.[lang] || vendor.name}
+                      onError={() => setImageErrors(prev => new Set([...prev, vendor.id]))}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                        display: 'block',
+                      }}
+                    />
+                  )}
+                </div>
 
                 {/* Content */}
                 <div style={{ padding: '1.2rem' }}>

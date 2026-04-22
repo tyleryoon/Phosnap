@@ -72,7 +72,6 @@ export const getVendorReviews = async (vendorType, vendorId = null) => {
 
     return reviews;
   } catch (err) {
-    console.error('[vendorReviews] Error reading reviews:', err);
     return [];
   }
 };

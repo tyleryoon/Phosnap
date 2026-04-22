@@ -152,16 +152,16 @@ const WorldMap = () => {
   [cityCounts]);
 
   const allCities = [...worldCities, ...insetCities];
-  const maxCount = Math.max(...allCities.map(c => c.count), 1);
 
   const handleCityClick = useCallback((cityId) => {
     navigate('/photographers', { state: { searchQuery: CITY_NAMES[cityId]?.[lang] || cityId } });
   }, [navigate, lang]);
 
+  // 작은 원 (1~1.5mm 크기) — 작가가 있는 지역만 표시, 숫자 없음
   const renderDot = (city, isInset = false) => {
     const isHov = hovered === city.id;
-    const intensity = 0.5 + (city.count / maxCount) * 0.5;
-    const r = isInset ? (2.5 + (city.count / maxCount) * 2.5) : (1.5 + (city.count / maxCount) * 2);
+    // SVG viewBox 480×280 기준으로 약 1~1.5mm = r 1.2~1.8 정도
+    const r = isInset ? 1.8 : 1.4;
 
     return (
       <g key={city.id} style={{ cursor: 'pointer' }}
@@ -179,16 +179,19 @@ const WorldMap = () => {
             <animate attributeName="opacity" from={0.4} to={0} dur="1.2s" repeatCount="indefinite" />
           </circle>
         )}
-        <circle cx={city.x} cy={city.y} r={r * 2.2}
-          fill={`rgba(232,160,32,${intensity * 0.1})`}
+        {/* 은은한 글로우 배경 */}
+        <circle cx={city.x} cy={city.y} r={r * 2.5}
+          fill="rgba(232,160,32,0.08)"
           filter={isHov ? 'url(#gH)' : 'url(#gN)'}
         />
-        <circle cx={city.x} cy={city.y} r={isHov ? r + 1.2 : r}
-          fill={`rgba(232,160,32,${intensity})`}
-          stroke={isHov ? 'rgba(232,160,32,1)' : 'rgba(232,160,32,0.6)'}
-          strokeWidth={isHov ? 0.8 : 0.3}
+        {/* 메인 도트 — 작고 균일한 크기 */}
+        <circle cx={city.x} cy={city.y} r={isHov ? r + 0.8 : r}
+          fill={isHov ? 'rgba(232,160,32,1)' : 'rgba(232,160,32,0.75)'}
+          stroke={isHov ? 'rgba(232,160,32,1)' : 'rgba(232,160,32,0.5)'}
+          strokeWidth={isHov ? 0.6 : 0.3}
           style={{ transition: 'all 0.2s ease' }}
         />
+        {/* 인셋에서 도시명 (호버 아닐 때만) */}
         {isInset && !isHov && (
           <text x={city.x + r + 2.5} y={city.y + 1.5}
             fill="rgba(242,242,242,0.45)" fontSize={4.8}
@@ -198,6 +201,7 @@ const WorldMap = () => {
             {city.name?.[lang] || city.id}
           </text>
         )}
+        {/* 호버 시 도시명 표시 */}
         {isHov && (
           <text x={city.x} y={city.y - r - 3}
             textAnchor="middle" fill="var(--gold)" fontSize={isInset ? 6 : 5.5} fontWeight="600"
@@ -257,16 +261,11 @@ const WorldMap = () => {
         {/* 인셋 도시 도트 */}
         {insetCities.map(c => renderDot(c, true))}
 
-        {/* 범례 */}
-        <g transform={`translate(8, ${H - 22})`}>
-          <circle cx={4} cy={4} r={1.5} fill="rgba(232,160,32,0.5)" stroke="rgba(232,160,32,0.6)" strokeWidth={0.3} />
-          <text x={10} y={5.5} fill="var(--muted)" fontSize={4.5} fontFamily="var(--font-sans)">1–2</text>
-          <circle cx={30} cy={4} r={2.5} fill="rgba(232,160,32,0.7)" stroke="rgba(232,160,32,0.6)" strokeWidth={0.3} />
-          <text x={36} y={5.5} fill="var(--muted)" fontSize={4.5} fontFamily="var(--font-sans)">3–5</text>
-          <circle cx={56} cy={4} r={3.5} fill="rgba(232,160,32,0.9)" stroke="rgba(232,160,32,0.6)" strokeWidth={0.3} />
-          <text x={62} y={5.5} fill="var(--muted)" fontSize={4.5} fontFamily="var(--font-sans)">6+</text>
-          <text x={78} y={5.5} fill="var(--muted)" fontSize={4} fontFamily="var(--font-serif)" letterSpacing="0.08em" opacity={0.6}>
-            {lang === 'ko' ? '작가 수' : lang === 'ja' ? 'フォトグラファー数' : 'photographers'}
+        {/* 범례 — 간소화: 작가 활동 지역 표시 */}
+        <g transform={`translate(8, ${H - 16})`}>
+          <circle cx={4} cy={4} r={1.4} fill="rgba(232,160,32,0.75)" stroke="rgba(232,160,32,0.5)" strokeWidth={0.3} />
+          <text x={10} y={5.5} fill="var(--muted)" fontSize={4} fontFamily="var(--font-serif)" letterSpacing="0.08em" opacity={0.6}>
+            {lang === 'ko' ? '작가 활동 지역' : lang === 'ja' ? 'フォトグラファー活動地域' : 'photographer locations'}
           </text>
         </g>
       </svg>
@@ -286,9 +285,6 @@ const WorldMap = () => {
             <Corners />
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 12, color: 'var(--gold)', letterSpacing: '0.06em' }}>
               {city.name?.[lang] || city.id}
-            </div>
-            <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
-              {city.count} {lang === 'ko' ? '명의 작가' : lang === 'ja' ? '名のフォトグラファー' : 'photographers'}
             </div>
           </div>
         );

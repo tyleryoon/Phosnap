@@ -135,6 +135,56 @@ export const saveProfile = (type, id, profile) => {
   localStorage.setItem(profileKey(type, id), JSON.stringify(profile));
 };
 
+/**
+ * 목(mock) 데이터 + localStorage 저장 데이터 병합
+ * 고객 화면에서 작가가 편집한 최신 데이터를 보여주기 위한 헬퍼
+ * @param {Object} mockData - photographers.js 등에서 온 기본 데이터
+ * @param {string} type - 'photographer' | 'videographer' | 'stylist'
+ * @param {number|string} id - 작가 ID
+ * @returns {Object} 병합된 프로필
+ */
+export const getMergedProfile = (mockData, type, id) => {
+  if (!mockData) return null;
+  try {
+    const raw = localStorage.getItem(profileKey(type, id));
+    if (!raw) return mockData;
+    const saved = JSON.parse(raw);
+    // 작가가 저장한 필드가 있으면 덮어쓰기, 없는 필드는 mock 유지
+    return {
+      ...mockData,
+      ...saved,
+      // mock 전용 필드는 항상 유지 (id, name, nameEn, avatar 등 기본 정보)
+      id: mockData.id,
+      name: saved.name || mockData.name,
+      nameEn: saved.nameEn || mockData.nameEn,
+      avatar: saved.avatar || mockData.avatar,
+      coverImage: saved.coverImage || mockData.coverImage,
+      // 배열 필드: 저장 데이터가 있으면 우선, 없으면 mock 유지
+      portfolio: saved.portfolio?.length > 0 ? saved.portfolio : mockData.portfolio,
+      packages: saved.snapProducts?.length > 0
+        ? saved.snapProducts.map(sp => ({
+            id: sp.id,
+            name: sp.name || '스냅 촬영',
+            duration: sp.duration || '1시간',
+            editedCount: sp.editedCount || '',
+            price: Number(sp.price) || 0,
+            desc: sp.desc || '',
+            images: sp.images || [],
+          }))
+        : mockData.packages,
+      tours: saved.tours?.length > 0 ? saved.tours : mockData.tours,
+      props: saved.props?.length > 0 ? saved.props : mockData.props,
+      costumes: saved.costumes?.length > 0 ? saved.costumes : (mockData.costumes || mockData.dresses),
+      hmk: saved.hmk?.selfAvailable !== undefined ? saved.hmk : mockData.hmk,
+      locations: saved.locations?.length > 0 ? saved.locations : mockData.locations,
+      hourlyRate: saved.hourlyRate ?? mockData.hourlyRate,
+      hourlyRateEnabled: saved.hourlyRateEnabled ?? mockData.hourlyRateEnabled,
+    };
+  } catch {
+    return mockData;
+  }
+};
+
 // ── 마지막 로그인 시간 기록 ──
 const LAST_LOGIN_KEY = (id) => `phosnap_lastLogin_${id}`;
 const INACTIVE_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 2주

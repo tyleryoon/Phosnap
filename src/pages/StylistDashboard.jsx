@@ -426,7 +426,6 @@ const ServiceMenuTab = ({ t, stylistId }) => {
       localStorage.setItem(`services_${stylistId}`, JSON.stringify(services));
       closeModal();
     } catch (error) {
-      console.error('Error saving service:', error);
       alert(t.error);
     }
   };
@@ -440,7 +439,6 @@ const ServiceMenuTab = ({ t, stylistId }) => {
       setServices(services.filter(s => s.id !== serviceId));
       localStorage.setItem(`services_${stylistId}`, JSON.stringify(services));
     } catch (error) {
-      console.error('Error deleting service:', error);
       alert(t.error);
     }
   };
@@ -721,7 +719,6 @@ const ProfileEditTab = ({ t, stylistId }) => {
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
-      console.error('Error saving profile:', error);
       setSaveStatus('error');
     } finally {
       setSaving(false);

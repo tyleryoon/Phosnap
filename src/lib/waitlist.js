@@ -27,11 +27,7 @@ const FORMSPREE_ENDPOINT = import.meta.env.VITE_FORMSPREE_ID
  */
 export async function submitWaitlist(data) {
   if (!FORMSPREE_ENDPOINT) {
-    console.warn(
-      '[Phosnap] VITE_FORMSPREE_ID가 설정되지 않았습니다.\n' +
-      '.env.local 파일에 VITE_FORMSPREE_ID=your_form_id 를 추가하세요.'
-    );
-    // 개발 환경에서는 성공으로 처리
+    // FORMSPREE_ENDPOINT not configured
     return;
   }
 
