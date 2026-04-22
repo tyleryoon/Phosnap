@@ -11,6 +11,7 @@ import UnifiedReviewModal from '../components/UnifiedReviewModal';
 import CarbonFootprint from '../components/CarbonFootprint';
 import ReferralCard from '../components/ReferralCard';
 import PointsCard from '../components/PointsCard';
+import { getSupabase } from '../lib/supabase';
 
 // ─── Customer Dashboard (/my) ─────────────────────────────────────────
 // 고객 전용 대시보드: 즐겨찾기, 예약, 리뷰, 쿠폰, 프로필, 설정
@@ -264,6 +265,12 @@ const CustomerDashboard = () => {
 
   // Notifications
   const [notiSettings, setNotiSettings] = useState({ booking: true, marketing: false, chat: true });
+
+  // 비밀번호 변경
+  const [newPw, setNewPw] = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [pwMsg, setPwMsg] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1012,6 +1019,102 @@ const CustomerDashboard = () => {
                 <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', color: 'var(--text)', margin: '0 0 1.5rem', letterSpacing: '0.04em' }}>
                   {m.settingsTitle}
                 </h2>
+
+                {/* 비밀번호 변경 */}
+                <div style={{ ...sectionStyle, marginBottom: '1.5rem' }}>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: 'var(--text)', margin: '0 0 1rem' }}>
+                    🔒 {lang === 'ko' ? '비밀번호 변경' : lang === 'ja' ? 'パスワード変更' : 'Change Password'}
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: 400 }}>
+                    <div>
+                      <label style={{ fontSize: '0.78rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
+                        {lang === 'ko' ? '새 비밀번호' : lang === 'ja' ? '新しいパスワード' : 'New Password'}
+                      </label>
+                      <input
+                        type="password"
+                        value={newPw}
+                        onChange={e => setNewPw(e.target.value)}
+                        placeholder={lang === 'ko' ? '8~16자, 대소문자+숫자+특수문자 포함' : 'Min 8 chars, upper/lower + number + special'}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.78rem', color: 'var(--muted)', display: 'block', marginBottom: 4 }}>
+                        {lang === 'ko' ? '새 비밀번호 확인' : lang === 'ja' ? '新しいパスワード確認' : 'Confirm New Password'}
+                      </label>
+                      <input
+                        type="password"
+                        value={confirmPw}
+                        onChange={e => setConfirmPw(e.target.value)}
+                        placeholder={lang === 'ko' ? '비밀번호를 다시 입력해 주세요' : 'Re-enter your password'}
+                        style={inputStyle}
+                      />
+                    </div>
+                    {/* 비밀번호 강도 표시 */}
+                    {newPw && (() => {
+                      let strength = 0;
+                      if (newPw.length >= 8) strength++;
+                      if (/[A-Z]/.test(newPw)) strength++;
+                      if (/[a-z]/.test(newPw)) strength++;
+                      if (/[0-9]/.test(newPw)) strength++;
+                      if (/[^A-Za-z0-9]/.test(newPw)) strength++;
+                      const labels = lang === 'ko'
+                        ? ['매우 약함', '약함', '보통', '강함', '매우 강함']
+                        : ['Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
+                      const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'];
+                      const idx = Math.max(0, strength - 1);
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ flex: 1, height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: `${strength * 20}%`, height: '100%', background: colors[idx], transition: 'width 0.3s' }} />
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: colors[idx], whiteSpace: 'nowrap' }}>{labels[idx]}</span>
+                        </div>
+                      );
+                    })()}
+                    {pwMsg && (
+                      <div style={{ fontSize: '0.8rem', color: pwMsg.includes('✓') ? '#4ade80' : '#ef4444', lineHeight: 1.5 }}>
+                        {pwMsg}
+                      </div>
+                    )}
+                    <button
+                      onClick={async () => {
+                        if (!newPw || !confirmPw) {
+                          setPwMsg(lang === 'ko' ? '비밀번호를 입력해 주세요.' : 'Please enter a password.');
+                          return;
+                        }
+                        if (newPw.length < 8 || newPw.length > 16) {
+                          setPwMsg(lang === 'ko' ? '비밀번호는 8~16자여야 합니다.' : 'Password must be 8-16 characters.');
+                          return;
+                        }
+                        if (newPw !== confirmPw) {
+                          setPwMsg(lang === 'ko' ? '새 비밀번호가 일치하지 않습니다.' : 'Passwords do not match.');
+                          return;
+                        }
+                        setPwLoading(true);
+                        setPwMsg('');
+                        try {
+                          const sb = getSupabase();
+                          const { error } = await sb.auth.updateUser({ password: newPw });
+                          if (error) throw error;
+                          setPwMsg(lang === 'ko' ? '비밀번호가 변경되었습니다 ✓' : 'Password changed successfully ✓');
+                          setNewPw('');
+                          setConfirmPw('');
+                        } catch (err) {
+                          setPwMsg(lang === 'ko' ? `비밀번호 변경 실패: ${err.message}` : `Failed: ${err.message}`);
+                        } finally {
+                          setPwLoading(false);
+                        }
+                      }}
+                      disabled={pwLoading}
+                      style={{ ...goldBtn, opacity: pwLoading ? 0.5 : 1, alignSelf: 'flex-start' }}
+                    >
+                      {pwLoading
+                        ? (lang === 'ko' ? '변경 중...' : 'Changing...')
+                        : (lang === 'ko' ? '비밀번호 변경' : lang === 'ja' ? 'パスワード変更' : 'Change Password')}
+                    </button>
+                  </div>
+                </div>
 
                 {/* Payment methods */}
                 <div style={{ ...sectionStyle, marginBottom: '1.5rem' }}>

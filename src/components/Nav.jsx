@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { MenuIcon, CloseIcon } from './Icons';
 import { useLanguage, LANG_LABELS } from '../contexts/LanguageContext';
-import { useCurrency } from '../contexts/CurrencyContext';
+// import { useCurrency } from '../contexts/CurrencyContext'; // removed — currency selector no longer shown
 import { useAuth } from '../contexts/AuthContext';
 import logoMark from '../assets/logo-mark.svg';
 import LogoText from './LogoText';
@@ -14,13 +14,13 @@ const Nav = ({ onAuthOpen }) => {
   const { isLoggedIn, userName, isArtist, isVendor, isAdmin, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
-  const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
+  // currency dropdown removed — card payments auto-convert
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const location = useLocation();
   const pathname = location.pathname;
   const navigate = useNavigate();
   const { lang, setLang, t } = useLanguage();
-  const { currency, setCurrency, symbol, currencies } = useCurrency();
+  // const { currency, setCurrency, symbol, currencies } = useCurrency(); // removed
 
   // ── 같은 페이지 링크 클릭 시 새로고침 ──────────────────────────────
   const handleNavClick = useCallback((e, to) => {
@@ -170,82 +170,6 @@ const Nav = ({ onAuthOpen }) => {
             )}
           </div>
 
-          {/* Currency selector */}
-          <div style={{ position: 'relative', display: 'inline-block' }}>
-            <button
-              onClick={() => setCurrencyDropdownOpen(!currencyDropdownOpen)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                fontFamily: 'var(--font-serif)',
-                fontSize: 13,
-                letterSpacing: '0.1em',
-                color: 'var(--muted)',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                transition: 'color 0.2s',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--gold)'}
-              onMouseLeave={e => !currencyDropdownOpen && (e.currentTarget.style.color = 'var(--muted)')}
-            >
-              {symbol}
-              <span style={{ fontSize: 9, marginTop: 2 }}>▼</span>
-            </button>
-
-            {currencyDropdownOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: 8,
-                  background: 'var(--bg2)',
-                  border: '1px solid var(--border-hover)',
-                  borderRadius: 4,
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-                  zIndex: 200,
-                  minWidth: 140,
-                  overflow: 'hidden',
-                }}
-              >
-                {currencies.map(curr => (
-                  <button
-                    key={curr}
-                    onClick={() => {
-                      setCurrency(curr);
-                      setCurrencyDropdownOpen(false);
-                    }}
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      background: currency === curr ? 'rgba(232,160,32,0.1)' : 'transparent',
-                      border: 'none',
-                      borderBottom: curr !== currencies[currencies.length - 1] ? '1px solid var(--border)' : 'none',
-                      fontFamily: 'var(--font-serif)',
-                      fontSize: 11,
-                      letterSpacing: '0.1em',
-                      color: currency === curr ? 'var(--gold)' : 'var(--muted)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={e => {
-                      if (currency !== curr) e.currentTarget.style.background = 'rgba(232,160,32,0.05)';
-                    }}
-                    onMouseLeave={e => {
-                      if (currency !== curr) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    {curr}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
 
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -377,50 +301,33 @@ const Nav = ({ onAuthOpen }) => {
           </a>
 
           {/* Language switcher (mobile) */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            {LANG_LABELS.map(({ code, label }) => (
-              <button
-                key={code}
-                onClick={() => { setLang(code); setMobileOpen(false); }}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${lang === code ? 'var(--gold)' : 'var(--border-hover)'}`,
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 11,
-                  letterSpacing: '0.1em',
-                  color: lang === code ? 'var(--gold)' : 'var(--muted)',
-                  cursor: 'pointer',
-                  padding: '6px 14px',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {label}
-              </button>
-            ))}
+          <div style={{ marginTop: 8 }}>
+            <select
+              value={lang}
+              onChange={e => { setLang(e.target.value); setMobileOpen(false); }}
+              style={{
+                background: 'var(--bg2)',
+                border: '1px solid var(--border-hover)',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 12,
+                letterSpacing: '0.1em',
+                color: 'var(--gold)',
+                cursor: 'pointer',
+                padding: '8px 16px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23e8a020%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'right 10px center',
+                paddingRight: 32,
+              }}
+            >
+              {LANG_LABELS.map(({ code, label }) => (
+                <option key={code} value={code}>{label}</option>
+              ))}
+            </select>
           </div>
 
-          {/* Currency selector (mobile) */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            {currencies.map(curr => (
-              <button
-                key={curr}
-                onClick={() => { setCurrency(curr); setMobileOpen(false); }}
-                style={{
-                  background: 'transparent',
-                  border: `1px solid ${currency === curr ? 'var(--gold)' : 'var(--border-hover)'}`,
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 11,
-                  letterSpacing: '0.1em',
-                  color: currency === curr ? 'var(--gold)' : 'var(--muted)',
-                  cursor: 'pointer',
-                  padding: '6px 14px',
-                  transition: 'all 0.2s',
-                }}
-              >
-                {curr}
-              </button>
-            ))}
-          </div>
 
           <button
             style={{ position: 'absolute', top: 20, right: 20, background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}

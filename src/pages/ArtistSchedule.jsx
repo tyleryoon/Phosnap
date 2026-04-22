@@ -267,7 +267,10 @@ const STATUS_COLORS = {
 const calcStatus = (schedule, dateStr) => {
   const dateData = schedule?.dates?.[dateStr];
   if (dateData?.dayOff) return 'off';
-  const slots = (dateData?.slots?.length > 0) ? dateData.slots : (schedule?.defaultSlots ?? DEFAULT_TIME_SLOTS);
+  const defaultHours = schedule?.defaultSlots ?? DEFAULT_TIME_SLOTS;
+  const rawSlots = (dateData?.slots?.length > 0) ? dateData.slots : defaultHours;
+  // 기본 운영 시간에 포함된 슬롯만 유효
+  const slots = rawSlots.filter(s => defaultHours.includes(s));
   if (!slots.length) return 'off';
   const blocked = dateData?.blocked ?? [];
   const avail = slots.filter(s => !blocked.includes(s));
@@ -384,6 +387,9 @@ const TourInstanceManager = ({ photographerId, tours }) => {
             ? `₩${Math.ceil(inst.basePrice / inst.maxGuests).toLocaleString('ko-KR')}/인`
             : `₩${inst.basePrice.toLocaleString('ko-KR')}/인`;
 
+          // 원본 투어 데이터에서 세부 정보 가져오기
+          const tourData = tours[inst.tourIndex] || {};
+
           return (
             <div key={inst.id} style={{ border: '1px solid var(--border)', padding: '14px 18px', position: 'relative' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -394,6 +400,19 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 3 }}>
                     📅 {fmtDate(inst.scheduledDate)} {inst.scheduledTime} &nbsp;|&nbsp; ⏰ 마감: {fmtDate(inst.deadline)}
                   </div>
+                  {/* 투어 간략 정보 */}
+                  {(tourData.durationMin || tourData.photos || tourData.desc) && (
+                    <div style={{ fontSize: 10, color: 'rgba(136,136,136,0.7)', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {tourData.durationMin && <span>⏱ {tourData.durationMin}분</span>}
+                      {tourData.photos && <span>📷 {tourData.photos}컷</span>}
+                      {tourData.route?.departure && <span>📍 {tourData.route.departure} → {tourData.route.destination || '...'}</span>}
+                    </div>
+                  )}
+                  {tourData.desc && (
+                    <div style={{ fontSize: 10, color: 'rgba(136,136,136,0.5)', marginTop: 2, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {tourData.desc}
+                    </div>
+                  )}
                 </div>
                 <div style={{
                   fontSize: 10, padding: '3px 10px', fontFamily: 'var(--font-serif)',
@@ -467,7 +486,8 @@ const TourInstanceManager = ({ photographerId, tours }) => {
             .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
             .map(i => {
               const dt = new Date(i.scheduledDate + 'T00:00:00');
-              return `${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]})`;
+              const count = getActiveBookingCount(i);
+              return `${dt.getMonth()+1}/${dt.getDate()}(${['일','월','화','수','목','금','토'][dt.getDay()]}) ${i.scheduledTime} ${i.tourName} [${count}/${i.maxGuests}명]`;
             }).join(' · ')}
         </div>
       )}
@@ -706,11 +726,13 @@ const ArtistSchedule = () => {
       // Silently fall back to localStorage
     }
 
-    // localStorage fallback (항상 실행) — artistId가 없으면 빈 프로필로 초기화
+    // localStorage fallback (항상 실행) — artistId가 없으면 임시 ID 할당 후 빈 프로필로 초기화
     if (!artistId) {
-      // artistId가 없어도 빈 프로필로 초기화하여 상품 관리 등 탭이 동작하도록 함
-      setProfileState(prev => prev || { locations: [], portfolio: [], paymentInfo: {}, tours: [], hmk: { selfAvailable: false, note: '', menus: [] } });
-      // 스케줄도 기본값으로 초기화
+      // 임시 ID 생성하여 투어 인스턴스 등 localStorage 기반 기능이 동작하도록
+      const tempId = sessionStorage.getItem('phosnap_temp_artist_id') || `temp_${Date.now()}`;
+      sessionStorage.setItem('phosnap_temp_artist_id', tempId);
+      setArtistId(tempId);
+      setProfileState(prev => prev || { id: tempId, locations: [], portfolio: [], paymentInfo: {}, tours: [], hmk: { selfAvailable: false, note: '', menus: [] } });
       setSchedule(prev => prev || { defaultSlots: INITIAL_DEFAULT_HOURS, dates: {} });
       setDraftDefault(prev => prev.length > 0 ? prev : []);
       return;
@@ -839,35 +861,47 @@ const ArtistSchedule = () => {
   const handleToggleDayOff = async () => {
     if (!activeDate) return;
     toggleDayOff('photographer', artistId, activeDate);
+    // 즉시 캘린더 상태 반영 (load() async 대기 없이)
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
     // Supabase 동기화
     if (dbConnected && dbPhotographerId) {
       const dayData = getDaySchedule('photographer', artistId, activeDate);
       await upsertScheduleDate(dbPhotographerId, activeDate, {
-        dayOff: !dayData.dayOff,
+        dayOff: dayData.dayOff,
       });
     }
-    load();
     setPendingBlocked(null);
     setSlotsDirty(false);
     showSaved();
   };
   const handleSaveDefault = async () => {
     updateDefaultSlots('photographer', artistId, draftDefault);
+    // 즉시 캘린더 상태 반영
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
+    // draftDefault도 저장된 값으로 동기화
+    setDraftDefault([...draftDefault]);
     // Supabase 동기화
     if (dbConnected && dbPhotographerId) {
       await upsertDefaultSlots(dbPhotographerId, draftDefault);
     }
-    load();
     setEditingDefault(false);
-    showSaved();
+    showSaved('기본 운영 시간이 저장되었습니다 ✓');
   };
 
   // ── Quick Range 적용 (전체 시간 슬롯으로 오픈, 이후 캘린더에서 개별 관리) ──
   const handleApplyRange = async () => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
-    const slots = [...DEFAULT_TIME_SLOTS]; // 전체 시간 슬롯
-    const exclude = excludeDays.map(String);
+    // excludeDays = 선택된 요일 (포함 대상). 선택 안 된 요일을 제외 처리.
+    const allDays = [0,1,2,3,4,5,6];
+    const selectedDays = excludeDays; // 이제 "선택된 요일"을 의미
+    const exclude = allDays.filter(d => !selectedDays.includes(d)).map(String);
+    const slots = [...(schedule?.defaultSlots ?? DEFAULT_TIME_SLOTS)];
     openDateRange('photographer', artistId, rangeStart, rangeEnd, slots, exclude);
+    // 즉시 캘린더 상태 반영
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
     // Supabase 일괄 동기화
     if (dbConnected && dbPhotographerId) {
       const entries = [];
@@ -887,45 +921,55 @@ const ArtistSchedule = () => {
       }
       if (entries.length) await upsertScheduleBatch(dbPhotographerId, entries);
     }
-    load();
     const d = new Date(rangeStart);
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
-    showSaved(`${rangeStart} ~ ${rangeEnd} 일괄 오픈 완료 ✓`);
+    const dayLabels = ['일','월','화','수','목','금','토'];
+    const selectedStr = selectedDays.sort((a,b) => a-b).map(d => dayLabels[d]).join('·');
+    showSaved(`${rangeStart} ~ ${rangeEnd} ${selectedStr} 오픈 완료 ✓`);
   };
 
   const handleCloseRange = () => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
-    const exclude = excludeDays.map(String);
+    // 선택된 요일만 클로즈 대상
+    const allDays = [0,1,2,3,4,5,6];
+    const selectedDays = excludeDays;
+    const exclude = allDays.filter(d => !selectedDays.includes(d)).map(String);
     closeDateRange('photographer', artistId, rangeStart, rangeEnd, exclude);
-    load();
+    // 즉시 캘린더 상태 반영
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
     const d = new Date(rangeStart);
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
-    showSaved(`${rangeStart} ~ ${rangeEnd} 일괄 클로즈 완료 ✓`);
+    const dayLabels = ['일','월','화','수','목','금','토'];
+    const selectedLabels = selectedDays.map(d => dayLabels[d]).join(', ');
+    showSaved(`${rangeStart} ~ ${rangeEnd} [${selectedLabels}] 일괄 클로즈 완료 ✓`);
   };
 
-  // ── 상시 오픈 (오늘 ~ 6개월) ──
+  // ── 상시 오픈 (오늘 ~ 2100-12-31) ──
   const handleAlwaysOpen = async () => {
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    const endDate = new Date(today);
-    endDate.setMonth(endDate.getMonth() + 6);
-    const endStr = endDate.toISOString().split('T')[0];
+    const endStr = '2100-12-31';
     const slots = [...DEFAULT_TIME_SLOTS];
     openDateRange('photographer', artistId, todayStr, endStr, slots, []);
+    // 즉시 캘린더 상태 반영
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
     if (dbConnected && dbPhotographerId) {
+      // Supabase에는 향후 1년만 동기화 (성능 고려)
       const entries = [];
       let cur = new Date(todayStr);
-      const end = new Date(endStr);
-      while (cur <= end) {
+      const sbEnd = new Date(today);
+      sbEnd.setFullYear(sbEnd.getFullYear() + 1);
+      while (cur <= sbEnd) {
         entries.push({ date: cur.toISOString().split('T')[0], dayOff: false, slots: slots, blocked: [] });
         cur.setDate(cur.getDate() + 1);
       }
       if (entries.length) await upsertScheduleBatch(dbPhotographerId, entries);
     }
-    load();
-    showSaved(`상시 오픈 완료 — ${todayStr} ~ ${endStr} ✓`);
+    showSaved('상시 오픈 완료 ✓');
   };
 
   // ── 모든 일정 클로즈 ──
@@ -933,11 +977,11 @@ const ArtistSchedule = () => {
     if (!confirm('모든 오픈 일정을 클로즈하시겠습니까?')) return;
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    const endDate = new Date(today);
-    endDate.setMonth(endDate.getMonth() + 12);
-    const endStr = endDate.toISOString().split('T')[0];
+    const endStr = '2100-12-31';
     closeDateRange('photographer', artistId, todayStr, endStr, []);
-    load();
+    // 즉시 캘린더 상태 반영
+    const updated = getSchedule('photographer', artistId);
+    setSchedule({ ...updated });
     showSaved('모든 일정이 클로즈되었습니다 ✓');
   };
 
@@ -996,9 +1040,9 @@ const ArtistSchedule = () => {
             <DatePicker value={rangeEnd} onChange={setRangeEnd} />
           </div>
         </div>
-        {/* 요일 제외 선택 */}
+        {/* 요일 선택 */}
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, fontFamily: 'var(--font-serif)' }}>제외할 요일 선택:</div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8, fontFamily: 'var(--font-serif)' }}>요일 선택:</div>
           <div style={{ display: 'flex', gap: 6 }}>
             {['일','월','화','수','목','금','토'].map((label, idx) => {
               const active = excludeDays.includes(idx);
@@ -1018,22 +1062,12 @@ const ArtistSchedule = () => {
           <button className="btn-primary" style={{ fontSize: 12, padding: '10px 20px' }}
             onClick={handleApplyRange}
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
-            선택 기간 전체 오픈 →
+            설정 기간 내 전체 오픈 →
           </button>
           <button style={{ fontSize: 12, padding: '10px 20px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'transparent', border: '1px solid #e85d5d', color: '#e85d5d', cursor: 'pointer' }}
             onClick={handleCloseRange}
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
-            선택 기간 전체 클로즈 ×
-          </button>
-        </div>
-        <div style={{ width: '100%', borderTop: '1px solid rgba(232,160,32,0.15)', marginTop: 12, paddingTop: 12, display: 'flex', gap: 12 }}>
-          <button style={{ fontSize: 11, padding: '8px 16px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'rgba(76,175,80,0.1)', border: '1px solid rgba(76,175,80,0.3)', color: '#4caf50', cursor: 'pointer' }}
-            onClick={handleAlwaysOpen}>
-            ✓ 상시 오픈 (오늘~6개월)
-          </button>
-          <button style={{ fontSize: 11, padding: '8px 16px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.3)', color: '#e85d5d', cursor: 'pointer' }}
-            onClick={handleCloseAll}>
-            × 모든 일정 클로즈
+            설정 기간 내 전체 클로즈 ×
           </button>
         </div>
         <p style={{ fontSize: 11, color: 'rgba(232,160,32,0.6)', marginTop: 12, lineHeight: 1.7 }}>
@@ -1049,12 +1083,14 @@ const ArtistSchedule = () => {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>월간 캘린더</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button className="btn-ghost" style={{ fontSize: 11, padding: '4px 8px' }} onClick={() => setCalYear(y => y-1)}>«</button>
               <button className="btn-ghost" onClick={() => { if (calMonth === 0) { setCalYear(y => y-1); setCalMonth(11); } else setCalMonth(m => m-1); }}>←</button>
-              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.08em', minWidth: 90, textAlign: 'center' }}>
+              <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.08em', minWidth: 110, textAlign: 'center' }}>
                 {calYear}년 {calMonth + 1}월
               </span>
               <button className="btn-ghost" onClick={() => { if (calMonth === 11) { setCalYear(y => y+1); setCalMonth(0); } else setCalMonth(m => m+1); }}>→</button>
+              <button className="btn-ghost" style={{ fontSize: 11, padding: '4px 8px' }} onClick={() => setCalYear(y => y+1)}>»</button>
             </div>
           </div>
 
@@ -1241,7 +1277,12 @@ const ArtistSchedule = () => {
                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, letterSpacing: '0.04em' }}>{activeDate}</div>
                 {activeDayData && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-                    {activeDayData.dayOff ? '휴무일' : `운영 ${activeDayData.slots.filter(s => !activeDayData.blocked.includes(s)).length}개 · 차단 ${activeDayData.blocked.length}개`}
+                    {activeDayData.dayOff ? '휴무일' : (() => {
+                      const dh = schedule?.defaultSlots ?? INITIAL_DEFAULT_HOURS;
+                      const effectiveSlots = activeDayData.slots.filter(s => dh.includes(s));
+                      const blockedInDefault = activeDayData.blocked.filter(s => dh.includes(s));
+                      return `운영 ${effectiveSlots.filter(s => !blockedInDefault.includes(s)).length}개 · 차단 ${blockedInDefault.length}개`;
+                    })()}
                   </div>
                 )}
               </div>
@@ -1267,7 +1308,12 @@ const ArtistSchedule = () => {
                     * 표시 시간은 활동 지역 현지 시간 기준입니다
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 420, overflowY: 'auto' }}>
-                    {(activeDayData?.slots ?? []).map(time => {
+                    {(() => {
+                      const defaultHours = schedule?.defaultSlots ?? INITIAL_DEFAULT_HOURS;
+                      const rawSlots = activeDayData?.slots ?? defaultHours;
+                      // 기본 운영 시간 범위로 제한 (기본 시간에 포함된 슬롯만 표시)
+                      return rawSlots.filter(t => defaultHours.includes(t));
+                    })().map(time => {
                       const currentBlocked = pendingBlocked ?? (activeDayData?.blocked || []);
                       const blocked = currentBlocked.includes(time);
                       return (
@@ -1306,7 +1352,6 @@ const ArtistSchedule = () => {
               )}
             </div>
           )}
-          {saveMsg && <div style={{ marginTop: 10, padding: '9px 16px', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center' }}>{saveMsg}</div>}
         </div>
       </div>
     </div>
@@ -2470,15 +2515,27 @@ const ArtistSchedule = () => {
     const portfolio = profile?.portfolio ?? [];
 
     // ── 새 포트폴리오 구조: { id, images: [url,...], coverIdx, caption, regionId } ──
-    const addPortfolio = () => saveProfileData({
-      ...profile,
-      portfolio: [...portfolio, { id: genId(), images: [], coverIdx: 0, caption: '', regionId: '' }],
-    });
+    const addPortfolio = () => {
+      const updated = {
+        ...profile,
+        portfolio: [...portfolio, { id: genId(), images: [], coverIdx: 0, caption: '', regionId: '' }],
+      };
+      saveProfile('photographer', artistId, updated);
+      setProfileState(updated);
+      // 토스트 없이 조용히 추가만 — 저장은 "포트폴리오 저장" 버튼으로
+    };
     const updatePf = (idx, field, val) => {
       const next = portfolio.map((p, i) => i === idx ? { ...p, [field]: val } : p);
-      saveProfileData({ ...profile, portfolio: next });
+      const updated = { ...profile, portfolio: next };
+      saveProfile('photographer', artistId, updated);
+      setProfileState(updated);
+      // 토스트 없이 — 저장은 "포트폴리오 저장" 버튼으로
     };
-    const removePf = (idx) => saveProfileData({ ...profile, portfolio: portfolio.filter((_, i) => i !== idx) });
+    const removePf = (idx) => {
+      const updated = { ...profile, portfolio: portfolio.filter((_, i) => i !== idx) };
+      saveProfile('photographer', artistId, updated);
+      setProfileState(updated);
+    };
 
     // 이미지 추가 (드래그앤드롭 / 클릭 업로드용) — 게시물당 최대 10장
     const addPfImages = async (idx, files) => {
@@ -2509,7 +2566,9 @@ const ArtistSchedule = () => {
       images.splice(imgIdx, 1);
       const newCover = pf.coverIdx >= images.length ? 0 : pf.coverIdx;
       const next = portfolio.map((p, i) => i === pfIdx ? { ...p, images, coverIdx: newCover } : p);
-      saveProfileData({ ...profile, portfolio: next });
+      const updated = { ...profile, portfolio: next };
+      saveProfile('photographer', artistId, updated);
+      setProfileState(updated);
     };
     const setCover = (pfIdx, imgIdx) => updatePf(pfIdx, 'coverIdx', imgIdx);
 
@@ -2530,11 +2589,19 @@ const ArtistSchedule = () => {
     const ALL_REGIONS = [...DOMESTIC_REGIONS.map(r => ({ ...r, locType: 'domestic' })), ...OVERSEAS_REGIONS.map(r => ({ ...r, locType: 'overseas' }))];
     const getRegionLabel = (id) => {
       const r = ALL_REGIONS.find(r => r.id === id);
-      return r ? `${r.ko} (${r.en})` : '';
+      if (r) return `${r.ko} (${r.en})`;
+      // WORLD_CITIES 검색
+      for (const [, cities] of Object.entries(WORLD_CITIES)) {
+        const c = cities.find(ct => ct.id === id);
+        if (c) return `${c.ko} (${c.en})`;
+      }
+      return id;
     };
 
-    // 포트폴리오 지역 필터링
-    const usedRegionIds = [...new Set(portfolio.map(pf => pf.regionId).filter(Boolean))];
+    // 포트폴리오 지역 필터링 — 활동 지역 + 포트폴리오에 쓰인 지역 합산
+    const locationRegionIds = (profile?.locations ?? []).map(l => l.regionId).filter(Boolean);
+    const portfolioRegionIds = portfolio.map(pf => pf.regionId).filter(Boolean);
+    const usedRegionIds = [...new Set([...locationRegionIds, ...portfolioRegionIds])];
     const filteredPortfolio = pfLocFilter === 'all' ? portfolio : portfolio.filter(pf => pf.regionId === pfLocFilter);
 
     // 대표 포트폴리오: featured가 true인 게시글의 커버 이미지만
@@ -2592,7 +2659,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
               전체 포트폴리오 ({portfolio.length}개)
-              {portfolio.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
+              {!portfolio.some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 사진+지역 포함 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ fontSize: 11, padding: '5px 12px' }}
@@ -2921,6 +2988,33 @@ const ArtistSchedule = () => {
               "새 포트폴리오" 버튼을 눌러 촬영 작업물을 추가하세요.
             </div>
           )}
+
+          {/* 포트폴리오 저장 버튼 */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
+            <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
+              onClick={() => {
+                if (portfolio.length === 0) {
+                  showSaved('⚠ 등록된 포트폴리오가 없습니다. 포트폴리오를 추가해 주세요.');
+                  return;
+                }
+                const missing = [];
+                portfolio.forEach((p, i) => {
+                  const no = i + 1;
+                  if (!p.regionId) missing.push(`포트폴리오 ${no}: 촬영 지역`);
+                  if (!p.images || p.images.length === 0) missing.push(`포트폴리오 ${no}: 사진`);
+                });
+                if (missing.length > 0) {
+                  showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
+                  return;
+                }
+                // 저장 (토스트 없이) + 명시적 토스트
+                saveProfile('photographer', artistId, { ...profile, portfolio });
+                setProfileState({ ...profile, portfolio });
+                showSaved('포트폴리오가 저장되었습니다 ✓');
+              }}>
+              포트폴리오 저장
+            </button>
+          </div>
 
           <p style={{ fontSize: 11, color: dbConnected ? '#48bb78' : 'var(--muted)', marginTop: 16, lineHeight: 1.7 }}>
             {dbConnected ? '✓ Supabase Storage 연동됨 — 이미지가 클라우드에 저장됩니다.' : '현재는 미리보기 전용입니다. Supabase 연결 후 클라우드 저장이 활성화됩니다.'}
@@ -3377,13 +3471,70 @@ const ArtistSchedule = () => {
       updateSnapProduct(idx, 'regionIds', next);
     };
 
-    // ── 상품 저장 함수 ──────────────────────────────────────────────
-    const handleSaveProducts = () => {
+    // ── 상품 저장 함수 (필수 필드 검증 포함) ──────────────────────
+    const handleSaveSnapProducts = () => {
+      if (snapProducts.length === 0) {
+        showSaved('⚠ 등록된 스냅 촬영 상품이 없습니다. 상품을 추가해 주세요.');
+        return;
+      }
+      const missing = [];
+      snapProducts.forEach((p, i) => {
+        const no = i + 1;
+        if (!p.name?.trim()) missing.push(`상품 ${no}: 상품명`);
+        if (!p.price) missing.push(`상품 ${no}: 가격`);
+        if (!p.editedCount) missing.push(`상품 ${no}: 보정 컷수`);
+        if (!p.desc?.trim()) missing.push(`상품 ${no}: 상품설명`);
+        const imgs = snapImages[i] || p.images || [];
+        if (!imgs.length) missing.push(`상품 ${no}: 사진`);
+      });
+      if (missing.length > 0) {
+        showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
+        return;
+      }
       const mergedSnap = snapProducts.map((p, i) => ({ ...p, images: snapImages[i] || p.images || [] }));
+      saveProfileData({ ...profile, snapProducts: mergedSnap, props: profile?.props || [], costumes: profile?.costumes || [], tours: profile?.tours || [] });
+      showSaved('스냅 촬영 상품이 저장되었습니다 ✓');
+    };
+
+    const handleSaveProps = () => {
+      if (props.length === 0) {
+        showSaved('⚠ 등록된 소품이 없습니다. 소품을 추가해 주세요.');
+        return;
+      }
+      const missing = [];
+      props.forEach((p, i) => {
+        if (!p.name?.trim()) missing.push(`소품 ${i + 1}: 이름`);
+        const imgs = propImages[i] || p.images || [];
+        if (!imgs.length) missing.push(`소품 ${i + 1}: 사진`);
+      });
+      if (missing.length > 0) {
+        showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
+        return;
+      }
       const mergedProps = props.map((p, i) => ({ ...p, images: propImages[i] || p.images || [] }));
+      saveProfileData({ ...profile, props: mergedProps });
+      showSaved('소품이 저장되었습니다 ✓');
+    };
+
+    const handleSaveCostumes = () => {
+      if (costumes.length === 0) {
+        showSaved('⚠ 등록된 의상이 없습니다. 의상을 추가해 주세요.');
+        return;
+      }
+      const missing = [];
+      costumes.forEach((c, i) => {
+        if (!c.name?.trim()) missing.push(`의상 ${i + 1}: 이름`);
+        if (!c.price) missing.push(`의상 ${i + 1}: 가격`);
+        const imgs = costumeImages[i] || c.images || [];
+        if (!imgs.length) missing.push(`의상 ${i + 1}: 사진`);
+      });
+      if (missing.length > 0) {
+        showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
+        return;
+      }
       const mergedCostumes = costumes.map((c, i) => ({ ...c, images: costumeImages[i] || c.images || [] }));
-      saveProfileData({ ...profile, snapProducts: mergedSnap, props: mergedProps, costumes: mergedCostumes, tours: profile?.tours || [] });
-      showSaved('저장되었습니다 ✓');
+      saveProfileData({ ...profile, costumes: mergedCostumes });
+      showSaved('의상이 저장되었습니다 ✓');
     };
 
     // ── 포토 투어 CRUD ─────────────────────────────────────────────
@@ -3478,11 +3629,11 @@ const ArtistSchedule = () => {
         </div>
 
         {/* Section C: 스냅 촬영 상품 (포트폴리오와 동일 형태) */}
-        <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 28px', position: 'relative' }}>
+        <div style={{ border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-              스냅 촬영 상품 ({snapProducts.length}개)
+              📷 스냅 촬영 상품 <span style={{ color: 'rgba(232,160,32,0.5)' }}>— {snapProducts.length}개</span>
               {snapProducts.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -3634,14 +3785,13 @@ const ArtistSchedule = () => {
               })}
             </div>
           )}
-        </div>
-
-        {/* 스냅 촬영 상품 저장 버튼 */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
-            onClick={handleSaveProducts}>
-            스냅 촬영 상품 저장
-          </button>
+          {/* 스냅 촬영 상품 저장 버튼 */}
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
+              onClick={handleSaveSnapProducts}>
+              스냅 촬영 상품 저장
+            </button>
+          </div>
         </div>
 
         {/* Section D: 포토 투어 상품 */}
@@ -3837,17 +3987,33 @@ const ArtistSchedule = () => {
             ))}
           </div>
           <button className="btn-ghost" style={{ fontSize: 12, color: 'var(--gold)' }} onClick={addTour}>+ 투어 추가</button>
-        </div>
-
-        {/* 포토 투어 저장 버튼 */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
-            onClick={() => {
-              saveProfileData({ ...profile, tours });
-              showSaved('포토 투어가 저장되었습니다 ✓');
-            }}>
-            포토 투어 저장
-          </button>
+          {/* 포토 투어 저장 버튼 */}
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
+              onClick={() => {
+                if (tours.length === 0) {
+                  showSaved('⚠ 등록된 포토 투어가 없습니다. 투어를 추가해 주세요.');
+                  return;
+                }
+                const missing = [];
+                tours.forEach((t, i) => {
+                  const no = i + 1;
+                  if (!t.name?.trim()) missing.push(`투어 ${no}: 투어명`);
+                  if (!t.price) missing.push(`투어 ${no}: 가격`);
+                  if (!t.desc?.trim()) missing.push(`투어 ${no}: 투어 설명`);
+                  if (!t.route?.departure?.trim()) missing.push(`투어 ${no}: 출발지`);
+                  if (!t.route?.destination?.trim()) missing.push(`투어 ${no}: 도착지`);
+                });
+                if (missing.length > 0) {
+                  showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
+                  return;
+                }
+                saveProfileData({ ...profile, tours });
+                showSaved('포토 투어가 저장되었습니다 ✓');
+              }}>
+              포토 투어 저장
+            </button>
+          </div>
         </div>
 
         {/* Section E: 투어 일정 오픈 (크라우드펀딩/모집 시스템) */}
@@ -3958,6 +4124,12 @@ const ArtistSchedule = () => {
             ))}
           </div>
           <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addProp}>+ 소품 추가</button>
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
+              onClick={handleSaveProps}>
+              소품 저장
+            </button>
+          </div>
         </div>
 
         {/* Section B: 의상 목록 */}
@@ -4013,14 +4185,13 @@ const ArtistSchedule = () => {
             ))}
           </div>
           <button className="btn-ghost" style={{ fontSize: 12 }} onClick={addCostume}>+ 의상 추가</button>
-        </div>
-
-        {/* 소품 · 의상 저장 버튼 */}
-        <div style={{ marginTop: 32, display: 'flex', justifyContent: 'flex-end' }}>
-          <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
-            onClick={handleSaveProducts}>
-            소품 · 의상 저장
-          </button>
+          {/* 의상 저장 버튼 */}
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
+              onClick={handleSaveCostumes}>
+              의상 저장
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -5112,7 +5283,6 @@ const ArtistSchedule = () => {
           </div>
         )}
 
-        {saveMsg && <div style={{ marginTop: 16, padding: '9px 16px', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center' }}>{saveMsg}</div>}
       </div>
     );
   };
@@ -5120,6 +5290,19 @@ const ArtistSchedule = () => {
   // ─────────────────────────────────────────────────────────────────
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      {/* ── 글로벌 저장 토스트 (fixed overlay) ── */}
+      {saveMsg && (
+        <div style={{
+          position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 9999, padding: '12px 32px', background: 'rgba(11,11,11,0.95)',
+          border: '1px solid var(--gold-border)', fontSize: 13,
+          color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
+          textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
+          animation: 'fadeInDown 0.3s ease-out',
+        }}>
+          {saveMsg}
+        </div>
+      )}
       <div className="section">
 
         {/* ── 헤더 ── */}
@@ -5174,7 +5357,7 @@ const ArtistSchedule = () => {
         {(() => {
           const locs = profile?.locations ?? [];
           const hasMainLoc = locs.some(l => l.isMain);
-          const hasPortfolio = (profile?.portfolio ?? []).length > 0;
+          const hasPortfolio = (profile?.portfolio ?? []).some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId);
           const hasSnapProduct = snapProducts.length > 0;
           const pi = profile?.paymentInfo;
           const hasPayment = !!(pi?.bankName && pi?.accountNumber && pi?.accountHolder);

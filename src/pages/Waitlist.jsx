@@ -11,6 +11,7 @@ const ROLE_BENEFITS = {
   customer: ['b1', 'b2', 'b3', 'b4'],
   photographer: ['b1', 'b3', 'b4'],   // 작가는 수익/글로벌 관련
   stylist: ['b1', 'b3', 'b4'],
+  vendor: ['b1', 'b3', 'b4'],         // 벤더(의상/장소 등)
 };
 
 // 역할 탭 정의
@@ -36,6 +37,13 @@ const ROLES = [
     descKey: 'waitlist.stylistDesc',
     color: '#b8a0c8',
   },
+  {
+    id: 'vendor',
+    icon: '🏪',
+    labelKey: 'waitlist.sectionVendor',
+    descKey: 'waitlist.vendorDesc',
+    color: '#4caf50',
+  },
 ];
 
 const getHonorific = (name, lang) => {
@@ -52,10 +60,15 @@ const Waitlist = () => {
   const [role, setRole]           = useState('customer');
   const [name, setName]           = useState('');
   const [email, setEmail]         = useState('');
+  const [phone, setPhone]         = useState('');
+  const [phoneCode, setPhoneCode] = useState('');
+  const [sentCode, setSentCode]   = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
   const [instagram, setInstagram] = useState('');
   const [done, setDone]           = useState(false);
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
+  const [verifyError, setVerifyError] = useState('');
 
   const activeRole = ROLES.find(r => r.id === role);
 
@@ -67,13 +80,44 @@ const Waitlist = () => {
     { key: 'b5', n: '05', title: t('waitlist.b5Title'), desc: t('waitlist.b5Desc') },
   ];
 
+  // 인증번호 발송 (프로토타입: 실제 SMS 연동 전까지 자동 인증)
+  const handleSendCode = () => {
+    if (!phone || phone.replace(/\D/g, '').length < 10) {
+      setVerifyError(lang === 'ko' ? '올바른 핸드폰 번호를 입력해주세요.' : lang === 'ja' ? '正しい電話番号を入力してください。' : 'Please enter a valid phone number.');
+      return;
+    }
+    setVerifyError('');
+    setSentCode(true);
+    // 프로토타입: 6자리 코드 자동 생성 & 저장 (실서비스 시 SMS API 연동)
+    window.__phosnapVerifyCode = String(Math.floor(100000 + Math.random() * 900000));
+    // alert 대신 콘솔에만 표시 (개발용)
+    console.log('[Phosnap] Verification code:', window.__phosnapVerifyCode);
+  };
+
+  const handleVerifyCode = () => {
+    if (phoneCode === window.__phosnapVerifyCode) {
+      setPhoneVerified(true);
+      setVerifyError('');
+    } else {
+      setVerifyError(lang === 'ko' ? '인증번호가 일치하지 않습니다.' : lang === 'ja' ? '認証番号が一致しません。' : 'Verification code does not match.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name?.trim()) {
+      setError(lang === 'ko' ? '이름을 입력해주세요.' : lang === 'ja' ? '名前を入力してください。' : 'Please enter your name.');
+      return;
+    }
     if (!email) return;
+    if (!phoneVerified) {
+      setError(lang === 'ko' ? '핸드폰 인증을 완료해주세요.' : lang === 'ja' ? '電話番号の認証を完了してください。' : 'Please verify your phone number.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
-      await submitWaitlist({ email, name, role, instagram });
+      await submitWaitlist({ email, name, role, instagram, phone });
       setDone(true);
     } catch (err) {
       setError(err.message || '오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
@@ -92,53 +136,7 @@ const Waitlist = () => {
         </h1>
         <p className="section-sub">{t('waitlist.pageSub')}</p>
 
-        {/* ── 역할 선택 카드 ── */}
-        <div className="waitlist-roles">
-          {ROLES.map(r => {
-            const isActive = role === r.id;
-            return (
-              <button
-                key={r.id}
-                onClick={() => setRole(r.id)}
-                style={{
-                  background: isActive ? 'var(--bg2)' : 'var(--bg)',
-                  border: `1px solid ${isActive ? r.color : 'var(--border)'}`,
-                  padding: '24px 20px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  position: 'relative',
-                  transition: 'all 0.25s',
-                  outline: 'none',
-                  boxShadow: isActive ? `0 0 20px rgba(0,0,0,0.3)` : 'none',
-                }}
-              >
-                {isActive && <Corners />}
-                <div style={{ fontSize: 26, marginBottom: 10 }}>{r.icon}</div>
-                <div style={{
-                  fontFamily: 'var(--font-serif)',
-                  fontSize: 11,
-                  letterSpacing: '0.12em',
-                  color: isActive ? r.color : 'var(--muted)',
-                  textTransform: 'uppercase',
-                  marginBottom: 8,
-                  transition: 'color 0.25s',
-                }}>
-                  {t(r.labelKey)}
-                </div>
-                <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
-                  {t(r.descKey)}
-                </p>
-                {isActive && (
-                  <div style={{
-                    position: 'absolute', bottom: 12, right: 14,
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: r.color,
-                  }} />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        {/* 역할 선택 카드는 폼 내부로 이동됨 */}
 
         {/* ── 혜택 (3+2 레이아웃) ── */}
         <div style={{ marginBottom: 64 }}>
@@ -192,34 +190,85 @@ const Waitlist = () => {
           <div style={{ border: '1px solid var(--border)', padding: '48px 40px', background: 'var(--bg2)', position: 'relative' }}>
             <Corners />
 
-            {/* 역할 표시 헤더 */}
+            {/* 역할 선택 카드 (폼 내부) */}
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.15em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 14 }}>
+              {lang === 'ko' ? '등록 유형 선택' : lang === 'ja' ? '登録タイプ選択' : 'Select Registration Type'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${ROLES.length}, 1fr)`, gap: 10, marginBottom: 28 }}>
+              {ROLES.map(r => {
+                const isActive = role === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    type="button"
+                    onClick={() => setRole(r.id)}
+                    style={{
+                      background: isActive ? `${r.color}10` : 'var(--bg)',
+                      border: `1px solid ${isActive ? r.color : 'var(--border)'}`,
+                      padding: '16px 12px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'all 0.25s',
+                      outline: 'none',
+                    }}
+                  >
+                    <div style={{ fontSize: 22, marginBottom: 6 }}>{r.icon}</div>
+                    <div style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 10,
+                      letterSpacing: '0.1em',
+                      color: isActive ? r.color : 'var(--muted)',
+                      textTransform: 'uppercase',
+                      transition: 'color 0.25s',
+                    }}>
+                      {t(r.labelKey)}
+                    </div>
+                    {isActive && (
+                      <div style={{
+                        position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)',
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: r.color,
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 역할 설명 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
               <span style={{ fontSize: 20 }}>{activeRole.icon}</span>
               <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: 17, letterSpacing: '0.08em', color: activeRole.color }}>
                 {t(activeRole.labelKey)}
               </h3>
             </div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 32, lineHeight: 1.6 }}>
-              {t('waitlist.formNote')}
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 28, lineHeight: 1.6 }}>
+              {t(activeRole.descKey)}
             </p>
 
             <form onSubmit={handleSubmit}>
 
-              {/* 이름 */}
+              {/* 이름 (필수) */}
               <div className="form-group">
-                <label className="form-label">{t('waitlist.nameLabel')}</label>
+                <label className="form-label">
+                  {lang === 'ko' ? '이름' : lang === 'ja' ? '名前' : 'Name'} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                </label>
                 <input
                   className="form-input"
                   type="text"
                   placeholder={t('waitlist.namePlaceholder')}
                   value={name}
                   onChange={e => setName(e.target.value)}
+                  required
                 />
               </div>
 
               {/* 이메일 */}
               <div className="form-group">
-                <label className="form-label">{t('waitlist.emailLabel')}</label>
+                <label className="form-label">
+                  {t('waitlist.emailLabel')} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                </label>
                 <input
                   className="form-input"
                   type="email"
@@ -228,6 +277,77 @@ const Waitlist = () => {
                   onChange={e => setEmail(e.target.value)}
                   required
                 />
+              </div>
+
+              {/* 핸드폰 번호 + 인증 */}
+              <div className="form-group">
+                <label className="form-label">
+                  {lang === 'ko' ? '핸드폰 번호' : lang === 'ja' ? '電話番号' : 'Phone Number'} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    className="form-input"
+                    type="tel"
+                    placeholder={lang === 'ko' ? '010-0000-0000' : '+82 10-0000-0000'}
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    disabled={phoneVerified}
+                    style={{ flex: 1, opacity: phoneVerified ? 0.6 : 1 }}
+                  />
+                  {!phoneVerified && (
+                    <button
+                      type="button"
+                      onClick={handleSendCode}
+                      style={{
+                        padding: '8px 16px', fontSize: 11, fontFamily: 'var(--font-serif)',
+                        background: sentCode ? 'transparent' : 'var(--gold)',
+                        color: sentCode ? 'var(--gold)' : '#000',
+                        border: sentCode ? '1px solid var(--gold-border)' : '1px solid var(--gold)',
+                        cursor: 'pointer', letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {sentCode
+                        ? (lang === 'ko' ? '재발송' : lang === 'ja' ? '再送信' : 'Resend')
+                        : (lang === 'ko' ? '인증번호 발송' : lang === 'ja' ? '認証番号送信' : 'Send Code')}
+                    </button>
+                  )}
+                  {phoneVerified && (
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', color: '#22c55e', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                      ✓ {lang === 'ko' ? '인증완료' : lang === 'ja' ? '認証済み' : 'Verified'}
+                    </div>
+                  )}
+                </div>
+
+                {/* 인증번호 입력 */}
+                {sentCode && !phoneVerified && (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                    <input
+                      className="form-input"
+                      type="text"
+                      maxLength={6}
+                      placeholder={lang === 'ko' ? '인증번호 6자리' : lang === 'ja' ? '認証番号6桁' : '6-digit code'}
+                      value={phoneCode}
+                      onChange={e => setPhoneCode(e.target.value.replace(/\D/g, ''))}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleVerifyCode}
+                      style={{
+                        padding: '8px 16px', fontSize: 11, fontFamily: 'var(--font-serif)',
+                        background: 'transparent', color: 'var(--text)',
+                        border: '1px solid var(--border)', cursor: 'pointer',
+                        letterSpacing: '0.05em', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {lang === 'ko' ? '확인' : lang === 'ja' ? '確認' : 'Verify'}
+                    </button>
+                  </div>
+                )}
+
+                {verifyError && (
+                  <p style={{ color: '#e85d5d', fontSize: 11, marginTop: 6 }}>{verifyError}</p>
+                )}
               </div>
 
               {/* 인스타그램 */}

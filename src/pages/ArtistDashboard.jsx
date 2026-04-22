@@ -34,7 +34,7 @@ import ArtistInsights from '../components/ArtistInsights';
 // ── 배지 정의 (ARTIST_TIERS 기준과 통일) ─────────────────────────────
 const BADGES = [
   { id: 'rising',      label: 'Rising',      symbol: '✦',    minShoots: 0,   minRating: 0,   color: '#9ca3af',    desc: '기본 프로필 노출' },
-  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 20,  minRating: 4.0, color: '#60a5fa',    desc: '검색 상위 노출' },
+  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 30,  minRating: 4.0, color: '#60a5fa',    desc: '검색 상위 노출' },
   { id: 'premier',     label: 'Premier',     symbol: '✦✦✦',  minShoots: 100, minRating: 4.5, color: 'var(--gold)', desc: '추천 작가 배지 표시' },
   { id: 'elite',       label: 'Elite',       symbol: '✦✦✦✦', minShoots: 300, minRating: 4.7, color: '#f472b6',    desc: '홈 피처드 섹션 노출' },
 ];
@@ -736,7 +736,7 @@ const ArtistDashboard = () => {
             // 빨간점: 필수 설정 미완료 또는 대기 예약 존재
             const hasPendingBookings = (bookings || []).some(b => b.status === 'pending' || b.status === 'requested');
             const hasNoLocations = !(artistData?.locations?.length > 0);
-            const hasNoPortfolio = !(artistData?.portfolio?.length > 0);
+            const hasNoPortfolio = !(artistData?.portfolio ?? []).some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId);
             const needsAttention = hasPendingBookings || hasNoLocations || hasNoPortfolio;
 
             return (
@@ -827,6 +827,30 @@ const ArtistDashboard = () => {
                   ))}
                 </div>
 
+                {/* 대기 중 예약 빠른 확인 */}
+                {stats.pending > 0 && (
+                  <div style={{ marginBottom: 40 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <SectionLabel>대기 중 예약 요청</SectionLabel>
+                      <button
+                        onClick={() => { setActiveTab('bookings'); setStatusFilter('pending'); }}
+                        style={{ fontSize: 11, color: 'var(--gold)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}
+                      >
+                        전체 보기 →
+                      </button>
+                    </div>
+                    {bookings.filter(b => b.status === 'pending').slice(0, 3).map(b => (
+                      <BookingCard key={b.id} b={b} showActions />
+                    ))}
+                  </div>
+                )}
+
+                {stats.pending === 0 && (
+                  <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-serif)', fontSize: 13, letterSpacing: '0.08em', marginBottom: 40 }}>
+                    새로운 예약 요청이 없습니다
+                  </div>
+                )}
+
                 {/* 배지 진행도 */}
                 <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.03)', padding: '28px 28px', marginBottom: 40, position: 'relative' }}>
                   <Corners />
@@ -912,30 +936,6 @@ const ArtistDashboard = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* 대기 중 예약 빠른 확인 */}
-                {stats.pending > 0 && (
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                      <SectionLabel>대기 중 예약 요청</SectionLabel>
-                      <button
-                        onClick={() => { setActiveTab('bookings'); setStatusFilter('pending'); }}
-                        style={{ fontSize: 11, color: 'var(--gold)', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}
-                      >
-                        전체 보기 →
-                      </button>
-                    </div>
-                    {bookings.filter(b => b.status === 'pending').slice(0, 3).map(b => (
-                      <BookingCard key={b.id} b={b} showActions />
-                    ))}
-                  </div>
-                )}
-
-                {stats.pending === 0 && (
-                  <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--muted)', border: '1px solid var(--border)', fontFamily: 'var(--font-serif)', fontSize: 13, letterSpacing: '0.08em' }}>
-                    새로운 예약 요청이 없습니다
-                  </div>
-                )}
               </div>
             )}
 

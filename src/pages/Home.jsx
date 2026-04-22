@@ -149,9 +149,6 @@ const WaitlistSection = () => {
             </button>
           </form>
         )}
-        <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 16, letterSpacing: '0.05em' }}>
-          {t('home.waitlistNote')}
-        </p>
       </div>
     </div>
   );

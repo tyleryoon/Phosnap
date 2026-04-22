@@ -41,6 +41,18 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
+  const prevYear = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setViewYear(y => y - 1);
+  }, []);
+
+  const nextYear = useCallback((e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setViewYear(y => y + 1);
+  }, []);
+
   const prevMonth = useCallback((e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -120,49 +132,87 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
             userSelect: 'none',
           }}
         >
-          {/* 헤더: ← 2025년 3월 → */}
+          {/* 헤더: « ‹ 2025년 3월 › » */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             marginBottom: 12,
           }}>
-            <button
-              type="button"
-              onClick={prevMonth}
-              onMouseDown={e => e.stopPropagation()}
-              style={{
-                background: 'transparent', border: '1px solid var(--border)',
-                color: 'var(--text)', width: 28, height: 28,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 14,
-                transition: 'border-color 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              ‹
-            </button>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                type="button"
+                onClick={prevYear}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--muted)', width: 28, height: 28,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 12,
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+                title="이전 연도"
+              >
+                «
+              </button>
+              <button
+                type="button"
+                onClick={prevMonth}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text)', width: 28, height: 28,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 14,
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                ‹
+              </button>
+            </div>
             <span style={{
               fontFamily: 'var(--font-serif)', fontSize: 13,
               letterSpacing: '0.08em', color: 'var(--text)',
             }}>
               {viewYear}년 {MONTHS[viewMonth]}
             </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              onMouseDown={e => e.stopPropagation()}
-              style={{
-                background: 'transparent', border: '1px solid var(--border)',
-                color: 'var(--text)', width: 28, height: 28,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', fontSize: 14,
-                transition: 'border-color 0.15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-            >
-              ›
-            </button>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button
+                type="button"
+                onClick={nextMonth}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--text)', width: 28, height: 28,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 14,
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                onClick={nextYear}
+                onMouseDown={e => e.stopPropagation()}
+                style={{
+                  background: 'transparent', border: '1px solid var(--border)',
+                  color: 'var(--muted)', width: 28, height: 28,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', fontSize: 12,
+                  transition: 'border-color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.color = 'var(--gold)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--muted)'; }}
+                title="다음 연도"
+              >
+                »
+              </button>
+            </div>
           </div>
 
           {/* 요일 헤더 */}
