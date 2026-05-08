@@ -573,7 +573,27 @@ CREATE POLICY "Stylists can delete their own services" ON stylist_services
 CREATE INDEX IF NOT EXISTS idx_stylist_services_stylist_id ON stylist_services(stylist_id);
 
 -- ============================================================================
--- 3. DRESS_ITEMS TABLE
+-- 3a. DRESS_VENDORS TABLE (must be created before dress_items)
+-- ============================================================================
+create table if not exists public.dress_vendors (
+  id              uuid primary key default uuid_generate_v4(),
+  user_id         uuid references public.profiles(id) on delete cascade,
+  name            text not null,
+  name_i18n       jsonb default '{}',
+  bio             text,
+  bio_i18n        jsonb default '{}',
+  location_id     text,
+  location_names  jsonb default '{}',
+  categories      text[] default '{}',
+  img             text,
+  contact_info    jsonb default '{}',
+  is_active       boolean default true,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+
+-- ============================================================================
+-- 3b. DRESS_ITEMS TABLE
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS dress_items (
@@ -682,23 +702,7 @@ alter table public.photographers
 alter table public.photographers
   add column if not exists dress_self boolean default false;
 
--- ── 3. dress_vendors (의상 대여 업체) ──────────────────────────
-create table if not exists public.dress_vendors (
-  id              uuid primary key default uuid_generate_v4(),
-  user_id         uuid references public.profiles(id) on delete cascade,
-  name            text not null,
-  name_i18n       jsonb default '{}',       -- {ko, en, ja, zh}
-  bio             text,
-  bio_i18n        jsonb default '{}',
-  location_id     text,
-  location_names  jsonb default '{}',
-  categories      text[] default '{}',
-  img             text,
-  contact_info    jsonb default '{}',
-  is_active       boolean default true,
-  created_at      timestamptz not null default now(),
-  updated_at      timestamptz not null default now()
-);
+-- ── 3. dress_vendors (이미 STEP 5에서 생성됨) ──────────────────
 
 -- Add country_code and city columns to dress_vendors
 ALTER TABLE dress_vendors ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT 'KR';
