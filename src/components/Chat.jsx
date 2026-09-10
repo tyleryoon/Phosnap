@@ -169,9 +169,11 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
         }
 
         if (!room) {
+          // bookings 의 고객 컬럼은 customer_id 다. user_id 는 존재하지 않아
+          // 항상 undefined 가 들어가 채팅방 생성이 실패했다.
           const { data: booking, error: bookingError } = await sb
             .from('bookings')
-            .select('photographer_id, user_id')
+            .select('photographer_id, customer_id')
             .eq('id', bookingId)
             .single();
 
@@ -185,7 +187,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
             .insert({
               booking_id: bookingId,
               photographer_id: booking.photographer_id,
-              customer_id: booking.user_id,
+              customer_id: booking.customer_id,
             })
             .select()
             .single();
@@ -205,7 +207,9 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
 
         if (isMounted) {
           setRoomId(room.id);
-          const isPhotographer = user.id === room.photographer_id;
+          // room.photographer_id 는 photographers.id 이므로 auth 유저 id 와
+          // 직접 비교하면 항상 false 가 된다. 고객 여부로 판별한다.
+          const isPhotographer = user.id !== room.customer_id;
           setOtherUser({
             id: isPhotographer ? room.customer_id : room.photographer_id,
             isPhotographer: !isPhotographer,
