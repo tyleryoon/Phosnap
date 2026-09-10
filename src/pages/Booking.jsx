@@ -363,6 +363,7 @@ const Booking = () => {
   const [dbDefaultSlots, setDbDefaultSlots] = useState(null); // string[]
   const [dbMonthSchedule, setDbMonthSchedule] = useState(null); // { 'YYYY-MM-DD': row }
   const [dbDresses, setDbDresses] = useState(null);
+  const [dbVenues, setDbVenues] = useState(null);
 
   // 스케줄 초기화 (localStorage mock 데이터 시딩)
   useEffect(() => { initSchedules(); }, []);
@@ -386,7 +387,7 @@ const Booking = () => {
   useEffect(() => {
     const loadDbData = async () => {
       try {
-        const { getStylists, getDressItems } = await import('../lib/supabase');
+        const { getStylists, getDressItems, getVenueVendors, getVenueItems } = await import('../lib/supabase');
 
         // Load stylists from DB
         const { data: stylistsData } = await getStylists(p?.locationId);
@@ -429,6 +430,20 @@ const Booking = () => {
             description: d.description,
           }));
           setDbDresses(mapped);
+        }
+
+        // Load venues from DB (mock venueVendors 폴백을 대체)
+        const { data: vendors } = await getVenueVendors();
+        if (vendors && vendors.length > 0) {
+          const lists = await Promise.all(
+            vendors.map(async v => {
+              const { data: items } = await getVenueItems(v.id);
+              return (items || []).map(item => ({ ...item, vendor: v }));
+            })
+          );
+          setDbVenues(lists.flat());
+        } else {
+          setDbVenues([]);
         }
       } catch (err) {
         // silently handled
@@ -572,7 +587,10 @@ const Booking = () => {
     );
   }
 
-  const availableStylists = dbStylists || getStylistsByLocation(p.locationId);
+  // DB 가 유일한 출처다. 예전에는 dbStylists 가 비면 mock 스타일리스트
+  // 5명(교토·도쿄·부산 등 지역 무관)이 노출되어, 존재하지 않는 사람을
+  // 예약에 포함시킬 수 있었다.
+  const availableStylists = dbStylists || [];
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay    = getFirstDay(calYear, calMonth);
@@ -589,13 +607,11 @@ const Booking = () => {
 
   // 의상 관련 데이터
   const dressVendor = p.dressVendorId ? getVendorById(p.dressVendorId) : null;
-  const availableDresses = dbDresses || (
-    p.dressSelf
-      ? (p.dresses || [])  // artist's own dresses (from photographer data)
-      : p.dressVendorId
-        ? getDressesByVendor(p.dressVendorId)
-        : []
-  );
+  // 작가 본인 보유 의상(photographers.dresses)은 실제 데이터이므로 유지하고,
+  // 벤더 의상은 DB 조회 결과만 사용한다 (mock 벤더 폴백 제거).
+  const availableDresses = p.dressSelf
+    ? (p.dresses || [])
+    : (dbDresses || []);
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
   const dressPrice = selectedDressData?.price || 0;
 
@@ -607,11 +623,8 @@ const Booking = () => {
   };
 
   // Venue data
-  const venueVendors = getVenueVendorsByLocation(p?.locationId) || [];
-  const allVenueItems = venueVendors.flatMap(v => {
-    const items = getVenueItemsByVendor(v.id) || [];
-    return items.map(item => ({ ...item, vendor: v }));
-  });
+  // 장소도 DB 에서 조회한다 (mock venueVendors 폴백 제거).
+  const allVenueItems = dbVenues || [];
   const selectedVenueData = allVenueItems.find(v => v.id === selectedVenue);
   const venuePrice = selectedVenueData?.price || 0;
 
