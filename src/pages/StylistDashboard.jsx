@@ -8,6 +8,7 @@ import LocationPicker from '../components/LocationPicker';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
+import { computeSlot } from '../lib/scheduling';
 
 const i18n = {
   ko: {
@@ -26,6 +27,21 @@ const i18n = {
     price: '가격',
     duration: '소요 시간 (분)',
     description: '설명',
+    timing: '시술 시점',
+    timingBefore: '촬영 전 완료',
+    timingDuring: '촬영 중 합류',
+    timingFull: '종일 동행',
+    timingBeforeDesc: '샵이나 현장에서 시술을 마치고 촬영에 넘깁니다',
+    timingDuringDesc: '촬영 중간에 현장으로 가서 헤어변형·터치업을 합니다',
+    timingFullDesc: '촬영 전 시술 후 촬영이 끝날 때까지 현장에 함께 있습니다',
+    travelBuffer: '촬영지 이동 시간 (분)',
+    travelBufferHint: '촬영 장소에서 바로 시술하면 0을 입력하세요',
+    joinAfter: '촬영 시작 후 합류 시점 (분)',
+    joinAfterHint: '촬영이 시작되고 몇 분 뒤에 도착하면 되는지',
+    maxHours: '감당 가능한 최대 촬영 시간',
+    maxHoursHint: '이보다 긴 촬영에는 이 메뉴가 노출되지 않습니다',
+    travelFee: '출장비 (선택)',
+    slotPreview: '촬영이 16:00~19:00 이라면',
     save: '저장',
     cancel: '취소',
     edit: '편집',
@@ -71,6 +87,21 @@ const i18n = {
     price: 'Price',
     duration: 'Duration (minutes)',
     description: 'Description',
+    timing: 'When the service happens',
+    timingBefore: 'Before the shoot',
+    timingDuring: 'Joins during the shoot',
+    timingFull: 'Stays all day',
+    timingBeforeDesc: 'Finish at the salon or on location, then hand off to the shoot',
+    timingDuringDesc: 'Arrive mid-shoot for restyling and touch-ups',
+    timingFullDesc: 'Prep before the shoot, then stay on location until it wraps',
+    travelBuffer: 'Travel time to location (min)',
+    travelBufferHint: 'Enter 0 if you work on location',
+    joinAfter: 'Joins after shoot starts (min)',
+    joinAfterHint: 'How long after the shoot begins you arrive',
+    maxHours: 'Longest shoot you can cover',
+    maxHoursHint: 'This menu is hidden for shoots longer than this',
+    travelFee: 'Travel fee (optional)',
+    slotPreview: 'If the shoot runs 16:00–19:00',
     save: 'Save',
     cancel: 'Cancel',
     edit: 'Edit',
@@ -116,6 +147,21 @@ const i18n = {
     price: '価格',
     duration: '所要時間（分）',
     description: '説明',
+    timing: '施術タイミング',
+    timingBefore: '撮影前に完了',
+    timingDuring: '撮影中に合流',
+    timingFull: '終日同行',
+    timingBeforeDesc: 'サロンまたは現場で施術を終えてから撮影に引き継ぎます',
+    timingDuringDesc: '撮影の途中で現場に向かい、ヘアチェンジや直しを行います',
+    timingFullDesc: '撮影前の施術後、撮影終了まで現場に同行します',
+    travelBuffer: '撮影地への移動時間（分）',
+    travelBufferHint: '現場で施術する場合は0を入力してください',
+    joinAfter: '撮影開始後の合流時間（分）',
+    joinAfterHint: '撮影開始から何分後に到着するか',
+    maxHours: '対応可能な最長撮影時間',
+    maxHoursHint: 'これより長い撮影ではこのメニューは表示されません',
+    travelFee: '出張費（任意）',
+    slotPreview: '撮影が16:00〜19:00の場合',
     save: '保存',
     cancel: 'キャンセル',
     edit: '編集',
@@ -163,6 +209,21 @@ const i18n = {
     description: '描述',
     save: '保存',
     cancel: '取消',
+    timing: '服务时间点',
+    timingBefore: '拍摄前完成',
+    timingDuring: '拍摄中加入',
+    timingFull: '全天陪同',
+    timingBeforeDesc: '在店内或现场完成造型后交给拍摄',
+    timingDuringDesc: '拍摄途中前往现场进行改造型和补妆',
+    timingFullDesc: '拍摄前造型后一直陪同到拍摄结束',
+    travelBuffer: '前往拍摄地的时间（分钟）',
+    travelBufferHint: '如在现场进行造型请填 0',
+    joinAfter: '拍摄开始后加入时间（分钟）',
+    joinAfterHint: '拍摄开始后多久到达',
+    maxHours: '可承接的最长拍摄时间',
+    maxHoursHint: '超过此时长的拍摄不会显示此项目',
+    travelFee: '出差费（可选）',
+    slotPreview: '若拍摄为 16:00–19:00',
     edit: '编辑',
     delete: '删除',
     noServices: '未注册服务',
@@ -608,18 +669,26 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
   );
 };
 
-const ServiceMenuTab = ({ t, stylistId }) => {
+const ServiceMenuTab = ({ t, lang, stylistId }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
-  const [formData, setFormData] = useState({
+  const EMPTY_FORM = {
     serviceName: '',
     price: '',
     duration: '',
     description: '',
-  });
+    // 시술 시점에 따라 점유 구간이 완전히 달라진다.
+    // 촬영 16:00 기준 — before 는 그 전에 끝나야 하고,
+    // during 은 아직 시작도 하지 않았다.
+    timing: 'before',
+    offsetMinutes: '30',
+    maxHours: '',
+    travelFee: '',
+  };
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -649,16 +718,15 @@ const ServiceMenuTab = ({ t, stylistId }) => {
         serviceName: service.name_ko ?? service.name ?? '',
         price: String(service.price ?? ''),
         duration: String(service.duration_minutes ?? service.duration ?? 60),
-        description: service.description,
+        description: service.description ?? '',
+        timing: service.timing ?? 'before',
+        offsetMinutes: String(service.offset_minutes ?? 30),
+        maxHours: service.max_hours != null ? String(service.max_hours) : '',
+        travelFee: service.travel_fee ? String(service.travel_fee) : '',
       });
     } else {
       setEditingService(null);
-      setFormData({
-        serviceName: '',
-        price: '',
-        duration: '',
-        description: '',
-      });
+      setFormData(EMPTY_FORM);
     }
     setModalOpen(true);
   };
@@ -666,12 +734,7 @@ const ServiceMenuTab = ({ t, stylistId }) => {
   const closeModal = () => {
     setModalOpen(false);
     setEditingService(null);
-    setFormData({
-      serviceName: '',
-      price: '',
-      duration: '',
-      description: '',
-    });
+    setFormData(EMPTY_FORM);
   };
 
   const handleSave = async () => {
@@ -686,6 +749,15 @@ const ServiceMenuTab = ({ t, stylistId }) => {
         duration_minutes: parseInt(formData.duration, 10) || 60,
         description:      formData.description || '',
         stylist_id:       stylistId,
+        // 예약 시 점유 구간을 계산하는 값들.
+        // 이게 없으면 모든 시술이 "촬영 전 완료"로 취급돼
+        // 헤어변형과 종일 동행을 등록할 수 없다.
+        timing:           formData.timing || 'before',
+        offset_minutes:   Math.max(0, parseInt(formData.offsetMinutes, 10) || 0),
+        max_hours:        formData.timing === 'full' && formData.maxHours
+                            ? Number(formData.maxHours)
+                            : null,
+        travel_fee:       parseInt(String(formData.travelFee).replace(/[^0-9]/g, ''), 10) || 0,
       };
 
       let nextServices;
@@ -798,6 +870,23 @@ const ServiceMenuTab = ({ t, stylistId }) => {
                   <div style={{ color: 'var(--text)' }}>{service.duration_minutes ?? service.duration}분</div>
                 </div>
               </div>
+              {/* 시술 시점 — 고객에게 안내되는 내용이라 목록에서도 확인할 수 있어야 한다 */}
+              <div style={{ marginBottom: 16 }}>
+                <span style={{
+                  display: 'inline-block',
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  color: 'rgba(232,160,32,0.9)',
+                  border: '1px solid rgba(232,160,32,0.35)',
+                }}>
+                  {service.timing === 'during' ? t.timingDuring
+                    : service.timing === 'full' ? t.timingFull
+                    : t.timingBefore}
+                  {service.timing === 'full' && service.max_hours
+                    ? ` · ~${service.max_hours}h`
+                    : ''}
+                </span>
+              </div>
               <div style={{ display: 'flex', gap: 12 }}>
                 <button
                   onClick={() => openModal(service)}
@@ -890,6 +979,150 @@ const ServiceMenuTab = ({ t, stylistId }) => {
                 fontSize: 14,
               }}
             />
+
+            {/* ── 시술 시점 ──────────────────────────────────────────
+                촬영 16:00 기준으로 세 유형의 시각이 전혀 다르다.
+                이 값이 없으면 모든 시술이 "촬영 전 완료"가 되어
+                헤어변형과 종일 동행을 등록할 수 없다. */}
+            <div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>{t.timing}</div>
+              <div style={{ display: 'grid', gap: 8 }}>
+                {[
+                  { key: 'before', label: t.timingBefore, desc: t.timingBeforeDesc },
+                  { key: 'during', label: t.timingDuring, desc: t.timingDuringDesc },
+                  { key: 'full',   label: t.timingFull,   desc: t.timingFullDesc },
+                ].map(opt => {
+                  const on = formData.timing === opt.key;
+                  return (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setFormData(f => ({
+                        ...f,
+                        timing: opt.key,
+                        // 동행은 이미 현장이라 이동 버퍼가 없다.
+                        // 기본값을 옮겨주지 않으면 "이동 30분"이 그대로 남는다.
+                        offsetMinutes: opt.key === 'during' ? '30'
+                                     : opt.key === 'full'   ? '0'
+                                     : f.offsetMinutes,
+                      }))}
+                      style={{
+                        textAlign: 'left',
+                        padding: 12,
+                        cursor: 'pointer',
+                        background: on ? 'rgba(232,160,32,0.10)' : 'var(--bg)',
+                        border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                        color: 'var(--text)',
+                        fontFamily: 'var(--font-body)',
+                      }}
+                    >
+                      <div style={{ fontSize: 14, marginBottom: 4 }}>{opt.label}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>{opt.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 이동 버퍼 / 합류 시점 */}
+            <div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                {formData.timing === 'during' ? t.joinAfter : t.travelBuffer}
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={formData.offsetMinutes}
+                onChange={e => setFormData({ ...formData, offsetMinutes: e.target.value })}
+                style={{
+                  padding: 12,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                }}
+              />
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                {formData.timing === 'during' ? t.joinAfterHint : t.travelBufferHint}
+              </div>
+            </div>
+
+            {/* 종일 동행 전용 — 감당 가능한 최대 촬영 길이 */}
+            {formData.timing === 'full' && (
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.maxHours}</div>
+                <input
+                  type="number"
+                  min="1"
+                  step="0.5"
+                  value={formData.maxHours}
+                  onChange={e => setFormData({ ...formData, maxHours: e.target.value })}
+                  style={{
+                    padding: 12,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                  }}
+                />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{t.maxHoursHint}</div>
+              </div>
+            )}
+
+            {/* 출장비 (선택) */}
+            {formData.timing !== 'before' && (
+              <input
+                type="number"
+                placeholder={t.travelFee}
+                value={formData.travelFee}
+                onChange={e => setFormData({ ...formData, travelFee: e.target.value })}
+                style={{
+                  padding: 12,
+                  background: 'var(--bg)',
+                  color: 'var(--text)',
+                  border: '1px solid var(--border)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: 14,
+                }}
+              />
+            )}
+
+            {/* 실제로 몇 시에 묶이는지 바로 보여준다 */}
+            <div style={{ padding: 12, background: 'var(--bg)', border: '1px dashed var(--border)' }}>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>{t.slotPreview}</div>
+              {(() => {
+                const slot = computeSlot({
+                  timing: formData.timing,
+                  shootStart: new Date('2026-01-01T16:00:00'),
+                  shootEnd:   new Date('2026-01-01T19:00:00'),
+                  durationMinutes: parseInt(formData.duration, 10) || 60,
+                  offsetMinutes:   parseInt(formData.offsetMinutes, 10) || 0,
+                });
+                if (!slot) return null;
+                const hm = d => d.toTimeString().slice(0, 5);
+                const same = hm(slot.busyStart) === hm(slot.start)
+                          && hm(slot.busyEnd)   === hm(slot.end);
+                return (
+                  <>
+                    <div style={{ fontSize: 14, color: 'var(--text)' }}>
+                      {lang === 'ko' ? '시술' : 'Service'} {hm(slot.start)} ~ {hm(slot.end)}
+                    </div>
+                    {!same && (
+                      <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 4 }}>
+                        {lang === 'ko' ? '일정 점유' : 'Blocked'} {hm(slot.busyStart)} ~ {hm(slot.busyEnd)}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
             <textarea
               placeholder={t.description}
               value={formData.description}
@@ -1421,7 +1654,7 @@ export default function StylistDashboard() {
         </div>
 
         {activeTab === 'bookings' && <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />}
-        {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} stylistId={stylistId} />}
+        {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} lang={lang} stylistId={stylistId} />}
         {activeTab === 'dressRental' && <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />}
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 

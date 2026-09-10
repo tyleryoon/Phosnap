@@ -20,6 +20,7 @@ import { getVendorsByLocation, getVendorById } from '../data/dressVendors';
 import { getVenueVendorsByLocation, getVenueItemsByVendor, getVenueItemById } from '../data/venueVendors';
 import { getTagLabel } from '../data/tagRegistry';
 import { loadTossPayments, generateOrderId } from '../lib/payment';
+import { computeSlot, buildShootWindow } from '../lib/scheduling';
 import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules, buildSlotData } from '../data/schedules';
 import WeatherGoldenHour from '../components/WeatherGoldenHour';
 import PopularityIndicator from '../components/PopularityIndicator';
@@ -693,6 +694,55 @@ const Booking = () => {
   const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
 
   /**
+   * 시술이 실제로 몇 시에 시작되는지 안내 문구로 만든다.
+   *
+   * 촬영 16:00 기준으로 세 유형의 시각이 전혀 다르다.
+   *   촬영 전 완료 → 14:00 시술 (이동 30분 포함해 16:00 까지)
+   *   촬영 중 합류 → 16:30 현장 도착
+   *   종일 동행    → 15:00 시술 후 촬영 종료까지
+   */
+  const stylistTimingLabel = (svc) => {
+    if (!svc) return '';
+    const shoot = buildShootWindow(
+      selectedDate,
+      selectedTime,
+      pkgData?.duration_hours ?? pkgData?.hours ?? 2,
+    );
+    const timing = svc.timing || 'before';
+
+    // 날짜·시간을 아직 안 골랐으면 성격만 알려준다
+    if (!shoot) {
+      if (timing === 'during') return lang === 'ko' ? '촬영 중 현장 합류' : 'Joins during the shoot';
+      if (timing === 'full')   return lang === 'ko' ? '촬영 종료까지 동행' : 'Stays through the shoot';
+      return '';
+    }
+
+    const slot = computeSlot({
+      timing,
+      shootStart: shoot.start,
+      shootEnd:   shoot.end,
+      durationMinutes: svc.duration_minutes ?? svc.duration ?? 60,
+      offsetMinutes:   svc.offset_minutes ?? 30,
+    });
+    if (!slot) return '';
+    const hm = (d) => d.toTimeString().slice(0, 5);
+
+    if (timing === 'during') {
+      return lang === 'ko'
+        ? `${hm(slot.start)} 현장 합류`
+        : `Joins on-site at ${hm(slot.start)}`;
+    }
+    if (timing === 'full') {
+      return lang === 'ko'
+        ? `${hm(slot.start)} 시술 · 촬영 종료까지 동행`
+        : `Prep at ${hm(slot.start)}, stays until the shoot ends`;
+    }
+    return lang === 'ko'
+      ? `${hm(slot.start)} 시술 시작`
+      : `Starts at ${hm(slot.start)}`;
+  };
+
+  /**
    * 예약을 참여자별 라인 아이템으로 만든다.
    *
    * 예전에는 이름·금액만 URL 로 넘겨서 헤메와 벤더가 자기 예약을 알 수도,
@@ -1155,6 +1205,18 @@ const Booking = () => {
                                 )}
                                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, letterSpacing: '0.08em', marginBottom: 6, paddingLeft: isSvcSelected ? 20 : 0, transition: 'padding 0.2s' }}>{svc.name}</div>
                                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, color: 'var(--gold)', marginBottom: 4 }}>₩{fmtStylist(svc.price)}</div>
+                                {/* 시술 시각을 실제로 몇 시인지 보여준다.
+                                    "촬영 전 완료"와 "촬영 중 합류"는 고객이 준비해야 할
+                                    시간이 완전히 달라서 반드시 안내가 필요하다. */}
+                                {(() => {
+                                  const label = stylistTimingLabel(svc);
+                                  if (!label) return null;
+                                  return (
+                                    <div style={{ fontSize: 11, color: 'rgba(232,160,32,0.9)', marginBottom: 4 }}>
+                                      {label}
+                                    </div>
+                                  );
+                                })()}
                                 <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>{svc.descI18n?.[lang] ?? svc.desc}</div>
                               </div>
                             );
