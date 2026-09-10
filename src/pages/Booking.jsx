@@ -736,6 +736,25 @@ const Booking = () => {
       b.start < shootWindow.end && shootWindow.start < b.end
     );
   });
+  // 장소를 벤더 단위로 묶어서 보여준다.
+  //
+  // 예전에는 mock 의 `venueVendors` 를 그대로 참조하고 있었는데,
+  // mock 을 걷어낼 때 이 참조가 남아 장소 벤더가 하나라도 생기는 순간
+  // STEP 05 전체가 ReferenceError 로 죽는 상태였다.
+  // 장소가 0개라 렌더될 일이 없어서 검증에서 드러나지 않았다.
+  const venueVendors = [...new Map(
+    allVenueItems
+      .filter(v => v.vendorId)
+      .map(v => [v.vendorId, {
+        id:            v.vendorId,
+        name:          v.vendorName || v.vendor?.name_ko || v.vendor?.name || '',
+        nameI18n:      v.vendor?.name_i18n || null,
+        img:           v.vendor?.img || v.vendor?.image_url || null,
+        locationNames: v.vendor?.location_names || null,
+        categories:    v.vendor?.categories || null,
+      }])
+  ).values()];
+
   const selectedVenueData = allVenueItems.find(v => v.id === selectedVenue);
   const venuePrice = selectedVenueData?.price || 0;
 

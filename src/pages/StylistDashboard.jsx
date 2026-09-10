@@ -1654,7 +1654,9 @@ export default function StylistDashboard() {
         </div>
 
         {activeTab === 'bookings' && <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />}
-        {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} lang={lang} stylistId={stylistId} />}
+        {/* 이 컴포넌트는 useLanguage() 를 `language` 로 받는다.
+            lang={lang} 로 넘기면 ReferenceError 로 탭 전체가 크래시한다. */}
+        {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} lang={language} stylistId={stylistId} />}
         {activeTab === 'dressRental' && <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />}
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 
