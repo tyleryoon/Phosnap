@@ -310,10 +310,18 @@ const Home = ({ onAuthOpen }) => {
                 }}
               />
             ))
-          ) : (
-            (featuredPhotographers || PHOTOGRAPHERS.map(ph => getMergedProfile(ph, 'photographer', ph.id))).map(p => (
+          ) : (featuredPhotographers && featuredPhotographers.length > 0) ? (
+            featuredPhotographers.map(p => (
               <PhotographerCard key={p.id} p={p} />
             ))
+          ) : (
+            // mock 폴백 제거: 등록된 작가가 없으면 빈 상태를 정직하게 보여준다.
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '60px 0', color: 'var(--muted)' }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
+                아직 등록된 작가가 없습니다
+              </div>
+              <div style={{ fontSize: 13 }}>곧 멋진 작가들을 만나보실 수 있습니다.</div>
+            </div>
           )}
         </div>
         <div style={{ textAlign: 'center', marginTop: 40 }}>

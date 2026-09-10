@@ -678,18 +678,27 @@ const ArtistSchedule = () => {
         // 현재 유저의 photographer 레코드 조회
         const { data: { session } } = await sb.auth.getSession();
         if (session?.user) {
-          const { data: photog } = await sb.from('photographers')
+          let { data: photog } = await sb.from('photographers')
             .select('id').eq('user_id', session.user.id).maybeSingle();
 
-          // profiles에서 legacy_id 조회하여 artistId 업데이트
-          const { data: prof } = await sb.from('profiles')
-            .select('artist_legacy_id').eq('id', session.user.id).maybeSingle();
-          if (prof?.artist_legacy_id) {
-            setArtistId(prof.artist_legacy_id);
-            try { sessionStorage.setItem('phosnap_artist_id', String(prof.artist_legacy_id)); } catch (_) {}
+          // 공개 레코드가 아직 없는 계정(구버전 가입자 등)은 여기서 생성해준다.
+          // 이게 없으면 임시 ID로 localStorage 에만 저장되어 고객에게 노출되지 않는다.
+          if (!photog?.id) {
+            const { data: prof } = await sb.from('profiles')
+              .select('full_name, artist_type').eq('id', session.user.id).maybeSingle();
+            const { ensureArtistRecord } = await import('../lib/supabase');
+            const parsed = (prof?.full_name || '').match(/^(.*?)\s*\((.*)\)\s*$/);
+            const { data: created } = await ensureArtistRecord(session.user.id, {
+              artistType:  prof?.artist_type || 'photographer',
+              nativeName:  parsed ? parsed[1] : (prof?.full_name || ''),
+              englishName: parsed ? parsed[2] : '',
+            });
+            if (created?.id) photog = created;
           }
 
           if (photog?.id) {
+            setArtistId(photog.id);
+            try { sessionStorage.setItem('phosnap_artist_id', String(photog.id)); } catch (_) {}
             setDbPhotographerId(photog.id);
             setDbConnected(true);
             // 패키지 로드

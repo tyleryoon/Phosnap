@@ -477,7 +477,7 @@ const ArtistRegister = () => {
   // ── 회원가입 제출 ────────────────────────────────────────────────────
   // ── 프로필 저장 공통 로직 ──
   const saveArtistProfile = async (userId) => {
-    const { upsertProfile, addUserRole } = await import('../lib/supabase');
+    const { upsertProfile, addUserRole, ensureArtistRecord } = await import('../lib/supabase');
     const { saveReferralCode, applyReferralCode } = await import('../lib/referral');
     const portfolioUrls = await uploadPortfolioImages();
     const displayName = `${nativeName} (${englishName})`;
@@ -488,7 +488,7 @@ const ArtistRegister = () => {
     // Generate referral code for new artist
     const myCode = await saveReferralCode(userId, 'artist');
 
-    await upsertProfile({
+    const { error: profileErr } = await upsertProfile({
       id:               userId,
       full_name:        displayName,
       role:             'artist',
@@ -508,6 +508,25 @@ const ArtistRegister = () => {
       instagram:        instagram.trim() || null,
       website:          website.trim() || null,
     });
+    if (profileErr) {
+      // 프로필이 저장되지 않으면 이후 단계가 모두 무의미하므로 즉시 중단한다.
+      throw new Error(`프로필 저장 실패: ${profileErr.message}`);
+    }
+
+    // 고객에게 노출되는 공개 레코드(photographers / stylists) 생성.
+    // 이 단계가 없으면 작가가 검색 결과에 영원히 나타나지 않는다.
+    const { error: artistErr } = await ensureArtistRecord(userId, {
+      artistType,
+      nativeName,
+      englishName,
+      portfolioUrls,
+      instagram: instagram.trim() || null,
+      hmkSelf:   isPhotoVideo ? (hmkSelf === true) : false,
+      dressSelf: isPhotoVideo ? dressSelf : false,
+    });
+    if (artistErr) {
+      throw new Error(`작가 등록 실패: ${artistErr.message}`);
+    }
 
     // Apply referral code if provided
     if (referralCode.trim()) {

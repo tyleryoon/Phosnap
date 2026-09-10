@@ -404,6 +404,95 @@ export const upsertProfile = async (profile) => {
   return sb.from('profiles').upsert(profile);
 };
 
+/**
+ * 작가/헤메 공개 레코드를 보장한다.
+ *
+ * 회원가입 시 profiles 만 저장하면 고객에게 노출되는 photographers /
+ * stylists 테이블에 아무 것도 남지 않아 작가가 검색되지 않는다.
+ * 이 함수는 해당 user_id 의 공개 레코드가 없으면 새로 만들고,
+ * 있으면 그대로 반환한다. (가입 직후 · 대시보드 진입 시 양쪽에서 호출)
+ *
+ * @param {string} userId          auth.users.id
+ * @param {Object} info
+ * @param {string} info.artistType 'photographer'|'videographer'|'both'|'hmk'
+ * @param {string} info.nativeName 한글 활동명
+ * @param {string} info.englishName 영문 활동명
+ * @param {string[]} info.portfolioUrls
+ * @param {string} info.instagram
+ * @param {boolean} info.hmkSelf
+ * @param {boolean} info.dressSelf
+ * @returns {{ data, error, kind }}  kind: 'photographer' | 'stylist'
+ */
+export const ensureArtistRecord = async (userId, info = {}) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' }, kind: null };
+  if (!userId) return { data: null, error: { message: 'userId 없음' }, kind: null };
+
+  const {
+    artistType = 'photographer',
+    nativeName = '',
+    englishName = '',
+    portfolioUrls = [],
+    instagram = null,
+    hmkSelf = false,
+    dressSelf = false,
+  } = info;
+
+  const isHmk = artistType === 'hmk';
+  const table = isHmk ? 'stylists' : 'photographers';
+  const kind  = isHmk ? 'stylist' : 'photographer';
+
+  // 이미 있으면 그대로 사용
+  const { data: existing, error: findErr } = await sb
+    .from(table)
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (findErr) return { data: null, error: findErr, kind };
+  if (existing) return { data: existing, error: null, kind };
+
+  const row = isHmk
+    ? {
+        user_id:          userId,
+        name_ko:          nativeName || '이름 미설정',
+        name_en:          englishName || null,
+        specialty:        'both',
+        instagram,
+        portfolio_images: portfolioUrls,
+        is_active:        false,   // 필수 정보 입력 전까지 비노출
+      }
+    : {
+        user_id:      userId,
+        name:         englishName || nativeName || 'Unnamed',
+        name_ko:      nativeName || null,
+        artist_type:  artistType,
+        hmk_self:     hmkSelf,
+        dress_self:   dressSelf,
+        portfolio:    portfolioUrls.map(url => ({ url, caption: '' })),
+        languages:    ['KO'],
+        is_active:    false,       // 필수 정보 입력 전까지 비노출
+      };
+
+  const { data, error } = await sb.from(table).insert(row).select().maybeSingle();
+  return { data, error, kind };
+};
+
+/** 로그인한 사용자의 작가 공개 레코드를 조회한다 (없으면 null) */
+export const getMyArtistRecord = async (userId) => {
+  const sb = await getSupabase();
+  if (!sb || !userId) return { data: null, error: null, kind: null };
+
+  const { data: photog } = await sb
+    .from('photographers').select('*').eq('user_id', userId).maybeSingle();
+  if (photog) return { data: photog, error: null, kind: 'photographer' };
+
+  const { data: stylist } = await sb
+    .from('stylists').select('*').eq('user_id', userId).maybeSingle();
+  if (stylist) return { data: stylist, error: null, kind: 'stylist' };
+
+  return { data: null, error: null, kind: null };
+};
+
 // ─── 결제 서버 검증 (Edge Function) ────────────────────────────────────
 
 /**
@@ -1297,20 +1386,20 @@ export const fetchPhotographers = async ({
 
   if (countryCode) q = q.eq('country_code', countryCode);
   if (city) q = q.eq('city', city);
-  if (genre) q = q.contains('genre', [genre]);
+  if (genre) q = q.contains('tags', [genre]);
   if (language) q = q.contains('languages', [language]);
   if (minRating) q = q.gte('rating', parseFloat(minRating));
-  if (minPrice) q = q.gte('base_price', parseInt(minPrice));
-  if (maxPrice) q = q.lte('base_price', parseInt(maxPrice));
-  if (search) q = q.or(`name_en.ilike.%${search}%,name_ko.ilike.%${search}%`);
+  if (minPrice) q = q.gte('price_from', parseInt(minPrice));
+  if (maxPrice) q = q.lte('price_from', parseInt(maxPrice));
+  if (search) q = q.or(`name.ilike.%${search}%,name_ko.ilike.%${search}%`);
 
   // Sort
   switch (sortBy) {
     case 'rating': q = q.order('rating', { ascending: false }); break;
-    case 'priceLow': q = q.order('base_price', { ascending: true }); break;
-    case 'priceHigh': q = q.order('base_price', { ascending: false }); break;
+    case 'priceLow': q = q.order('price_from', { ascending: true }); break;
+    case 'priceHigh': q = q.order('price_from', { ascending: false }); break;
     case 'newest': q = q.order('created_at', { ascending: false }); break;
-    default: q = q.order('review_count', { ascending: false }); // popular
+    default: q = q.order('reviews_count', { ascending: false }); // popular
   }
 
   q = q.range(offset, offset + limit - 1);
@@ -1325,9 +1414,11 @@ export const fetchPhotographer = async (idOrLegacy) => {
   if (!sb) return { data: null, error: null };
 
   const isUuid = typeof idOrLegacy === 'string' && idOrLegacy.includes('-');
+  // photographers 테이블에는 legacy_id 컬럼이 없으므로 UUID 조회만 지원한다.
+  if (!isUuid) return { data: null, error: null };
   const { data, error } = await sb.from('photographers')
     .select('*')
-    .eq(isUuid ? 'id' : 'legacy_id', isUuid ? idOrLegacy : parseInt(idOrLegacy))
+    .eq('id', idOrLegacy)
     .maybeSingle();
   return { data, error };
 };

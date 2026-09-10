@@ -308,8 +308,13 @@ const Photographers = ({ onAuthOpen }) => {
         sortBy,
         search: searchQuery || undefined,
       });
-      if (!error && data && data.length > 0) {
-        setDbPhotographers(data);
+      // 빈 배열도 정상 결과로 취급한다. 예전에는 결과가 비면 하드코딩된
+      // mock 작가로 폴백해 실제로 존재하지 않는 작가가 노출됐다.
+      if (error) {
+        console.error('[Photographers] fetch failed:', error);
+        setDbPhotographers([]);
+      } else {
+        setDbPhotographers(data || []);
       }
       setDbLoading(false);
     };
@@ -386,8 +391,9 @@ const Photographers = ({ onAuthOpen }) => {
     return Math.min(...p.packages.map(pkg => pkg.price));
   };
 
-  // Use DB data with fallback to mock data
-  const photographersSource = dbPhotographers || PHOTOGRAPHERS.map(ph => getMergedProfile(ph, 'photographer', ph.id));
+  // DB 가 유일한 출처다. 로딩 전에는 빈 배열로 두고, 로드 후 결과가 없으면
+  // "등록된 작가가 없습니다" 빈 상태를 보여준다. (mock 폴백 제거)
+  const photographersSource = dbPhotographers || [];
 
   // Filter logic - chain all filters together
   const filtered = photographersSource.filter(p => {
@@ -1006,10 +1012,23 @@ const Photographers = ({ onAuthOpen }) => {
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--muted)' }}>
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
-                {t('photographers.noResults')}
-              </div>
-              <div style={{ fontSize: 13 }}>{t('photographers.changeFilter')}</div>
+              {dbLoading ? (
+                <div style={{ fontSize: 13 }}>불러오는 중…</div>
+              ) : photographersSource.length === 0 ? (
+                <>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
+                    아직 등록된 작가가 없습니다
+                  </div>
+                  <div style={{ fontSize: 13 }}>첫 번째 작가로 등록해보세요.</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
+                    {t('photographers.noResults')}
+                  </div>
+                  <div style={{ fontSize: 13 }}>{t('photographers.changeFilter')}</div>
+                </>
+              )}
             </div>
           );
         })()}
