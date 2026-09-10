@@ -237,7 +237,16 @@ export const calculateItemCommission = ({
  */
 export const calculateBookingCommissions = (items = []) => {
   const billable = items.filter(i => (Number(i.price) || 0) > 0);
-  const collabCount = new Set(billable.map(i => i.providerId)).size || 1;
+
+  // 인원은 사람(ownerId = auth uid) 기준으로 센다.
+  //
+  // provider_id 로 세면 한 사람이 여러 역할을 겸할 때 중복 계산된다.
+  // 헤메가 의상 대여도 하면 stylists.id 와 dress_vendors.id 가 서로 달라
+  // 혼자서 2인 콜라보가 되고, 자동으로 할인을 한 단계 더 받아버린다.
+  // ownerId 를 모를 때만 provider_id 로 대체한다.
+  const collabCount = new Set(
+    billable.map(i => i.ownerId || `provider:${i.providerId}`)
+  ).size || 1;
 
   const priced = items.map(item => ({
     ...item,

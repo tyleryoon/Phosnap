@@ -654,7 +654,12 @@ export const createBooking = async (booking) => {
         timing:       'shoot',
       }].filter(i => i.providerId);
 
-  const priced = calculateBookingCommissions(rawItems);
+  // 각 공급자의 실제 소유자(auth uid)를 붙인다.
+  // 콜라보 인원을 사람 기준으로 세야 한 사람이 여러 역할을 겸할 때
+  // 혼자서 2인 콜라보가 되는 일이 없다.
+  const withOwners = await attachProviderOwners(sb, rawItems);
+
+  const priced = calculateBookingCommissions(withOwners);
   payload.collab_count     = priced.collabCount;
   payload.commission_total = priced.commissionTotal;
 
@@ -742,6 +747,40 @@ export const createBooking = async (booking) => {
   }).catch(err => console.error('[createBooking] 공급자 알림 실패:', err));
 
   return { data, error };
+};
+
+/**
+ * 각 아이템에 공급자의 소유자(auth uid)를 붙인다.
+ *
+ * 한 사람이 헤메이면서 의상 벤더일 수 있다. 그때 stylists.id 와
+ * dress_vendors.id 는 서로 다르지만 정산받는 사람은 한 명이다.
+ * 콜라보 인원을 사람 기준으로 세기 위해 필요하다.
+ */
+const attachProviderOwners = async (sb, items = []) => {
+  const byTable = new Map();
+  for (const it of items) {
+    const table = PROVIDER_TABLE[it.providerType];
+    if (!table || !it.providerId) continue;
+    if (!byTable.has(table)) byTable.set(table, new Set());
+    byTable.get(table).add(it.providerId);
+  }
+
+  const owners = new Map();
+  await Promise.all([...byTable.entries()].map(async ([table, ids]) => {
+    const { data, error } = await sb.from(table).select('id, user_id').in('id', [...ids]);
+    if (error) {
+      // 소유자를 못 찾으면 provider_id 로 대체 계산된다.
+      // 인원이 실제보다 많게 잡힐 수는 있어도 예약은 진행돼야 한다.
+      console.error('[attachProviderOwners] 소유자 조회 실패:', table, error);
+      return;
+    }
+    for (const row of data || []) owners.set(`${table}:${row.id}`, row.user_id);
+  }));
+
+  return items.map(it => ({
+    ...it,
+    ownerId: owners.get(`${PROVIDER_TABLE[it.providerType]}:${it.providerId}`) || null,
+  }));
 };
 
 /** provider_type → 대시보드 경로 */
