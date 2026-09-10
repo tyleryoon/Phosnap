@@ -7,6 +7,12 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
+
+// 지역 id → 다국어 이름 (location_names 가 비어 있는 작가용 폴백)
+const BOOKING_LOCATION_NAMES = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS]
+  .reduce((acc, l) => { acc[l.id] = l.nameI18n || { ko: l.name, en: l.nameEn }; return acc; }, {});
+
 import { getMergedProfile } from '../data/artistProfile';
 import { getStylistsByLocation, fmtStylist } from '../data/stylists';
 import { getDressesByVendor, getDressesByCategory } from '../data/dresses';
@@ -369,44 +375,6 @@ const Booking = () => {
     return () => { cancelled = true; };
   }, [p?.id]);
 
-  // 달력에 표시할 월 단위 스케줄을 Supabase 에서 가져온다.
-  // getDateStatus 는 localStorage 를 읽어 고객 화면에서는 모든 날짜가
-  // '휴무'로 보이던 문제를 막는다.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!p?.id) return;
-      try {
-        const { getScheduleMonth } = await import('../lib/supabase');
-        const { data } = await getScheduleMonth(p.id, calYear, calMonth + 1);
-        if (cancelled) return;
-        const map = {};
-        (data || []).forEach(row => { map[row.date] = row; });
-        setDbMonthSchedule(map);
-      } catch (_) { /* localStorage 폴백 */ }
-    })();
-    return () => { cancelled = true; };
-  }, [p?.id, calYear, calMonth]);
-
-  /**
-   * 달력 셀의 예약 상태를 판정한다.
-   * 날짜별 레코드가 없으면 기본 운영 시간으로 열려 있는 것으로 본다
-   * (작가 대시보드와 동일한 규칙).
-   */
-  const resolveDateStatus = (dateStr) => {
-    if (!dbMonthSchedule || !dbDefaultSlots) {
-      return getDateStatus('photographer', p.id, dateStr);
-    }
-    const row = dbMonthSchedule[dateStr];
-    if (!row) return dbDefaultSlots.length ? 'open' : 'off';
-    if (row.day_off) return 'off';
-    const slots = row.slots?.length ? row.slots : dbDefaultSlots;
-    if (!slots.length) return 'off';
-    const blocked = row.blocked || [];
-    const avail = slots.filter(sl => !blocked.includes(sl));
-    if (avail.length === 0) return 'full';
-    return blocked.length > 0 ? 'partial' : 'open';
-  };
 
   // Supabase에서 stylists과 dresses 로드
   useEffect(() => {
@@ -512,12 +480,59 @@ const Booking = () => {
   const [calYear,  setCalYear]  = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
+  // 훅은 early return 보다 앞에 있어야 한다. 아래 세 개는 원래
+  // `if (!p) return null;` 뒤에 있어, 작가를 찾지 못한 경우 훅 개수가
+  // 달라져 React 가 깨지는 상태였다.
+  const [payLoading, setPayLoading]           = useState(false);
+  const [payError, setPayError]               = useState('');
+  const [showNoticeModal, setShowNoticeModal] = useState(false);
+
+  // 달력에 표시할 월 단위 스케줄을 Supabase 에서 가져온다.
+  // getDateStatus 는 localStorage 를 읽어 고객 화면에서는 모든 날짜가
+  // '휴무'로 보이던 문제를 막는다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!p?.id) return;
+      try {
+        const { getScheduleMonth } = await import('../lib/supabase');
+        const { data } = await getScheduleMonth(p.id, calYear, calMonth + 1);
+        if (cancelled) return;
+        const map = {};
+        (data || []).forEach(row => { map[row.date] = row; });
+        setDbMonthSchedule(map);
+      } catch (_) { /* localStorage 폴백 */ }
+    })();
+    return () => { cancelled = true; };
+  }, [p?.id, calYear, calMonth]);
+
+  /**
+   * 달력 셀의 예약 상태를 판정한다.
+   * 날짜별 레코드가 없으면 기본 운영 시간으로 열려 있는 것으로 본다
+   * (작가 대시보드와 동일한 규칙).
+   */
+  const resolveDateStatus = (dateStr) => {
+    if (!dbMonthSchedule || !dbDefaultSlots) {
+      return getDateStatus('photographer', p.id, dateStr);
+    }
+    const row = dbMonthSchedule[dateStr];
+    if (!row) return dbDefaultSlots.length ? 'open' : 'off';
+    if (row.day_off) return 'off';
+    const slots = row.slots?.length ? row.slots : dbDefaultSlots;
+    if (!slots.length) return 'off';
+    const blocked = row.blocked || [];
+    const avail = slots.filter(sl => !blocked.includes(sl));
+    if (avail.length === 0) return 'full';
+    return blocked.length > 0 ? 'partial' : 'open';
+  };
+
   if (!p) return null;
 
   const availableStylists = dbStylists || getStylistsByLocation(p.locationId);
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay    = getFirstDay(calYear, calMonth);
+
 
   const isPast = (day) => {
     const d = new Date(calYear, calMonth, day);
@@ -572,11 +587,11 @@ const Booking = () => {
 
   // 이름: 언어별
   const artistName = lang === 'ko' && p.nameKo ? p.nameKo : p.name;
-  const locationLabel = p.locationNames?.[lang] ?? p.location;
-
-  const [payLoading, setPayLoading]       = useState(false);
-  const [payError, setPayError]           = useState('');
-  const [showNoticeModal, setShowNoticeModal] = useState(false);
+  const locationLabel =
+    p.locationNames?.[lang]
+    ?? BOOKING_LOCATION_NAMES[p.location]?.[lang]
+    ?? BOOKING_LOCATION_NAMES[p.location]?.ko
+    ?? p.location;
 
   const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
 
