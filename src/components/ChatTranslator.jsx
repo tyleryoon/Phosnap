@@ -52,8 +52,16 @@ const ChatTranslator = ({
   const [error, setError] = useState(null);
 
   // Detect language if not provided
-  const detectedSourceLang = sourceLang || detectLanguage(text);
-  const detectedTargetLang = targetLang || (currentLang === detectedSourceLang ? 'en' : currentLang);
+  // sourceLang 으로 'auto' 가 넘어오는 호출부가 있다. 그대로 두면
+  // LANGUAGE_NAMES_LOCALIZED['auto'] 가 undefined 가 되어 라벨을 읽을 때
+  // 채팅 화면 전체가 크래시한다. 지원 언어가 아니면 직접 감지한다.
+  const SUPPORTED = ['ko', 'en', 'ja', 'zh'];
+  const rawSource = sourceLang && SUPPORTED.includes(sourceLang)
+    ? sourceLang
+    : detectLanguage(text);
+  const detectedSourceLang = SUPPORTED.includes(rawSource) ? rawSource : 'en';
+  const rawTarget = targetLang || (currentLang === detectedSourceLang ? 'en' : currentLang);
+  const detectedTargetLang = SUPPORTED.includes(rawTarget) ? rawTarget : 'en';
 
   // Skip translation if source and target are the same
   if (detectedSourceLang === detectedTargetLang) {
@@ -125,8 +133,13 @@ const ChatTranslator = ({
     zh: '翻译服务准备中',
   };
 
-  const sourceLanguageLabel = LANGUAGE_NAMES_LOCALIZED[detectedSourceLang][currentLang];
-  const targetLanguageLabel = LANGUAGE_NAMES_LOCALIZED[detectedTargetLang][currentLang];
+  // 라벨 조회도 방어적으로 — 예상 못 한 언어 코드에도 화면이 죽지 않게 한다.
+  const langLabel = (code) =>
+    LANGUAGE_NAMES_LOCALIZED[code]?.[currentLang]
+    ?? LANGUAGE_NAMES_LOCALIZED[code]?.en
+    ?? code;
+  const sourceLanguageLabel = langLabel(detectedSourceLang);
+  const targetLanguageLabel = langLabel(detectedTargetLang);
 
   return (
     <div
