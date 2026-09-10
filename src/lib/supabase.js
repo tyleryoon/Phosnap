@@ -634,6 +634,18 @@ export const createBooking = async (booking) => {
     note:                     booking.note || null,
   };
 
+  // 고객 이름을 스냅샷으로 남긴다.
+  // profiles 의 RLS 는 본인만 읽을 수 있어서, 이게 없으면 헤메·벤더는
+  // 촬영 당일 누구를 만나는지 알 수 없다.
+  if (!payload.customer_name) {
+    const s = await getSession();
+    payload.customer_name =
+      booking.customer_name
+      || s?.user?.user_metadata?.name
+      || s?.user?.user_metadata?.full_name
+      || (s?.user?.email ? s.user.email.split('@')[0] : null);
+  }
+
   // ── 촬영 시간대 ────────────────────────────────────────────────────
   const shoot = buildShootWindow(booking.date, booking.time, booking.hours || 2);
   if (shoot) {

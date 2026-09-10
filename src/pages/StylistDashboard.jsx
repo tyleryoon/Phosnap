@@ -26,6 +26,10 @@ const i18n = {
     serviceName: '서비스 이름',
     price: '가격',
     duration: '소요 시간 (분)',
+    myWork: '내 작업',
+    payout: '실수령',
+    collab: '콜라보',
+    people: '인',
     description: '설명',
     timing: '시술 시점',
     timingBefore: '촬영 전 완료',
@@ -86,6 +90,10 @@ const i18n = {
     serviceName: 'Service Name',
     price: 'Price',
     duration: 'Duration (minutes)',
+    myWork: 'My part',
+    payout: 'Payout',
+    collab: 'Collab',
+    people: ' people',
     description: 'Description',
     timing: 'When the service happens',
     timingBefore: 'Before the shoot',
@@ -146,6 +154,10 @@ const i18n = {
     serviceName: 'サービス名',
     price: '価格',
     duration: '所要時間（分）',
+    myWork: '担当作業',
+    payout: '受取額',
+    collab: 'コラボ',
+    people: '名',
     description: '説明',
     timing: '施術タイミング',
     timingBefore: '撮影前に完了',
@@ -206,6 +218,10 @@ const i18n = {
     serviceName: '服务名称',
     price: '价格',
     duration: '持续时间（分钟）',
+    myWork: '我的工作',
+    payout: '实收',
+    collab: '合作',
+    people: '人',
     description: '描述',
     save: '保存',
     cancel: '取消',
@@ -283,6 +299,21 @@ const Modal = ({ onClose, children }) => (
     </div>
   </div>
 );
+
+/** 아이템의 실제 작업 시각을 사람이 읽는 형태로 */
+const fmtSlot = (item) => {
+  if (!item?.start_at) return '';
+  const hm = (v) => new Date(v).toLocaleTimeString('ko-KR', {
+    hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  // 의상은 하루 단위 점유라 시각을 보여줄 이유가 없다
+  if (item.timing === 'day') return '';
+  const base = `${hm(item.start_at)} ~ ${hm(item.end_at)}`;
+  const tag = item.timing === 'during' ? ' · 촬영 중 합류'
+            : item.timing === 'full'   ? ' · 촬영 종료까지 동행'
+            : '';
+  return base + tag;
+};
 
 const BookingsTab = ({ t, stylistId, stylistName }) => {
   const [bookings, setBookings] = useState([]);
@@ -365,12 +396,52 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
               </div>
             </div>
             <div>
+              {/* booking_date 라는 컬럼은 없다. 예전에는 Invalid Date 가 떴다. */}
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.date}</div>
               <div style={{ color: 'var(--text)', fontWeight: 500 }}>
-                {new Date(booking.booking_date).toLocaleDateString()}
+                {booking.date || '-'}{booking.time ? ` · ${booking.time}` : ''}
               </div>
             </div>
           </div>
+
+          {/* 내가 맡은 시술 — 헤메가 실제로 알아야 하는 정보.
+              예전에는 카드에 시술명도 시각도 금액도 없었다. */}
+          {(booking.myItems || []).length > 0 && (
+            <div style={{ marginBottom: 16, border: '1px solid var(--border)', padding: 16 }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>{t.myWork}</div>
+              {booking.myItems.map(item => (
+                <div key={item.id} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+                  gap: 12, marginBottom: 8, flexWrap: 'wrap',
+                }}>
+                  <div>
+                    <div style={{ color: 'var(--text)', fontWeight: 500 }}>{item.item_name}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 2 }}>
+                      {fmtSlot(item)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ color: 'var(--gold)', fontWeight: 600 }}>
+                      ₩{Number(item.price ?? 0).toLocaleString('ko-KR')}
+                    </div>
+                    {item.payout_amount != null && (
+                      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                        {t.payout} ₩{Number(item.payout_amount).toLocaleString('ko-KR')}
+                        {item.commission_rate != null
+                          ? ` (${Math.round(item.commission_rate * 1000) / 10}%)`
+                          : ''}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {booking.collab_count > 1 && (
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>
+                  {t.collab} {booking.collab_count}{t.people}
+                </div>
+              )}
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div>
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.photographer}</div>
