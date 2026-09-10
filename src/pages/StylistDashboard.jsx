@@ -231,7 +231,9 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
     const fetchBookings = async () => {
       try {
         const { getStylistBookings } = await import('../lib/supabase');
-        const data = await getStylistBookings(stylistId);
+        // 이 함수들은 { data, error } 를 반환한다. 배열로 취급하면
+        // 목록이 비거나 객체가 렌더링되어 화면이 멈춘다.
+        const { data } = await getStylistBookings(stylistId);
         setBookings(data || []);
       } catch {
         const cached = localStorage.getItem(`bookings_${stylistId}`);
@@ -341,6 +343,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
 const ServiceMenuTab = ({ t, stylistId }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingService, setEditingService] = useState(null);
   const [formData, setFormData] = useState({
@@ -354,7 +357,7 @@ const ServiceMenuTab = ({ t, stylistId }) => {
     const fetchServices = async () => {
       try {
         const { getStylistServices } = await import('../lib/supabase');
-        const data = await getStylistServices(stylistId);
+        const { data } = await getStylistServices(stylistId);
         setServices(data || []);
       } catch {
         const cached = localStorage.getItem(`services_${stylistId}`);
@@ -437,8 +440,9 @@ const ServiceMenuTab = ({ t, stylistId }) => {
       localStorage.setItem(`services_${stylistId}`, JSON.stringify(nextServices));
       closeModal();
     } catch (error) {
+      // alert 는 브라우저를 블로킹해 화면이 멈춘 것처럼 보인다.
       console.error('[StylistDashboard] 서비스 저장 실패:', error);
-      alert(`${t.error}\n${error?.message || ''}`);
+      setErrorMsg(`${t.error} — ${error?.message || ''}`);
     }
   };
 
@@ -451,7 +455,8 @@ const ServiceMenuTab = ({ t, stylistId }) => {
       setServices(services.filter(s => s.id !== serviceId));
       localStorage.setItem(`services_${stylistId}`, JSON.stringify(services));
     } catch (error) {
-      alert(t.error);
+      console.error('[StylistDashboard] 서비스 삭제 실패:', error);
+      setErrorMsg(t.error);
     }
   };
 
@@ -478,6 +483,12 @@ const ServiceMenuTab = ({ t, stylistId }) => {
       >
         {t.addService}
       </button>
+
+      {errorMsg && (
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+          {errorMsg}
+        </div>
+      )}
 
       {!services.length ? (
         <div style={{ color: 'var(--muted)', padding: 32 }}>{t.noServices}</div>
@@ -682,7 +693,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
     const fetchProfile = async () => {
       try {
         const { getStylistProfile } = await import('../lib/supabase');
-        const data = await getStylistProfile(stylistId);
+        const { data } = await getStylistProfile(stylistId);
         if (data) {
           setProfile({
             displayName: data.display_name || '',
