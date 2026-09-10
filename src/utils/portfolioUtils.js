@@ -73,38 +73,28 @@ export function normalizePortfolio(portfolio, locations = [], photographerId = 0
     }));
   }
 
-  // ── Old flat format → 게시물로 변환 ──
-  // string[] 또는 { url, caption }[] 모두 지원
-  const pool = seededShuffle(EXTRA_POOL, photographerId * 137 + 42);
-  let poolIdx = 0;
-
+  // ── Flat format → 게시물로 변환 ──
+  // string[] 또는 { url, caption, regionId }[] 모두 지원
+  //
+  // 예전에는 EXTRA_POOL(Unsplash 스톡 사진)에서 보조 이미지를 2~3장씩
+  // 섞어 넣었는데, 실제 작가의 포트폴리오에 남의 사진이 붙는 셈이라
+  // 제거했다. 보조 이미지는 mock 작가에게만 의미가 있었다.
   return portfolio.map((item, i) => {
-    // { url, caption } 객체 또는 단순 문자열
-    const url = typeof item === 'string' ? item : (item?.url || '');
-    const caption = typeof item === 'string' ? '' : (item?.caption || '');
-
-    // 게시물당 보조 이미지 수: 2~3장 (시드 기반)
-    const extraCount = 2 + ((photographerId + i) % 2); // 2 or 3
-    const extras = [];
-    for (let e = 0; e < extraCount; e++) {
-      const candidate = pool[poolIdx % pool.length];
-      // 커버와 같은 URL은 건너뛰기
-      if (candidate !== url) {
-        extras.push(candidate);
-      } else {
-        extras.push(pool[(poolIdx + 1) % pool.length]);
-        poolIdx++;
-      }
-      poolIdx++;
-    }
+    const isStr   = typeof item === 'string';
+    const url     = isStr ? item : (item?.url || item?.cover || '');
+    const caption = isStr ? '' : (item?.caption || '');
+    // 지역은 저장 형태에 따라 location / regionId 어느 쪽으로도 올 수 있다.
+    const location = isStr
+      ? (locations[i] || null)
+      : (item?.location || item?.regionId || locations[i] || null);
 
     return {
-      cover:    url,
-      images:   [url, ...extras],
-      location: locations[i] || null,
+      cover:  url,
+      images: [url],
+      location,
       caption,
     };
-  });
+  }).filter(post => post.cover);
 }
 
 /**

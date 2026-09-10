@@ -873,11 +873,26 @@ const ArtistSchedule = () => {
             .filter(n => Number.isFinite(n) && n > 0);
           const priceFrom = prices.length ? Math.min(...prices) : 0;
 
-          const portfolioItems = (updated.portfolio || []).flatMap(pf =>
-            (pf.images?.length ? pf.images : (pf.url ? [pf.url] : []))
-              .map(url => ({ url, caption: pf.title || '', regionId: pf.regionId || null }))
-          );
-          const coverImg = portfolioItems[0]?.url
+          // 게시글 단위로 저장한다. 예전에는 이미지를 낱장으로 펼쳐 저장해
+          // 한 게시글의 여러 장이 서로 다른 게시글처럼 흩어졌다.
+          const portfolioItems = (updated.portfolio || [])
+            .map(pf => {
+              const images = pf.images?.length ? pf.images : (pf.url ? [pf.url] : []);
+              if (!images.length) return null;
+              const coverIdx = Number.isInteger(pf.coverIdx) ? pf.coverIdx : 0;
+              const cover = images[coverIdx] || images[0];
+              return {
+                cover,
+                url: cover,                       // 구버전 호환
+                images,
+                caption:  pf.caption || pf.title || '',
+                location: pf.regionId || null,
+                regionId: pf.regionId || null,    // 구버전 호환
+              };
+            })
+            .filter(Boolean);
+
+          const coverImg = portfolioItems[0]?.cover
             || snaps.find(p => p.images?.length)?.images?.[0]
             || null;
 
