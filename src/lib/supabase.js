@@ -6,6 +6,8 @@
 //   VITE_SUPABASE_ANON_KEY = eyJ...
 
 import { createClient } from '@supabase/supabase-js';
+import { computeSlot, buildShootWindow } from './scheduling';
+import { calculateBookingCommissions } from './commission';
 
 const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
@@ -632,61 +634,226 @@ export const createBooking = async (booking) => {
     note:                     booking.note || null,
   };
 
+  // ── 촬영 시간대 ────────────────────────────────────────────────────
+  const shoot = buildShootWindow(booking.date, booking.time, booking.hours || 2);
+  if (shoot) {
+    payload.shoot_start_at = shoot.start.toISOString();
+    payload.shoot_end_at   = shoot.end.toISOString();
+  }
+
+  // ── 참여자별 라인 아이템 ───────────────────────────────────────────
+  // items 가 없으면 레거시 필드로부터 작가 아이템 하나를 만들어 준다.
+  const rawItems = Array.isArray(booking.items) && booking.items.length
+    ? booking.items
+    : [{
+        providerType: 'photographer',
+        providerId:   booking.photographer_id,
+        providerName: booking.photographer_name,
+        itemName:     booking.package_name,
+        price:        Number(booking.package_price) || 0,
+        timing:       'shoot',
+      }].filter(i => i.providerId);
+
+  const priced = calculateBookingCommissions(rawItems);
+  payload.collab_count     = priced.collabCount;
+  payload.commission_total = priced.commissionTotal;
+
   const { data, error } = await sb
     .from('bookings')
     .insert([payload])
     .select()
     .single();
 
-  if (!error && data) {
-    // Send notifications (fire-and-forget)
-    const session = await getSession();
-    if (session?.user?.email) {
-      sendNotification({
-        type: 'booking_created_customer',
-        bookingId: data.id,
-        recipientEmail: session.user.email,
-        recipientName: session.user.user_metadata?.name || '',
-        lang: payload.lang,
-        data: {
-          photographerName: payload.photographer_name,
-          date: payload.date,
-          time: payload.time,
-          packageName: payload.package_name,
-          totalPrice: payload.total_price,
-        },
-      }).catch(() => {});
-    }
+  if (error || !data) return { data, error };
 
-    // Notify artist if photographer_legacy_id exists
-    if (payload.photographer_legacy_id) {
-      // Try to fetch photographer email from photographers table
-      const { data: photographer } = await sb
-        .from('photographers')
-        .select('email, name')
-        .eq('legacy_id', String(payload.photographer_legacy_id))
-        .maybeSingle();
+  // ── booking_items 저장 ─────────────────────────────────────────────
+  // 실패를 조용히 삼키면 "예약은 됐는데 헤메·벤더는 모르는" 상태가 된다.
+  // 아이템 저장이 실패하면 예약 자체를 롤백한다.
+  const itemRows = priced.items.map((it) => {
+    const slot = shoot
+      ? computeSlot({
+          timing:          it.timing || 'shoot',
+          shootStart:      shoot.start,
+          shootEnd:        shoot.end,
+          durationMinutes: it.durationMinutes,
+          offsetMinutes:   it.offsetMinutes,
+        })
+      : null;
+    return {
+      booking_id:        data.id,
+      provider_type:     it.providerType,
+      provider_id:       it.providerId,
+      provider_name:     it.providerName || null,
+      item_id:           it.itemId || null,
+      item_name:         it.itemName || '항목',
+      item_option:       it.itemOption || null,
+      quantity:          it.quantity || 1,
+      price:             Number(it.price) || 0,
+      timing:            it.timing || 'shoot',
+      start_at:          slot ? (slot.busyStart ?? slot.start).toISOString() : null,
+      end_at:            slot ? (slot.busyEnd   ?? slot.end).toISOString()   : null,
+      commission_rate:   it.rate,
+      commission_amount: it.commission,
+      payout_amount:     it.payout,
+      collab_count:      priced.collabCount,
+      status:            'pending',
+    };
+  });
 
-      if (photographer?.email) {
-        sendNotification({
-          type: 'booking_created_artist',
-          bookingId: data.id,
-          recipientEmail: photographer.email,
-          recipientName: photographer.name || '',
-          lang: payload.lang,
-          data: {
-            customerName: session?.user?.user_metadata?.name || 'Customer',
-            date: payload.date,
-            time: payload.time,
-            packageName: payload.package_name,
-            totalPrice: payload.total_price,
-          },
-        }).catch(() => {});
-      }
+  if (itemRows.length) {
+    const { error: itemErr } = await sb.from('booking_items').insert(itemRows);
+    if (itemErr) {
+      await sb.from('bookings').delete().eq('id', data.id);
+      console.error('[createBooking] 아이템 저장 실패 — 예약을 롤백했습니다:', itemErr);
+      return { data: null, error: itemErr };
     }
   }
 
+  // ── 알림 ───────────────────────────────────────────────────────────
+  const session = await getSession();
+  const customerName = session?.user?.user_metadata?.name || '고객';
+
+  if (session?.user?.email) {
+    sendNotification({
+      type: 'booking_created_customer',
+      bookingId: data.id,
+      recipientEmail: session.user.email,
+      recipientName: customerName,
+      lang: payload.lang,
+      data: {
+        photographerName: payload.photographer_name,
+        date: payload.date,
+        time: payload.time,
+        packageName: payload.package_name,
+        totalPrice: payload.total_price,
+      },
+    }).catch(() => {});
+  }
+
+  // 참여자 전원에게 앱 내 알림.
+  // 예전에는 작가에게만, 그것도 항상 null 인 legacy_id 로 조회해서
+  // 실제로는 아무에게도 발송되지 않았다.
+  notifyBookingProviders(priced.items, {
+    title: '새 예약 요청이 있습니다',
+    body:  `${customerName} · ${payload.date} ${payload.time}`,
+    type:  'booking_created',
+    link:  null,
+    bookingId: data.id,
+  }).catch(err => console.error('[createBooking] 공급자 알림 실패:', err));
+
   return { data, error };
+};
+
+/** provider_type → 대시보드 경로 */
+const PROVIDER_LINK = {
+  photographer: '/artist/dashboard',
+  stylist:      '/stylist/dashboard',
+  dress:        '/vendor/dashboard',
+  venue:        '/vendor/dashboard',
+};
+
+/** provider_id(공개 레코드 ID) → user_id(auth uid) 로 변환 */
+const PROVIDER_TABLE = {
+  photographer: 'photographers',
+  stylist:      'stylists',
+  dress:        'dress_vendors',
+  venue:        'venue_vendors',
+};
+
+/**
+ * 예약 참여자 전원에게 앱 내 알림을 보낸다.
+ *
+ * 알림은 auth uid 기준으로 저장되는데 아이템에 담긴 것은 공개 레코드 ID라
+ * 유형별 테이블을 거쳐 user_id 를 찾아야 한다.
+ */
+export const notifyBookingProviders = async (items = [], { title, body, type, link, bookingId }) => {
+  const sb = await getSupabase();
+  if (!sb) return;
+
+  // 같은 사람이 여러 아이템을 맡았을 수 있으므로 중복 제거
+  const targets = new Map();
+  for (const it of items) {
+    if (!it?.providerId || !PROVIDER_TABLE[it.providerType]) continue;
+    targets.set(`${it.providerType}:${it.providerId}`, it);
+  }
+
+  await Promise.all([...targets.values()].map(async (it) => {
+    const { data: row, error } = await sb
+      .from(PROVIDER_TABLE[it.providerType])
+      .select('user_id')
+      .eq('id', it.providerId)
+      .maybeSingle();
+
+    if (error || !row?.user_id) {
+      console.error('[notifyBookingProviders] 대상 조회 실패:', it.providerType, it.providerId, error);
+      return;
+    }
+
+    return sendNotificationTo(row.user_id, {
+      type,
+      title,
+      body,
+      link: link || PROVIDER_LINK[it.providerType] || '/',
+      metadata: { bookingId, providerType: it.providerType },
+    });
+  }));
+};
+
+/** 예약 1건의 아이템 목록 */
+export const getBookingItems = async (bookingId) => {
+  const sb = await getSupabase();
+  if (!sb || !bookingId) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('booking_items')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .order('created_at', { ascending: true });
+  if (error) console.error('[getBookingItems] 조회 실패:', error);
+  return { data: data || [], error };
+};
+
+/**
+ * 특정 공급자가 이미 점유한 시간 구간
+ * 콜라보 추천 / 충돌 판정에 쓴다.
+ *
+ * @param {'photographer'|'stylist'|'dress'|'venue'} providerType
+ * @param {string|string[]} providerId - 여러 명을 한 번에 조회할 수 있다
+ * @param {string} date - 'YYYY-MM-DD'
+ */
+export const getProviderBusyBlocks = async (providerType, providerId, date) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId || !date) return { data: [], error: null };
+
+  const ids = Array.isArray(providerId) ? providerId : [providerId];
+  if (!ids.length) return { data: [], error: null };
+
+  // 하루 앞뒤로 여유를 둔다 — 헤메 시술은 촬영 전날 밤으로 역산될 수 있다
+  const from = new Date(`${date}T00:00:00`);
+  from.setDate(from.getDate() - 1);
+  const to = new Date(`${date}T23:59:59`);
+  to.setDate(to.getDate() + 1);
+
+  const { data, error } = await sb
+    .from('booking_items')
+    .select('provider_id, item_id, start_at, end_at, timing, status')
+    .eq('provider_type', providerType)
+    .in('provider_id', ids)
+    .in('status', ['pending', 'confirmed', 'completed'])
+    .gte('start_at', from.toISOString())
+    .lte('start_at', to.toISOString());
+
+  if (error) console.error('[getProviderBusyBlocks] 조회 실패:', error);
+
+  return {
+    data: (data || []).map(r => ({
+      providerId: r.provider_id,
+      itemId:     r.item_id,
+      start:      r.start_at ? new Date(r.start_at) : null,
+      end:        r.end_at   ? new Date(r.end_at)   : null,
+      timing:     r.timing,
+    })).filter(b => b.start && b.end),
+    error,
+  };
 };
 
 /**
@@ -739,6 +906,29 @@ export const approveBooking = async (bookingId) => {
       link:  '/my',
       metadata: { bookingId: data.id },
     }).catch(() => {});
+
+    // 아이템도 함께 확정 처리
+    const { error: itemErr } = await sb.from('booking_items')
+      .update({ status: 'confirmed' })
+      .eq('booking_id', bookingId)
+      .eq('status', 'pending');
+    if (itemErr) console.error('[approveBooking] 아이템 상태 갱신 실패:', itemErr);
+
+    // 헤메·벤더에게도 확정 알림.
+    // 작가만 승인하는 구조라, 이 알림이 없으면 나머지 참여자는
+    // 자기가 그날 일한다는 사실 자체를 모른 채 촬영일을 맞는다.
+    const { data: items } = await getBookingItems(bookingId);
+    notifyBookingProviders(
+      items
+        .filter(i => i.provider_type !== 'photographer')
+        .map(i => ({ providerType: i.provider_type, providerId: i.provider_id })),
+      {
+        type:  'booking_confirmed',
+        title: '예약이 확정되었습니다',
+        body:  `${data.date} ${data.time} · ${data.photographer_name || '작가'} 촬영`,
+        bookingId: data.id,
+      },
+    ).catch(err => console.error('[approveBooking] 공급자 알림 실패:', err));
   }
 
   return { data, error };
@@ -761,6 +951,27 @@ export const rejectBooking = async (bookingId, reason = '') => {
       link:  '/my',
       metadata: { bookingId: data.id },
     }).catch(() => {});
+
+    // 아이템도 함께 취소해야 헤메·벤더의 시간이 다시 풀린다.
+    // 이게 없으면 성사되지 않은 예약이 스케줄을 계속 점유한다.
+    const { data: items } = await getBookingItems(bookingId);
+    const { error: itemErr } = await sb.from('booking_items')
+      .update({ status: 'cancelled' })
+      .eq('booking_id', bookingId)
+      .not('status', 'in', '("cancelled","refunded")');
+    if (itemErr) console.error('[rejectBooking] 아이템 취소 실패:', itemErr);
+
+    notifyBookingProviders(
+      items
+        .filter(i => i.provider_type !== 'photographer')
+        .map(i => ({ providerType: i.provider_type, providerId: i.provider_id })),
+      {
+        type:  'booking_cancelled',
+        title: '예약이 취소되었습니다',
+        body:  `${data.date} ${data.time} · 일정이 다시 열렸습니다`,
+        bookingId: data.id,
+      },
+    ).catch(err => console.error('[rejectBooking] 공급자 알림 실패:', err));
   }
 
   return { data, error };
@@ -1037,20 +1248,61 @@ export const deleteVendorDress = async (dressId) => {
 /**
  * 업체의 예약 현황 조회 (dress_name 기준)
  */
-export const getVendorBookings = async (vendorId) => {
-  const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
-  // bookings 테이블에 vendor_id가 없으므로, dress_vendor 이름으로 조회
-  // 추후 bookings에 dress_vendor_id 컬럼 추가 시 직접 조인
-  const { data: vendor } = await sb
-    .from('dress_vendors')
-    .select('name_ko')
-    .eq('id', vendorId)
-    .single();
-  if (!vendor) return { data: [], error: null };
+export const getVendorBookings = async (vendorId, vendorType = 'dress') =>
+  getProviderBookings(vendorType, vendorId);
 
-  // 현재는 빈 배열 반환 (bookings와 vendor 연결 후 구현)
-  return { data: [], error: null };
+/**
+ * 공급자(작가·헤메·의상·장소)가 참여한 예약 목록
+ *
+ * 예전에는 이름 문자열로 예약을 찾았다. 동명이인이면 남의 예약이 보이고
+ * 개명하면 과거 예약이 통째로 사라졌으며, 벤더 쪽은 아예 빈 배열을
+ * 반환하도록 방치돼 있어 자기 의상이 예약돼도 알 방법이 없었다.
+ * 이제 booking_items 의 provider_id 로 정확히 찾는다.
+ *
+ * @param {'photographer'|'stylist'|'dress'|'venue'} providerType
+ * @param {string} providerId
+ * @returns {{data: Array, error: Object|null}} 예약 + 내가 맡은 아이템(myItems)
+ */
+export const getProviderBookings = async (providerType, providerId) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { data: [], error: null };
+
+  const { data: items, error } = await sb
+    .from('booking_items')
+    .select('*, bookings(*)')
+    .eq('provider_type', providerType)
+    .eq('provider_id', providerId)
+    .order('start_at', { ascending: false });
+
+  if (error) {
+    console.error('[getProviderBookings] 조회 실패:', providerType, error);
+    return { data: [], error };
+  }
+
+  // 한 예약에서 같은 사람이 여러 아이템을 맡을 수 있다
+  // (신부 헤메 + 신랑 그루밍 + 헤어변형 → 아이템 3개, 예약 1건)
+  const byBooking = new Map();
+  for (const it of items || []) {
+    const booking = it.bookings;
+    if (!booking) continue;
+    const { bookings: _drop, ...item } = it;
+    const cur = byBooking.get(booking.id);
+    if (cur) {
+      cur.myItems.push(item);
+      cur.myTotal += Number(item.price) || 0;
+      cur.myPayout += Number(item.payout_amount) || 0;
+    } else {
+      byBooking.set(booking.id, {
+        ...booking,
+        myItems:  [item],
+        myTotal:  Number(item.price) || 0,
+        myPayout: Number(item.payout_amount) || 0,
+        myStatus: item.status,
+      });
+    }
+  }
+
+  return { data: [...byBooking.values()], error: null };
 };
 
 // ─── Packages (상품 CRUD) ───────────────────────────────────────────
@@ -1328,19 +1580,8 @@ export const updateStylistProfile = async (stylistId, updates) => {
 };
 
 /** Get stylist's bookings (by stylist name match in bookings table) */
-export const getStylistBookings = async (stylistId) => {
-  const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
-  // First get stylist name
-  const { data: stylist } = await sb.from('stylists').select('name_ko, name_en').eq('id', stylistId).maybeSingle();
-  if (!stylist) return { data: [], error: null };
-  // Search bookings where stylist_name matches
-  const { data, error } = await sb.from('bookings')
-    .select('*')
-    .or(`stylist_name.eq.${stylist.name_ko},stylist_name.eq.${stylist.name_en}`)
-    .order('date', { ascending: false });
-  return { data: data || [], error };
-};
+export const getStylistBookings = async (stylistId) =>
+  getProviderBookings('stylist', stylistId);
 
 // ─── Stylist Services CRUD ─────────────────────────────────────────
 
@@ -1407,12 +1648,32 @@ export const getDressItems = async ({ vendorId, locationId, category } = {}) => 
 /** Get dress items booked for a specific date (for availability check) */
 export const getBookedDresses = async (date) => {
   const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('bookings')
-    .select('dress_name, dress_size')
-    .eq('date', date)
-    .in('status', ['pending', 'confirmed']);
-  return { data: data || [], error };
+  if (!sb || !date) return { data: [], error: null };
+
+  // 예전에는 dress_name(텍스트)으로 비교해서, 서로 다른 벤더가 둘 다
+  // "웨딩드레스"라고 이름 붙이면 한쪽이 예약될 때 다른 쪽까지 막혔다.
+  // 이제 item_id 로 정확히 판정한다.
+  const from = new Date(`${date}T00:00:00`);
+  const to   = new Date(`${date}T23:59:59`);
+
+  const { data, error } = await sb.from('booking_items')
+    .select('item_id, item_option, quantity, provider_id')
+    .eq('provider_type', 'dress')
+    .in('status', ['pending', 'confirmed', 'completed'])
+    .gte('start_at', from.toISOString())
+    .lte('start_at', to.toISOString());
+
+  if (error) console.error('[getBookedDresses] 조회 실패:', error);
+
+  return {
+    data: (data || []).map(r => ({
+      itemId:   r.item_id,
+      size:     r.item_option,
+      quantity: r.quantity || 1,
+      vendorId: r.provider_id,
+    })),
+    error,
+  };
 };
 
 // ─── Stylists listing (for Booking Step 3) ─────────────────────────

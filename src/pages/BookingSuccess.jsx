@@ -284,10 +284,26 @@ const BookingSuccess = () => {
         }
       } catch (_) { /* ignore */ }
 
+      // 결제 전에 남겨둔 초안에서 참여자별 아이템을 복원한다.
+      // 초안이 없으면(다른 탭에서 결제 완료 등) URL 파라미터만으로
+      // 작가 예약은 만들어지되 헤메·벤더 아이템은 빠진다.
+      let draft = null;
+      try {
+        const raw = sessionStorage.getItem(`phosnap_draft_${orderId}`);
+        if (raw) draft = JSON.parse(raw);
+      } catch (err) {
+        console.error('[BookingSuccess] 예약 초안 복원 실패:', err);
+      }
+      if (!draft?.items?.length) {
+        console.warn('[BookingSuccess] 예약 초안이 없어 작가 항목만 저장합니다:', orderId);
+      }
+
       const { error } = await createBooking({
         customer_id:            user.id,
+        photographer_id:        artistId || null,
         photographer_name:      decodeURIComponent(artist),
-        photographer_legacy_id: artistId || null,
+        items:                  draft?.items || null,
+        hours:                  draft?.hours || 2,
         date,
         time:                   decodeURIComponent(time),
         package_name:           decodeURIComponent(pkg),

@@ -412,11 +412,19 @@ const Booking = () => {
               return prices.length ? Math.min(...prices) : 0;
             })(),
             services: (s.stylist_services || []).map(svc => ({
+              // id 가 없으면 예약 아이템에 어떤 시술인지 담을 수 없다
+              id: svc.id,
               name: svc.name_ko,
               nameEn: svc.name_en,
               price: svc.price,
               duration: svc.duration_minutes,
               description: svc.description,
+              // 시술 시점 — 점유 구간 계산에 쓰인다.
+              // before=촬영 전 완료 / during=촬영 중 합류 / full=종료까지 동행
+              timing:           svc.timing || 'before',
+              duration_minutes: svc.duration_minutes,
+              offset_minutes:   svc.offset_minutes ?? 30,
+              max_hours:        svc.max_hours ?? null,
             })),
             rating: s.rating || 0,
             reviews: s.review_count || 0,
@@ -453,7 +461,13 @@ const Booking = () => {
           const lists = await Promise.all(
             vendors.map(async v => {
               const { data: items } = await getVenueItems(v.id);
-              return (items || []).map(item => ({ ...item, vendor: v }));
+              // vendorId 가 있어야 예약 아이템에 정산 대상을 담을 수 있다
+              return (items || []).map(item => ({
+                ...item,
+                vendor: v,
+                vendorId: v.id,
+                vendorName: v.name_ko || v.name || '',
+              }));
             })
           );
           setDbVenues(lists.flat());
@@ -630,11 +644,14 @@ const Booking = () => {
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
   const dressPrice = selectedDressData?.price || 0;
 
-  // Helper to check if a dress size is booked for the selected date
-  const isDressSizeBooked = (dressName, size) => {
-    return bookedDressInfo.some(b =>
-      b.dress_name === dressName && b.dress_size === size
-    );
+  // 선택한 날짜에 이 의상의 해당 사이즈가 이미 나갔는지 확인한다.
+  //
+  // 예전에는 의상 "이름"으로 비교해서, 서로 다른 벤더가 둘 다
+  // "웨딩드레스"라고 이름 붙이면 한쪽이 예약될 때 다른 쪽까지 막혔다.
+  // 이제 booking_items.item_id 로 정확히 판정한다.
+  const isDressSizeBooked = (dressId, size) => {
+    if (!dressId) return false;
+    return bookedDressInfo.some(b => b.itemId === dressId && b.size === size);
   };
 
   // Venue data
@@ -675,6 +692,71 @@ const Booking = () => {
 
   const TOSS_CLIENT_KEY = import.meta.env.VITE_TOSS_CLIENT_KEY;
 
+  /**
+   * 예약을 참여자별 라인 아이템으로 만든다.
+   *
+   * 예전에는 이름·금액만 URL 로 넘겨서 헤메와 벤더가 자기 예약을 알 수도,
+   * 정산을 받을 수도 없었다. 이제 provider_id 와 item_id 를 함께 넘긴다.
+   */
+  const buildBookingItems = () => {
+    const items = [];
+
+    if (p?.id) {
+      items.push({
+        providerType: 'photographer',
+        providerId:   p.id,
+        providerName: artistName,
+        itemId:       pkgData?.id || null,
+        itemName:     selectedPkg,
+        price:        toAmount(pkgData?.price),
+        timing:       'shoot',
+      });
+    }
+
+    if (stylistData?.id && stylistSvcData) {
+      items.push({
+        providerType:    'stylist',
+        providerId:      stylistData.id,
+        providerName:    stylistData.name || stylistData.nameKo || '',
+        itemId:          stylistSvcData.id || null,
+        itemName:        selectedStylistSvc || stylistSvcData.name || '헤어메이크업',
+        price:           toAmount(stylistSvcData.price),
+        // 시술 시점에 따라 점유 구간이 완전히 달라진다.
+        // before=촬영 전 완료 / during=촬영 중 합류 / full=종료까지 동행
+        timing:          stylistSvcData.timing || 'before',
+        durationMinutes: stylistSvcData.duration_minutes ?? stylistSvcData.duration ?? 60,
+        offsetMinutes:   stylistSvcData.offset_minutes ?? 30,
+      });
+    }
+
+    if (selectedDressData?.id && selectedDressData?.vendorId) {
+      items.push({
+        providerType: 'dress',
+        providerId:   selectedDressData.vendorId,
+        providerName: selectedDressData.vendorName || '',
+        itemId:       selectedDressData.id,
+        itemName:     selectedDressData.nameI18n?.[lang] || selectedDressData.name || '의상',
+        itemOption:   selectedDressSize || null,
+        price:        toAmount(dressPrice),
+        timing:       'day',   // 의상은 하루 단위 점유
+      });
+    }
+
+    if (selectedVenueData?.id && selectedVenueData?.vendorId) {
+      items.push({
+        providerType: 'venue',
+        providerId:   selectedVenueData.vendorId,
+        providerName: selectedVenueData.vendorName || '',
+        itemId:       selectedVenueData.id,
+        itemName:     selectedVenueData.nameI18n?.[lang] || selectedVenueData.name || '장소',
+        price:        toAmount(venuePrice),
+        timing:       'shoot',
+      });
+    }
+
+    return items;
+  };
+
   const handleConfirm = async () => {
     setPayLoading(true);
     setPayError('');
@@ -682,6 +764,19 @@ const Booking = () => {
       const tossPayments = await loadTossPayments(TOSS_CLIENT_KEY);
       const orderId   = generateOrderId();
       const orderName = `[Phosnap] ${artistName} · ${selectedPkg}`;
+
+      // 결제 리다이렉트 뒤에도 아이템 정보를 살리기 위해 초안을 남긴다.
+      // URL 파라미터로 넘기기엔 ID 가 너무 많고 길이 제한에 걸린다.
+      try {
+        sessionStorage.setItem(`phosnap_draft_${orderId}`, JSON.stringify({
+          items: buildBookingItems(),
+          hours: pkgData?.duration_hours ?? pkgData?.hours ?? 2,
+        }));
+      } catch (err) {
+        // 저장에 실패해도 결제는 진행한다. 성공 페이지가 URL 파라미터로
+        // 최소한의 예약은 만들 수 있다.
+        console.error('[Booking] 예약 초안 저장 실패:', err);
+      }
 
       await tossPayments.requestPayment('카드', {
         amount:       totalPrice,
@@ -1163,7 +1258,7 @@ const Booking = () => {
                               setSelectedDressSize(size || dress.sizes?.[0] || '');
                             }
                           }}
-                          bookedSizes={dress.sizes?.filter(size => isDressSizeBooked(dress.name, size)) || []}
+                          bookedSizes={dress.sizes?.filter(size => isDressSizeBooked(dress.id, size)) || []}
                         />
                       ))}
                     </div>
