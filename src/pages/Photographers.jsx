@@ -358,16 +358,35 @@ const Photographers = ({ onAuthOpen }) => {
     localStorage.setItem('phosnap_fav_countries', JSON.stringify(next));
   };
 
-  // Countries list — 작가 포트폴리오에 태그된 국가만 (즐겨찾기 우선)
+  // Countries list — 실제 DB 작가 기준으로 집계한다.
+  // getCountriesFromPortfolio 는 mock PHOTOGRAPHERS 로 레지스트리를 만들어
+  // 등록 작가가 1명인데 "한국 4" 처럼 실제와 다른 숫자를 보여줬다.
   const countriesList = useMemo(() => {
-    const fromPortfolio = getCountriesFromPortfolio(lang);
-    // 즐겨찾기를 우선으로 정렬
-    return [...fromPortfolio].sort((a, b) => {
-      const aFav = favCountries.includes(a.code) ? 0 : 1;
-      const bFav = favCountries.includes(b.code) ? 0 : 1;
-      return aFav - bFav;
+    const source = dbPhotographers || [];
+    const counts = {};
+    source.forEach(p => {
+      const cc = p.countryCode || p.country_code || 'KR';
+      counts[cc] = (counts[cc] || 0) + 1;
     });
-  }, [lang, favCountries]);
+
+    const all = getCountriesFromPortfolio(lang);
+    const byCode = all.reduce((acc, c) => { acc[c.code] = c; return acc; }, {});
+    const order = ['KR', 'JP', 'CN', 'TW', 'TH', 'VN', 'ID', 'US', 'FR', 'IT', 'ES', 'GB', 'DE', 'AU', 'SG', 'MY', 'PH', 'IN'];
+
+    const list = Object.keys(counts)
+      .map(code => ({
+        ...(byCode[code] || { code, name: code, flag: '' }),
+        artistCount: counts[code],
+      }))
+      .sort((a, b) => {
+        const aFav = favCountries.includes(a.code) ? 0 : 1;
+        const bFav = favCountries.includes(b.code) ? 0 : 1;
+        if (aFav !== bFav) return aFav - bFav;
+        const ai = order.indexOf(a.code); const bi = order.indexOf(b.code);
+        return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
+      });
+    return list;
+  }, [lang, favCountries, dbPhotographers]);
 
   // Cities for selected country
   const citiesForCountry = useMemo(() => {
