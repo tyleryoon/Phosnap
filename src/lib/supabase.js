@@ -1087,6 +1087,100 @@ export const deletePackage = async (pkgId) => {
   return sb.from('packages').delete().eq('id', pkgId);
 };
 
+/**
+ * packages 테이블 row 를 대시보드가 쓰는 로컬 형태로 되돌린다.
+ * 컬럼명(description/duration_hours/edit_count/regions)과 UI 필드명
+ * (desc/duration/editedCount/regionIds)이 달라 변환이 없으면 불러온
+ * 상품의 입력칸이 전부 비어 보인다.
+ */
+export const fromPackageRow = (row) => {
+  const base = {
+    id:        row.id,
+    name:      row.name || '',
+    desc:      row.description || '',
+    price:     row.price ?? '',
+    images:    row.images || [],
+    regionIds: row.regions || [],
+    coverIdx:  0,
+    type:      row.type,
+  };
+  if (row.type === 'snap') {
+    const h = row.duration_hours;
+    base.duration    = h === 0.5 ? '30분' : `${Number(h) % 1 === 0 ? Number(h) : h}시간`;
+    base.editedCount = row.edit_count ?? '';
+  }
+  if (row.type === 'tour') {
+    base.durationMin = row.duration_min ?? '';
+    base.spots       = row.spots || [];
+  }
+  if (row.type === 'costume') {
+    base.gender   = row.gender === 'male' ? '남성' : row.gender === 'female' ? '여성' : '공용';
+    base.category = row.category || '한복';
+  }
+  return base;
+};
+
+/** 대시보드의 로컬 상품 형태를 packages 테이블 row 로 변환 */
+const toPackageRow = (photographerId, item, type, sortOrder) => {
+  const num = (v) => {
+    const n = parseInt(String(v ?? '').replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const row = {
+    photographer_id: photographerId,
+    type,
+    name:        (item.name || '').trim() || '(이름 없음)',
+    description: item.desc || item.description || '',
+    price:       num(item.price),
+    images:      item.images || [],
+    regions:     item.regionIds || [],
+    sort_order:  sortOrder,
+    is_active:   true,
+    updated_at:  new Date().toISOString(),
+  };
+  if (type === 'snap') {
+    row.duration_hours = parseFloat(String(item.duration || '1').replace(/[^0-9.]/g, '')) || 1;
+    row.edit_count     = num(item.editedCount);
+  }
+  if (type === 'tour') {
+    row.duration_min = num(item.durationMin) || null;
+    row.spots        = item.spots || [];
+  }
+  if (type === 'costume') {
+    const g = item.gender === '남성' ? 'male' : item.gender === '여성' ? 'female' : 'unisex';
+    row.gender   = g;
+    row.category = item.category || null;
+  }
+  return row;
+};
+
+/**
+ * 작가의 상품 목록을 packages 테이블에 통째로 반영한다 (해당 type 만 교체).
+ *
+ * 대시보드는 상품을 photographers.packages(jsonb) 에 저장했는데 읽을 때는
+ * packages 테이블에서 조회해, 저장한 상품이 다시 로드되지 않는 문제가 있었다.
+ * 저장 경로를 테이블로 일원화한다.
+ *
+ * @param {string} photographerId
+ * @param {string} type 'snap'|'tour'|'costume'|'prop'
+ * @param {Array}  items 대시보드 로컬 상품 배열
+ */
+export const replacePackages = async (photographerId, type, items = []) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  if (!photographerId) return { error: { message: 'photographerId 없음' } };
+
+  const { error: delErr } = await sb.from('packages')
+    .delete().eq('photographer_id', photographerId).eq('type', type);
+  if (delErr) return { error: delErr };
+
+  if (!items.length) return { data: [], error: null };
+
+  const rows = items.map((item, i) => toPackageRow(photographerId, item, type, i));
+  const { data, error } = await sb.from('packages').insert(rows).select();
+  return { data: data || [], error };
+};
+
 // ─── Artist Schedules (스케줄 CRUD) ─────────────────────────────────
 
 /**

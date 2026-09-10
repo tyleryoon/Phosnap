@@ -705,9 +705,14 @@ const ArtistSchedule = () => {
             // 패키지 로드
             const { data: pkgs } = await getPackages(photog.id);
             if (pkgs?.length) {
-              setSnapProducts(pkgs.filter(p => p.type === 'snap'));
-              setCostumes(pkgs.filter(p => p.type === 'costume'));
-              setProps(pkgs.filter(p => p.type === 'prop').map(p => ({ name: p.name, desc: p.description, id: p.id })));
+              // DB 컬럼명을 대시보드가 쓰는 필드명으로 되돌린다.
+              const { fromPackageRow } = await import('../lib/supabase');
+              const mapped = pkgs.map(fromPackageRow);
+              setSnapProducts(mapped.filter(p => p.type === 'snap'));
+              setCostumes(mapped.filter(p => p.type === 'costume'));
+              setProps(mapped.filter(p => p.type === 'prop'));
+              // tours 는 profile 상태로 관리되며 setTours 는 저장을 유발하므로
+              // 로드 시점에 호출하지 않는다.
             }
             // 스케줄 로드
             const { data: schedData } = await getScheduleMonth(photog.id, calYear, calMonth + 1);
@@ -863,6 +868,20 @@ const ArtistSchedule = () => {
           const { error: syncErr } = await sb.from('photographers')
             .update(payload).eq('id', dbPhotographerId);
           if (syncErr) console.error('[ArtistSchedule] photographers sync failed:', syncErr);
+
+          // packages 테이블에도 반영한다. load() 가 이 테이블에서 읽으므로
+          // 여기에 쓰지 않으면 저장한 상품이 새로고침 후 사라진다.
+          const { replacePackages } = await import('../lib/supabase');
+          const groups = [
+            ['snap',    snaps],
+            ['tour',    updated.tours || []],
+            ['costume', updated.costumes || []],
+            ['prop',    updated.props || []],
+          ];
+          for (const [type, items] of groups) {
+            const { error: pkgErr } = await replacePackages(dbPhotographerId, type, items);
+            if (pkgErr) console.error(`[ArtistSchedule] packages(${type}) sync failed:`, pkgErr);
+          }
         }
       } catch (e) {
         console.error('[ArtistSchedule] photographers sync threw:', e);
