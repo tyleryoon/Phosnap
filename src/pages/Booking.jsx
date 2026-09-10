@@ -615,7 +615,15 @@ const Booking = () => {
   const selectedVenueData = allVenueItems.find(v => v.id === selectedVenue);
   const venuePrice = selectedVenueData?.price || 0;
 
-  const totalPrice     = (pkgData?.price || 0) + (stylistSvcData?.price || 0) + dressPrice + venuePrice;
+  // 가격이 문자열("250000")로 들어오는 경로가 있어 그대로 더하면 문자열
+  // 연결이 일어나 금액이 1000배가 된다. 반드시 숫자로 정규화한 뒤 더한다.
+  const toAmount = (v) => {
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    const n = parseInt(String(v ?? '').replace(/[^0-9]/g, ''), 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const totalPrice     = toAmount(pkgData?.price) + toAmount(stylistSvcData?.price)
+                       + toAmount(dressPrice) + toAmount(venuePrice);
 
   const STEPS = [
     t('booking.selectDate'),
@@ -870,8 +878,8 @@ const Booking = () => {
                       </div>
                       <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
                         {pkgHours > 1
-                          ? `${selectedPkg} 패키지 (${pkgHours}시간) 기준으로 예약 가능한 시간대입니다. 선택한 시간부터 ${pkgHours}시간 연속으로 사용됩니다.`
-                          : `${selectedPkg} 패키지 (${pkgHours}시간) 기준 예약 가능 시간대입니다.`
+                          ? `${selectedPkg} (${pkgHours}시간) 기준으로 예약 가능한 시간대입니다. 선택한 시간부터 ${pkgHours}시간 연속으로 사용됩니다.`
+                          : `${selectedPkg} (${pkgHours}시간) 기준 예약 가능 시간대입니다.`
                         }
                       </p>
 

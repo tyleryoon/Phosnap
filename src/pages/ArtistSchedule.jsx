@@ -912,12 +912,19 @@ const ArtistSchedule = () => {
           // 고객 상세 페이지(Profile)는 pkg.hours / pkg.photos 를 읽는데
           // 대시보드는 duration("2시간") / editedCount 로 관리한다.
           // 양쪽 필드를 모두 채워 어느 화면에서도 값이 비지 않게 한다.
+          const toInt = (v) => {
+            const n = parseInt(String(v ?? '').replace(/[^0-9]/g, ''), 10);
+            return Number.isFinite(n) ? n : 0;
+          };
           const publicPackages = snaps.map(p => {
             const hours = parseFloat(String(p.duration ?? '').replace(/[^0-9.]/g, '')) || null;
             return {
               ...p,
+              // 문자열로 저장하면 예약 화면에서 금액 덧셈이 문자열 연결이 되어
+              // 결제 금액이 1000배가 된다. 반드시 숫자로 저장한다.
+              price:  toInt(p.price),
               hours:  hours ?? p.hours ?? null,
-              photos: p.editedCount ?? p.photos ?? null,
+              photos: toInt(p.editedCount ?? p.photos) || null,
             };
           });
 
