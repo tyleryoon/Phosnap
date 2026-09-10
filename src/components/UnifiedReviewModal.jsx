@@ -107,28 +107,34 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
     setSavedMsg('');
 
     try {
+      // 리뷰 저장 실패를 조용히 삼키면 "저장되었습니다" 를 보고도
+      // 실제로는 아무것도 남지 않는다. 실패를 모아 사용자에게 알린다.
+      const failed = [];
+
       // 작가 리뷰
       const artistData = reviewData.artist;
       if (artistData?.rating > 0) {
-        await submitPhotographerReview({
+        const { error } = await submitPhotographerReview({
           booking_id: booking.id,
           photographer_id: booking.artistId || booking.photographer_id,
           rating: artistData.rating,
           title: '',
           body: artistData.comment || '',
           tags: artistData.tags || [],
-        }).catch(() => {});
+        }).catch(err => ({ error: err }));
+        if (error) { console.error('[UnifiedReviewModal] 작가 리뷰 실패:', error); failed.push('작가'); }
       }
 
       // 패키지 리뷰 (작가 패키지 기반)
       if (artistData?.rating > 0) {
-        await submitPackageReview({
+        const { error } = await submitPackageReview({
           booking_id: booking.id,
           photographer_id: booking.artistId || booking.photographer_id,
           rating: artistData.rating,
           title: '',
           body: artistData.comment || '',
-        }).catch(() => {});
+        }).catch(err => ({ error: err }));
+        if (error) { console.error('[UnifiedReviewModal] 패키지 리뷰 실패:', error); failed.push('패키지'); }
       }
 
       // Stylist/costume/venue → Supabase vendor_reviews 테이블
@@ -142,8 +148,20 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
           rating: reviewData[vt].rating,
           tags: reviewData[vt].tags || [],
           body: reviewData[vt].comment || '',
-        }).catch(() => {}));
+        }).catch(err => ({ error: err })).then(res => {
+          if (res?.error) {
+            console.error(`[UnifiedReviewModal] ${vt} 리뷰 실패:`, res.error);
+            failed.push(vt);
+          }
+        }));
       await Promise.all(vendorPromises);
+
+      if (failed.length) {
+        // savedMsg 렌더가 '✓' 유무로 성공/실패 색을 구분한다.
+        setSavedMsg(`일부 리뷰를 저장하지 못했습니다 (${failed.join(', ')}). 잠시 후 다시 시도해주세요.`);
+        setSaving(false);
+        return;
+      }
 
       // Calculate and award points
       try {
