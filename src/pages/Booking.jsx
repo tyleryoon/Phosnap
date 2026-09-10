@@ -317,26 +317,32 @@ const Booking = () => {
   const { lang, t } = useLanguage();
   const { userName, userRole } = useAuth();
 
+  // 실제 가입 작가는 UUID 를 쓰므로 Number(id) 로는 mock 배열에서 절대
+  // 찾을 수 없다(NaN). Supabase 에서 먼저 조회하고, 없을 때만 mock 을 쓴다.
+  const [dbPhotographer, setDbPhotographer] = useState(null);
+  const [artistLoading, setArtistLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setArtistLoading(true);
+      try {
+        const { fetchPhotographer } = await import('../lib/supabase');
+        const { data } = await fetchPhotographer(id);
+        if (!cancelled && data) setDbPhotographer(data);
+      } catch (_) { /* mock 폴백 */ }
+      if (!cancelled) setArtistLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
+
   const pMock = PHOTOGRAPHERS.find(ph => ph.id === Number(id));
-  const p = getMergedProfile(pMock, 'photographer', Number(id));
+  const p = dbPhotographer || getMergedProfile(pMock, 'photographer', Number(id));
 
   // ── 작가/사진작가 role은 예약 불가 ──
+  // (아래 early return 들은 모든 훅 선언 이후로 옮겨져 있어야 한다)
   const isArtistRole = userRole === 'artist' || userRole === 'photographer';
-  if (isArtistRole) {
-    const msg = ARTIST_BLOCK_MSG[lang] || ARTIST_BLOCK_MSG['ko'];
-    return (
-      <div className="page-enter" style={{ paddingTop: 120, textAlign: 'center', minHeight: '60vh' }}>
-        <div style={{ maxWidth: 480, margin: '0 auto', padding: '60px 24px' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
-          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '0.05em', marginBottom: 12 }}>{msg.title}</h2>
-          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 32 }}>{msg.desc}</p>
-          <button className="btn-primary" onClick={() => navigate('/artist/dashboard')}>
-            {msg.btn}
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   const [step, setStep]                 = useState(1);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -526,7 +532,45 @@ const Booking = () => {
     return blocked.length > 0 ? 'partial' : 'open';
   };
 
-  if (!p) return null;
+  if (isArtistRole) {
+    const msg = ARTIST_BLOCK_MSG[lang] || ARTIST_BLOCK_MSG['ko'];
+    return (
+      <div className="page-enter" style={{ paddingTop: 120, textAlign: 'center', minHeight: '60vh' }}>
+        <div style={{ maxWidth: 480, margin: '0 auto', padding: '60px 24px' }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎨</div>
+          <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '0.05em', marginBottom: 12 }}>{msg.title}</h2>
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 32 }}>{msg.desc}</p>
+          <button className="btn-primary" onClick={() => navigate('/artist/dashboard')}>
+            {msg.btn}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // DB 조회 중에는 빈 화면 대신 로딩을 보여준다.
+  // (예전에는 mock 에서 못 찾으면 곧장 null 을 반환해 흰 화면이 됐다)
+  if (artistLoading) {
+    return (
+      <div style={{ paddingTop: 140, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+        불러오는 중…
+      </div>
+    );
+  }
+
+  if (!p) {
+    return (
+      <div className="page-enter" style={{ paddingTop: 140, textAlign: 'center', minHeight: '50vh' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 18, marginBottom: 10 }}>
+          작가를 찾을 수 없습니다
+        </div>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20 }}>
+          삭제되었거나 주소가 잘못되었을 수 있습니다.
+        </p>
+        <button className="btn-outline" onClick={() => navigate('/photographers')}>작가 목록으로</button>
+      </div>
+    );
+  }
 
   const availableStylists = dbStylists || getStylistsByLocation(p.locationId);
 
