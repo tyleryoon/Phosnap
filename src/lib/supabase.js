@@ -792,24 +792,26 @@ export const rejectBooking = async (bookingId, reason = '') => {
 };
 
 /** 특정 작가(legacy_id)의 대기 중 예약 목록 */
-export const getPendingBookings = async (legacyId) => {
+export const getPendingBookings = async (photographerId) => {
   const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
+  if (!sb || !photographerId) return { data: [], error: null };
+  // 예약은 photographer_id(UUID) 로 저장된다. 예전에는
+  // photographer_legacy_id 로 조회해 작가가 예약 요청을 볼 수 없었다.
   const { data, error } = await sb.from('bookings')
     .select('*')
     .eq('status', 'pending')
-    .eq('photographer_legacy_id', String(legacyId))
+    .eq('photographer_id', photographerId)
     .order('created_at', { ascending: true });
   return { data: data || [], error };
 };
 
 /** 특정 작가의 모든 예약 목록 (대시보드용) */
-export const getArtistBookings = async (legacyId) => {
+export const getArtistBookings = async (photographerId) => {
   const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
+  if (!sb || !photographerId) return { data: [], error: null };
   const { data, error } = await sb.from('bookings')
     .select('*')
-    .eq('photographer_legacy_id', String(legacyId))
+    .eq('photographer_id', photographerId)
     .order('date', { ascending: true });
   return { data: data || [], error };
 };

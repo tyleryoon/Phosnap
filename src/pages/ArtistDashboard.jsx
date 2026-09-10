@@ -212,15 +212,30 @@ const ArtistDashboard = () => {
             legacyId = photog.id;
             setArtistLegacyId(photog.id);
           } else {
-            // profiles에서 legacy ID fallback
+            // 공개 레코드가 없는 계정(구버전 가입자)은 여기서 생성해준다.
             const { data: prof } = await sb.from('profiles')
-              .select('artist_legacy_id').eq('id', user.id).maybeSingle();
-            legacyId = prof?.artist_legacy_id || user.id;
-            setArtistLegacyId(legacyId);
+              .select('full_name, artist_type').eq('id', user.id).maybeSingle();
+            const { ensureArtistRecord } = await import('../lib/supabase');
+            const parsed = (prof?.full_name || '').match(/^(.*?)\s*\((.*)\)\s*$/);
+            const { data: created, kind } = await ensureArtistRecord(user.id, {
+              artistType:  prof?.artist_type || 'photographer',
+              nativeName:  parsed ? parsed[1] : (prof?.full_name || ''),
+              englishName: parsed ? parsed[2] : '',
+            });
+            if (kind === 'photographer' && created?.id) {
+              legacyId = created.id;
+              setArtistLegacyId(created.id);
+            }
           }
         }
       }
-      if (!legacyId) legacyId = 1; // 최후 fallback (dev mode)
+      // 레코드를 끝내 찾지 못하면 조회를 건너뛴다.
+      // 예전에는 legacyId = 1 로 대체해 남의 작가 데이터를 불러왔다.
+      if (!legacyId) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
 
       // 예약 목록
       const { data: bData } = await getArtistBookings(legacyId);
