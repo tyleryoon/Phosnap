@@ -20,7 +20,7 @@ import { getVendorsByLocation, getVendorById } from '../data/dressVendors';
 import { getVenueVendorsByLocation, getVenueItemsByVendor, getVenueItemById } from '../data/venueVendors';
 import { getTagLabel } from '../data/tagRegistry';
 import { loadTossPayments, generateOrderId } from '../lib/payment';
-import { computeSlot, buildShootWindow } from '../lib/scheduling';
+import { computeSlot, buildShootWindow, isServiceAvailable } from '../lib/scheduling';
 import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules, buildSlotData } from '../data/schedules';
 import WeatherGoldenHour from '../components/WeatherGoldenHour';
 import PopularityIndicator from '../components/PopularityIndicator';
@@ -365,9 +365,49 @@ const Booking = () => {
   const [dbMonthSchedule, setDbMonthSchedule] = useState(null); // { 'YYYY-MM-DD': row }
   const [dbDresses, setDbDresses] = useState(null);
   const [dbVenues, setDbVenues] = useState(null);
+  // 선택한 날짜에 헤메·장소가 이미 묶여 있는 구간.
+  // 이게 없으면 이미 예약이 찬 헤메를 고객이 그대로 고를 수 있다.
+  const [busyStylists, setBusyStylists] = useState([]);
+  const [busyVenues, setBusyVenues] = useState([]);
 
   // 스케줄 초기화 (localStorage mock 데이터 시딩)
   useEffect(() => { initSchedules(); }, []);
+
+  // 선택한 날짜에 헤메·장소가 이미 점유된 구간을 가져온다.
+  // 헤메는 시술 시점에 따라 촬영 전날 밤이나 촬영 중으로 구간이 흩어지므로
+  // 날짜만으로는 판정할 수 없고 실제 구간을 비교해야 한다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!selectedDate) { setBusyStylists([]); setBusyVenues([]); return; }
+      const stylistIds = (dbStylists || []).map(s => s.id).filter(Boolean);
+      const venueIds   = [...new Set((dbVenues || []).map(v => v.vendorId).filter(Boolean))];
+      if (!stylistIds.length && !venueIds.length) return;
+
+      try {
+        const { getProviderBusyBlocks } = await import('../lib/supabase');
+        const [st, ve] = await Promise.all([
+          stylistIds.length ? getProviderBusyBlocks('stylist', stylistIds, selectedDate) : { data: [] },
+          venueIds.length   ? getProviderBusyBlocks('venue',   venueIds,   selectedDate) : { data: [] },
+        ]);
+        if (cancelled) return;
+        setBusyStylists(st.data || []);
+        setBusyVenues(ve.data || []);
+      } catch (err) {
+        // 조회에 실패하면 아무것도 막지 않는다. 다만 조용히 넘어가면
+        // 중복 예약이 생겨도 원인을 찾을 수 없으므로 반드시 남긴다.
+        console.error('[Booking] 점유 구간 조회 실패:', err);
+        if (!cancelled) { setBusyStylists([]); setBusyVenues([]); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedDate, dbStylists, dbVenues]);
+
+  // 날짜나 시간을 바꾸면 이전에 고른 시술의 가용성 판단이 무효가 된다.
+  // 그대로 두면 이미 찬 시간대의 시술을 선택한 채로 결제까지 갈 수 있다.
+  useEffect(() => {
+    setSelectedStylistSvc(null);
+  }, [selectedDate, selectedTime]);
 
   // 작가의 기본 운영 시간(artist_defaults)을 Supabase 에서 가져온다.
   useEffect(() => {
@@ -620,7 +660,7 @@ const Booking = () => {
   // DB 가 유일한 출처다. 예전에는 dbStylists 가 비면 mock 스타일리스트
   // 5명(교토·도쿄·부산 등 지역 무관)이 노출되어, 존재하지 않는 사람을
   // 예약에 포함시킬 수 있었다.
-  const availableStylists = dbStylists || [];
+  const allStylists = dbStylists || [];
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay    = getFirstDay(calYear, calMonth);
@@ -632,7 +672,38 @@ const Booking = () => {
   };
 
   const pkgData        = p.packages.find(pk => pk.name === selectedPkg);
-  const stylistData    = availableStylists.find(s => s.id === selectedStylist);
+
+  // ── 촬영 시간대 ──────────────────────────────────────────────────────
+  // 헤메·장소가 가능한지 판정하려면 촬영이 언제 시작해서 언제 끝나는지
+  // 알아야 한다. 날짜만으로는 판정할 수 없다.
+  const shootWindow = buildShootWindow(
+    selectedDate,
+    selectedTime,
+    pkgData?.duration_hours ?? pkgData?.hours ?? 2,
+  );
+
+  /** 이 시술을 이 촬영에 넣을 수 있는지 */
+  const serviceAvailability = (stylistId, svc) => {
+    if (!shootWindow) return { available: true, slot: null, reason: null };
+    return isServiceAvailable(
+      {
+        timing:           svc.timing || 'before',
+        duration_minutes: svc.duration_minutes ?? svc.duration ?? 60,
+        offset_minutes:   svc.offset_minutes ?? 30,
+        max_hours:        svc.max_hours,
+      },
+      shootWindow,
+      busyStylists.filter(b => b.providerId === stylistId),
+    );
+  };
+
+  // 시술이 하나도 가능하지 않은 헤메는 아예 보여주지 않는다.
+  // 고객이 골랐다가 마지막 단계에서 막히는 것보다 처음부터 안 보이는 게 낫다.
+  const availableStylists = shootWindow
+    ? allStylists.filter(s => (s.services || []).some(svc => serviceAvailability(s.id, svc).available))
+    : allStylists;
+
+  const stylistData    = allStylists.find(s => s.id === selectedStylist);
   const stylistSvcData = stylistData?.services?.find(sv => sv.name === selectedStylistSvc);
 
   // 의상 관련 데이터
@@ -657,7 +728,14 @@ const Booking = () => {
 
   // Venue data
   // 장소도 DB 에서 조회한다 (mock venueVendors 폴백 제거).
-  const allVenueItems = dbVenues || [];
+  // 촬영 시간에 이미 다른 예약이 잡힌 장소는 제외한다.
+  const allVenueItems = (dbVenues || []).filter(v => {
+    if (!shootWindow || !v.vendorId) return true;
+    return !busyVenues.some(b =>
+      b.providerId === v.vendorId &&
+      b.start < shootWindow.end && shootWindow.start < b.end
+    );
+  });
   const selectedVenueData = allVenueItems.find(v => v.id === selectedVenue);
   const venuePrice = selectedVenueData?.price || 0;
 
@@ -1178,17 +1256,21 @@ const Booking = () => {
                           {t('booking.selectService')}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
-                          {availableStylists.find(s => s.id === selectedStylist)?.services.map(svc => {
+                          {(stylistData?.services || []).map(svc => {
                             const isSvcSelected = selectedStylistSvc === svc.name;
+                            // 이미 다른 예약이 걸려 있거나 촬영이 너무 길면 고를 수 없다
+                            const avail = serviceAvailability(stylistData.id, svc);
+                            const blocked = !avail.available;
                             return (
                               <div
                                 key={svc.name}
-                                onClick={() => setSelectedStylistSvc(svc.name)}
+                                onClick={() => { if (!blocked) setSelectedStylistSvc(svc.name); }}
                                 style={{
                                   border: `2px solid ${isSvcSelected ? 'var(--gold)' : 'var(--border)'}`,
                                   padding: '16px 20px',
                                   background: isSvcSelected ? 'rgba(232,160,32,0.08)' : 'var(--bg2)',
-                                  cursor: 'pointer',
+                                  cursor: blocked ? 'not-allowed' : 'pointer',
+                                  opacity: blocked ? 0.42 : 1,
                                   position: 'relative',
                                   transition: 'all 0.2s',
                                 }}
@@ -1209,6 +1291,16 @@ const Booking = () => {
                                     "촬영 전 완료"와 "촬영 중 합류"는 고객이 준비해야 할
                                     시간이 완전히 달라서 반드시 안내가 필요하다. */}
                                 {(() => {
+                                  if (blocked) {
+                                    const msg = avail.reason === 'exceeds_max_hours'
+                                      ? (lang === 'ko' ? '이 촬영 길이는 어려워요' : 'Too long for this menu')
+                                      : (lang === 'ko' ? '이 시간대는 예약이 찼어요' : 'Already booked at this time');
+                                    return (
+                                      <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 4 }}>
+                                        {msg}
+                                      </div>
+                                    );
+                                  }
                                   const label = stylistTimingLabel(svc);
                                   if (!label) return null;
                                   return (
