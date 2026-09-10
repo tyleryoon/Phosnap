@@ -1213,7 +1213,9 @@ function VendorDashboard() {
                 <span style={{ color: 'var(--gold-dim)' }}>|</span>
               )}
               {(profileForm.location) && (
-                <span>📍 {profileForm.location}</span>
+                <span>📍 {typeof profileForm.location === 'string'
+                  ? profileForm.location
+                  : (profileForm.location?.city || profileForm.location?.locationId || '')}</span>
               )}
             </div>
           </div>
@@ -1997,25 +1999,7 @@ function VendorDashboard() {
                   )}
                 </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                    주소/지역
-                  </label>
-                  <input
-                    type="text"
-                    value={profileForm.location}
-                    onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      backgroundColor: 'var(--bg)',
-                      color: 'var(--text)',
-                      border: '1px solid var(--gold-dim)',
-                      boxSizing: 'border-box',
-                      fontFamily: 'var(--font-sans)',
-                    }}
-                  />
-                </div>
+
 
                 <div>
                   <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
