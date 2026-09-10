@@ -602,16 +602,20 @@ function VendorDashboard() {
           setShowSavePopup(true);
           setTimeout(() => setShowSavePopup(false), 2500);
         } else {
+          // 실패 원인을 남긴다. 예전에는 조용히 'error' 만 세팅해
+          // 스키마 불일치(42703)로 저장이 안 되는데도 원인을 알 수 없었다.
+          console.error('[VendorDashboard] 업체 프로필 저장 실패:', error);
           setProfileSaveStatus('error');
         }
       } catch (err) {
+        console.error('[VendorDashboard] 업체 프로필 저장 예외:', err);
         setProfileSaveStatus('error');
       }
     } else {
-      // Mock mode — just show success popup
-      setProfileSaveStatus('saved');
-      setShowSavePopup(true);
-      setTimeout(() => setShowSavePopup(false), 2500);
+      // 벤더 레코드가 없으면 저장할 대상이 없다.
+      // 성공 팝업을 띄우면 저장된 것으로 오해하게 되므로 에러로 처리한다.
+      console.error('[VendorDashboard] 벤더 레코드가 없어 저장할 수 없습니다.');
+      setProfileSaveStatus('error');
     }
     setTimeout(() => setProfileSaveStatus(null), 2000);
   };
