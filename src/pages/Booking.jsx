@@ -409,6 +409,10 @@ const Booking = () => {
             })),
             rating: s.rating || 0,
             reviews: s.review_count || 0,
+            // StylistCard 가 기대하는 필드. 없으면 slice/map 에서 크래시한다.
+            tags:      s.specialty ? [s.specialty] : [],
+            languages: s.languages || ['KO'],
+            portfolio: s.portfolio_images || [],
           }));
           setDbStylists(mapped);
         }

@@ -109,7 +109,7 @@ const DressCard = ({
           )}
           {dress.sizes?.length > 0 && (
             <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4 }}>
-              {dress.sizes.join(' / ')}
+              {(dress.sizes || []).join(' / ')}
             </div>
           )}
         </div>

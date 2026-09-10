@@ -12,8 +12,13 @@ import LazyImage from './LazyImage';
 
 const StylistCard = ({ s, selected, onClick }) => {
   const { lang, t } = useLanguage();
-  const displayTags = s.tagsI18n?.[lang] ?? s.tags;
-  const displayName = lang === 'ko' && s.nameKo ? s.nameKo : s.name;
+  // DB 스타일리스트에는 mock 에만 있던 필드(tags, languages)가 없다.
+  // 방어하지 않으면 실제 데이터가 들어오는 순간 예약 페이지가 죽는다.
+  const displayTags = s.tagsI18n?.[lang] ?? s.tags ?? [];
+  const languages = s.languages ?? [];
+  const displayName = (lang === 'ko' && (s.nameKo || s.name_ko))
+    ? (s.nameKo || s.name_ko)
+    : (s.name || s.name_ko || s.name_en || '');
 
   // 포트폴리오 최대 3장 썸네일
   const thumbs = (s.portfolio || []).slice(0, 3);
@@ -67,7 +72,7 @@ const StylistCard = ({ s, selected, onClick }) => {
               {displayName}
             </div>
             <div style={{ display: 'flex', gap: 4 }}>
-              {s.languages.slice(0, 2).map(l => (
+              {languages.slice(0, 2).map(l => (
                 <span key={l} className="lang-chip">{l}</span>
               ))}
             </div>
