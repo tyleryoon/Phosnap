@@ -27,6 +27,7 @@ const i18n = {
     price: '가격',
     duration: '소요 시간 (분)',
     myWork: '내 작업',
+    dressRentalDay: '의상 대여 · 당일',
     payout: '실수령',
     collab: '콜라보',
     people: '인',
@@ -91,6 +92,7 @@ const i18n = {
     price: 'Price',
     duration: 'Duration (minutes)',
     myWork: 'My part',
+    dressRentalDay: 'Dress rental · same day',
     payout: 'Payout',
     collab: 'Collab',
     people: ' people',
@@ -155,6 +157,7 @@ const i18n = {
     price: '価格',
     duration: '所要時間（分）',
     myWork: '担当作業',
+    dressRentalDay: '衣装レンタル · 当日',
     payout: '受取額',
     collab: 'コラボ',
     people: '名',
@@ -219,6 +222,7 @@ const i18n = {
     price: '价格',
     duration: '持续时间（分钟）',
     myWork: '我的工作',
+    dressRentalDay: '服装租赁 · 当天',
     payout: '实收',
     collab: '合作',
     people: '人',
@@ -322,10 +326,13 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
   useEffect(() => {
     const fetchBookings = async () => {
       try {
-        const { getStylistBookings } = await import('../lib/supabase');
+        // 헤메가 의상 대여도 하면 같은 예약에서 시술과 의상 두 아이템을
+        // 맡는다. 역할별로 따로 조회하면 카드가 두 장으로 쪼개지고,
+        // 의상 예약은 볼 화면 자체가 없었다.
+        const { getMyProviderBookings } = await import('../lib/supabase');
         // 이 함수들은 { data, error } 를 반환한다. 배열로 취급하면
         // 목록이 비거나 객체가 렌더링되어 화면이 멈춘다.
-        const { data } = await getStylistBookings(stylistId);
+        const { data } = await getMyProviderBookings();
         setBookings(data || []);
       } catch {
         const cached = localStorage.getItem(`bookings_${stylistId}`);
@@ -415,9 +422,13 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
                   gap: 12, marginBottom: 8, flexWrap: 'wrap',
                 }}>
                   <div>
-                    <div style={{ color: 'var(--text)', fontWeight: 500 }}>{item.item_name}</div>
+                    <div style={{ color: 'var(--text)', fontWeight: 500 }}>
+                      {item.item_name}
+                      {item.item_option ? ` · ${item.item_option}` : ''}
+                    </div>
                     <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 2 }}>
-                      {fmtSlot(item)}
+                      {/* 의상은 하루 단위 점유라 시각 대신 대여 표시 */}
+                      {item.timing === 'day' ? t.dressRentalDay : fmtSlot(item)}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

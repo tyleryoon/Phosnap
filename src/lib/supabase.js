@@ -1634,6 +1634,66 @@ export const updateStylistProfile = async (stylistId, updates) => {
 export const getStylistBookings = async (stylistId) =>
   getProviderBookings('stylist', stylistId);
 
+/**
+ * 현재 로그인한 사람이 소유한 모든 공급자 레코드
+ *
+ * 한 사람이 헤메이면서 의상 벤더일 수 있다.
+ * (헤메 대시보드의 "의상 대여" 를 켜면 dress_vendors 레코드가 생긴다)
+ */
+export const getMyProviderRefs = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const session = await getSession();
+  const uid = session?.user?.id;
+  if (!uid) return { data: [], error: null };
+
+  const refs = [];
+  await Promise.all(Object.entries(PROVIDER_TABLE).map(async ([type, table]) => {
+    const { data, error } = await sb.from(table).select('id').eq('user_id', uid);
+    if (error) {
+      console.error('[getMyProviderRefs] 조회 실패:', table, error);
+      return;
+    }
+    for (const row of data || []) refs.push({ providerType: type, providerId: row.id });
+  }));
+
+  return { data: refs, error: null };
+};
+
+/**
+ * 내가 참여한 모든 예약 — 역할을 가리지 않고 하나로 묶는다.
+ *
+ * 헤메가 의상 대여도 한다면 같은 예약에서 시술과 의상 두 아이템을
+ * 맡게 되는데, 카드 두 장이 아니라 한 장에 둘 다 보여야 한다.
+ * "그날 내가 할 일" 이 한눈에 들어와야 하기 때문이다.
+ */
+export const getMyProviderBookings = async () => {
+  const { data: refs } = await getMyProviderRefs();
+  if (!refs.length) return { data: [], error: null };
+
+  const results = await Promise.all(
+    refs.map(r => getProviderBookings(r.providerType, r.providerId)),
+  );
+
+  const merged = new Map();
+  for (const { data } of results) {
+    for (const bk of data || []) {
+      const cur = merged.get(bk.id);
+      if (cur) {
+        cur.myItems.push(...bk.myItems);
+        cur.myTotal  += bk.myTotal;
+        cur.myPayout += bk.myPayout;
+      } else {
+        merged.set(bk.id, { ...bk, myItems: [...bk.myItems] });
+      }
+    }
+  }
+
+  const list = [...merged.values()];
+  list.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return { data: list, error: null };
+};
+
 // ─── Stylist Services CRUD ─────────────────────────────────────────
 
 /** Get all services for a stylist */
