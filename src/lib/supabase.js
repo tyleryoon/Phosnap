@@ -1466,6 +1466,37 @@ export const deliverPhotos = async (bookingId, { deliveryUrl, deliveryMemo }) =>
 
 // ─── Photographers (DB queries replacing mock) ────────────────────
 
+/**
+ * photographers 테이블 row 를 화면 컴포넌트가 기대하는 형태로 변환한다.
+ *
+ * PhotographerCard / Profile 등은 원래 mock 데이터(camelCase, price/reviews)
+ * 를 기준으로 만들어져 있어 DB row(snake_case, price_from/reviews_count)를
+ * 그대로 넘기면 `undefined.toLocaleString()` 으로 화면이 통째로 깨진다.
+ */
+export const toPhotographerCard = (row) => {
+  if (!row) return null;
+  return {
+    ...row,
+    id:            row.id,
+    name:          row.name || row.name_ko || 'Unnamed',
+    nameKo:        row.name_ko || row.name || '',
+    price:         row.price_from ?? 0,
+    rating:        row.rating ?? 0,
+    reviews:       row.reviews_count ?? 0,
+    location:      row.location_id || '',
+    locationNames: row.location_names || {},
+    languages:     row.languages || [],
+    tags:          row.tags || [],
+    img:           row.img || null,
+    portfolio:     Array.isArray(row.portfolio) ? row.portfolio : [],
+    packages:      Array.isArray(row.packages) ? row.packages : [],
+    featuredPortfolio: Array.isArray(row.portfolio) ? row.portfolio.slice(0, 5) : [],
+    hmkAvailable:  row.hmk_available ?? false,
+    countryCode:   row.country_code || 'KR',
+    city:          row.city || '',
+  };
+};
+
 /** Fetch photographers with filters (replaces client-side filtering) */
 export const fetchPhotographers = async ({
   countryCode, city, genre, language, tags,
@@ -1499,7 +1530,7 @@ export const fetchPhotographers = async ({
   q = q.range(offset, offset + limit - 1);
 
   const { data, error, count } = await q;
-  return { data: data || [], error, count };
+  return { data: (data || []).map(toPhotographerCard), error, count };
 };
 
 /** Fetch single photographer by ID (legacy_id or UUID) */
@@ -1514,7 +1545,7 @@ export const fetchPhotographer = async (idOrLegacy) => {
     .select('*')
     .eq('id', idOrLegacy)
     .maybeSingle();
-  return { data, error };
+  return { data: toPhotographerCard(data), error };
 };
 
 /** Fetch featured photographers for Home page */
@@ -1525,9 +1556,9 @@ export const fetchFeaturedPhotographers = async (limit = 6) => {
     .select('*')
     .eq('is_active', true)
     .order('rating', { ascending: false })
-    .order('review_count', { ascending: false })
+    .order('reviews_count', { ascending: false })   // 컬럼명은 reviews_count
     .limit(limit);
-  return { data: data || [], error };
+  return { data: (data || []).map(toPhotographerCard), error };
 };
 
 /** Save waitlist entry */

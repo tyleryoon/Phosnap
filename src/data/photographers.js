@@ -41,7 +41,11 @@ export const LOCATIONS_OVERSEAS = [
 export const ALL_LOCATIONS = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS];
 
 // ── 유틸 ──────────────────────────────────────────────────────────────
-export const fmt = (n) => n.toLocaleString('ko-KR');
+export const fmt = (n) => {
+  // 값이 비어 있어도 화면이 통째로 깨지지 않도록 방어한다.
+  const num = typeof n === 'number' ? n : parseInt(String(n ?? '').replace(/[^0-9]/g, ''), 10);
+  return Number.isFinite(num) ? num.toLocaleString('ko-KR') : '0';
+};
 export const ALL_TAG_KEYS = ['all','wedding','couple','outdoor','birthday1st','portrait','video','iphone','indoor','landmark'];
 
 // ── GYG 벤치마킹: 스냅 특화 필터 키 ──────────────────────────────────
