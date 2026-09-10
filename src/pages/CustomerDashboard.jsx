@@ -284,12 +284,51 @@ const CustomerDashboard = () => {
   // 토스트 메시지
   const [toastMsg, setToastMsg] = useState('');
 
-  // Mock data
-  const bookings = MOCK_BOOKINGS;
+  // ── 예약 내역: Supabase 에서 로드 ──
+  // 예전에는 MOCK_BOOKINGS(김서윤·Sakura Tanaka·이준호)를 그대로 썼기 때문에
+  // 고객이 실제로 한 예약을 마이페이지에서 확인할 수 없었다.
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { getMyBookings } = await import('../lib/supabase');
+        const { data } = await getMyBookings();
+        if (cancelled) return;
+        setBookings((data || []).map(b => ({
+          id:         b.id,
+          artistId:   b.photographer_id,
+          artistName: b.photographer_name || '작가',
+          date:       b.date,
+          time:       b.time,
+          pkg:        b.package_name,
+          amount:     b.total_price ?? b.package_price ?? 0,
+          status:     b.status,
+          paidAt:     b.paid_at ? String(b.paid_at).slice(0, 10) : null,
+          // 파이프라인 상세는 벤더 연동 이후 채운다.
+          pipeline:   null,
+          raw:        b,
+        })));
+      } catch (e) {
+        console.error('[CustomerDashboard] 예약 조회 실패:', e);
+      } finally {
+        if (!cancelled) setBookingsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const reviews = MOCK_REVIEWS;
   const coupons = MOCK_COUPONS;
 
-  const upcomingBookings = bookings.filter(b => b.status === 'confirmed' && new Date(b.date) >= new Date());
+  // 승인 대기(pending) 예약도 '다가오는 촬영'에 포함한다.
+  // 확정 전이라고 숨기면 고객이 자기 예약 요청을 어디서도 볼 수 없다.
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const upcomingBookings = bookings.filter(
+    b => ['confirmed', 'pending'].includes(b.status) && new Date(b.date) >= today0
+  );
 
   // ─── Tab config ────────────────────────────────────────────────────
   const tabs = [
