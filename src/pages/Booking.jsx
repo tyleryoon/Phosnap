@@ -398,8 +398,19 @@ const Booking = () => {
             nameKo: s.name_ko,
             img: s.portfolio_images?.[0] || '/default-stylist.jpg',
             specialty: s.specialty || 'both',
-            location: s.location_id || '',
-            price: 0,
+            // 지역은 raw id('seoul')가 아니라 현지어 이름으로 보여준다.
+            location: BOOKING_LOCATION_NAMES[s.location_id]?.[lang]
+                   ?? BOOKING_LOCATION_NAMES[s.location_id]?.ko
+                   ?? s.city
+                   ?? s.location_id
+                   ?? '',
+            // 시작 가격은 시술 메뉴 중 최저가. 0 으로 두면 "₩0~" 로 보인다.
+            price: (() => {
+              const prices = (s.stylist_services || [])
+                .map(svc => Number(svc.price))
+                .filter(n => Number.isFinite(n) && n > 0);
+              return prices.length ? Math.min(...prices) : 0;
+            })(),
             services: (s.stylist_services || []).map(svc => ({
               name: svc.name_ko,
               nameEn: svc.name_en,
