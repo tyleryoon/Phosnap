@@ -3,7 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { MapPinIcon } from './Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { fmt } from '../data/photographers';
+import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
 import LazyImage from './LazyImage';
+
+// 지역 id → 다국어 이름 조회용 인덱스 (순수 데이터라 순환 참조 없음)
+const LOCATION_NAME_INDEX = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS]
+  .reduce((acc, l) => { acc[l.id] = l.nameI18n || { ko: l.name, en: l.nameEn }; return acc; }, {});
 
 // ─── 대표 포트폴리오 최대 장수 ────────────────────────────────────────
 const MAX_FEATURED = 5;
@@ -79,7 +84,13 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
 
   // 언어별 표시 이름
   const displayName = lang === 'ko' && p.nameKo ? p.nameKo : p.name;
-  const locationLabel = p.locationNames?.[lang] ?? p.location;
+  // location_names 가 비어 있는 작가(직접 가입자)는 지역 id 가 그대로
+  // 노출되므로("seoul") 데이터 인덱스에서 현지어 이름을 찾아 보완한다.
+  const locationLabel =
+    p.locationNames?.[lang]
+    ?? LOCATION_NAME_INDEX[p.location]?.[lang]
+    ?? LOCATION_NAME_INDEX[p.location]?.ko
+    ?? p.location;
 
   return (
     <div className="photo-card" onClick={handleClick} style={blurred ? { position: 'relative', borderRadius: 'var(--radius)' } : { borderRadius: 'var(--radius)' }}>

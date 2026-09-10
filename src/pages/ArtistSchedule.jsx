@@ -883,10 +883,22 @@ const ArtistSchedule = () => {
 
           // jsonb 컬럼에는 객체를 그대로 넣는다. JSON.stringify 로 감싸면
           // 문자열이 통째로 저장되어 읽는 쪽에서 파싱이 깨진다.
+          // 고객 카드는 location_names[언어] 로 지역을 표시한다.
+          // 비어 있으면 'seoul' 같은 raw id 가 그대로 노출된다.
+          const locationNames = mainLocation
+            ? {
+                ko: mainLocation.name   || mainLocation.regionId || '',
+                en: mainLocation.nameEn || mainLocation.name || '',
+                ja: mainLocation.nameJa || mainLocation.name || '',
+                zh: mainLocation.nameZh || mainLocation.name || '',
+              }
+            : {};
+
           const payload = {
-            location_id:  mainLocation?.regionId || null,
-            country_code: mainLocation?.countryCode || 'KR',
-            city:         mainLocation?.city || null,
+            location_id:    mainLocation?.regionId || null,
+            location_names: locationNames,
+            country_code:   mainLocation?.countryCode || 'KR',
+            city:           mainLocation?.city || null,
             packages:     snaps,
             props:        updated.props || [],
             dresses:      updated.costumes || [],
@@ -3115,9 +3127,10 @@ const ArtistSchedule = () => {
                   showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
                   return;
                 }
-                // 저장 (토스트 없이) + 명시적 토스트
-                saveProfile('photographer', artistId, { ...profile, portfolio });
-                setProfileState({ ...profile, portfolio });
+                // saveProfileData 를 거쳐야 photographers 테이블까지 동기화된다.
+                // 예전에는 saveProfile(localStorage) 만 호출해 DB 의 portfolio
+                // 컬럼이 계속 비어 있었고, 고객 화면에 사진이 나오지 않았다.
+                saveProfileData({ ...profile, portfolio });
                 showSaved('포트폴리오가 저장되었습니다 ✓');
               }}>
               포트폴리오 저장
