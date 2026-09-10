@@ -37,8 +37,11 @@ export const AuthProvider = ({ children }) => {
       // activeRole 결정: sessionStorage 값 절대 우선
       // 로그인 시 AuthModal에서 sessionStorage에 역할을 먼저 기록하므로,
       // 이 값이 존재하면 무조건 신뢰 (customer / artist / vendor / dress_vendor 모두)
+      // 단, 그 역할을 실제로 보유한 경우에만 신뢰한다.
+      // 이전 계정의 값이 남아 있으면(로그아웃 없이 계정 전환 등) 엉뚱한
+      // 대시보드로 보내거나 권한 검사에 걸린다.
       const storedRole = sessionStorage.getItem('phosnap_active_role');
-      if (storedRole) {
+      if (storedRole && userRoles.includes(storedRole)) {
         setActiveRole(storedRole);
       } else {
         // sessionStorage 없을 때만 fallback: user_metadata.role → 첫 번째 역할

@@ -977,7 +977,9 @@ const ProfileEditTab = ({ t, stylistId }) => {
 
 export default function StylistDashboard() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  // LanguageContext 가 노출하는 키는 lang 이다. language 로 받으면 항상
+  // undefined 가 되어 i18n.en 으로 폴백, 한국어 사용자에게도 영어가 나온다.
+  const { lang: language } = useLanguage();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('bookings');
   const [reviews, setReviews] = useState([]);
