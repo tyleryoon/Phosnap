@@ -14,7 +14,7 @@ import { getVendorsByLocation, getVendorById } from '../data/dressVendors';
 import { getVenueVendorsByLocation, getVenueItemsByVendor, getVenueItemById } from '../data/venueVendors';
 import { getTagLabel } from '../data/tagRegistry';
 import { loadTossPayments, generateOrderId } from '../lib/payment';
-import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules } from '../data/schedules';
+import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules, buildSlotData } from '../data/schedules';
 import WeatherGoldenHour from '../components/WeatherGoldenHour';
 import PopularityIndicator from '../components/PopularityIndicator';
 
@@ -345,10 +345,68 @@ const Booking = () => {
   const [bookedSlots, setBookedSlots] = useState([]); // DB에서 이미 예약된 슬롯
   const [bookedDressInfo, setBookedDressInfo] = useState([]); // 선택된 날짜에 이미 예약된 의상
   const [dbStylists, setDbStylists] = useState(null);
+  // 작가 스케줄(Supabase). data/schedules 는 localStorage 전용이라
+  // 고객 브라우저에서는 작가의 운영 시간을 알 수 없다.
+  const [dbDaySchedule, setDbDaySchedule] = useState(null);   // { slots, blocked, dayOff }
+  const [dbDefaultSlots, setDbDefaultSlots] = useState(null); // string[]
+  const [dbMonthSchedule, setDbMonthSchedule] = useState(null); // { 'YYYY-MM-DD': row }
   const [dbDresses, setDbDresses] = useState(null);
 
   // 스케줄 초기화 (localStorage mock 데이터 시딩)
   useEffect(() => { initSchedules(); }, []);
+
+  // 작가의 기본 운영 시간(artist_defaults)을 Supabase 에서 가져온다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!p?.id) return;
+      try {
+        const { getDefaultSlots } = await import('../lib/supabase');
+        const { data } = await getDefaultSlots(p.id);
+        if (!cancelled) setDbDefaultSlots(data?.default_slots || null);
+      } catch (_) { /* 연결 실패 시 localStorage 폴백 */ }
+    })();
+    return () => { cancelled = true; };
+  }, [p?.id]);
+
+  // 달력에 표시할 월 단위 스케줄을 Supabase 에서 가져온다.
+  // getDateStatus 는 localStorage 를 읽어 고객 화면에서는 모든 날짜가
+  // '휴무'로 보이던 문제를 막는다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!p?.id) return;
+      try {
+        const { getScheduleMonth } = await import('../lib/supabase');
+        const { data } = await getScheduleMonth(p.id, calYear, calMonth + 1);
+        if (cancelled) return;
+        const map = {};
+        (data || []).forEach(row => { map[row.date] = row; });
+        setDbMonthSchedule(map);
+      } catch (_) { /* localStorage 폴백 */ }
+    })();
+    return () => { cancelled = true; };
+  }, [p?.id, calYear, calMonth]);
+
+  /**
+   * 달력 셀의 예약 상태를 판정한다.
+   * 날짜별 레코드가 없으면 기본 운영 시간으로 열려 있는 것으로 본다
+   * (작가 대시보드와 동일한 규칙).
+   */
+  const resolveDateStatus = (dateStr) => {
+    if (!dbMonthSchedule || !dbDefaultSlots) {
+      return getDateStatus('photographer', p.id, dateStr);
+    }
+    const row = dbMonthSchedule[dateStr];
+    if (!row) return dbDefaultSlots.length ? 'open' : 'off';
+    if (row.day_off) return 'off';
+    const slots = row.slots?.length ? row.slots : dbDefaultSlots;
+    if (!slots.length) return 'off';
+    const blocked = row.blocked || [];
+    const avail = slots.filter(sl => !blocked.includes(sl));
+    if (avail.length === 0) return 'full';
+    return blocked.length > 0 ? 'partial' : 'open';
+  };
 
   // Supabase에서 stylists과 dresses 로드
   useEffect(() => {
@@ -411,6 +469,26 @@ const Booking = () => {
     setSelectedTime(null);
     setBookedSlots([]);
     setBookedDressInfo([]);
+    setDbDaySchedule(null);
+
+    // 해당 날짜의 작가 운영/차단 시간 조회 (artist_schedules)
+    try {
+      const { getScheduleMonth } = await import('../lib/supabase');
+      const [y, m] = dateStr.split('-').map(Number);
+      const { data } = await getScheduleMonth(p.id, y, m);
+      const row = (data || []).find(d => d.date === dateStr);
+      if (row) {
+        setDbDaySchedule({
+          slots:   row.slots?.length ? row.slots : null,
+          blocked: row.blocked || [],
+          dayOff:  !!row.day_off,
+        });
+      } else {
+        // 날짜별 레코드가 없으면 기본 운영 시간으로 열려 있는 것으로 본다
+        // (작가 대시보드도 같은 규칙으로 표시한다)
+        setDbDaySchedule({ slots: null, blocked: [], dayOff: false });
+      }
+    } catch (_) { /* localStorage 폴백 */ }
     // Supabase에서 해당 날짜의 예약된 시간 조회
     try {
       const { getBookedSlots } = await import('../lib/supabase');
@@ -593,7 +671,7 @@ const Booking = () => {
                     const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                     const past     = isPast(day);
                     const selected = selectedDate === dateStr;
-                    const status   = past ? 'past' : getDateStatus('photographer', p.id, dateStr);
+                    const status   = past ? 'past' : resolveDateStatus(dateStr);
                     // status: 'open' | 'partial' | 'full' | 'off' | 'past'
                     const isOff    = status === 'off';
                     const isFull   = status === 'full';
@@ -704,7 +782,17 @@ const Booking = () => {
                 {/* ─ 시간 슬롯 선택 (패키지 선택 후) ─ */}
                 {selectedPkg && selectedDate && (() => {
                   const pkgHours = p.packages.find(pk => pk.name === selectedPkg)?.hours || 1;
-                  const rawSlotData = getAvailableSlotsForDuration('photographer', p.id, selectedDate, pkgHours);
+                  // DB 스케줄이 있으면 그것을 우선 사용한다.
+                  // (data/schedules 는 localStorage 전용이라 고객 화면에서는
+                  //  작가의 운영 시간을 전혀 알 수 없다)
+                  const dbSlots = dbDaySchedule
+                    ? (dbDaySchedule.dayOff
+                        ? []
+                        : (dbDaySchedule.slots || dbDefaultSlots || []))
+                    : null;
+                  const rawSlotData = dbSlots
+                    ? buildSlotData(dbSlots, dbDaySchedule.blocked || [], pkgHours)
+                    : getAvailableSlotsForDuration('photographer', p.id, selectedDate, pkgHours);
                   // 예약 충돌 체크: DB에서 이미 예약된 슬롯 비활성화
                   const slotData = rawSlotData.map(s => {
                     if (s.available && bookedSlots.includes(s.time)) {

@@ -260,6 +260,34 @@ export const getDateStatus = (type, id, dateStr) => {
  * @param {number} hours - 패키지 시간 (시간 단위)
  * @returns {Array<{time: string, available: boolean, reason?: string}>}
  */
+/**
+ * 운영/차단 슬롯 배열로부터 예약 가능 시간대를 계산한다.
+ *
+ * getAvailableSlotsForDuration 은 localStorage 를 읽기 때문에 고객 화면에서는
+ * 작가의 운영 시간을 알 수 없다. Supabase 에서 가져온 슬롯을 그대로 넣어
+ * 같은 규칙(연속 시간 확보 · 차단 검사)을 적용하기 위한 순수 함수 버전이다.
+ *
+ * @param {string[]} slots   운영 슬롯 ('10:00' 형식)
+ * @param {string[]} blocked 차단 슬롯
+ * @param {number}   hours   패키지 소요 시간
+ */
+export const buildSlotData = (slots = [], blocked = [], hours = 1) => {
+  if (!slots.length) return [];
+  if (hours <= 1) {
+    return slots.filter(s => !blocked.includes(s)).map(time => ({ time, available: true }));
+  }
+  return slots.map(time => {
+    if (blocked.includes(time)) return { time, available: false, reason: 'blocked' };
+    const needed = slotsForHours(time, hours);
+    if (needed.length < hours) return { time, available: false, reason: 'overflow' };
+    const conflict = needed.find(s => blocked.includes(s));
+    if (conflict) return { time, available: false, reason: `conflict_${conflict}` };
+    const outside = needed.find(s => !slots.includes(s));
+    if (outside) return { time, available: false, reason: 'outside_hours' };
+    return { time, available: true };
+  }).filter(s => !blocked.includes(s.time));
+};
+
 export const getAvailableSlotsForDuration = (type, id, dateStr, hours = 1) => {
   const { slots, blocked, dayOff } = getDaySchedule(type, id, dateStr);
   if (dayOff) return [];
