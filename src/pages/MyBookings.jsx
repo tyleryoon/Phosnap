@@ -653,7 +653,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', cursor: 'pointer',
                 borderRadius: 2,
               }}
-              onClick={() => onChat(booking)}
+              onClick={() => onChat(booking.id)}
             >
               💬 Chat
             </button>
