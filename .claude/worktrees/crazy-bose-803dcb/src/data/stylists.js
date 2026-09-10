@@ -1,0 +1,193 @@
+// ─── Hair & Makeup Stylist Mock Data ──────────────────────────────────
+
+export const STYLISTS = [
+  {
+    id: 101,
+    name: 'Hana Y.',
+    nameKo: '야마모토 하나',
+    location: '교토 · 오사카',
+    locationIds: ['kyoto', 'osaka', 'seoul'],
+    tags: ['웨딩메이크업', '내추럴', '한복메이크업'],
+    tagsI18n: {
+      ko: ['웨딩메이크업', '내추럴', '한복메이크업'],
+      en: ['Wedding Makeup', 'Natural', 'Hanbok Makeup'],
+      ja: ['ウェディングメイク', 'ナチュラル', '韓服メイク'],
+      zh: ['婚礼妆', '自然妆', '韩服妆'],
+    },
+    languages: ['JP', 'KO', 'EN'],
+    rating: 4.9,
+    reviews: 88,
+    price: 120000,
+    img: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80',
+    bio: '교토 기반 웨딩 & 스냅 전문 헤어메이크업 아티스트. 한복, 기모노 메이크업 전문.',
+    bioI18n: {
+      ko: '교토 기반 웨딩 & 스냅 전문 헤어메이크업 아티스트. 한복, 기모노 메이크업 전문.',
+      en: 'Kyoto-based hair & makeup artist specializing in wedding and snap photography. Expert in Hanbok and Kimono styling.',
+      ja: '京都拠点のウェディング＆スナップ専門ヘアメイクアップアーティスト。韓服・着物メイク専門。',
+      zh: '京都专业婚礼写真发型化妆师。专精韩服、和服造型。',
+    },
+    portfolio: [
+      { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', caption: '웨딩 내추럴 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=600&q=80', caption: '한복 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80', caption: '기모노 헤어스타일' },
+      { url: 'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=600&q=80', caption: '스냅 촬영 메이크업' },
+    ],
+    services: [
+      { name: 'Basic',  price: 80000,  desc: '내추럴 메이크업 + 헤어 세팅',              descI18n: { ko: '내추럴 메이크업 + 헤어 세팅', en: 'Natural makeup + hair setting', ja: 'ナチュラルメイク＋ヘアセット', zh: '自然妆容 + 发型设计' } },
+      { name: 'Bridal', price: 120000, desc: '웨딩 & 스냅 전문 메이크업 + 헤어', popular: true, descI18n: { ko: '웨딩 & 스냅 전문 메이크업 + 헤어', en: 'Wedding & snap specialist makeup + hair', ja: 'ウェディング＆スナップ専門メイク＋ヘア', zh: '婚礼&写真专业妆容 + 发型' } },
+      { name: 'Full',   price: 180000, desc: '촬영 동행 + 리터치 포함',                  descI18n: { ko: '촬영 동행 + 리터치 포함', en: 'On-site attendance + retouching included', ja: '撮影同行＋リタッチ込み', zh: '全程陪拍 + 含补妆' } },
+    ],
+  },
+  {
+    id: 102,
+    name: 'Soyeon P.',
+    nameKo: '박소연',
+    location: '서울 전지역',
+    locationIds: ['seoul'],
+    tags: ['웨딩메이크업', '돌잔치', '글램메이크업'],
+    tagsI18n: {
+      ko: ['웨딩메이크업', '돌잔치', '글램메이크업'],
+      en: ['Wedding Makeup', '1st Birthday', 'Glam Makeup'],
+      ja: ['ウェディングメイク', 'トルジャンチ', 'グラムメイク'],
+      zh: ['婚礼妆', '周岁宴', '魅力妆'],
+    },
+    languages: ['KO', 'EN'],
+    rating: 4.8,
+    reviews: 112,
+    price: 100000,
+    img: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80',
+    bio: '서울에서 5년간 웨딩 & 돌잔치 전문으로 활동. 자연스럽고 오래가는 메이크업.',
+    bioI18n: {
+      ko: '서울에서 5년간 웨딩 & 돌잔치 전문으로 활동. 자연스럽고 오래가는 메이크업.',
+      en: '5 years of experience in wedding and birthday ceremonies across Seoul. Known for natural, long-lasting makeup.',
+      ja: 'ソウルでウェディング＆トルジャンチ専門5年のキャリア。自然で持続力のあるメイクが得意。',
+      zh: '在首尔从事婚礼及周岁宴专业化妆5年。以自然持久的妆容著称。',
+    },
+    portfolio: [
+      { url: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80', caption: '웨딩 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=600&q=80', caption: '돌잔치 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=600&q=80', caption: '글램 스타일' },
+    ],
+    services: [
+      { name: 'Light',    price: 70000,  desc: '내추럴 데일리 메이크업',                   descI18n: { ko: '내추럴 데일리 메이크업', en: 'Natural daily makeup', ja: 'ナチュラルデイリーメイク', zh: '自然日常妆' } },
+      { name: 'Standard', price: 100000, desc: '스냅 전문 메이크업 + 헤어', popular: true, descI18n: { ko: '스냅 전문 메이크업 + 헤어', en: 'Snap specialist makeup + hair', ja: 'スナップ専門メイク＋ヘア', zh: '写真专业妆容 + 发型' } },
+      { name: 'Premium',  price: 160000, desc: '웨딩 풀메이크업 + 헤어 + 리터치',          descI18n: { ko: '웨딩 풀메이크업 + 헤어 + 리터치', en: 'Full wedding makeup + hair + retouching', ja: 'ウェディングフルメイク＋ヘア＋リタッチ', zh: '婚礼全套妆容 + 发型 + 补妆' } },
+    ],
+  },
+  {
+    id: 103,
+    name: 'Minji K.',
+    nameKo: '김민지',
+    location: '부산 · 제주',
+    locationIds: ['busan', 'jeju'],
+    tags: ['웨딩메이크업', '커플스냅', '감성메이크업'],
+    tagsI18n: {
+      ko: ['웨딩메이크업', '커플스냅', '감성메이크업'],
+      en: ['Wedding Makeup', 'Couple Snap', 'Emotional Makeup'],
+      ja: ['ウェディングメイク', 'カップルスナップ', 'エモーショナルメイク'],
+      zh: ['婚礼妆', '情侣拍摄', '感性妆容'],
+    },
+    languages: ['KO', 'EN'],
+    rating: 4.7,
+    reviews: 67,
+    price: 110000,
+    img: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=600&q=80',
+    bio: '부산과 제주를 기반으로 활동하는 전문 스타일리스트. 자연스러운 감성 메이크업과 핸드메이드 헤어 스타일이 특징입니다.',
+    bioI18n: {
+      ko: '부산과 제주를 기반으로 활동하는 전문 스타일리스트. 자연스러운 감성 메이크업과 핸드메이드 헤어 스타일이 특징입니다.',
+      en: 'Professional stylist based in Busan and Jeju. Known for natural emotional makeup and handmade hairstyles.',
+      ja: '釜山と済州を拠点に活動する専門スタイリスト。自然な感情的なメイクとハンドメイドのヘアスタイルが特徴です。',
+      zh: '以釜山和济州为基地的专业发型师。以自然情感妆容和手工发型著称。',
+    },
+    portfolio: [
+      { url: 'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=600&q=80', caption: '감성 웨딩 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80', caption: '커플 스냅 스타일' },
+      { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', caption: '자연스러운 헤어' },
+    ],
+    services: [
+      { name: 'Natural',  price: 90000,  desc: '감성 메이크업 + 헤어 스타일링',         descI18n: { ko: '감성 메이크업 + 헤어 스타일링', en: 'Emotional makeup + hair styling', ja: 'エモーショナルメイク＋ヘアスタイリング', zh: '感性妆容 + 发型设计' } },
+      { name: 'Romantic', price: 110000, desc: '웨딩 스냅 전문 메이크업 + 헤어', popular: true, descI18n: { ko: '웨딩 스냅 전문 메이크업 + 헤어', en: 'Wedding snap specialist makeup + hair', ja: 'ウェディングスナップ専門メイク＋ヘア', zh: '婚礼拍摄专业妆容 + 发型' } },
+      { name: 'Premium',  price: 170000, desc: '풀 웨딩 메이크업 + 헤어 + 현장 리터치', descI18n: { ko: '풀 웨딩 메이크업 + 헤어 + 현장 리터치', en: 'Full wedding makeup + hair + on-site retouching', ja: 'フルウェディングメイク＋ヘア＋現場リタッチ', zh: '全套婚礼妆容 + 发型 + 现场补妆' } },
+    ],
+  },
+  {
+    id: 104,
+    name: 'Aoi S.',
+    nameKo: '사토 아오이',
+    location: '도쿄 · 오사카',
+    locationIds: ['tokyo', 'osaka'],
+    tags: ['기모노헤어', '현대스타일', '웨딩메이크업'],
+    tagsI18n: {
+      ko: ['기모노헤어', '현대스타일', '웨딩메이크업'],
+      en: ['Kimono Hair', 'Modern Style', 'Wedding Makeup'],
+      ja: ['着物ヘア', 'モダンスタイル', 'ウェディングメイク'],
+      zh: ['和服发型', '现代风格', '婚礼妆'],
+    },
+    languages: ['JP', 'EN'],
+    rating: 4.9,
+    reviews: 156,
+    price: 140000,
+    img: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80',
+    bio: '도쿄·오사카 기반 헤어 및 메이크업 전문가. 기모노 헤어부터 현대적 웨딩 스타일까지 다양한 스타일링이 가능합니다.',
+    bioI18n: {
+      ko: '도쿄·오사카 기반 헤어 및 메이크업 전문가. 기모노 헤어부터 현대적 웨딩 스타일까지 다양한 스타일링이 가능합니다.',
+      en: 'Hair and makeup expert based in Tokyo and Osaka. Specializing in kimono hairstyles to modern wedding looks.',
+      ja: '東京・大阪拠点のヘアおよびメイクアップ専門家。着物ヘアから現代的なウェディングスタイルまで様々なスタイリングが可能です。',
+      zh: '基于东京和大阪的发型和化妆专家。专业提供从和服发型到现代婚礼风格的各种造型。',
+    },
+    portfolio: [
+      { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', caption: '現代ウェディングスタイル' },
+      { url: 'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=600&q=80', caption: '着物ヘアスタイル' },
+      { url: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=600&q=80', caption: '婚礼メイク' },
+    ],
+    services: [
+      { name: 'Kimono',   price: 120000, desc: '전통 기모노 헤어 & 메이크업',         descI18n: { ko: '전통 기모노 헤어 & 메이크업', en: 'Traditional kimono hair & makeup', ja: '伝統着物ヘア＆メイク', zh: '传统和服发型和化妆' } },
+      { name: 'Modern',   price: 140000, desc: '현대 웨딩 헤어메이크업', popular: true, descI18n: { ko: '현대 웨딩 헤어메이크업', en: 'Modern wedding hair & makeup', ja: 'モダンウェディングヘア＆メイク', zh: '现代婚礼发型和化妆' } },
+      { name: 'Fusion',   price: 180000, desc: '전통-현대 퓨전 스타일 + 현장 케어', descI18n: { ko: '전통-현대 퓨전 스타일 + 현장 케어', en: 'Fusion traditional-modern style + on-site care', ja: '伝統-モダンフュージョンスタイル＋現場ケア', zh: '传统现代融合风格 + 现场护理' } },
+    ],
+  },
+  {
+    id: 105,
+    name: 'Eunji C.',
+    nameKo: '최은지',
+    location: '서울 · 강릉',
+    locationIds: ['seoul', 'gangneung'],
+    tags: ['내추럴메이크업', '스냅전문', '커플스타일'],
+    tagsI18n: {
+      ko: ['내추럴메이크업', '스냅전문', '커플스타일'],
+      en: ['Natural Makeup', 'Snap Specialist', 'Couple Style'],
+      ja: ['ナチュラルメイク', 'スナップ専門', 'カップルスタイル'],
+      zh: ['自然妆', '拍摄专业', '情侣风格'],
+    },
+    languages: ['KO', 'EN'],
+    rating: 4.8,
+    reviews: 94,
+    price: 105000,
+    img: 'https://images.unsplash.com/photo-1560869713-7d0a29430803?w=600&q=80',
+    bio: '서울과 강릉에서 활동하는 자연스러운 스냅 전문 스타일리스트. 야외 촬영에서의 오래가는 메이크업과 가볍고 우아한 헤어 스타일링이 장점입니다.',
+    bioI18n: {
+      ko: '서울과 강릉에서 활동하는 자연스러운 스냅 전문 스타일리스트. 야외 촬영에서의 오래가는 메이크업과 가볍고 우아한 헤어 스타일링이 장점입니다.',
+      en: 'Natural snap specialist stylist active in Seoul and Gangneung. Expert in long-lasting outdoor makeup and elegant, light hairstyling.',
+      ja: 'ソウルと江陵で活動する自然なスナップ専門スタイリスト。屋外撮影での持続力のあるメイクと軽くエレガントなヘアスタイリングが強みです。',
+      zh: '在首尔和江陵活动的自然拍摄专业发型师。擅长户外摄影的持久妆容和优雅轻盈的发型设计。',
+    },
+    portfolio: [
+      { url: 'https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&q=80', caption: '자연스러운 스냅 메이크업' },
+      { url: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=600&q=80', caption: '가벼운 헤어 스타일' },
+      { url: 'https://images.unsplash.com/photo-1516914943479-89db7d9ae7f2?w=600&q=80', caption: '야외 촬영 스타일' },
+    ],
+    services: [
+      { name: 'Light',    price: 80000,  desc: '내추럴 스냅 메이크업 + 가벼운 헤어',   descI18n: { ko: '내추럴 스냅 메이크업 + 가벼운 헤어', en: 'Natural snap makeup + light hair', ja: 'ナチュラルスナップメイク＋軽いヘア', zh: '自然拍摄妆容 + 轻盈发型' } },
+      { name: 'Standard', price: 105000, desc: '야외 스냅 전문 메이크업 + 헤어', popular: true, descI18n: { ko: '야외 스냅 전문 메이크업 + 헤어', en: 'Outdoor snap specialist makeup + hair', ja: '屋外スナップ専門メイク＋ヘア', zh: '户外拍摄专业妆容 + 发型' } },
+      { name: 'Premium',  price: 165000, desc: '풀데이 스냅 메이크업 + 리터치 + 헤어케어', descI18n: { ko: '풀데이 스냅 메이크업 + 리터치 + 헤어케어', en: 'Full-day snap makeup + retouching + hair care', ja: 'フルデイスナップメイク＋リタッチ＋ヘアケア', zh: '全天拍摄妆容 + 补妆 + 发型护理' } },
+    ],
+  },
+];
+
+// 작가 locationId 기준으로 활동 가능한 스타일리스트 필터링
+export const getStylistsByLocation = (locationId) => {
+  if (!locationId) return STYLISTS;
+  return STYLISTS.filter(s => s.locationIds.includes(locationId));
+};
+
+export const fmtStylist = (n) => n.toLocaleString('ko-KR');

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --no-install eslint src/lib/points.js src/components/UnifiedReviewModal.jsx src/lib/commission.js)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

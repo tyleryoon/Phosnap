@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /artist/dashboard
+Disallow: /vendor/dashboard
+Disallow: /account
+Disallow: /mypage
+Sitemap: https://phosnap.com/sitemap.xml

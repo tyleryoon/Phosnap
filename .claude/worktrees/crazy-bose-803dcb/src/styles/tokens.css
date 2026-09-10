@@ -1,0 +1,62 @@
+/* ─── Phosnap Design Tokens ───────────────────────────────────────────── */
+:root {
+  /* Color palette */
+  --bg:           #0B0B0B;
+  --bg2:          #111111;
+  --bg3:          #181818;
+  --text:         #F2F2F2;
+  --muted:        #999999;
+  --gold:         #E8A020;
+  --gold-dim:     rgba(232, 160, 32, 0.15);
+  --gold-border:  rgba(232, 160, 32, 0.3);
+  --border:       rgba(242, 242, 242, 0.08);
+  --border-hover: rgba(242, 242, 242, 0.18);
+
+  /* Typography */
+  --font-serif:   'Cinzel', serif;
+  --font-elegant: 'Cinzel', serif;
+  --font-sans:    'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+
+  /* Spacing scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* Border radius — soft rounding for modern, approachable feel */
+  --radius: 6px;
+  --radius-sm: 4px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --ease: 0.3s ease;
+  --ease-fast: 0.2s ease;
+  --ease-slow: 0.5s ease;
+
+  /* Shadows — clean depth system */
+  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-lg:    0 8px 24px rgba(0, 0, 0, 0.3);
+  --shadow-gold:  0 0 20px rgba(232, 160, 32, 0.1);
+  /* Legacy aliases (for backward compatibility) */
+  --glow-gold:    0 0 20px rgba(232, 160, 32, 0.1);
+  --glow-gold-lg: 0 0 30px rgba(232, 160, 32, 0.12);
+  --text-glow:    none;
+
+  /* Z-index layers */
+  --z-base:    1;
+  --z-card:    10;
+  --z-nav:     100;
+  --z-mobile:  150;
+  --z-modal:   200;
+  --z-toast:   300;
+}

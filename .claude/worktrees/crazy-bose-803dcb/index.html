@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Primary SEO ── -->
+  <title>Phosnap — Light captured. Moments made.</title>
+  <meta name="description" content="전 세계 스냅촬영 작가와 고객을 연결하는 글로벌 스냅촬영 예약 플랫폼. 서울, 교토, 파리, 발리 등 48개 도시에서 활동하는 2,400+ 작가를 만나보세요." />
+  <meta name="keywords" content="스냅촬영, 여행 사진작가, 스냅사진, 커플스냅, 웨딩스냅, travel photographer, snap photo, phosnap" />
+  <meta name="author" content="Phosnap" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://phosnap.vercel.app/" />
+
+  <!-- ── Open Graph (Facebook / KakaoTalk) ── -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://phosnap.vercel.app/" />
+  <meta property="og:site_name" content="Phosnap" />
+  <meta property="og:title" content="Phosnap — Light captured. Moments made." />
+  <meta property="og:description" content="Find your photographer, anywhere in the world. Book snap photographers in Seoul, Kyoto, Paris, Bali and 45+ cities." />
+  <meta property="og:image" content="https://phosnap.vercel.app/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:locale" content="ko_KR" />
+  <meta property="og:locale:alternate" content="en_US" />
+  <meta property="og:locale:alternate" content="ja_JP" />
+  <meta property="og:locale:alternate" content="zh_CN" />
+
+  <!-- ── Twitter Card ── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@phosnap_kr" />
+  <meta name="twitter:title" content="Phosnap — Light captured. Moments made." />
+  <meta name="twitter:description" content="Find your photographer, anywhere in the world." />
+  <meta name="twitter:image" content="https://phosnap.vercel.app/og-image.jpg" />
+
+  <!-- ── hreflang (multilingual SEO) ── -->
+  <link rel="alternate" hreflang="ko" href="https://phosnap.vercel.app/" />
+  <link rel="alternate" hreflang="en" href="https://phosnap.vercel.app/" />
+  <link rel="alternate" hreflang="ja" href="https://phosnap.vercel.app/" />
+  <link rel="alternate" hreflang="zh" href="https://phosnap.vercel.app/" />
+  <link rel="alternate" hreflang="x-default" href="https://phosnap.vercel.app/" />
+
+  <!-- ── Favicon ── -->
+  <link rel="icon" type="image/svg+xml" href="/logo-full.svg" />
+  <link rel="apple-touch-icon" href="/logo-full.svg" />
+
+  <!-- ── PWA Manifest & Meta Tags ── -->
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0B0B0B" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+
+  <!-- ── Fonts ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- ── JSON-LD Structured Data ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Phosnap",
+    "alternateName": "포스냅",
+    "url": "https://phosnap.vercel.app/",
+    "description": "Global snap photography booking platform connecting photographers and clients worldwide.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://phosnap.vercel.app/photographers?q={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    },
+    "inLanguage": ["ko", "en", "ja", "zh"],
+    "publisher": {
+      "@type": "Organization",
+      "name": "Phosnap",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phosnap.vercel.app/logo-full.svg"
+      }
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+
+  <!-- ── Service Worker Registration ── -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

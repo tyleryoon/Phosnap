@@ -1,0 +1,311 @@
+================================================================================
+  PHOSNAP — PROJECT BACKUP PROMPT
+  최종 업데이트: 2026-04-11 (세션 3차 — 의상 대여 시스템 + 예약 플로우 개선)
+  목적: 새 대화창에서 프로젝트 컨텍스트 복원용 프롬프트
+================================================================================
+
+아래 내용을 새 대화 시작 시 첫 메시지로 붙여넣기하세요.
+
+────────────────────────────────────────────────────────────────────────────────
+[붙여넣기 시작]
+────────────────────────────────────────────────────────────────────────────────
+
+나는 Phosnap이라는 글로벌 스냅 사진·영상 예약 플랫폼을 개발하고 있어.
+φῶς(phos) = 그리스어로 "빛"에서 이름을 따왔어.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 프로젝트 위치 & 기술 스택
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+경로: C:\Users\keons\Documents\Claude\phosnap\
+프레임워크: Vite 5 + React 18
+라우터: React Router v6
+상태관리: Context API (LanguageContext)
+스타일: CSS-in-JS (App.jsx navCSS string) + global.css + tokens.css
+폰트: Cinzel, Cormorant Garamond, Noto Sans KR
+디자인 테마: 어두운 배경(#0B0B0B), 골드 어센트(#E8A020), 고급 럭셔리 미니멀
+백엔드: Supabase (Auth + DB + RLS)
+결제: 토스페이먼츠 (국내), Stripe (해외 확장 시)
+i18n: i18next + react-i18next 설치됨, 자체 LanguageContext도 병행
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 파일 구조 (2026-04-11 세션2 기준)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+src/
+├── main.jsx                  ← <LanguageProvider> 가 <BrowserRouter> 감싸고 있음
+├── App.jsx                   ← 라우트 19개 + navCSS (전체 CSS 정의 포함)
+├── styles/
+│   ├── global.css            ← 전역 스타일 (section, filters, modal, stats 등)
+│   └── tokens.css            ← CSS 변수 (--gold, --bg, --muted 등)
+├── contexts/
+│   └── LanguageContext.jsx   ← useLanguage() hook, LANG_LABELS, t(key) 함수
+├── i18n/
+│   ├── ko.json               ← 한국어 (368+ keys) ★ 349→368 의상/예약 키 추가
+│   ├── en.json               ← 영어 (368+ keys)
+│   ├── ja.json               ← 일본어 (368+ keys)
+│   └── zh.json               ← 중국어 (368+ keys)
+├── components/
+│   ├── Nav.jsx               ← 네비게이션 (LogoText 사용, 언어 전환 버튼)
+│   ├── Footer.jsx            ← 푸터 (LogoText, Instagram 링크)
+│   ├── LogoText.jsx          ← PHOSNAP 로고 (S자에 금→흰 그라디언트)
+│   ├── AuthModal.jsx         ← 로그인/회원가입 모달 — ★ 전체 i18n 완료 (45개 새 키)
+│   ├── PhotographerCard.jsx  ← 사진작가 카드 (i18n 완료)
+│   ├── StylistCard.jsx       ← 스타일리스트 카드 — ★ i18n 완료 (ternary→t())
+│   ├── DressCard.jsx         ← ★ 신규: 의상 카드 (compact/full 모드, 이미지 갤러리)
+│   ├── SizeSelector.jsx      ← ★ 신규: 의상 사이즈 선택 컴포넌트
+│   ├── VerifiedBadge.jsx     ← ★ 신규: 작가 인증 뱃지 (Verified/Pro/Elite 3단계)
+│   ├── Corners.jsx           ← 브랜드 코너 마크 (dotted 골드 테두리)
+│   ├── Toast.jsx             ← 토스트 메시지
+│   └── Icons.jsx             ← SVG 아이콘 컴포넌트
+├── data/
+│   ├── photographers.js      ← mock 작가 26명 ★ artistType/hmkSelf/dressSelf/dressVendorId 추가
+│   ├── dressVendors.js       ← ★ 신규: 의상 업체 6곳 (교토/서울/제주/파리/전주/오사카)
+│   ├── dresses.js            ← ★ 신규: 의상 아이템 24개 (한복/드레스/기모노/치파오 등)
+│   ├── artistProfile.js      ← 작가 프로필 데이터
+│   ├── schedules.js          ← 스케줄 데이터 ★ getAvailableSlotsForDuration 추가 (겹침 방지)
+│   ├── locations.js          ← 국내/해외 지역 (nameI18n 포함)
+│   ├── stylists.js           ← H&M 스타일리스트 mock 데이터
+│   └── legal.js              ← 이용약관/개인정보 데이터 — ★ 만족보증 정책 추가됨
+├── lib/
+│   ├── supabase.js           ← Supabase 클라이언트 (anon key만 사용, 보안 OK)
+│   ├── payment.js            ← 토스페이먼츠 SDK 로더 + 주문ID 생성
+│   └── waitlist.js           ← Formspree 웨이트리스트 제출
+└── pages/
+    ├── Home.jsx              ← 메인 홈
+    ├── Explore.jsx           ← 지역 탐색
+    ├── Photographers.jsx     ← 작가 목록
+    ├── Profile.jsx           ← 작가 프로필
+    ├── Booking.jsx           ← 예약 5단계 ★ 날짜→패키지+시간→H&M→의상→확인
+    ├── BookingSuccess.jsx    ← 예약 성공
+    ├── ForArtists.jsx        ← 작가 모집
+    ├── ArtistRegister.jsx    ← 작가 등록 4단계 ★ 서비스 옵션 Step 추가 (H&M/의상)
+    ├── ArtistSchedule.jsx    ← 작가 대시보드 — ★ i18n 완료 (OVERSEAS_NOTICE)
+    ├── VendorRegister.jsx    ← ★ 신규: 의상 업체 등록 (3단계)
+    ├── VendorDashboard.jsx   ← ★ 신규: 의상 업체 대시보드 (의상 관리 + 예약 현황)
+    ├── Waitlist.jsx          ← 얼리 액세스
+    ├── Contact.jsx           ← 문의 (4개 언어 인라인 — 검증 완료)
+    ├── Terms.jsx             ← 이용약관 — ★ 만족보증 정책 추가됨
+    └── Privacy.jsx           ← 개인정보처리방침
+
+supabase/
+├── schema.sql               ← 7 테이블 + RLS + 인덱스 + Auth 트리거
+├── migration_dress_vendor_v1.sql ← ★ 신규: dress_vendors + dress_items 테이블, photographers/bookings 확장
+├── migration_bookings_v2~v4.sql
+└── migration_profiles_artist_v1.sql
+
+프로젝트 루트 문서:
+├── BENCHMARK_INSIGHTS_AND_IDEAS.md   ← ★ 7개+ 플랫폼 벤치마킹 + 적용 아이디어 TOP 10
+├── LEGAL_AND_PAYMENT_STRUCTURE.md    ← 법적 구조 & 결제 설계
+├── SECURITY_AUDIT_NOTES.md           ← ★ 보안 감사 결과 (아래 요약 참조)
+└── PHOSNAP_PROJECT_BACKUP_PROMPT.txt ← 이 파일
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ i18n 시스템 — 368+개 키, 4개 언어 완전 일치
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+언어: KR(ko) / EN(en) / JP(ja) / CN(zh) — 표시 라벨: KO/EN/JP/CN
+JSON 키 368+개 — 4개 언어 완전 일치 (2026-04-11 세션3 검증)
+
+JSON 최상위 섹션:
+nav, tags, hero, stats, section, profile, photographers, explore,
+home, card, booking, forartists, waitlist, footer, auth,
+badge, terms, artistRegister, artistSchedule
+
+t() 함수는 배열도 반환 가능 — Array.isArray() 체크 필요
+모든 페이지에서: const { lang, t } = useLanguage();
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 예약 플로우 (Booking.jsx — 5단계)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Step 1: 날짜 선택 (캘린더 + 날짜 상태 dot)
+Step 2: 패키지 선택 + 시간 선택 (★ 시간은 패키지 선택 후 표시, 겹침 방지 적용)
+Step 3: H&M 스타일리스트 (선택사항)
+Step 4: 의상 선택 (선택사항) — Case A: 작가 자체 의상 / Case B: 연계 업체 의상 / Case C: 없음
+Step 5: 확인 + 결제
+
+시간 겹침 방지:
+- getAvailableSlotsForDuration(type, id, dateStr, hours) 함수
+- 선택한 시간부터 패키지 시간만큼 연속 슬롯이 모두 available해야 선택 가능
+- blocked/overflow/outside_hours/conflict 사유별 비활성화
+
+의상 데이터 흐름:
+- photographers.js → dressSelf (boolean), dressVendorId (vendor ID)
+- dressSelf=true → 작가 자체 의상 (추후 대시보드에서 등록)
+- dressVendorId → dressVendors.js → dresses.js (getDressesByVendor)
+- 예약 시 dress_item_id, dress_size, dress_price가 bookings에 저장
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 역할 시스템 (Role)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+DB: profiles.role = 'customer' | 'artist' | 'photographer' | 'stylist' | 'dress_vendor' | 'admin'
+클라이언트: AuthContext.userRole = 'customer' | 'artist' | 'admin'
+작가 세부유형: photographers.artist_type = 'photographer' | 'videographer' | 'both' | 'hmk'
+
+라우트:
+- /artist/register → ArtistRegister (4단계)
+- /artist/dashboard → ArtistDashboard
+- /artist/schedule → ArtistSchedule
+- /vendor/register → VendorRegister (3단계)
+- /vendor/dashboard → VendorDashboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ VerifiedBadge 컴포넌트 (신규)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+사용법:
+  <VerifiedBadge tier="verified" />   // 브론즈 — 포트폴리오 심사 통과
+  <VerifiedBadge tier="pro" />        // 실버 — 10건+ 완료 + 평점 4.7+
+  <VerifiedBadge tier="elite" />      // 골드 — 50건+ 완료 + 평점 4.9+ + 추천
+
+Props: tier("verified"|"pro"|"elite"), size("sm"|"md"|"lg")
+i18n 키: badge.verified, badge.pro, badge.elite + Desc 버전
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 결제 & 법적 구조
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+결제 흐름: 고객 전액 선결제 → Phosnap 수취 → 촬영 완료 → 고객 수령확인 → 수수료 차감 후 작가 정산
+수수료: 런칭 10% → 성장기 20~25% → 안정기 25~30%
+국내 결제: 토스페이먼츠 | 해외: Stripe (확장 시)
+
+★ 만족 보증 정책 (Moment Guarantee) — legal.js + Terms에 반영 완료:
+- 100% 재촬영 보장 (날씨/노쇼)
+- 70% 환불 옵션 (불만족 시)
+- 평점 4.5 미만 작가 자동 프리미엄 재배정
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 보안 감사 결과 요약 (2026-04-11)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[수정 완료]
+✅ Booking.jsx — 하드코딩된 Toss 테스트키 제거 → env만 참조
+✅ 비밀번호 최소 길이 6→8자로 강화 (AuthModal, ArtistRegister)
+✅ supabase 폴더 빈 파일 삭제
+
+[수정 필요 — 런칭 전]
+⚠️ .env.local이 git에 커밋됨 → API 키 교체 필요 (Supabase, Toss, Formspree)
+⚠️ Booking.jsx successUrl에 금액 노출 → POST 리다이렉트 또는 서버사이드 전환 필요
+⚠️ Contact/Waitlist 폼에 maxLength 추가 필요
+⚠️ 에러 메시지 sanitization 필요 (err.message 직접 노출하지 말 것)
+⚠️ CSP/X-Frame-Options 헤더 추가 (Vite config 또는 서버)
+
+[보안 OK 확인]
+✅ Supabase: anon key만 클라이언트 사용, service role key 없음
+✅ RLS 정책 적절히 구현됨
+✅ XSS: dangerouslySetInnerHTML 없음
+✅ 의존성: 모두 최신 버전, 알려진 CVE 없음
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 완료 작업 목록 (2026-04-11 세션3 기준)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[이전 세션 완료]
+[완료] 언어 전환 시스템 4개 언어 + 로고 + 모바일 반응형
+[완료] 전 페이지 i18n (Home~Waitlist) + JSON 202키 일치 검증
+[완료] Supabase 스키마 + Migration + RLS
+[완료] ArtistRegister 3단계 + ArtistSchedule 대시보드
+[완료] Booking PRE_PAYMENT_NOTICE + HMK_GUIDE + Contact (4개 언어)
+[완료] Terms, Privacy, BookingSuccess 페이지
+[완료] payment.js, waitlist.js, legal.js
+[완료] 법적 구조 & 결제 설계 문서
+
+[이번 세션 완료] ★
+[완료] 벤치마킹 리서치 — 7개+ 플랫폼 (Flytographer, Shoott, Localgrapher, Snapro, OurPhoto 등)
+[완료] 벤치마킹 → Phosnap 적용 아이디어 TOP 10 도출 (BENCHMARK_INSIGHTS_AND_IDEAS.md)
+[완료] AuthModal i18n 전면 정리 — 45개 새 키 추가, 52개 t() 호출 전환
+[완료] StylistCard ternary → t('card.viewProfile') 전환
+[완료] ArtistRegister ARTIST_TYPES + HMK_OPTIONS → i18n (buildArtistTypes(t) 패턴)
+[완료] ArtistSchedule OVERSEAS_NOTICE → i18n (buildOverseasNotice(t) + useMemo)
+[완료] VerifiedBadge 컴포넌트 신규 제작 (3단계: Verified/Pro/Elite)
+[완료] Terms에 만족보증 정책 (Moment Guarantee) 추가 — legal.js 4개 언어
+[완료] 보안 감사 실시 — CRITICAL 4건 + MEDIUM 6건 + LOW 6건 식별
+[완료] 보안 CRITICAL 수정 — Toss 테스트키 제거, 비밀번호 8자 강화
+[완료] 불필요 파일 정리 (supabase/새 텍스트 문서.txt 삭제)
+[완료] i18n JSON 349키 × 4개 언어 완전 일치 검증
+
+[세션3 완료] ★★ 의상 대여 시스템 전면 구현
+[완료] DB 마이그레이션 — dress_vendors + dress_items 테이블, profiles.role 확장, bookings 필드 추가
+[완료] Mock 데이터 — dressVendors.js (6곳), dresses.js (24벌), photographers.js 필드 추가
+[완료] ArtistRegister 4단계 확장 — Step 3 서비스 옵션 (H&M 자체진행/의상 보유/연계업체)
+[완료] DressCard + SizeSelector 컴포넌트 신규 제작
+[완료] Booking 5단계 확장 — Step 4 의상 선택 (작가자체/연계업체/없음 분기)
+[완료] VendorRegister 페이지 — 의상 업체 3단계 등록
+[완료] VendorDashboard 페이지 — 의상 관리 + 예약 현황 탭 + 새 의상 등록 모달
+[완료] App.jsx 라우트 추가 — /vendor/register, /vendor/dashboard
+[완료] 예약 시간 겹침 방지 — getAvailableSlotsForDuration() 함수, 패키지 시간 기준 슬롯 필터링
+[완료] 시간 선택 UI 이동 — Step 1(날짜)→Step 2(패키지+시간) 로 재배치
+[완료] 작가 탐색 지역 필터 UX 개선 — 국내/해외 구분, 모바일 가로 스크롤, 선택 초기화 버튼
+[완료] ZH→CN 언어 표시 확인 — 이미 적용 완료 상태
+[완료] i18n 키 19개 추가 — booking 14개 + photographers 1개 + artistRegister 4개 (368+ keys)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 미완료 / 향후 작업
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[i18n 잔여]
+[ ] 작가 props (보유 소품) 한국어 하드코딩 → i18n
+[ ] Booking 패키지 desc 한국어 → 다국어
+[ ] ArtistSchedule DOMESTIC_REGIONS / OVERSEAS_REGIONS 지역명 i18n (구조적 데이터)
+
+[보안 — 런칭 전 필수]
+[ ] .env.local git 이력에서 제거 + API 키 전체 교체
+[ ] Booking successUrl에서 결제 금액 제거 (서버사이드 검증 전환)
+[ ] Contact/Waitlist 폼 maxLength 추가
+[ ] 에러 메시지 sanitization
+[ ] CSP/X-Frame-Options 헤더
+
+[기능]
+[ ] VerifiedBadge를 PhotographerCard/Profile에 실제 연결
+[ ] Supabase 실제 연동 (현재 localStorage MVP)
+[ ] 토스페이먼츠 실제 결제 연동
+[ ] 작가 프로필 이미지 (현재 Unsplash placeholder)
+[ ] SEO / meta tags (react-helmet)
+[ ] 실제 배포 (Vercel)
+[ ] VendorDashboard: 실제 의상 이미지 업로드 (현재 URL 입력)
+[ ] 작가 대시보드에서 자체 의상 목록 관리 UI
+[ ] Booking 의상 선택에서 카테고리 필터 추가
+[ ] ArtistRegister Step 3: 연계 업체 검색 기능 (현재 코드 직접 입력)
+[ ] 의상 업체 검색/탐색 공개 페이지
+
+[벤치마킹 도출 아이디어] → BENCHMARK_INSIGHTS_AND_IDEAS.md
+[ ] Same Day Preview (촬영 당일 미편집 5장 선공개)
+[ ] Express Delivery 옵션 (48시간/7일)
+[ ] 글로벌 가격 표준화 (티어 시스템)
+[ ] Phosnap Stories (UGC 후기 피드)
+[ ] AI 스타일 매칭 온보딩 퀴즈
+[ ] Gift Card 시스템
+[ ] Duo Session (사진+영상 동시예약)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ CSS 변수 (tokens.css)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+--bg: #0B0B0B  --bg2: #111111  --bg3: #1a1a1a
+--text: #F2F2F2  --muted: #888888
+--gold: #E8A020  --gold-border: rgba(232,160,32,0.3)  --gold-dim: rgba(232,160,32,0.05)
+--border: rgba(242,242,242,0.08)  --border-hover: rgba(242,242,242,0.18)
+--font-serif: 'Cinzel'  --font-elegant: 'Cormorant Garamond'  --font-sans: 'Noto Sans KR'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 알려진 패턴 & 주의사항
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. JSON 중복 키 금지 — 수정 후 항상 JSON.parse로 유효성 검사
+2. CSS background-clip: text — 반드시 display: inline-block 필요
+3. t() 반환값이 배열일 수 있음 — Array.isArray() 체크
+4. App.jsx 전역 CSS — .nav-logo span 등이 인라인 스타일 덮어쓸 수 있음
+5. 빌드 환경 — Claude 샌드박스에서 @rollup/rollup-linux-x64-gnu 없어 build 실패 (코드 문제 아님)
+6. i18n 인라인 패턴 — Booking PRE_PAYMENT_NOTICE, Contact CONTENT는 {ko,en,ja,zh} 인라인 객체 패턴 (의도적)
+7. ArtistRegister/ArtistSchedule — buildXxx(t) 헬퍼 패턴으로 i18n 구현 (useMemo 사용)
+
+────────────────────────────────────────────────────────────────────────────────
+[붙여넣기 끝]
+────────────────────────────────────────────────────────────────────────────────
+
+이 프롬프트를 새 대화창에 붙여넣은 후, 원하는 작업을 요청하면
+컨텍스트를 완전히 복원하고 이어서 작업할 수 있습니다.
+
+================================================================================
