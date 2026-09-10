@@ -688,12 +688,13 @@ const ArtistSchedule = () => {
               .select('full_name, artist_type').eq('id', session.user.id).maybeSingle();
             const { ensureArtistRecord } = await import('../lib/supabase');
             const parsed = (prof?.full_name || '').match(/^(.*?)\s*\((.*)\)\s*$/);
-            const { data: created } = await ensureArtistRecord(session.user.id, {
+            const { data: created, kind } = await ensureArtistRecord(session.user.id, {
               artistType:  prof?.artist_type || 'photographer',
               nativeName:  parsed ? parsed[1] : (prof?.full_name || ''),
               englishName: parsed ? parsed[2] : '',
             });
-            if (created?.id) photog = created;
+            // 헤메(hmk)는 stylists 레코드가 만들어지므로 여기서 쓰면 안 된다.
+            if (kind === 'photographer' && created?.id) photog = created;
           }
 
           if (photog?.id) {
