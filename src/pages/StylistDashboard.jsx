@@ -985,8 +985,32 @@ export default function StylistDashboard() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const t = i18n[language] || i18n.en;
 
-  const stylistId = user?.id;
+  // stylists.id 는 auth 유저 id 와 다른 값이다.
+  // stylist_services / stylist_schedules / 예약 조회가 모두 stylists.id 를
+  // 기준으로 하므로 여기서 공개 레코드를 찾아(없으면 만들어) 그 id 를 쓴다.
+  const [stylistId, setStylistId] = useState(null);
+  const [stylistLoading, setStylistLoading] = useState(true);
   const stylistName = user?.name || user?.email;
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user?.id) { setStylistLoading(false); return; }
+      try {
+        const { ensureArtistRecord } = await import('../lib/supabase');
+        const { data } = await ensureArtistRecord(user.id, {
+          artistType: 'hmk',
+          nativeName: user?.name || '',
+        });
+        if (!cancelled && data?.id) setStylistId(data.id);
+      } catch (e) {
+        console.error('[StylistDashboard] stylist 레코드 확보 실패:', e);
+      } finally {
+        if (!cancelled) setStylistLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // Load stylist reviews + avatar on mount
   useEffect(() => {
@@ -1002,6 +1026,14 @@ export default function StylistDashboard() {
     };
     loadData();
   }, []);
+
+  if (stylistLoading) {
+    return (
+      <div style={{ paddingTop: 100, color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
+        …
+      </div>
+    );
+  }
 
   if (!stylistId) {
     return (

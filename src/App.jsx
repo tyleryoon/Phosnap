@@ -366,6 +366,7 @@ const RoleAwareHome = ({ onAuthOpen }) => {
   const { activeRole, roleLoading, loading } = useAuth();
   if (loading || roleLoading) return null;
   if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
+  if (activeRole === 'stylist')                                         return <Navigate to="/stylist/dashboard" replace />;
   if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
   if (activeRole === 'admin')                                           return <Navigate to="/admin" replace />;
   // 고객 로그인 또는 비로그인 → 홈 페이지 표시
@@ -377,6 +378,7 @@ const RoleAwareExplore = () => {
   const { activeRole, roleLoading, loading } = useAuth();
   if (loading || roleLoading) return null;
   if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
+  if (activeRole === 'stylist')                                         return <Navigate to="/stylist/dashboard" replace />;
   if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
   // customer 또는 기타 → Explore 페이지
   return <Explore />;

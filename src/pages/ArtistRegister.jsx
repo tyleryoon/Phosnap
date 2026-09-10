@@ -482,16 +482,20 @@ const ArtistRegister = () => {
     const portfolioUrls = await uploadPortfolioImages();
     const displayName = `${nativeName} (${englishName})`;
 
+    // 헤어메이크업 전용 가입자는 stylists 경로(전용 대시보드 · 고객 H&M 선택)를
+    // 사용한다. 사진/영상 작가와 상품 구조가 달라 테이블도 분리되어 있다.
+    const signupRole = artistType === 'hmk' ? 'stylist' : 'artist';
+
     // 역할 추가
-    await addUserRole(userId, 'artist');
+    await addUserRole(userId, signupRole);
 
     // Generate referral code for new artist
-    const myCode = await saveReferralCode(userId, 'artist');
+    const myCode = await saveReferralCode(userId, signupRole);
 
     const { error: profileErr } = await upsertProfile({
       id:               userId,
       full_name:        displayName,
-      role:             'artist',
+      role:             signupRole,
       artist_type:      artistType,
       has_hmk_partner:  false,
       hmk_self:         isPhotoVideo ? (hmkSelf === true) : false,
@@ -545,10 +549,11 @@ const ArtistRegister = () => {
     setError('');
     try {
       const { signInAndAddRole } = await import('../lib/supabase');
+      const roleForSignup = artistType === 'hmk' ? 'stylist' : 'artist';
       const { error: loginErr, data } = await signInAndAddRole({
         email,
         password: existingPassword,
-        role: 'artist',
+        role: roleForSignup,
       });
       if (loginErr) {
         setError(loginErr.message === 'Invalid login credentials'
@@ -561,12 +566,12 @@ const ArtistRegister = () => {
       if (userId) {
         await saveArtistProfile(userId);
         // AuthContext를 통해 역할 추가 + 전환 (sessionStorage + React state 동기화)
-        await authAddRole('artist');
-        await authSwitchRole('artist');
-        sessionStorage.setItem('phosnap_active_role', 'artist');
+        await authAddRole(roleForSignup);
+        await authSwitchRole(roleForSignup);
+        sessionStorage.setItem('phosnap_active_role', roleForSignup);
       }
-      // 기존 계정 연결 완료 → 바로 작가 대시보드로 이동
-      navigate('/artist/dashboard');
+      // 기존 계정 연결 완료 → 역할에 맞는 대시보드로 이동
+      navigate(roleForSignup === 'stylist' ? '/stylist/dashboard' : '/artist/dashboard');
       return;
     } catch (err) {
       setError(err.message || '가입 중 오류가 발생했습니다.');
