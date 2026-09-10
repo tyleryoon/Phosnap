@@ -664,7 +664,7 @@ const CustomerDashboard = () => {
                   <>
                     {/* Filter tabs */}
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                      {['all', 'confirmed', 'completed', 'cancelled'].map(f => {
+                      {['all', 'pending', 'confirmed', 'completed', 'cancelled'].map(f => {
                         const isActive = bookingFilter === f;
                         return (
                           <button key={f}
