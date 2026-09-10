@@ -628,7 +628,9 @@ function VendorDashboard() {
         const { error } = await deleteVendorDress(dressId);
         if (error) throw error;
       } catch (err) {
-        // silently handled
+        // 삭제 실패를 조용히 넘기면 목록에서만 사라진 것처럼 보인다.
+        console.error('[VendorDashboard] 의상 삭제 실패:', err);
+        alert('의상 삭제에 실패했습니다. 다시 시도해주세요.');
       }
     }
     setDresses(prev => prev.filter(d => d.id !== dressId));
@@ -752,7 +754,9 @@ function VendorDashboard() {
         const { url } = await uploadDressImage(imageFile, vendorProfile.id);
         if (url) imageUrl = url;
       } catch (err) {
-        // silently handled
+        // 업로드 실패 시 이미지 없이 저장되지 않도록 알린다.
+        console.error('[VendorDashboard] 이미지 업로드 실패:', err);
+        alert('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
@@ -792,7 +796,11 @@ function VendorDashboard() {
         setDresses(prev => [...prev, mapped]);
         setAvailability(prev => ({ ...prev, [savedDress.id]: true }));
       } else if (error) {
-        // silently handled
+        // 실패를 조용히 넘기면 저장 버튼이 아무 반응 없는 것처럼 보인다.
+        console.error('[VendorDashboard] 의상 등록 실패:', error);
+        setSaveStatus('error');
+        alert(`의상 등록에 실패했습니다.\n${error.message || '알 수 없는 오류'}`);
+        return;
       }
     } else {
       const newDress = {
@@ -859,7 +867,9 @@ function VendorDashboard() {
         const { url } = await uploadDressImage(imageFile, vendorProfile.id);
         if (url) imageUrl = url;
       } catch (err) {
-        // silently handled
+        // 업로드 실패 시 이미지 없이 저장되지 않도록 알린다.
+        console.error('[VendorDashboard] 이미지 업로드 실패:', err);
+        alert('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
