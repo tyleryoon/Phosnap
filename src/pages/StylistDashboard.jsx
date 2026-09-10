@@ -375,9 +375,9 @@ const ServiceMenuTab = ({ t, stylistId }) => {
     if (service) {
       setEditingService(service);
       setFormData({
-        serviceName: service.name,
-        price: service.price.toString(),
-        duration: service.duration.toString(),
+        serviceName: service.name_ko ?? service.name ?? '',
+        price: String(service.price ?? ''),
+        duration: String(service.duration_minutes ?? service.duration ?? 60),
         description: service.description,
       });
     } else {
@@ -407,26 +407,38 @@ const ServiceMenuTab = ({ t, stylistId }) => {
     try {
       const { createStylistService, updateStylistService } = await import('../lib/supabase');
 
-      const data = {
-        name: formData.serviceName,
-        price: parseFloat(formData.price),
-        duration: parseInt(formData.duration),
-        description: formData.description,
-        stylist_id: stylistId,
+      // 컬럼명은 name_ko / duration_minutes 다.
+      // name / duration 으로 보내면 42703 으로 저장이 실패한다.
+      const payload = {
+        name_ko:          formData.serviceName,
+        price:            parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10) || 0,
+        duration_minutes: parseInt(formData.duration, 10) || 60,
+        description:      formData.description || '',
+        stylist_id:       stylistId,
       };
 
+      let nextServices;
       if (editingService) {
-        await updateStylistService(editingService.id, data);
-        setServices(services.map(s => (s.id === editingService.id ? { ...s, ...data } : s)));
+        const { error } = await updateStylistService(editingService.id, payload);
+        if (error) throw error;
+        nextServices = services.map(s =>
+          s.id === editingService.id ? { ...s, ...payload } : s
+        );
       } else {
-        const newService = await createStylistService(data);
-        setServices([...services, newService]);
+        // 반환값은 { data, error } 객체다. 예전에는 이걸 그대로 목록에 넣어
+        // 렌더링 시 화면이 멈췄다.
+        const { data: created, error } = await createStylistService(payload);
+        if (error) throw error;
+        nextServices = [...services, created];
       }
 
-      localStorage.setItem(`services_${stylistId}`, JSON.stringify(services));
+      setServices(nextServices);
+      // 갱신 전 services 를 저장하던 버그 수정 (한 박자 늦게 기록됨)
+      localStorage.setItem(`services_${stylistId}`, JSON.stringify(nextServices));
       closeModal();
     } catch (error) {
-      alert(t.error);
+      console.error('[StylistDashboard] 서비스 저장 실패:', error);
+      alert(`${t.error}\n${error?.message || ''}`);
     }
   };
 
@@ -491,7 +503,7 @@ const ServiceMenuTab = ({ t, stylistId }) => {
                     marginBottom: 8,
                   }}
                 >
-                  {service.name}
+                  {service.name_ko ?? service.name}
                 </h3>
                 <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.6 }}>
                   {service.description}
@@ -500,11 +512,11 @@ const ServiceMenuTab = ({ t, stylistId }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
                 <div>
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.price}</div>
-                  <div style={{ color: 'var(--gold)', fontWeight: 600 }}>${service.price}</div>
+                  <div style={{ color: 'var(--gold)', fontWeight: 600 }}>₩{Number(service.price ?? 0).toLocaleString('ko-KR')}</div>
                 </div>
                 <div>
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.duration}</div>
-                  <div style={{ color: 'var(--text)' }}>{service.duration} {t.duration}</div>
+                  <div style={{ color: 'var(--text)' }}>{service.duration_minutes ?? service.duration}분</div>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
