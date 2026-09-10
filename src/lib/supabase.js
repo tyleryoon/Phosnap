@@ -983,11 +983,13 @@ export const updateVendorProfile = async (vendorId, updates) => {
 /**
  * 업체의 의상 목록 조회
  */
+// vendor_dresses 는 dress_items 의 단순 VIEW 라 INSERT/UPDATE/DELETE 가
+// 불가능하고, 현재 DB 에는 그 뷰조차 없다. 실제 테이블을 직접 사용한다.
 export const getVendorDresses = async (vendorId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
   const { data, error } = await sb
-    .from('vendor_dresses')
+    .from('dress_items')
     .select('*')
     .eq('vendor_id', vendorId)
     .order('created_at', { ascending: false });
@@ -1001,7 +1003,7 @@ export const addVendorDress = async (dress) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb
-    .from('vendor_dresses')
+    .from('dress_items')
     .insert([dress])
     .select()
     .single();
@@ -1015,7 +1017,7 @@ export const updateVendorDress = async (dressId, updates) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb
-    .from('vendor_dresses')
+    .from('dress_items')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', dressId)
     .select()
@@ -1029,7 +1031,7 @@ export const updateVendorDress = async (dressId, updates) => {
 export const deleteVendorDress = async (dressId) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  return sb.from('vendor_dresses').delete().eq('id', dressId);
+  return sb.from('dress_items').delete().eq('id', dressId);
 };
 
 /**
