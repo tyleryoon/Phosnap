@@ -340,6 +340,274 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
   );
 };
 
+// ─── 의상 대여 탭 (헤메가 의상도 함께 대여하는 경우) ──────────────────
+// 별도 테이블을 만들지 않고 벤더와 동일한 dress_vendors / dress_items 를
+// 사용한다. 고객 예약의 의상 조회 로직을 그대로 재사용할 수 있다.
+const DressRentalTab = ({ t, lang, stylistProfile }) => {
+  const [vendorId, setVendorId] = useState(null);
+  const [enabled, setEnabled] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '' });
+  const { user } = useAuth();
+
+  // 이미 연결된 dress_vendors 레코드가 있는지 확인
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!user?.id) { setLoading(false); return; }
+      try {
+        const { getSupabase } = await import('../lib/supabase');
+        const sb = await getSupabase();
+        if (!sb) return;
+        const { data: v } = await sb.from('dress_vendors')
+          .select('id').eq('user_id', user.id).maybeSingle();
+        if (cancelled) return;
+        if (v?.id) {
+          setVendorId(v.id);
+          setEnabled(true);
+          const { getVendorDresses } = await import('../lib/supabase');
+          const { data } = await getVendorDresses(v.id);
+          if (!cancelled) setItems(data || []);
+        }
+      } catch (e) {
+        console.error('[StylistDashboard] 의상 정보 로드 실패:', e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  // 의상 대여 활성화 — dress_vendors 레코드를 만들고 헤메 프로필 정보를 승계
+  const handleEnable = async () => {
+    setSaving(true);
+    setErrorMsg('');
+    try {
+      const { ensureVendorRecord, updateVendorProfile } = await import('../lib/supabase');
+      const { data: created, error } = await ensureVendorRecord(user.id, {
+        nameKo:     stylistProfile?.name_ko || stylistProfile?.display_name || '',
+        nameEn:     stylistProfile?.name_en || '',
+        vendorType: 'costume',
+      });
+      if (error) throw error;
+      // 헤메의 지역·연락처를 그대로 물려받아 고객 검색에 바로 잡히게 한다
+      if (created?.id) {
+        await updateVendorProfile(created.id, {
+          location_id:  stylistProfile?.location_id || null,
+          country_code: stylistProfile?.country_code || 'KR',
+          city:         stylistProfile?.city || null,
+          contact_phone: stylistProfile?.phone || null,
+          intro:        stylistProfile?.specialty || '',
+        });
+        setVendorId(created.id);
+        setEnabled(true);
+      }
+    } catch (e) {
+      console.error('[StylistDashboard] 의상 대여 활성화 실패:', e);
+      setErrorMsg(e?.message || t.error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAddItem = async () => {
+    if (!form.nameKo.trim() || !form.price) {
+      setErrorMsg('의상명과 가격을 입력해주세요.');
+      return;
+    }
+    setSaving(true);
+    setErrorMsg('');
+    try {
+      const { addVendorDress } = await import('../lib/supabase');
+      const sizes = form.size.split(',').map(s => s.trim()).filter(Boolean);
+      const { data, error } = await addVendorDress({
+        vendor_id:  vendorId,
+        name_ko:    form.nameKo.trim(),
+        name_en:    form.nameEn.trim() || null,
+        category:   'traditional',
+        price:      parseInt(String(form.price).replace(/[^0-9]/g, ''), 10) || 0,
+        sizes,
+        size_stock: sizes.reduce((acc, sz) => ({ ...acc, [sz]: parseInt(form.stock, 10) || 0 }), {}),
+        color:      form.color.trim() || null,
+        description: form.description.trim() || null,
+      });
+      if (error) throw error;
+      setItems(prev => [...prev, data]);
+      setModalOpen(false);
+      setForm({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '' });
+    } catch (e) {
+      console.error('[StylistDashboard] 의상 등록 실패:', e);
+      setErrorMsg(e?.message || t.error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    try {
+      const { deleteVendorDress } = await import('../lib/supabase');
+      const { error } = await deleteVendorDress(id);
+      if (error) throw error;
+      setItems(prev => prev.filter(x => x.id !== id));
+    } catch (e) {
+      console.error('[StylistDashboard] 의상 삭제 실패:', e);
+      setErrorMsg(e?.message || t.error);
+    }
+  };
+
+  const label = { display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 };
+  const input = {
+    width: '100%', padding: '10px 12px', background: 'var(--bg)', color: 'var(--text)',
+    border: '1px solid var(--gold-dim)', boxSizing: 'border-box', fontSize: 14,
+  };
+
+  if (loading) return <div style={{ color: 'var(--muted)', padding: 32 }}>…</div>;
+
+  if (!enabled) {
+    return (
+      <div style={{ padding: '32px 0', maxWidth: 560 }}>
+        <div style={{ border: '1px solid var(--gold-border)', padding: '28px 24px', position: 'relative' }}>
+          <Corners />
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, marginBottom: 10 }}>
+            의상 대여도 함께 하시나요?
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 20 }}>
+            헤어메이크업과 함께 한복·드레스를 대여하신다면 활성화해주세요.
+            고객이 촬영을 예약할 때 의상 단계에서 회원님의 의상을 선택할 수 있습니다.
+            활동 지역과 연락처는 프로필 정보를 그대로 사용합니다.
+          </p>
+          {errorMsg && (
+            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+              {errorMsg}
+            </div>
+          )}
+          <button
+            onClick={handleEnable}
+            disabled={saving}
+            style={{
+              padding: '12px 28px', background: 'var(--gold)', color: 'var(--bg)',
+              border: 'none', cursor: saving ? 'default' : 'pointer', fontWeight: 600,
+              fontSize: 14, opacity: saving ? 0.6 : 1,
+            }}
+          >
+            {saving ? t.saving : '의상 대여 활성화'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '24px 0' }}>
+      <button
+        onClick={() => setModalOpen(true)}
+        style={{
+          marginBottom: 24, padding: '12px 24px', background: 'var(--gold)',
+          color: 'var(--bg)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
+        }}
+      >
+        의상 추가
+      </button>
+
+      {errorMsg && (
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+          {errorMsg}
+        </div>
+      )}
+
+      {!items.length ? (
+        <div style={{ color: 'var(--muted)', padding: 32 }}>등록된 의상이 없습니다</div>
+      ) : (
+        <div style={{ display: 'grid', gap: 16 }}>
+          {items.map(it => (
+            <div key={it.id} style={{ border: '1px solid var(--border)', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, marginBottom: 6 }}>{it.name_ko}</div>
+                <div style={{ fontSize: 13, color: 'var(--muted)' }}>
+                  {(it.sizes || []).join(', ')}{it.color ? ` · ${it.color}` : ''}
+                </div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ color: 'var(--gold)', fontWeight: 600, marginBottom: 8 }}>
+                  ₩{Number(it.price ?? 0).toLocaleString('ko-KR')}
+                </div>
+                <button
+                  onClick={() => handleDelete(it.id)}
+                  style={{ fontSize: 12, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
+                >
+                  {t.delete}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {modalOpen && (
+        <Modal onClose={() => setModalOpen(false)}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 22 }}>의상 추가</div>
+          <div style={{ display: 'grid', gap: 14 }}>
+            <div>
+              <label style={label}>의상명 (한글) *</label>
+              <input style={input} value={form.nameKo} onChange={e => setForm({ ...form, nameKo: e.target.value })} />
+            </div>
+            <div>
+              <label style={label}>의상명 (영문)</label>
+              <input style={input} value={form.nameEn} onChange={e => setForm({ ...form, nameEn: e.target.value })} />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={label}>가격 (원) *</label>
+                <input style={input} type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+              </div>
+              <div>
+                <label style={label}>색상</label>
+                <input style={input} value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label style={label}>사이즈 (쉼표로 구분)</label>
+                <input style={input} value={form.size} onChange={e => setForm({ ...form, size: e.target.value })} />
+              </div>
+              <div>
+                <label style={label}>사이즈별 수량</label>
+                <input style={input} type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} />
+              </div>
+            </div>
+            <div>
+              <label style={label}>{t.description}</label>
+              <textarea style={{ ...input, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            </div>
+          </div>
+          {errorMsg && (
+            <div style={{ marginTop: 14, color: '#e85d5d', fontSize: 13 }}>{errorMsg}</div>
+          )}
+          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+            <button
+              onClick={handleAddItem}
+              disabled={saving}
+              style={{ flex: 1, padding: '12px', background: 'var(--gold)', color: 'var(--bg)', border: 'none', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}
+            >
+              {saving ? t.saving : t.save}
+            </button>
+            <button
+              onClick={() => setModalOpen(false)}
+              style={{ flex: 1, padding: '12px', background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)', cursor: 'pointer' }}
+            >
+              {t.cancel}
+            </button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
+
 const ServiceMenuTab = ({ t, stylistId }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1014,6 +1282,8 @@ export default function StylistDashboard() {
   // stylist_services / stylist_schedules / 예약 조회가 모두 stylists.id 를
   // 기준으로 하므로 여기서 공개 레코드를 찾아(없으면 만들어) 그 id 를 쓴다.
   const [stylistId, setStylistId] = useState(null);
+  // 의상 대여 탭에서 지역·연락처를 승계하기 위해 레코드 전체를 보관한다.
+  const [stylistProfile, setStylistProfile] = useState(null);
   const [stylistLoading, setStylistLoading] = useState(true);
   const stylistName = user?.name || user?.email;
 
@@ -1027,7 +1297,10 @@ export default function StylistDashboard() {
           artistType: 'hmk',
           nativeName: user?.name || '',
         });
-        if (!cancelled && data?.id) setStylistId(data.id);
+        if (!cancelled && data?.id) {
+          setStylistId(data.id);
+          setStylistProfile(data);
+        }
       } catch (e) {
         console.error('[StylistDashboard] stylist 레코드 확보 실패:', e);
       } finally {
@@ -1123,6 +1396,7 @@ export default function StylistDashboard() {
           {[
             { id: 'bookings', label: t.bookings },
             { id: 'serviceMenu', label: t.serviceMenu },
+            { id: 'dressRental', label: '의상 대여' },
             { id: 'profileEdit', label: t.profileEdit },
             { id: 'reviews', label: t.reviews },
           ].map(tab => (
@@ -1148,6 +1422,7 @@ export default function StylistDashboard() {
 
         {activeTab === 'bookings' && <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />}
         {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} stylistId={stylistId} />}
+        {activeTab === 'dressRental' && <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />}
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 
         {/* Reviews Tab */}
