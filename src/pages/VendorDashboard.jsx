@@ -4,6 +4,7 @@ import Corners from '../components/Corners';
 import DressCard from '../components/DressCard';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+import LocationPicker from '../components/LocationPicker';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../data/photographers';
 import {
@@ -385,7 +386,9 @@ function VendorDashboard() {
             // mock 업체명으로 폴백하지 않는다 — 등록 안내가 뜨도록 빈 값 유지
             name: profile.name_ko || profile.name_en || '',
             nameEn: profile.name_en || '',
-            location: profile.location_id || '',
+            location: profile.location_id
+              ? { locationId: profile.location_id, countryCode: profile.country_code || 'KR', city: profile.city || '' }
+              : null,
             specialties: profile.categories || [],
             contact: {
               email: profile.contact_email || '',
@@ -406,7 +409,9 @@ function VendorDashboard() {
           const costumeProfile = {
             nameKo: profile.name_ko || '',
             nameEn: profile.name_en || '',
-            location: profile.location_id || '',
+            location: profile.location_id
+              ? { locationId: profile.location_id, countryCode: profile.country_code || 'KR', city: profile.city || '' }
+              : null,
             phone: profile.contact_phone || '',
             email: profile.contact_email || '',
             website: profile.website || '',
@@ -551,7 +556,10 @@ function VendorDashboard() {
     const payload = activeDashboard === 'costume' ? {
       name_ko: pf.nameKo,
       name_en: pf.nameEn,
-      location_id: pf.location,
+      // LocationPicker 는 { locationId, countryCode, city } 객체를 준다.
+      location_id:  pf.location?.locationId || pf.location || null,
+      country_code: pf.location?.countryCode || 'KR',
+      city:         pf.location?.city || null,
       contact_phone: pf.phone,
       contact_email: pf.email,
       website: pf.website,
@@ -2069,6 +2077,23 @@ function VendorDashboard() {
                     }}
                   />
                 </div>
+              </div>
+
+              {/* 활동 지역 — 고객 예약의 의상/장소 조회가 이 값으로 필터링된다.
+                  입력 UI 가 없어 location_id 가 항상 비어 있었고, 그 결과
+                  등록한 의상이 고객에게 한 번도 노출되지 않았다. */}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
+                  활동 지역 <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
+                </label>
+                <LocationPicker
+                  value={profileForm.location}
+                  onChange={(location) => setProfileForm({ ...profileForm, location })}
+                  lang={lang}
+                />
+                <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
+                  이 지역에서 촬영하는 고객에게 아이템이 노출됩니다.
+                </p>
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>
