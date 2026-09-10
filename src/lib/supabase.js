@@ -919,6 +919,37 @@ export const createDressVendor = async (vendor) => {
 /**
  * 현재 로그인한 유저의 업체 프로필 조회
  */
+/**
+ * 벤더 공개 레코드를 보장한다.
+ *
+ * 가입 시 createDressVendor 가 스키마 불일치로 실패했던 계정, 또는
+ * 구버전 가입자는 dress_vendors 레코드가 없어 대시보드가 mock 을
+ * 보여준다. 작가의 ensureArtistRecord 와 같은 역할.
+ *
+ * @param {string} userId auth.users.id
+ * @param {Object} info { nameKo, nameEn, vendorType }
+ */
+export const ensureVendorRecord = async (userId, info = {}) => {
+  const sb = await getSupabase();
+  if (!sb || !userId) return { data: null, error: null };
+
+  const { data: existing, error: findErr } = await sb
+    .from('dress_vendors').select('*').eq('user_id', userId).maybeSingle();
+  if (findErr) return { data: null, error: findErr };
+  if (existing) return { data: existing, error: null };
+
+  const { nameKo = '', nameEn = '', vendorType = 'costume' } = info;
+  const { data, error } = await sb.from('dress_vendors').insert({
+    user_id:     userId,
+    name:        nameKo || nameEn || '이름 미설정',
+    name_ko:     nameKo || null,
+    name_en:     nameEn || null,
+    vendor_type: vendorType,
+    is_active:   false,   // 업체명·소개 입력 전까지 비노출
+  }).select().maybeSingle();
+  return { data, error };
+};
+
 export const getMyVendorProfile = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: null };

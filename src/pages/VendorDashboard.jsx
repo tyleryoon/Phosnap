@@ -5,8 +5,6 @@ import DressCard from '../components/DressCard';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { DRESS_VENDORS } from '../data/dressVendors';
-import { DRESS_ITEMS } from '../data/dresses';
 import { fmt } from '../data/photographers';
 import {
   getMyVendorProfile, getVendorDresses, addVendorDress,
@@ -109,22 +107,21 @@ function VendorDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [bookingActionConfirm, setBookingActionConfirm] = useState(null); // { bookingId, action }
 
-  const matchedMockVendor = DRESS_VENDORS.find(v =>
-    v.contact?.email === user?.email
-  ) || DRESS_VENDORS[0];
-  const mockVendor = matchedMockVendor;
-  const vendor = vendorProfile || mockVendor;
+  // mock 업체 폴백 제거.
+  // 예전에는 DRESS_VENDORS[0] 로 폴백해, 레코드가 없는 벤더 계정이
+  // 아무 관계 없는 mock 업체의 의상 4벌을 자기 것처럼 보게 됐다.
+  const emptyVendor = {
+    id: null,
+    name: '',
+    nameEn: '',
+    location: '',
+    specialties: [],
+    contact: { email: user?.email || '', phone: '' },
+  };
+  const vendor = vendorProfile || emptyVendor;
 
-  const vendorDresses = useMemo(
-    () => {
-      if (vendorProfile) return [];
-      // Only show mock dresses if vendorProfile is explicitly null (data loaded but no DB profile)
-      // Don't show while still loading
-      if (dataLoading) return [];
-      return DRESS_ITEMS.filter(d => d.vendorId === mockVendor.id);
-    },
-    [mockVendor.id, vendorProfile, dataLoading]
-  );
+  // 의상 목록은 DB 에서만 온다 (아래 setDresses 로 채워진다).
+  const vendorDresses = useMemo(() => [], []);
 
   const [dresses, setDresses] = useState([]);
   const [activeTab, setActiveTab] = useState('manage');
@@ -366,17 +363,33 @@ function VendorDashboard() {
     const loadVendorData = async () => {
       setDataLoading(true);
       try {
-        const { data: profile } = await getMyVendorProfile();
+        let { data: profile } = await getMyVendorProfile();
+
+        // 레코드가 없으면 여기서 만들어준다. 가입 시 createDressVendor 가
+        // 스키마 불일치로 실패한 계정은 레코드 없이 남아 있고, 그러면
+        // 대시보드가 계속 mock 업체를 보여주게 된다.
+        if (!profile && user?.id) {
+          const { ensureVendorRecord } = await import('../lib/supabase');
+          const parsed = (user?.name || '').match(/^(.*?)\s*\((.*)\)\s*$/);
+          const { data: created } = await ensureVendorRecord(user.id, {
+            nameKo:     parsed ? parsed[1] : (user?.name || ''),
+            nameEn:     parsed ? parsed[2] : '',
+            vendorType: 'costume',
+          });
+          profile = created;
+        }
+
         if (profile) {
           setVendorProfile({
             id: profile.id,
-            name: profile.name_ko || profile.name_en || mockVendor.name,
+            // mock 업체명으로 폴백하지 않는다 — 등록 안내가 뜨도록 빈 값 유지
+            name: profile.name_ko || profile.name_en || '',
             nameEn: profile.name_en || '',
-            location: profile.location_id || mockVendor.location,
-            specialties: profile.categories || mockVendor.specialties,
+            location: profile.location_id || '',
+            specialties: profile.categories || [],
             contact: {
-              email: profile.contact_email || mockVendor.contact?.email || '',
-              phone: profile.contact_phone || mockVendor.contact?.phone || '',
+              email: profile.contact_email || '',
+              phone: profile.contact_phone || '',
             },
             vendor_type: profile.vendor_type || '',
             website: profile.website || '',
