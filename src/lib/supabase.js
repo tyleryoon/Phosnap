@@ -2073,8 +2073,13 @@ export const getAvatarUrl = async () => {
 export const getMyNotifications = async (limit = 30) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return { data: [], error: null };
+  // RLS 가 막아주긴 하지만, 정책이 바뀌어도 남의 알림이 새지 않도록
+  // 쿼리에서도 명시적으로 본인 것만 조회한다.
   const { data, error } = await sb.from('notifications')
     .select('*')
+    .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
   return { data: data || [], error };
@@ -2084,9 +2089,12 @@ export const getMyNotifications = async (limit = 30) => {
 export const getUnreadNotificationCount = async () => {
   const sb = await getSupabase();
   if (!sb) return 0;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return 0;
   const { count } = await sb.from('notifications')
     .select('*', { count: 'exact', head: true })
-    .eq('is_read', false);
+    .eq('user_id', session.user.id)
+    .is('read_at', null);
   return count || 0;
 };
 
@@ -2094,8 +2102,9 @@ export const getUnreadNotificationCount = async () => {
 export const markNotificationRead = async (notificationId) => {
   const sb = await getSupabase();
   if (!sb) return;
+  // 실제 컬럼은 read_at 이다 (기존 코드는 없는 is_read 를 갱신했다).
   await sb.from('notifications')
-    .update({ is_read: true })
+    .update({ read_at: new Date().toISOString() })
     .eq('id', notificationId);
 };
 
@@ -2103,9 +2112,12 @@ export const markNotificationRead = async (notificationId) => {
 export const markAllNotificationsRead = async () => {
   const sb = await getSupabase();
   if (!sb) return;
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.user) return;
   await sb.from('notifications')
-    .update({ is_read: true })
-    .eq('is_read', false);
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', session.user.id)
+    .is('read_at', null);
 };
 
 /** 알림 생성 (자기 자신에게) */

@@ -94,9 +94,9 @@ const NotificationBell = () => {
 
   // 알림 클릭
   const handleNotifClick = async (notif) => {
-    if (!notif.is_read) {
+    if (!notif.read_at) {
       await markNotificationRead(notif.id);
-      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+      setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
     if (notif.link) {
@@ -108,7 +108,7 @@ const NotificationBell = () => {
   // 전체 읽음
   const handleMarkAllRead = async () => {
     await markAllNotificationsRead();
-    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    setNotifications(prev => prev.map(n => ({ ...n, read_at: n.read_at || new Date().toISOString() })));
     setUnreadCount(0);
   };
 
@@ -196,11 +196,11 @@ const NotificationBell = () => {
                   display: 'flex', gap: 12, padding: '12px 16px',
                   borderBottom: '1px solid var(--border)',
                   cursor: notif.link ? 'pointer' : 'default',
-                  background: notif.is_read ? 'transparent' : 'rgba(232,160,32,0.04)',
+                  background: notif.read_at ? 'transparent' : 'rgba(232,160,32,0.04)',
                   transition: 'background 0.2s',
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = notif.is_read ? 'transparent' : 'rgba(232,160,32,0.04)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = notif.read_at ? 'transparent' : 'rgba(232,160,32,0.04)'}
               >
                 <span style={{ fontSize: 18, flexShrink: 0 }}>
                   {NOTIF_ICONS[notif.type] || '🔔'}
@@ -208,7 +208,7 @@ const NotificationBell = () => {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{
                     fontSize: 13, color: 'var(--text)',
-                    fontWeight: notif.is_read ? 'normal' : '600',
+                    fontWeight: notif.read_at ? 'normal' : '600',
                     marginBottom: 3,
                   }}>
                     {notif.title}
@@ -226,7 +226,7 @@ const NotificationBell = () => {
                     {timeAgo(notif.created_at, lang)}
                   </div>
                 </div>
-                {!notif.is_read && (
+                {!notif.read_at && (
                   <span style={{
                     width: 8, height: 8, borderRadius: '50%',
                     background: '#e85d5d', flexShrink: 0, marginTop: 6,
