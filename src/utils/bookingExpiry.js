@@ -20,9 +20,21 @@ export const checkBookingExpiry = (booking) => {
   }
 
   // Supabase에서 expires_at이 설정돼 있으면 그걸 사용
-  const expiresAt = booking.expires_at
-    ? new Date(booking.expires_at)
-    : new Date(new Date(booking.created_at || booking.createdAt).getTime() + EXPIRY_HOURS * 60 * 60 * 1000);
+  // DB 트리거와 동일한 규칙: min(생성 + 48시간, 촬영 3일 전).
+  // 촬영일이 임박하면 48시간을 다 기다릴 수 없다 — 취소가 확정될 때쯤
+  // 고객이 다른 작가를 찾을 시간이 남아 있어야 한다.
+  let expiresAt;
+  if (booking.expires_at) {
+    expiresAt = new Date(booking.expires_at);
+  } else {
+    const created  = new Date(booking.created_at || booking.createdAt).getTime();
+    const standard = created + EXPIRY_HOURS * 60 * 60 * 1000;
+    const shootDate = booking.date ? new Date(booking.date).getTime() : null;
+    const hardDeadline = shootDate ? shootDate - 3 * 24 * 60 * 60 * 1000 : Infinity;
+    let chosen = Math.min(standard, hardDeadline);
+    if (chosen <= Date.now()) chosen = Date.now() + 2 * 60 * 60 * 1000;
+    expiresAt = new Date(chosen);
+  }
 
   const now = new Date();
   const hoursRemaining = Math.max(0, (expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60));

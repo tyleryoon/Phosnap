@@ -2584,7 +2584,7 @@ const ArtistSchedule = () => {
       <div>
         <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 28, maxWidth: 560 }}>
           고객이 결제 완료한 예약 요청 목록입니다.<br/>
-          <strong style={{ color: 'var(--gold)' }}>48시간 이내에 수락 또는 거절해주세요.</strong> 미응답 시 자동 확정됩니다.
+          <strong style={{ color: 'var(--gold)' }}>48시간 이내에 수락 또는 거절해주세요.</strong> 미응답 시 예약은 <strong style={{ color: '#e85d5d' }}>자동 취소</strong>되고 고객에게 환불됩니다. (촬영일이 임박한 경우 더 일찍 마감될 수 있습니다)
         </div>
 
         {bookingsLoading && (
