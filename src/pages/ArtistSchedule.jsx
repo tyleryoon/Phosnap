@@ -894,12 +894,24 @@ const ArtistSchedule = () => {
               }
             : {};
 
+          // 고객 상세 페이지(Profile)는 pkg.hours / pkg.photos 를 읽는데
+          // 대시보드는 duration("2시간") / editedCount 로 관리한다.
+          // 양쪽 필드를 모두 채워 어느 화면에서도 값이 비지 않게 한다.
+          const publicPackages = snaps.map(p => {
+            const hours = parseFloat(String(p.duration ?? '').replace(/[^0-9.]/g, '')) || null;
+            return {
+              ...p,
+              hours:  hours ?? p.hours ?? null,
+              photos: p.editedCount ?? p.photos ?? null,
+            };
+          });
+
           const payload = {
             location_id:    mainLocation?.regionId || null,
             location_names: locationNames,
             country_code:   mainLocation?.countryCode || 'KR',
             city:           mainLocation?.city || null,
-            packages:     snaps,
+            packages:     publicPackages,
             props:        updated.props || [],
             dresses:      updated.costumes || [],
             portfolio:    portfolioItems,

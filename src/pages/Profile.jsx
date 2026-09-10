@@ -5,6 +5,11 @@ import Footer from '../components/Footer';
 import { ArrowLeftIcon, MapPinIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
+
+// 지역 id → 다국어 이름 (순수 데이터라 순환 참조 없음)
+const PROFILE_LOCATION_NAMES = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS]
+  .reduce((acc, l) => { acc[l.id] = l.nameI18n || { ko: l.name, en: l.nameEn }; return acc; }, {});
 import { getMergedProfile } from '../data/artistProfile';
 import { getAllLocationsSorted } from '../data/locationUtils';
 import { ProfileSEO } from '../components/SEO';
@@ -364,7 +369,13 @@ const Profile = ({ onAuthOpen }) => {
   const displayName    = lang === 'ko' && p.nameKo ? p.nameKo   : p.name;
   const subName        = lang === 'ko' ? null : (p.nameKo ?? null);
   const bio            = p.bioI18n?.[lang] ?? p.bio;
-  const locationLabel  = p.locationNames?.[lang] ?? p.location;
+  // location_names 가 비어 있는 작가는 지역 id 가 그대로 노출되므로
+  // 데이터 인덱스에서 현지어 이름을 찾아 보완한다. (카드와 동일한 폴백)
+  const locationLabel  =
+    p.locationNames?.[lang]
+    ?? PROFILE_LOCATION_NAMES[p.location]?.[lang]
+    ?? PROFILE_LOCATION_NAMES[p.location]?.ko
+    ?? p.location;
 
   const filteredPortfolio = portfolioLocation === 'all'
     ? portfolioItems
