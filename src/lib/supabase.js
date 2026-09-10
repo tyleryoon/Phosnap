@@ -729,27 +729,16 @@ export const approveBooking = async (bookingId) => {
     .select().single();
 
   if (!error && data) {
-    // Fetch customer info to send confirmation notification
-    const { data: customer } = await sb
-      .from('_customers')
-      .select('email, user_metadata')
-      .eq('id', data.customer_id)
-      .maybeSingle();
-
-    if (customer?.email) {
-      sendNotification({
-        type: 'booking_confirmed',
-        bookingId: data.id,
-        recipientEmail: customer.email,
-        recipientName: customer.user_metadata?.name || '',
-        lang: data.lang,
-        data: {
-          photographerName: data.photographer_name,
-          date: data.date,
-          time: data.time,
-        },
-      }).catch(() => {});
-    }
+    // 앱 내 알림을 고객에게 보낸다.
+    // 예전에는 존재하지 않는 `_customers` 테이블을 조회해 알림이 전혀
+    // 발송되지 않았다. customer_id 를 바로 쓰면 조회가 필요 없다.
+    sendNotificationTo(data.customer_id, {
+      type:  'booking_confirmed',
+      title: '예약이 확정되었습니다',
+      body:  `${data.photographer_name || '작가'} · ${data.date} ${data.time}`,
+      link:  '/my',
+      metadata: { bookingId: data.id },
+    }).catch(() => {});
   }
 
   return { data, error };
@@ -765,27 +754,13 @@ export const rejectBooking = async (bookingId, reason = '') => {
     .select().single();
 
   if (!error && data) {
-    // Fetch customer info to send rejection notification
-    const { data: customer } = await sb
-      .from('_customers')
-      .select('email, user_metadata')
-      .eq('id', data.customer_id)
-      .maybeSingle();
-
-    if (customer?.email) {
-      sendNotification({
-        type: 'booking_rejected',
-        bookingId: data.id,
-        recipientEmail: customer.email,
-        recipientName: customer.user_metadata?.name || '',
-        lang: data.lang,
-        data: {
-          photographerName: data.photographer_name,
-          date: data.date,
-          reason: reason,
-        },
-      }).catch(() => {});
-    }
+    sendNotificationTo(data.customer_id, {
+      type:  'booking_rejected',
+      title: '예약이 거절되었습니다',
+      body:  reason ? `사유: ${reason}` : `${data.photographer_name || '작가'} · ${data.date} ${data.time}`,
+      link:  '/my',
+      metadata: { bookingId: data.id },
+    }).catch(() => {});
   }
 
   return { data, error };
@@ -1439,28 +1414,14 @@ export const deliverPhotos = async (bookingId, { deliveryUrl, deliveryMemo }) =>
     .select().single();
 
   if (!error && data) {
-    // Fetch customer info to send delivery notification
-    const { data: customer } = await sb
-      .from('_customers')
-      .select('email, user_metadata')
-      .eq('id', data.customer_id)
-      .maybeSingle();
-
-    if (customer?.email) {
-      const deliveryDate = data.delivered_at ? new Date(data.delivered_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-      sendNotification({
-        type: 'photos_delivered',
-        bookingId: data.id,
-        recipientEmail: customer.email,
-        recipientName: customer.user_metadata?.name || '',
-        lang: data.lang,
-        data: {
-          photographerName: data.photographer_name,
-          deliveryUrl: deliveryUrl,
-          deliveryDate: deliveryDate,
-        },
-      }).catch(() => {});
-    }
+    // 사진 전달 알림 (앱 내). `_customers` 테이블은 존재하지 않는다.
+    sendNotificationTo(data.customer_id, {
+      type:  'photos_delivered',
+      title: '사진이 전달되었습니다',
+      body:  `${data.photographer_name || '작가'} · ${data.date}`,
+      link:  '/my',
+      metadata: { bookingId: data.id, deliveryUrl },
+    }).catch(() => {});
   }
 
   return { data, error };
