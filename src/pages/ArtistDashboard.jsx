@@ -318,9 +318,12 @@ const ArtistDashboard = () => {
     if (!files || !files[0]) return;
     const file = files[0];
     try {
-      const url = await uploadImage(file, 'photographers');
+      // uploadImage 는 { url, path, error } 를 반환한다.
+      const { url, error } = await uploadImage(file, 'photographers');
       if (url) {
         setProfileImages(prev => [...prev, url]);
+      } else {
+        setProfileMsg(`이미지 업로드 실패 — ${error || '알 수 없는 오류'}`);
       }
     } catch (err) {
       setProfileMsg('이미지 업로드 실패');

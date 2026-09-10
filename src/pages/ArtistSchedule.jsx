@@ -821,6 +821,39 @@ const ArtistSchedule = () => {
     loadBookings();
   }, [activeTab, artistId]);
 
+  /**
+   * 이미지를 Supabase Storage 에 올리고 공개 URL 배열을 돌려준다.
+   *
+   * 예전에는 업로드가 실패하면 조용히 URL.createObjectURL() 로 폴백했는데,
+   * blob: 주소는 새로고침하면 죽고 그대로 DB 에 저장되어 깨진 이미지가
+   * 남았다. 실패는 폴백하지 않고 사용자에게 알린다.
+   *
+   * @param {FileList|File[]} files
+   * @param {string} bucket
+   * @param {number} maxNew 이번에 추가 가능한 최대 장수
+   * @returns {Promise<string[]>} 업로드 성공한 공개 URL 목록
+   */
+  const uploadImagesToStorage = async (files, bucket, maxNew) => {
+    if (maxNew <= 0) return [];
+    const urls = [];
+    const failures = [];
+    try {
+      const { uploadImage } = await import('../lib/storage');
+      for (let i = 0; i < maxNew; i++) {
+        const { url, error } = await uploadImage(files[i], bucket);
+        if (url) urls.push(url);
+        else failures.push(error || '알 수 없는 오류');
+      }
+    } catch (e) {
+      failures.push(e?.message || '업로드 모듈 로드 실패');
+    }
+    if (failures.length) {
+      console.error(`[ArtistSchedule] ${bucket} 업로드 실패:`, failures);
+      showSaved(`⚠ 사진 ${failures.length}장 업로드 실패 — ${failures[0]}`);
+    }
+    return urls;
+  };
+
   const saveProfileData = async (updated) => {
     saveProfile('photographer', artistId, updated);
     setProfileState(updated);
@@ -2632,20 +2665,7 @@ const ArtistSchedule = () => {
       const maxNew = Math.min(files.length, 10 - currentImages.length);
       if (maxNew <= 0) return;
 
-      let newUrls = [];
-      if (dbConnected && dbPhotographerId) {
-        try {
-          const { uploadImage } = await import('../lib/storage');
-          for (let i = 0; i < maxNew; i++) {
-            const { url } = await uploadImage(files[i], 'portfolios', dbPhotographerId);
-            if (url) newUrls.push(url);
-          }
-        } catch {
-          for (let i = 0; i < maxNew; i++) newUrls.push(URL.createObjectURL(files[i]));
-        }
-      } else {
-        for (let i = 0; i < maxNew; i++) newUrls.push(URL.createObjectURL(files[i]));
-      }
+      const newUrls = await uploadImagesToStorage(files, 'portfolios', maxNew);
       if (newUrls.length) updatePf(idx, 'images', [...currentImages, ...newUrls]);
     };
     const removePfImage = (pfIdx, imgIdx) => {
@@ -3402,29 +3422,10 @@ const ArtistSchedule = () => {
       if (!files || files.length === 0) return;
       const maxNew = Math.min(files.length, maxCount - (images || []).length);
 
-      // Supabase Storage 연동 시도
-      if (dbConnected && dbPhotographerId) {
-        setUploading(true);
-        try {
-          const { uploadImage } = await import('../lib/storage');
-          const uploadedUrls = [];
-          for (let i = 0; i < maxNew; i++) {
-            const { url, error } = await uploadImage(files[i], bucket, dbPhotographerId);
-            if (url) uploadedUrls.push(url);
-          }
-          if (uploadedUrls.length) onUpload(uploadedUrls);
-        } catch (e) {
-          const urls = [];
-          for (let i = 0; i < maxNew; i++) urls.push(URL.createObjectURL(files[i]));
-          onUpload(urls);
-        }
-        setUploading(false);
-      } else {
-        // localStorage 모드 — blob URL
-        const urls = [];
-        for (let i = 0; i < maxNew; i++) urls.push(URL.createObjectURL(files[i]));
-        onUpload(urls);
-      }
+      setUploading(true);
+      const uploadedUrls = await uploadImagesToStorage(files, bucket, maxNew);
+      if (uploadedUrls.length) onUpload(uploadedUrls);
+      setUploading(false);
     };
 
     const handleDrop = (e) => {
@@ -3845,19 +3846,7 @@ const ArtistSchedule = () => {
                             // 스냅 이미지용: addPfImages 같은 로직이지만 snapImages 사용
                             const process = async () => {
                               const maxNew = Math.min(files.length, 10 - imgs.length);
-                              if (maxNew <= 0) return;
-                              let newUrls = [];
-                              if (dbConnected && dbPhotographerId) {
-                                try {
-                                  const { uploadImage } = await import('../lib/storage');
-                                  for (let i = 0; i < maxNew; i++) {
-                                    const { url } = await uploadImage(files[i], 'snap-products', dbPhotographerId);
-                                    if (url) newUrls.push(url);
-                                  }
-                                } catch { for (let i = 0; i < maxNew; i++) newUrls.push(URL.createObjectURL(files[i])); }
-                              } else {
-                                for (let i = 0; i < maxNew; i++) newUrls.push(URL.createObjectURL(files[i]));
-                              }
+                              const newUrls = await uploadImagesToStorage(files, 'snap-products', maxNew);
                               if (newUrls.length) handleSnapImageUpload(idx, newUrls);
                             };
                             process();

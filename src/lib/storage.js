@@ -66,8 +66,22 @@ export const uploadImage = async (file, bucket, userId, options = {}) => {
   const sb = await getSupabase();
   if (!sb) return { url: null, path: null, error: 'Supabase 연결 실패' };
 
+  // Storage RLS 는 첫 폴더명이 auth.uid() 와 일치할 때만 쓰기를 허용한다.
+  // 호출부가 photographerId 를 넘기거나 아예 넘기지 않는 경우가 있어
+  // 여기서 항상 로그인 사용자 id 로 교정한다.
+  let ownerId = userId;
+  try {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user?.id) {
+      return { url: null, path: null, error: '로그인 후 업로드할 수 있습니다.' };
+    }
+    ownerId = user.id;
+  } catch (e) {
+    return { url: null, path: null, error: '인증 확인 실패' };
+  }
+
   const fileName = uniqueName(file, options.prefix || '');
-  const filePath = `${userId}/${fileName}`;
+  const filePath = `${ownerId}/${fileName}`;
 
   const { data, error } = await sb.storage
     .from(bucket)

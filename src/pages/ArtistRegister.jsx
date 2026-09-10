@@ -460,8 +460,10 @@ const ArtistRegister = () => {
       const sb = await getSupabase();
       if (sb) {
         for (let file of portfolioFiles) {
-          const url = await uploadImage(file, 'portfolios');
+          // uploadImage 는 { url, path, error } 를 반환한다.
+          const { url, error } = await uploadImage(file, 'portfolios');
           if (url) urls.push(url);
+          else if (error) console.error('[ArtistRegister] 포트폴리오 업로드 실패:', error);
         }
       } else {
         // Supabase not connected - use local URLs
