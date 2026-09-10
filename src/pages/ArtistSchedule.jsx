@@ -765,6 +765,39 @@ const ArtistSchedule = () => {
 
   useEffect(() => { load(); }, [load]);
 
+  // ── 필수 항목 충족 여부에 따라 고객 노출(is_active) 자동 동기화 ──
+  // 이 로직이 없으면 작가가 모든 정보를 채워도 photographers.is_active 가
+  // false 로 남아 고객 검색 결과에 영원히 나타나지 않는다.
+  useEffect(() => {
+    if (!dbPhotographerId) return;
+
+    const locs           = profile?.locations ?? [];
+    const hasMainLoc     = locs.some(l => l.isMain);
+    const hasPortfolio   = (profile?.portfolio ?? []).some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId);
+    const hasSnapProduct = snapProducts.length > 0;
+    const pi             = profile?.paymentInfo;
+    const hasPayment     = !!(pi?.bankName && pi?.accountNumber && pi?.accountHolder);
+
+    const shouldBeActive = hasMainLoc && hasPortfolio && hasSnapProduct && hasPayment;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const sb = await getSupabase();
+        if (!sb || cancelled) return;
+        const { data: cur } = await sb.from('photographers')
+          .select('is_active').eq('id', dbPhotographerId).maybeSingle();
+        if (cancelled || !cur || cur.is_active === shouldBeActive) return;
+        await sb.from('photographers')
+          .update({ is_active: shouldBeActive, updated_at: new Date().toISOString() })
+          .eq('id', dbPhotographerId);
+      } catch (_) {
+        // 노출 동기화 실패는 사용자 작업을 막지 않는다.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [dbPhotographerId, profile, snapProducts]);
+
   // 콜라보 탭 열릴 때 로드
   useEffect(() => {
     if (activeTab === 'collabo') loadCollabo();
@@ -790,22 +823,48 @@ const ArtistSchedule = () => {
       try {
         const sb = await getSupabase();
         if (sb) {
-          // Extract primary location from locations array (first location is main)
-          const mainLocation = updated.locations?.[0];
+          // 메인 활동지 우선, 없으면 첫 번째 지역
+          const mainLocation = updated.locations?.find(l => l.isMain) || updated.locations?.[0];
 
-          await sb.from('photographers').update({
-            location_id: mainLocation?.regionId || null,
+          // 고객 목록 카드에 필요한 값들을 함께 계산한다.
+          // (예전에는 저장하지 않아 작가가 노출돼도 가격·썸네일이 비어 있었다)
+          const snaps = updated.snapProducts || snapProducts || [];
+          const prices = snaps
+            .map(p => parseInt(String(p.price).replace(/[^0-9]/g, ''), 10))
+            .filter(n => Number.isFinite(n) && n > 0);
+          const priceFrom = prices.length ? Math.min(...prices) : 0;
+
+          const portfolioItems = (updated.portfolio || []).flatMap(pf =>
+            (pf.images?.length ? pf.images : (pf.url ? [pf.url] : []))
+              .map(url => ({ url, caption: pf.title || '', regionId: pf.regionId || null }))
+          );
+          const coverImg = portfolioItems[0]?.url
+            || snaps.find(p => p.images?.length)?.images?.[0]
+            || null;
+
+          // jsonb 컬럼에는 객체를 그대로 넣는다. JSON.stringify 로 감싸면
+          // 문자열이 통째로 저장되어 읽는 쪽에서 파싱이 깨진다.
+          const payload = {
+            location_id:  mainLocation?.regionId || null,
             country_code: mainLocation?.countryCode || 'KR',
-            city: mainLocation?.city || null,
-            packages: JSON.stringify(updated.snapProducts || []),
-            props: JSON.stringify(updated.props || []),
-            dresses: JSON.stringify(updated.costumes || []),
+            city:         mainLocation?.city || null,
+            packages:     snaps,
+            props:        updated.props || [],
+            dresses:      updated.costumes || [],
+            portfolio:    portfolioItems,
+            tags:         updated.snapFilters || [],
+            price_from:   priceFrom,
             hmk_available: updated.hmkSelf ?? false,
-            updated_at: new Date().toISOString(),
-          }).eq('id', dbPhotographerId);
+            updated_at:   new Date().toISOString(),
+          };
+          if (coverImg) payload.img = coverImg;
+
+          const { error: syncErr } = await sb.from('photographers')
+            .update(payload).eq('id', dbPhotographerId);
+          if (syncErr) console.error('[ArtistSchedule] photographers sync failed:', syncErr);
         }
       } catch (e) {
-        // Silently ignore sync errors
+        console.error('[ArtistSchedule] photographers sync threw:', e);
       }
     }
     showSaved();
