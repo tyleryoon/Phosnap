@@ -477,6 +477,10 @@ const ArtistDashboard = () => {
   const totalReviews = pkgReviews.length + artReviews.length;
   const TABS = [
     { id: 'home',     label: '홈' },
+    // 예약 탭이 목록에서 빠져 있어 확정된 예약에 도달할 방법이 없었다.
+    // (탭 콘텐츠는 그대로 있었고 "전체 보기" 버튼은 대기 건이 0이면 사라진다)
+    // 확정 이후의 채팅·사진 전달이 이 탭에서만 가능하므로 다시 노출한다.
+    { id: 'bookings', label: `예약${bookings.length > 0 ? ` (${bookings.length})` : ''}` },
     { id: 'reviews',  label: `리뷰 관리${totalReviews > 0 ? ` (${totalReviews})` : ''}` },
     { id: 'profile',  label: c.profileTab },
     { id: 'insights', label: '인사이트', icon: '📊' },
