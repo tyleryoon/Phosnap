@@ -104,6 +104,7 @@ create policy "헤메 본인 삽입" on public.stylists
 drop policy if exists "벤더 본인 삽입" on public.dress_vendors;
 drop policy if exists "의상 벤더 본인 삽입" on public.dress_vendors;
 drop policy if exists "dress_vendors_owner_insert" on public.dress_vendors;
+drop policy if exists "의상업체 본인 삽입" on public.dress_vendors;
 create policy "벤더 본인 삽입" on public.dress_vendors
   for insert with check (
     auth.uid() = user_id
@@ -117,6 +118,7 @@ create policy "벤더 본인 삽입" on public.dress_vendors
 --   전용 역할이 따로 없으므로 같은 범위로 맞춘다.
 drop policy if exists "장소벤더 본인 삽입" on public.venue_vendors;
 drop policy if exists "venue_vendors_owner_insert" on public.venue_vendors;
+drop policy if exists "촬영장소업체 본인 삽입" on public.venue_vendors;
 create policy "장소벤더 본인 삽입" on public.venue_vendors
   for insert with check (
     auth.uid() = user_id
