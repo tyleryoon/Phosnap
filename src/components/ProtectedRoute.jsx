@@ -70,12 +70,18 @@ const ROLE_LABELS = {
 };
 
 const ProtectedRoute = ({ children, onAuthOpen, requiredRole }) => {
-  const { isLoggedIn, userRole, loading, roles, switchRole, roleStatuses } = useAuth();
+  const { isLoggedIn, userRole, loading, roles, switchRole, roleStatuses, activeRole } = useAuth();
   const { lang } = useLanguage();
   const m = MSG[lang] || MSG.en;
 
-  // 세션 확인 중
-  if (loading) {
+  // 세션 확인 중 — 또는 로그인은 됐는데 역할을 아직 못 읽어온 동안.
+  //
+  // userRole 이 더 이상 sessionStorage 로 떨어지지 않으므로, 역할 로딩이
+  // 끝나기 전에는 전부 'customer' 로 보인다. 그 상태로 판정하면 정상
+  // 공급자에게도 "권한 없음" 이 한 번 번쩍인다. activeRole 이 채워질
+  // 때까지 기다린다. (loadRoles 는 실패해도 'customer' 를 넣으므로
+  // 무한 대기하지 않는다)
+  if (loading || (isLoggedIn && !activeRole)) {
     return (
       <div style={{ paddingTop: 160, textAlign: 'center', minHeight: '60vh' }}>
         <div style={{ width: 24, height: 24, border: '2px solid var(--gold)', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />
@@ -130,7 +136,21 @@ const ProtectedRoute = ({ children, onAuthOpen, requiredRole }) => {
 
   // 승인 상태 체크 — pending이면 대기 안내, rejected면 반려 안내
   if (requiredRole && requiredRole !== 'customer') {
+    // roles 와 roleStatuses 는 이제 같은 조회(user_roles)에서 나온다.
+    // 역할 목록에 있으면 상태도 반드시 있다. 그래도 관리자 우회(위 109행)로
+    // 내려온 경우엔 없을 수 있으므로 관리자만 예외로 통과시킨다.
     const status = roleStatuses?.[requiredRole] || roleStatuses?.[roleAliases[requiredRole]];
+    if (!status && userRole !== 'admin') {
+      const roleLabel = ROLE_LABELS[lang]?.[requiredRole] ?? requiredRole;
+      return (
+        <div className="page-enter" style={{ paddingTop: 160, textAlign: 'center', minHeight: '60vh' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '0.1em', marginBottom: 12, color: 'var(--text)' }}>
+            {m.noAccess}
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--muted)' }}>{m.noAccessSub.replace('{role}', roleLabel)}</p>
+        </div>
+      );
+    }
     if (status === 'pending') {
       const roleLabel = ROLE_LABELS[lang]?.[requiredRole] ?? requiredRole;
       return (

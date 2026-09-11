@@ -440,6 +440,76 @@ babel 스코프 분석으로 정의되지 않은 식별자를 찾는다.
 실제로 크래시 2건을 잡았다 — 그중 하나는 **장소 벤더가 등록되는 순간
 예약 STEP 05 전체가 죽는** 상태였다.
 
+### 5-14. 권한 출처는 `user_roles` 하나뿐 (2026-09-11)
+
+**클라이언트가 고칠 수 있는 값을 권한 판단에 쓰지 않는다.**
+
+금지 목록. 전부 브라우저에서 한 줄로 바꿀 수 있다.
+
+| 쓰면 안 되는 것 | 왜 |
+|---|---|
+| `localStorage['phosnap_roles_<uid>']` | 콘솔에서 직접 편집 가능 |
+| `sessionStorage['phosnap_active_role']` | 위와 같음 + 계정 전환 시 잔여값 |
+| `user_metadata.role` | `auth.updateUser({ data: { role: 'admin' } })` |
+| `profiles.role` | 본인 수정 정책이 열려 있다 |
+
+`sessionStorage['phosnap_active_role']` 은 **어느 역할을 보고 있나**(표시용)로만
+쓴다. 그것도 `userRoles.includes()` 를 통과한 뒤에만 신뢰한다.
+
+#### 실제로 어떻게 뚫렸나
+
+`getUserRolesWithFallback` 이 localStorage 역할을 DB 결과에 병합했다.
+여기에 걸린 게 세 겹이었다.
+
+```
+localStorage 에 'artist' 주입
+  → roles 배열 오염
+  → ProtectedRoute 역할 검사 통과 (자동 역할 전환까지 해 줌)
+  → 승인대기 검사도 통과 ★
+  → RLS INSERT 통과 (auth.uid() = user_id 만 봄)
+  → photographers 레코드 생성
+```
+
+★ 가 제일 교묘하다. 역할 목록은 **병합본**인데 `roleStatuses` 는 **DB 전용**이라,
+주입된 역할은 `status === undefined` 가 되고 `pending` 도 `rejected` 도 아니라서
+관리자 승인 절차를 통째로 건너뛴다.
+
+결과: `hnm@gmail.com`(헤메), `yoonstudio@gmail.com`(의상벤더) 계정에
+artist 역할 없이 `photographers` 레코드가 생겼다.
+`is_active = false` 라 고객에게는 안 보였다 — **그래서 화면으로는 못 찾는다.**
+`VERIFY.sql` 의 `작가 역할 없이 작가 레코드 보유` 항목이 이걸 잡는다.
+
+#### 고친 내용
+
+| 파일 | 변경 |
+|---|---|
+| `supabase.js` `getUserRoles` | fallback 전부 제거. DB만. 실패하면 `customer`(fail closed) |
+| `supabase.js` `getUserRolesWithFallback` | localStorage 병합 제거 (이름만 유지 — 호출부가 많다) |
+| `supabase.js` `addUserRole` | localStorage 대체 제거. 실패를 `error` 로 반환 |
+| `supabase.js` `ensureArtistRecord` | 생성 전 `canOwnProviderRecord()` 확인 |
+| `AuthContext.jsx` | `userRole = activeRole ?? 'customer'` — 저장소로 안 떨어진다 |
+| `ProtectedRoute.jsx` | `activeRole` 채워질 때까지 대기 + `status` 없으면 거부 |
+| `FIX_23_ROLE_GUARD.sql` | INSERT 정책에 `has_role()` 추가 ← **진짜 방어선** |
+| `FIX_24_CLEAN_ORPHAN_PROVIDERS.sql` | 이미 생긴 고아 레코드 정리 |
+
+#### 역할 가드는 `active` 가 아니라 "행이 있고 반려 아님"
+
+가입 절차가 `addUserRole`(→ `pending`) **직후에** 공개 레코드를 만든다.
+여기서 `active` 를 요구하면 **정상 가입이 막힌다.**
+승인 전 노출은 레코드의 `is_active = false` 가 따로 막는다.
+
+#### ⚠️ RLS 정책은 OR 로 합쳐진다
+
+같은 테이블·같은 명령에 정책이 여러 개면 Postgres 는 **OR** 로 평가한다.
+느슨한 옛 정책을 하나라도 남기면 새 정책은 **아무 의미가 없다.**
+이 프로젝트는 영문 이름(`dress_vendors_owner_insert`)과 한글 이름(`벤더 본인 삽입`)이
+마이그레이션마다 섞여 있으니, 정책을 조일 때는 반드시 이름을 전부 확인한다.
+
+```sql
+select tablename, policyname, with_check from pg_policies
+ where schemaname='public' and cmd='INSERT' and tablename='photographers';
+```
+
 ---
 
 ## 6. 과거에 발목 잡았던 함정들

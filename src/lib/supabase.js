@@ -244,23 +244,36 @@ export const onAuthChange = async (callback) => {
 
 /**
  * 유저의 등록된 역할 목록 가져오기
- * user_roles 테이블이 없거나 오류 시 user_metadata.role fallback
+ *
+ * ⚠ user_roles 테이블이 **유일한** 권한 출처다. 다른 곳을 보지 않는다.
+ *
+ *   예전에는 테이블이 비어 있으면 user_metadata.role → profiles.role 순으로
+ *   대체했다. 둘 다 클라이언트가 직접 고칠 수 있는 값이다.
+ *   user_metadata 는 auth.updateUser({ data: { role: 'admin' } }) 한 줄이면
+ *   바뀌고, 그렇게 들어온 역할에 status: 'active' 까지 붙여 줬으므로
+ *   관리자 승인 절차가 통째로 건너뛰어졌다.
+ *
+ *   역할을 못 찾으면 고객으로 떨어뜨린다(fail closed).
+ *   공급자인데 고객으로 보인다면 user_roles 에 행이 없는 것이므로
+ *   화면을 열어 주는 게 아니라 그 행을 만들어야 한다.
  */
 export const getUserRoles = async (userId) => {
   const sb = await getSupabase();
-  if (!sb) return [];
+  if (!sb || !userId) return [];
   try {
-    const { data, error } = await sb.from('user_roles').select('role, status, created_at').eq('user_id', userId).order('created_at');
-    if (error || !data || data.length === 0) {
-      // fallback: user_metadata.role 또는 profiles.role 사용
-      const { data: { user } } = await sb.auth.getUser();
-      const metaRole = user?.user_metadata?.role;
-      if (metaRole) return [{ role: metaRole, status: 'active' }];
-      const { data: profile } = await sb.from('profiles').select('role').eq('id', userId).single();
-      return profile?.role ? [{ role: profile.role, status: 'active' }] : [{ role: 'customer', status: 'active' }];
+    const { data, error } = await sb
+      .from('user_roles')
+      .select('role, status, created_at')
+      .eq('user_id', userId)
+      .order('created_at');
+    if (error) {
+      console.error('[getUserRoles] 역할 조회 실패 — 고객으로 처리:', error);
+      return [{ role: 'customer', status: 'active' }];
     }
+    if (!data || data.length === 0) return [{ role: 'customer', status: 'active' }];
     return data;
-  } catch {
+  } catch (e) {
+    console.error('[getUserRoles] 역할 조회 예외 — 고객으로 처리:', e);
     return [{ role: 'customer', status: 'active' }];
   }
 };
@@ -275,52 +288,66 @@ export const addUserRole = async (userId, role) => {
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
   // customer는 승인 불필요 → active, 나머지는 관리자 승인 필요 → pending
   const status = role === 'customer' ? 'active' : 'pending';
-  try {
-    // user_roles 테이블에 추가 시도
-    const { error } = await sb.from('user_roles').upsert(
-      { user_id: userId, role, status },
-      { onConflict: 'user_id,role' }
-    );
-    if (error) {
-      // 테이블 없으면 localStorage fallback
-      const key = `phosnap_roles_${userId}`;
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      if (!existing.includes(role)) {
-        existing.push(role);
-        localStorage.setItem(key, JSON.stringify(existing));
-      }
-    }
-    return { error: null };
-  } catch (err) {
-    // localStorage fallback
-    const key = `phosnap_roles_${userId}`;
-    const existing = JSON.parse(localStorage.getItem(key) || '[]');
-    if (!existing.includes(role)) {
-      existing.push(role);
-      localStorage.setItem(key, JSON.stringify(existing));
-    }
-    return { error: null };
-  }
+
+  // 실패를 삼키지 않는다.
+  //   예전에는 여기서 DB 쓰기가 실패하면 localStorage 에 역할을 적고
+  //   error: null 을 돌려줬다. 호출부는 성공으로 알고 넘어가는데
+  //   실제로는 역할이 등록되지 않은 상태였다.
+  //   그 localStorage 값이 나중에 권한 검사를 통과시키는 열쇠가 됐다.
+  const { error } = await sb.from('user_roles').upsert(
+    { user_id: userId, role, status },
+    { onConflict: 'user_id,role' }
+  );
+  if (error) console.error('[addUserRole] 역할 등록 실패:', role, error);
+  return { error };
 };
 
 /**
- * 유저의 역할 목록 가져오기 (localStorage fallback 포함)
+ * 유저의 역할 이름 배열
+ *
+ * ⚠ 이름은 남겨 두지만 더 이상 fallback 하지 않는다. getUserRoles 와 같은
+ *   출처(user_roles)만 본다. 호출부가 많아 시그니처만 유지한 것이다.
+ *
+ *   예전에는 localStorage 의 `phosnap_roles_<uid>` 를 DB 결과에 **병합**했다.
+ *   그래서 브라우저 콘솔에서 한 줄이면 아무 역할이나 얻을 수 있었고,
+ *   더 나쁘게는 그렇게 주입된 역할이 roleStatuses(=DB 전용)에는 없어서
+ *   ProtectedRoute 의 승인대기(pending) 검사까지 통과했다.
+ *   실제로 헤메·의상벤더 계정이 이 경로로 작가 페이지에 들어가
+ *   photographers 레코드를 만들었다.
  */
 export const getUserRolesWithFallback = async (userId) => {
-  // 1. Supabase user_roles 먼저 시도
   const roles = await getUserRoles(userId);
-  if (roles.length > 0) {
-    const roleNames = roles.map(r => r.role);
-    // localStorage에 있는 역할도 병합
-    const key = `phosnap_roles_${userId}`;
-    const localRoles = JSON.parse(localStorage.getItem(key) || '[]');
-    const merged = [...new Set([...roleNames, ...localRoles])];
-    return merged;
-  }
-  // 2. localStorage fallback
-  const key = `phosnap_roles_${userId}`;
-  const localRoles = JSON.parse(localStorage.getItem(key) || '[]');
-  return localRoles.length > 0 ? localRoles : ['customer'];
+  const names = roles.map(r => r.role).filter(Boolean);
+  return names.length > 0 ? [...new Set(names)] : ['customer'];
+};
+
+/**
+ * 특정 역할의 승인 상태를 돌려준다. 없으면 null.
+ * 'vendor' 와 'dress_vendor' 는 같은 것으로 본다.
+ */
+export const getRoleStatus = async (userId, role) => {
+  const roles = await getUserRoles(userId);
+  const aliases = (role === 'vendor' || role === 'dress_vendor')
+    ? ['vendor', 'dress_vendor']
+    : [role];
+  const hit = roles.find(r => aliases.includes(r.role));
+  return hit ? (hit.status || 'active') : null;
+};
+
+/**
+ * 공개 레코드(photographers/stylists/…)를 만들어도 되는 역할인가.
+ *
+ * ⚠ 'active' 가 아니라 "행이 존재하고 반려되지 않았다" 를 본다.
+ *   가입 절차가 addUserRole(→ status 'pending') 직후에 공개 레코드를
+ *   만들기 때문이다. 여기서 active 를 요구하면 정상 가입이 막힌다.
+ *   승인 전 노출은 레코드의 is_active=false 가 따로 막는다.
+ *
+ *   막으려는 건 "역할 행이 아예 없는 사람" 이다. 문제가 됐던
+ *   헤메·의상벤더 계정에는 artist 행이 없었다.
+ */
+export const canOwnProviderRecord = async (userId, role) => {
+  const status = await getRoleStatus(userId, role);
+  return !!status && status !== 'rejected';
 };
 
 /**
@@ -452,6 +479,27 @@ export const ensureArtistRecord = async (userId, info = {}) => {
     .maybeSingle();
   if (findErr) return { data: null, error: findErr, kind };
   if (existing) return { data: existing, error: null, kind };
+
+  // ── 여기부터는 새로 만드는 경로다. 역할을 반드시 확인한다. ──
+  //
+  // 이 함수는 대시보드 진입 시에도 불린다("구버전 가입자 구제"). 그래서
+  // 화면 접근만 뚫리면 조용히 공개 레코드가 생겼다.
+  // 실제로 헤메(stylist) 계정과 의상벤더(dress_vendor) 계정에
+  // 빈 photographers 레코드가 만들어져 있었다. is_active=false 라
+  // 고객 눈에는 안 띄었을 뿐, 누군가 켜면 헤메가 작가 목록에 뜬다.
+  //
+  // 화면 가드(ProtectedRoute)는 UI 사정으로 언제든 느슨해질 수 있으니
+  // 레코드를 만드는 쪽에서도 한 번 더 본다.
+  const neededRole = isHmk ? 'stylist' : 'artist';
+  const allowed = await canOwnProviderRecord(userId, neededRole);
+  if (!allowed) {
+    console.warn(`[ensureArtistRecord] ${neededRole} 역할이 없어 ${table} 레코드를 만들지 않는다.`, userId);
+    return {
+      data: null,
+      error: { message: `${neededRole} 역할이 없어 공개 레코드를 만들 수 없습니다.`, code: 'ROLE_REQUIRED' },
+      kind,
+    };
+  }
 
   const row = isHmk
     ? {

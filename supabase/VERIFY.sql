@@ -104,6 +104,49 @@ integrity as (
   select '1.정합성', '판매중 의상에 재고 정보 없음', count(*), string_agg(d.name_ko, ', ')
     from public.dress_items d
    where d.is_available and (d.size_stock is null or d.size_stock = '{}'::jsonb)
+
+  -- ── 역할 ↔ 공급자 레코드 불일치 ─────────────────────────────────────
+  --
+  -- 2026-09-11 에 실제로 터진 문제다.
+  -- 헤메·의상벤더 계정에 artist 역할 없이 photographers 레코드가 생겼다.
+  -- 화면 권한 검사가 localStorage 값을 믿어서 뚫렸고, RLS 는 역할을
+  -- 보지 않아서 그대로 통과했다(FIX_23·FIX_24 에서 수정).
+  --
+  -- is_active=false 라 고객에게는 안 보였다. 즉 **화면으로는 절대 못 찾는다.**
+  -- 이런 게 쿼리로 잡아야 하는 종류다.
+  union all
+  select '1.정합성', '작가 역할 없이 작가 레코드 보유', count(*),
+         string_agg(coalesce(p.name_ko, p.name), ', ')
+    from public.photographers p
+   where not exists (select 1 from public.user_roles r
+                      where r.user_id = p.user_id and r.role = 'artist')
+
+  union all
+  select '1.정합성', '헤메 역할 없이 헤메 레코드 보유', count(*),
+         string_agg(s.name_ko, ', ')
+    from public.stylists s
+   where not exists (select 1 from public.user_roles r
+                      where r.user_id = s.user_id and r.role = 'stylist')
+
+  union all
+  -- 헤메가 의상 대여를 겸하는 것은 정상이므로 stylist 도 인정한다.
+  select '1.정합성', '벤더 역할 없이 벤더 레코드 보유', count(*),
+         string_agg(coalesce(v.name_ko, v.name), ', ')
+    from public.dress_vendors v
+   where not exists (select 1 from public.user_roles r
+                      where r.user_id = v.user_id
+                        and r.role in ('dress_vendor','vendor','stylist'))
+
+  union all
+  -- INSERT 정책에 역할 검사가 빠진 테이블이 있는가.
+  -- 정책은 OR 로 합쳐지므로 느슨한 게 하나만 남아도 전체가 뚫린다.
+  select '1.정합성', 'INSERT 정책에 역할 검사 누락', count(*),
+         string_agg(tablename || '.' || policyname, ', ')
+    from pg_policies
+   where schemaname = 'public'
+     and cmd = 'INSERT'
+     and tablename in ('photographers','stylists','dress_vendors','venue_vendors')
+     and coalesce(with_check, '') not ilike '%has_role%'
 ),
 
 -- ── 운영 ──────────────────────────────────────────────────────────────

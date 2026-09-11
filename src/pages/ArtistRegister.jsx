@@ -489,7 +489,13 @@ const ArtistRegister = () => {
     const signupRole = artistType === 'hmk' ? 'stylist' : 'artist';
 
     // 역할 추가
-    await addUserRole(userId, signupRole);
+    // 이 단계가 실패하면 뒤의 공개 레코드 생성이 역할 가드에 막힌다.
+    // 예전에는 실패해도 조용히 넘어가서 "가입은 됐는데 아무 데도 못 들어가는"
+    // 계정이 만들어졌다. 여기서 끊는다.
+    const { error: roleErr } = await addUserRole(userId, signupRole);
+    if (roleErr) {
+      throw new Error(`역할 등록 실패: ${roleErr.message}`);
+    }
 
     // Generate referral code for new artist
     const myCode = await saveReferralCode(userId, signupRole);

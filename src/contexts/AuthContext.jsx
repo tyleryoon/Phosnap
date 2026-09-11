@@ -123,9 +123,18 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.removeItem('phosnap_active_role');
   };
 
-  // 편의 getter — activeRole 기반 (sessionStorage를 먼저 확인하여 race condition 방지)
-  const storedRole = typeof window !== 'undefined' ? sessionStorage.getItem('phosnap_active_role') : null;
-  const userRole = activeRole ?? storedRole ?? user?.user_metadata?.role ?? 'customer';
+  // 편의 getter — activeRole 기반
+  //
+  // ⚠ sessionStorage / user_metadata 로 내려가지 않는다.
+  //   예전에는 activeRole 이 아직 null 인 동안(loadRoles 진행 중)
+  //   sessionStorage 값을 그대로 썼다. 그 값은 검증을 거치지 않으므로
+  //   이전 계정의 잔여값이나 손으로 넣은 값이 곧바로 권한이 됐다.
+  //   loadRoles 는 sessionStorage 값을 쓸 때 userRoles.includes() 로
+  //   확인하는데, 이 getter 가 그 확인을 우회하고 있었다.
+  //
+  //   역할이 아직 안 정해졌으면 가장 낮은 권한으로 둔다. 로딩 중인지는
+  //   roleLoading 으로 구분하므로 화면이 잘못 튕기지 않는다.
+  const userRole = activeRole ?? 'customer';
   // ⚠ Privacy: full_name = 활동명(작가) / 업체명(벤더) / 입력이름(고객). 실명(real_name)은 절대 노출 안 함.
   const userName = user?.user_metadata?.full_name ?? user?.email ?? '';
   const isArtist = userRole === 'artist';
