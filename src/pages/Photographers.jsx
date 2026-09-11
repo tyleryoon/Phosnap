@@ -295,7 +295,7 @@ const Photographers = ({ onAuthOpen }) => {
   // Reset displayed count when filters change
   useEffect(() => {
     setDisplayedCount(PHOTOGRAPHERS_PER_PAGE);
-  }, [selectedCountry, selectedCity, activeFilter, activeLanguage, minPrice, maxPrice, sortBy, searchQuery, activeSnapFilters]);
+  }, [selectedCountry, selectedCity, activeFilter, activeArtistType, activeLanguage, minPrice, maxPrice, sortBy, searchQuery, activeSnapFilters]);
 
   // ─── Fetch photographers from Supabase with current filters ──────────────
   useEffect(() => {
@@ -323,7 +323,9 @@ const Photographers = ({ onAuthOpen }) => {
       setDbLoading(false);
     };
     fetchWithFilters();
-  }, [selectedCountry, selectedCity, activeFilter, activeLanguage, minPrice, maxPrice, sortBy, searchQuery]);
+    // activeArtistType 이 빠져 있어 유형을 바꿔도 재조회가 일어나지 않았다.
+    // 필터를 눌러도 결과가 그대로라 아무 일도 안 하는 것처럼 보였다.
+  }, [selectedCountry, selectedCity, activeFilter, activeArtistType, activeLanguage, minPrice, maxPrice, sortBy, searchQuery]);
 
   const resetAllFilters = () => {
     setActiveFilter('all');
@@ -423,6 +425,16 @@ const Photographers = ({ onAuthOpen }) => {
     // Genre filter
     const tagMatch = activeFilter === 'all' || p.tags.includes(activeFilter);
 
+    // 작가 유형. 서버 조회에서도 거르지만 클라이언트에서 한 번 더 본다.
+    // 조회 파라미터가 바뀌어도 재조회가 늦으면 이전 결과가 그대로 남는데,
+    // 그러면 필터를 눌러도 아무 변화가 없는 것처럼 보인다.
+    // '사진+영상' 작가는 사진·영상 어느 쪽으로 찾아도 나와야 한다.
+    const typeMatch =
+      activeArtistType === 'all' ||
+      p.artistType === activeArtistType ||
+      (p.artistType === 'both' &&
+       (activeArtistType === 'photographer' || activeArtistType === 'videographer'));
+
     // Language filter
     const langMatch = activeLanguage === 'all' || p.languages.includes(activeLanguage);
 
@@ -483,7 +495,7 @@ const Photographers = ({ onAuthOpen }) => {
         (p.tags || []).some(tag => tag.toLowerCase().includes(q) || (t(`tags.${tag}`) || '').toLowerCase().includes(q));
     }
 
-    return tagMatch && langMatch && locMatch && countryMatch && cityMatch && priceMatch && searchMatch && snapMatch;
+    return tagMatch && typeMatch && langMatch && locMatch && countryMatch && cityMatch && priceMatch && searchMatch && snapMatch;
   });
 
   // Apply sorting
