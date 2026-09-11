@@ -26,6 +26,31 @@ const ALL_SLOTS = [
 
 const DOW = ['일','월','화','수','목','금','토'];
 
+/**
+ * 슬롯 목록을 "09:00~18:00" 형태로 요약한다.
+ *
+ * 슬롯이 연속이 아닐 수 있다는 점이 중요하다.
+ * 예: 10,11,13,14,15,16,17 은 12시가 빠져 있는데(점심)
+ * 그냥 "10:00~17:00" 으로 쓰면 12시도 되는 것처럼 보인다.
+ * 중간에 빈 시간이 있으면 * 를 붙인다.
+ */
+const summarizeSlots = (slots = []) => {
+  if (!slots.length) return { text: '', gap: false };
+  const sorted = [...slots].sort();
+  const first = sorted[0];
+  const last  = sorted[sorted.length - 1];
+  if (sorted.length === 1) return { text: first, gap: false };
+
+  // 정시 슬롯만 있을 때는 개수로 연속 여부를 판정할 수 있다
+  const allOnTheHour = sorted.every(x => /^\d{2}:00$/.test(x));
+  let gap = false;
+  if (allOnTheHour) {
+    const h = (x) => parseInt(x.slice(0, 2), 10);
+    gap = (h(last) - h(first) + 1) !== sorted.length;
+  }
+  return { text: `${first}~${last}`, gap };
+};
+
 const i18n = {
   ko: {
     title: '운영 일정',
@@ -39,7 +64,8 @@ const i18n = {
     open: '영업', closed: '휴무',
     legendOpen: '영업', legendClosed: '휴무',
     legendWeekly: '정기 휴무', legendDefault: '기본 운영시간 적용',
-    slotUnit: '타임', dayOffShort: '휴무', weeklyShort: '정기',
+    dayOffShort: '휴무', weeklyShort: '정기',
+    gapNote: '* 표시는 중간에 쉬는 시간이 있다는 뜻입니다',
     hint: '날짜를 누르면 영업/휴무가 바뀝니다',
     bulkDone: (n) => `${n}일 설정 완료`,
     skipped: '예약이 있어 휴무로 바꾸지 못한 날',
@@ -59,7 +85,8 @@ const i18n = {
     open: 'Open', closed: 'Closed',
     legendOpen: 'Open', legendClosed: 'Closed',
     legendWeekly: 'Weekly day off', legendDefault: 'Default hours apply',
-    slotUnit: ' slots', dayOffShort: 'Closed', weeklyShort: 'Weekly',
+    dayOffShort: 'Closed', weeklyShort: 'Weekly',
+    gapNote: '* means there is a break in the middle',
     hint: 'Click a date to toggle open/closed',
     bulkDone: (n) => `${n} day(s) updated`,
     skipped: 'Kept open — bookings exist',
@@ -299,7 +326,7 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
             // 예전에는 row 유무만 봐서, 정기 휴무로 지정한 요일이
             // 달력에 아무 표시 없이 '미설정'으로 보였다.
             const st = resolveDayState(row, defaults, new Date(year, month - 1, d));
-            const slotCount = resolveProviderSlots(row, defaults, dateStr).length;
+            const slots = resolveProviderSlots(row, defaults, dateStr);
 
             const style = {
               open:      { bg: 'rgba(72,187,120,0.14)', bd: 'rgba(72,187,120,0.55)', fg: '#48bb78' },
@@ -308,10 +335,11 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
               weeklyOff: { bg: 'rgba(232,93,93,0.06)',  bd: 'rgba(232,93,93,0.28)',  fg: 'rgba(232,93,93,0.75)' },
             }[st];
 
+            const summary = summarizeSlots(slots);
             const caption =
               st === 'closed'    ? t.dayOffShort
             : st === 'weeklyOff' ? t.weeklyShort
-            : `${slotCount}${t.slotUnit}`;
+            : summary.text + (summary.gap ? '*' : '');
 
             return (
               <button key={d} type="button" onClick={() => toggleDay(d)}
@@ -319,7 +347,7 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
                   st === 'closed' ? t.legendClosed
                   : st === 'weeklyOff' ? t.legendWeekly
                   : st === 'default' ? t.legendDefault
-                  : t.legendOpen}`}
+                  : t.legendOpen}${slots.length ? `\n${slots.join(', ')}` : ''}`}
                 style={{
                   aspectRatio: '1', cursor: 'pointer', padding: 4,
                   background: style.bg,
@@ -329,7 +357,9 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
                   alignItems: 'center', justifyContent: 'center', gap: 2,
                 }}>
                 <span style={{ fontSize: 13 }}>{d}</span>
-                <span style={{ fontSize: 9, color: style.fg, lineHeight: 1 }}>{caption}</span>
+                <span style={{ fontSize: 8.5, color: style.fg, lineHeight: 1, whiteSpace: 'nowrap' }}>
+                  {caption}
+                </span>
               </button>
             );
           })}
@@ -345,8 +375,8 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
         </div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
           {lang === 'ko'
-            ? `칸 아래 숫자는 그날 예약을 받을 수 있는 시간대 개수입니다. 설정하지 않은 날은 기본 운영시간이 그대로 적용됩니다.`
-            : 'The number shows how many time slots are bookable. Days you never touch fall back to your default hours.'}
+            ? `칸 아래는 그날 예약을 받는 시간대입니다. ${t.gapNote} 설정하지 않은 날은 기본 운영시간이 그대로 적용됩니다.`
+            : `Each cell shows the bookable hours. ${t.gapNote}. Days you never touch fall back to your default hours.`}
         </div>
       </section>
     </div>
