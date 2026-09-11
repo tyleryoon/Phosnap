@@ -138,7 +138,7 @@ supabase/                    # SQL 마이그레이션 모음
 | `MyBookings.jsx` | `/my-bookings` | 고객 예약 목록 + 채팅 + 리뷰 |
 | `VendorDashboard.jsx` | `/vendor/dashboard` | 벤더 (~4400줄) |
 | `StylistDashboard.jsx` | `/stylist/dashboard` | 헤메 (~1600줄) |
-| `AdminDashboard.jsx` | `/admin` | 관리자 (아직 mock 기반) |
+| `AdminDashboard.jsx` | `/admin` | 관리자 — 개요·예약·**승인**·회원. 승인 탭은 `RoleApprovals.jsx` |
 
 ### 라우트 전체
 ```
