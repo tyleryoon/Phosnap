@@ -1,6 +1,6 @@
 # PhoSnap 프로젝트 인수인계 문서
 
-> **백업 작성일: 2026년 9월 11일** (2차 검증 반영)
+> **백업 작성일: 2026년 9월 12일** (권한 정리 · 승인/문의 시스템 반영)
 > 이 문서 하나만 읽으면 다른 AI 플랫폼(ChatGPT, Gemini, Cursor 등)에서도
 > 맥락 손실 없이 작업을 이어갈 수 있도록 작성했다.
 > 프로젝트를 처음 보는 사람/AI를 독자로 가정한다.
@@ -149,7 +149,7 @@ supabase/                    # SQL 마이그레이션 모음
 /my  /my-bookings
 /stylist/dashboard  /stylist/:id
 /vendors  /vendor/register  /vendor/dashboard
-/tour/:instanceId  /account/settings  /admin  *
+/tour/:instanceId  /account/settings  /admin  /support  *
 ```
 
 ---
@@ -201,6 +201,11 @@ supabase/                    # SQL 마이그레이션 모음
 
 **리뷰**
 `reviews`, `package_reviews`, `photographer_reviews`, `review_replies`, `vendor_reviews`
+
+**문의**
+| 테이블 | 핵심 컬럼 |
+|---|---|
+| `inquiries` | `user_id`, `category`(8종), `subject`, `body`, `role_at_time`, `status`(open/answered/closed), `answer`, `answered_at`, `answered_by` |
 
 **기타**: `waitlist`
 
@@ -436,9 +441,30 @@ npm 레지스트리가 막혀 eslint 를 쓸 수 없다. 대신 이걸 돌린다
 node scripts/check-undefined.mjs     # → 미정의 참조 0건
 ```
 
-babel 스코프 분석으로 정의되지 않은 식별자를 찾는다.
-실제로 크래시 2건을 잡았다 — 그중 하나는 **장소 벤더가 등록되는 순간
-예약 STEP 05 전체가 죽는** 상태였다.
+세 가지를 본다.
+
+| 검사 | 잡는 것 |
+|---|---|
+| 미정의 참조 | babel 스코프 분석. 크래시 2건을 잡았다 — 그중 하나는 **장소 벤더가 등록되는 순간 예약 STEP 05 전체가 죽는** 상태였다 |
+| **파싱 실패** | 문법 오류·중복 선언 |
+| **중복 선언** | 최상위 `export const` 중복 |
+
+#### ⚠ 예전에는 검사기가 실패를 삼켰다 (2026-09-11 수정)
+
+```js
+try { ast = parse(code, ...); } catch { continue; }   // ← 조용히 건너뜀
+```
+
+파싱 실패한 파일을 건너뛰고 "미정의 참조 0건" 을 출력했다.
+`supabase.js` 에 `getPendingRoleRequests` 를 중복 선언했는데 그대로 통과해서
+**Vercel 빌드가 깨졌다.** 푸시는 되는데 번들이 안 바뀌어 한참 헤맸다.
+
+지금은 파일명과 메시지를 출력하고 `exit code 1` 을 낸다.
+결함을 일부러 주입해 두 경로 모두 잡히는지 확인했다.
+
+실제로 값을 했다. `ArtistSchedule` 에 H&M 메뉴 CRUD 를 새로 만들려다
+`Identifier 'addHmkMenu' has already been declared` 로 즉시 막혔다.
+이미 있는 UI 를 못 보고 중복 구현을 밀어넣을 뻔했다.
 
 ### 5-14. 권한 출처는 `user_roles` 하나뿐 (2026-09-11)
 
@@ -587,6 +613,82 @@ FIX_25 는 이 순서를 강제하고, 관리자가 0명이면 `raise exception`
 그대로 신청자 메일 본문이 된다. 사유 없이 반려하면 신청자는 뭘 고쳐야 할지
 알 수 없다.
 
+### 5-16. 자체 헤메·자체 의상 — 데이터가 어디 있어야 하나 (2026-09-12)
+
+작가가 "헤어메이크업도 직접 한다" / "의상도 자체 보유한다" 를 켤 수 있다.
+**그 메뉴는 `packages` 에 있어야 한다.**
+
+| 무엇 | 어디 | `packages.type` |
+|---|---|---|
+| 촬영 상품 | packages | `snap`, `tour` |
+| 자체 의상 | packages | `costume` |
+| **자체 H&M** | packages | **`hmk`** |
+| 소품 | packages | `prop` |
+
+#### 왜 `profiles` 에 두면 안 되나
+
+```sql
+create policy "본인 프로필 조회" on public.profiles
+  for select using (auth.uid() = id);
+```
+
+`profiles` 는 본인(과 관리자)만 읽는다. 고객은 남의 프로필을 못 읽는다.
+
+가입 폼이 H&M 메뉴를 `profiles.hmk_options` 에 저장하고 있었는데,
+**그래서 그 값을 읽는 코드가 한 줄도 없었다.** 빠뜨린 게 아니라 불가능했다.
+"자체 H&M 있음" 으로 가입한 작가의 고객은 그 작가 메뉴 대신
+같은 지역 **다른** 헤메 목록을 봤다. (FIX_29 에서 `packages` 로 이관)
+
+의상은 처음부터 `packages(type='costume')` 라 잘 동작했다.
+같은 문제는 같은 방법으로 푼다.
+
+#### ⚠ `hmk_available` 과 `hmk_self` 는 다른 컬럼이다
+
+`photographers` 에 둘 다 있다.
+
+| 컬럼 | 누가 쓰나 |
+|---|---|
+| `hmk_self` | **정본.** `toPhotographerCard`, 예약 STEP 03, FIX_29, VERIFY_COMBO |
+| `hmk_available` | 레거시. 읽는 코드가 없다 |
+
+ArtistSchedule 이 `hmk_available` 에만 쓰고 있어서, 작가가 대시보드에서
+자체 H&M 을 켜도 고객 화면은 영영 바뀌지 않았다.
+게다가 읽는 값도 틀렸다 — 토글은 `profile.hmk.selfAvailable` 에 저장되는데
+동기화 코드는 존재하지 않는 `updated.hmkSelf` 를 봤다. 늘 `false` 였다.
+지금은 두 컬럼 다 `profile.hmk.selfAvailable` 에서 채운다.
+
+#### ⚠ localStorage 기반 프로필이 DB 를 지울 수 있다
+
+`profile.hmk.menus` 는 localStorage 에서 온다. 다른 기기에서 열면 비어 있고,
+그 상태로 저장하면 `replacePackages(id, 'hmk', [])` 가 돌아
+**DB 의 hmk 행이 삭제된다.**
+로드 시 비어 있을 때만 DB 값으로 채우도록 막아 뒀다.
+`costume`·`prop` 도 같은 구조이므로 같은 위험이 있다.
+
+#### 자체 H&M 의 수수료
+
+10-3 절 참고. `provider_type='photographer'` + `rate_type='stylist'` 다.
+
+---
+
+### 5-17. 공급자도 고객 화면을 볼 수 있어야 한다 (2026-09-12)
+
+작가·헤메·벤더가 자기가 고객에게 어떻게 노출되는지 확인할 방법이 없었다.
+두 군데가 막고 있었다.
+
+- `Nav` 가 공급자 로그인 시 `지역 탐색`·`작가 찾기` 를 숨김
+- `/explore` 에 들어가면 `RoleAwareExplore` 가 대시보드로 리다이렉트
+
+둘 다 풀었다. 각 대시보드에 `👁 고객에게 보이는 내 페이지` 링크가 있다.
+홈(`/`) 리다이렉트는 유지한다 — 로그인하면 자기 대시보드로 가는 게 맞다.
+
+**예약은 들어갈 수 있지만 결제는 막는다.** `Booking.jsx` 의
+`isSupplierViewing` 이 상단 배너를 띄우고 `handleConfirm` 을 차단한다.
+공급자 계정으로 예약이 생기면 정산·수수료·일정이 전부 꼬인다.
+끝까지 채우고 나서 막히면 시간만 버리므로 배너를 먼저 보여준다.
+
+---
+
 ---
 
 ## 6. 과거에 발목 잡았던 함정들
@@ -726,6 +828,9 @@ UI가 이상할 때 **DB에 실제로 뭐가 들어갔는지** 먼저 확인하�
    > 작가 가입 폼의 "SNS · 웹사이트 (선택)" 문구를 "작업물 확인 가능한 SNS"로 수정 필요
 4. **벤더 가입 주소 검색** — `ArtistRegister.jsx`에는 있고 `VendorRegister.jsx`에는 없음
 
+> 3번의 "반려 시 관리자에게 알림" 부분은 이미 만들어져 있다 (10-5 절).
+> AI 자동 심사만 남았다 — `approve_role()` / `reject_role()` 을 그대로 부르면 된다.
+
 ### C. 기술 부채
 | 항목 | 내용 |
 |---|---|
@@ -736,7 +841,9 @@ UI가 이상할 때 **DB에 실제로 뭐가 들어갔는지** 먼저 확인하�
 | 테스트 데이터 | 예약 3건·알림 다수·리뷰 1건이 DB에 남아 있음 (아래 참조) |
 | `expireStaleBookings` | pg_cron 스케줄 필요 (현재 클라이언트 의존) |
 | `artist_locations` 미사용 | 다중 활동지역(국내3+해외3)이 저장 안 됨 |
-| `AdminDashboard` | 아직 mock 데이터 기반 (실제 검증 안 됨) |
+| ~~`AdminDashboard` mock~~ | ✅ 해결 (2026-09-12). 조회 실패를 가짜 데이터로 덮던 것을 제거 |
+| 반송 메일 미처리 | `email_status='sent'` 은 **Resend 가 접수했다**는 뜻이지 도착이 아니다. 없는 주소면 접수 후 반송되는데 웹훅이 없어 계속 `sent` 로 남는다 |
+| `costume`/`prop` 도 덮어쓰기 위험 | `profile.*` 가 localStorage 기반이라 다른 기기에서 저장하면 DB 행이 지워질 수 있다. `hmk` 만 막아 뒀다 (5-16 참고) |
 | `venue_vendors` | 장소 대여 경로가 사실상 미완성 |
 | 남은 `catch {}` 13곳 | 포인트·공유·아바타 등 부가 기능 (주 흐름 영향 없음) |
 
@@ -769,6 +876,24 @@ select (select count(*) from public.bookings)      as 예약,
 ---
 
 ## 9. 작업 이력 요약
+
+### 2026-09-11 ~ 12 — 권한 정리 · 관리자 도구
+
+| 무엇 | 왜 |
+|---|---|
+| 권한 출처를 `user_roles` 단일화 | localStorage·user_metadata·profiles.role 로 아무 역할이나 얻을 수 있었다 (5-14) |
+| `user_roles` 자기 삽입/수정 잠금 | 스스로 `admin/active` 를 만들 수 있었다 (5-15) |
+| `is_admin()` 을 `user_roles` 기반으로 | `profiles.role='admin'` 한 줄로 전 DB 관리자 정책이 열렸다 |
+| RLS INSERT 에 역할 검사 | 로그인만 하면 누구나 작가 레코드를 만들 수 있었다 |
+| 승인/반려/재신청 | 승인 탭이 장식이었고 `'rejected'` 는 DB 제약에 없어 반려가 불가능했다 |
+| 문의 시스템 | `mailto:` 를 대체 (10-5) |
+| `rate_type` 분리 | 같은 헤메 시술인데 작가가 하면 요율이 달랐다 (10-3) |
+| 자체 H&M 을 `packages` 로 | `profiles` 에 있어 고객이 읽을 수 없었다 (5-16) |
+| 공급자 둘러보기 | 자기 노출 상태를 볼 방법이 없었다 (5-17) |
+| 검사기 강화 | 파싱 실패를 삼켜 빌드를 깨뜨렸다 (5-13) |
+
+적용한 SQL: `FIX_23` ~ `FIX_31`, 검증용 `VERIFY.sql` · `VERIFY_COMBO.sql`
+
 
 ### 2026-09-10 ~ 09-11 세션
 - **DB를 완전히 비우고 mock 데이터를 제거한 상태에서 전 구간 실검증**
@@ -985,9 +1110,42 @@ timingLabel(service, lang)
 - 얼리버드 유효기간 **12개월**, 선착순 50명
 
 ```
-calculateItemCommission({providerType, price, completedCount, isEarlyBird, collabCount})
+calculateItemCommission({providerType, rateType, price, completedCount, isEarlyBird, collabCount})
 calculateBookingCommissions(items)   → { items, collabCount, commissionTotal, payoutTotal }
 ```
+
+### ⚠ `provider_type` 과 `rate_type` 은 다른 것이다 (2026-09-12)
+
+| 필드 | 뜻 | 쓰이는 곳 |
+|---|---|---|
+| `provider_type` | **돈이 누구에게 가나** | `provider_user_id()` 정산 대상, `owns_provider()` RLS |
+| `rate_type` | **무슨 일에 대한 수수료인가** | 요율표 선택 |
+
+대부분 둘이 같다. **작가 자체 헤어메이크업만 갈린다.**
+
+```
+provider_type = 'photographer'   작가에게 정산, 작가가 자기 아이템을 본다
+rate_type     = 'stylist'        헤메 요율(15/12/10%) 적용
+```
+
+`provider_type` 을 그냥 `'stylist'` 로 바꾸면 요율은 맞지만
+`owns_provider('stylist', 작가id)` 가 false 라 **작가가 자기 예약을 못 본다.**
+
+같은 시술 같은 금액인데 누가 하느냐로 요율이 다르면 설명할 수 없고,
+작가가 자체 헤메를 숨기고 외부로 돌리는 유인이 생긴다.
+
+실측 (헤메 시술 80,000원)
+
+| 경우 | 인원 | 헤메 요율 | 총 수수료 |
+|---|---|---|---|
+| 헤메 단독 | 1 | 15% | 12,000 |
+| 작가 자체헤메 | 1 | **15%** | 12,000 |
+| 작가+자체헤메 | 1 | 15% | 57,000 |
+| 작가+외부헤메 | 2 | **14%** | 53,700 |
+| 작가+헤메+벤더 | 3 | **13%** | 72,000 |
+
+같은 일이면 같은 요율, 협업하면 혜택. 콜라보 인원은 사람 수 기준이라
+작가가 혼자 헤메까지 하면 1인이고 할인이 없다.
 
 **콜라보 인원은 사람(`ownerId` = auth uid) 기준으로 센다.**
 `provider_id` 로 세면 한 사람이 헤메이면서 의상 벤더일 때 혼자 2인이 되어
@@ -1104,6 +1262,81 @@ select status_code, content from net._http_response order by created desc limit 
 | `401` | Vault 키 오류 |
 | `{"skipped":"RESEND_API_KEY not set"}` | 시크릿 설정 후 **재배포** 필요 |
 | `{"sent":N}` | 정상 |
+
+---
+
+## 10-5. 승인 · 문의 (관리자 도구)
+
+### 승인 — `user_roles.status`
+
+```
+가입        addUserRole()      → pending
+승인        approve_role()     → active     + 알림·메일
+반려        reject_role(사유)  → rejected   + 알림·메일 (사유 필수)
+재신청      reapply_role(보완) → pending    + 관리자 전원에게 알림
+```
+
+| 화면 | 파일 |
+|---|---|
+| 관리자 승인 | `components/RoleApprovals.jsx` → `/admin` 승인 탭 |
+| 반려 안내 + 재신청 | `components/RoleRejected.jsx` (ProtectedRoute 가 띄움) |
+
+**반려는 막다른 길이 아니다.** `user_roles` 는 `(user_id, role)` 유니크라
+새 신청을 만들 수 없고 본인 수정 정책도 없앴다. `reapply_role()` RPC 만이 길이다.
+보완 메모를 필수로 받는다 — 버튼만 다시 누르는 재신청을 막고,
+관리자가 이전 반려 사유와 나란히 놓고 재심사할 수 있게 하기 위해서다.
+**이전 반려 사유는 지우지 않는다.** 맥락이 필요하다.
+
+### 문의 — `inquiries`
+
+분류 8종: `role_change` `account` `booking` `payment` `settlement` `bug` `suggestion` `other`
+
+```
+접수  submit_inquiry(category, subject, body)  → 본인·관리자 전원 알림
+답변  answer_inquiry(id, answer)               → 문의자 알림
+종료  close_inquiry(id)                        → 알림 없음 (중복·해결된 건)
+목록  admin_inquiries(status)                  → 미답변 우선, 오래된 순
+```
+
+| 화면 | 파일 |
+|---|---|
+| 문의 작성 + 내 내역 | `pages/Support.jsx` → `/support` |
+| 관리자 처리 | `components/InquiryAdmin.jsx` → `/admin` 문의 탭 |
+
+`/support?category=role_change` 로 열면 분류가 미리 선택된다.
+개인정보 관리의 "유형 변경 문의" 버튼이 그렇게 넘어간다.
+(예전에는 `mailto:` 였다 — 메일 클라이언트가 없으면 아무 일도 안 일어나고,
+보냈는지 확인할 수 없고, 기록도 안 남았다)
+
+**`inquiries` 에 INSERT 정책을 열지 않았다.** 열면 사용자가
+`status: 'answered'` 나 `answer` 를 직접 넣을 수 있다. 접수도 RPC 로만 한다.
+
+### 관리자 배지
+
+```
+admin_attention()  → { pending_roles, reapplied, open_inquiries,
+                       failed_emails, stale_bookings }
+```
+
+`hooks/useAdminAttention.js` 가 60초마다 부르고 `components/AlertDot.jsx` 가 그린다.
+Nav 의 `⚙ Admin` 과 관리자 탭에 숫자가 붙는다.
+**활성 역할이 작가여도 관리자 계정이면 보인다** — 작가 화면을 보고 있다고
+승인 대기를 몰라도 되는 건 아니다.
+
+목록 조회를 배지에 쓰지 않는다. 프로필·포트폴리오까지 끌고 오는 쿼리를
+1분마다 돌릴 이유가 없어서 숫자 전용 함수를 따로 뒀다.
+
+> ⚠ `auth.uid()` 를 쓰는 함수는 SQL Editor 에서 그냥 실행하면 항상 0 이다.
+> Editor 는 `postgres` 로 돌아 `auth.uid()` 가 NULL 이다.
+> 실제 값을 보려면 VERIFY.sql 2-C 절처럼 `set local role authenticated` +
+> `request.jwt.claims` 를 세팅해야 한다.
+
+### 멀티롤 전환
+
+`components/RoleSwitcher.jsx` — Nav 우측(모바일은 메뉴 안).
+역할이 하나뿐이면 아무것도 그리지 않는다.
+없을 때는 관리자 역할을 받아도 활성 역할이 `artist` 면 `⚙ Admin` 링크가
+보이지 않았고, 헤메 겸 벤더는 한쪽 대시보드에서 돌아올 길이 없었다.
 
 ---
 
