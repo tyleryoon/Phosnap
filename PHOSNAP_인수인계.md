@@ -185,16 +185,19 @@ supabase/                    # SQL 마이그레이션 모음
 |---|---|
 | `dress_vendors` | `id`, `user_id`, `name`, `name_ko`, `vendor_type`, `location_id`, `city`, `intro`, `tags`, `venue_*`(장소 대시보드용), `is_active` |
 | `dress_items` | `vendor_id`, `name_ko`, `category`, `price`, `sizes`, `size_stock`(jsonb), `image_url`, `is_available` |
-| `venue_vendors` / `venue_items` | 장소 대여 (별도 테이블, 현재 미사용에 가까움) |
+| `venue_vendors` | 장소 벤더. `location_id` 가 있어야 고객 지역 필터에 걸린다 |
+| `venue_items` | 개별 촬영장소. `category`, `capacity`, `price`, `price_unit`(per_session 고정), `amenities` |
 
 **예약·소통**
 | 테이블 | 핵심 컬럼 |
 |---|---|
 | `bookings` | `id`, `customer_id`, `customer_name`, `photographer_id`, `date`, `time`, `total_price`, `status`, `expires_at`, `shoot_start_at`, `shoot_end_at`, `collab_count`, `commission_total` |
 | **`booking_items`** | **예약 1건 : 아이템 N개.** `booking_id`, `provider_type`(photographer/stylist/dress/venue), `provider_id`, `item_id`, `item_name`, `item_option`, `price`, `timing`, `start_at`, `end_at`, `commission_rate`, `commission_amount`, `payout_amount`, `status` |
+| **`provider_schedules`** | **작가·헤메·벤더 공통 날짜별 스케줄.** `provider_type`, `provider_id`, `date`, `day_off`, `slots`, `blocked` |
+| **`provider_defaults`** | 기본 운영시간 + 정기 휴무 요일. `default_slots`, `weekly_off`(0=일~6=토) |
 | `chat_rooms` | `booking_id`(unique), `photographer_id`(=photographers.id), `customer_id`(=auth uid) |
 | `messages` | `room_id`, `sender_id`, `content`, `read_at` |
-| `notifications` | `user_id`, `type`, `title`, `body`, `link`, `metadata`, `read_at`, `is_read` |
+| `notifications` | `user_id`, `type`, `title`, `body`, `link`, `metadata`, `read_at`, **`email_status`**, **`email_after`**, `email_sent_at`, `email_error` |
 
 **리뷰**
 `reviews`, `package_reviews`, `photographer_reviews`, `review_replies`, `vendor_reviews`
@@ -242,7 +245,13 @@ RLS가 첫 폴더명 = `auth.uid()` 일치를 요구한다. **절대 다른 ID�
 17. FIX_16_PROVIDER_BOOKING_ACCESS.sql  # 공급자가 자기 예약을 읽게
 18. FIX_17_CUSTOMER_NAME.sql     # 고객 이름 스냅샷
 19. FIX_18_APPROVE_RPC.sql       # 확정/거절/알림 서버 함수
+20. FIX_19_PROVIDER_SCHEDULES.sql # 작가·헤메·벤더 공통 스케줄
+21. FIX_20_REVIEW_AGGREGATE.sql   # 리뷰 평점·후기수 자동 집계
+22. FIX_21_CHAT_NOTIFY_EMAIL.sql  # 채팅 알림 + 이메일 발송 큐
+23. FIX_22_CRON.sql               # pg_cron (메일 1분 / 예약만료 10분)
 ```
+
+> 22·23은 외부 설정이 함께 필요하다. 아래 "이메일 발송" 절 참조.
 
 > `PATCH_*.sql`, `migration_*.sql`은 과거 파일이라 참고용. 위 순서만 실행하면 된다.
 
@@ -839,6 +848,115 @@ calculateBookingCommissions(items)   → { items, collabCount, commissionTotal, 
 
 > 요율을 바꾸면 `src/data/legal.js` TERMS_VENDOR 제3조,
 > `VendorRegister.jsx` 동의 문구, 대시보드 안내 문구도 함께 고쳐야 한다.
+
+---
+
+## 10-4. 이메일 발송 (Resend + pg_cron)
+
+### 설계 — 알림을 만드는 것이 곧 메일을 예약하는 것
+
+예전 `send-notification` 은 "이 사람에게 이 메일을 보내라" 는 명령형이었다.
+부르는 쪽이 빠뜨리면 그대로 메일이 안 가고, 실제로 그랬다
+(호출처가 `createBooking` 한 군데뿐이었다).
+
+`notify-worker` 는 반대로 동작한다. `notifications` 에서
+**아직 안 보냈고 · 보낼 때가 됐고 · 아직 안 읽은** 것을 스스로 찾아 보낸다.
+
+```
+알림 생성 (앱 또는 서버 함수)
+   ↓
+notifications  ← email_status='pending', email_after
+   ↓  pg_cron 1분마다
+notify-worker (Edge Function)
+   ↓
+Resend → 메일
+```
+
+**앞으로 알림을 추가하면 메일은 저절로 따라간다.** 따로 붙일 게 없다.
+
+### 발송 상태
+
+| `email_status` | 의미 |
+|---|---|
+| `pending` | 보낼 차례 대기 |
+| `sent` | 발송 완료 |
+| `skipped` | 보낼 필요 없어짐 (읽음 처리 등) |
+| `failed` | 실패 — `email_error` 에 원인 |
+
+읽음 처리하면 트리거가 `skipped` 로 바꾼다. 이미 본 것을 메일로 또 받을 이유가 없다.
+
+### 채팅은 5분 유예
+
+`send_chat_message()` 가 알림을 만들 때 `email_after = now() + 5분` 을 건다.
+그 안에 읽으면 메일이 나가지 않는다.
+같은 방에 안 읽은 알림이 있으면 새로 만들지 않고 내용만 갱신하고 유예를 다시 센다
+— 대화가 오가는 동안 메일이 연달아 가지 않는다.
+
+### 외부 설정 (새 환경 구축 시 필요)
+
+**1. Resend**
+- resend.com 가입 → Domains → `phosnap.com` 추가
+- DNS 레코드를 카페24에 등록 (호스트명은 `.phosnap.com` 제외하고 앞부분만)
+
+| Resend 항목 | Type | Name | 카페24 메뉴 |
+|---|---|---|---|
+| DKIM | TXT | `resend._domainkey` | TXT 관리 |
+| SPF | CNAME | `rsend`, `send` | **별칭(CNAME) 관리** |
+| DMARC | TXT | `_dmarc` | TXT 관리 |
+
+> Resend 가 섹션 제목을 "SPF" 라고 붙였지만 Type 은 CNAME 이다.
+> 카페24의 "SPF 관리" 가 아니라 "별칭(CNAME) 관리" 에 넣는다.
+
+**2. Edge Function 배포** (PowerShell)
+```bash
+npx supabase login
+npx supabase link --project-ref znjkyvijjlahsxczweqh
+npx supabase secrets set RESEND_API_KEY=re_...
+npx supabase secrets set SITE_URL=https://www.phosnap.com
+npx supabase functions deploy notify-worker
+```
+
+> ⚠ 함수 이름 주의. `send-notification` 은 쓰지 않는 옛 함수다.
+> 실제로 쓰는 것은 **`notify-worker`** 다. 한 번 여기서 헤맸다
+> — 옛 함수를 배포해놓고 404 를 한참 추적했다.
+
+**3. service_role 키를 Vault 에 저장** (SQL Editor)
+```sql
+select vault.create_secret('키', 'service_role_key', 'pg_cron 용');
+```
+> 이 키는 RLS 를 전부 우회한다. `.env` 나 코드, Vercel 환경변수에 절대 넣지 않는다.
+
+**4. `FIX_22_CRON.sql` 실행** — 메일 1분 / 예약만료 10분
+
+### 문제 진단
+
+```sql
+-- 대기 중인 알림이 있는가
+select count(*) from public.pending_notification_emails(50);
+
+-- 크론이 도는가
+select j.jobname, d.status, d.return_message, d.start_time
+  from cron.job_run_details d join cron.job j on j.jobid = d.jobid
+ order by d.start_time desc limit 10;
+
+-- 워커를 직접 호출
+select net.http_post(
+  url := 'https://znjkyvijjlahsxczweqh.supabase.co/functions/v1/notify-worker',
+  headers := jsonb_build_object('Content-Type','application/json',
+    'Authorization','Bearer ' || (select decrypted_secret
+      from vault.decrypted_secrets where name='service_role_key' limit 1)),
+  body := '{}'::jsonb);
+
+-- 5초 뒤 응답 확인
+select status_code, content from net._http_response order by created desc limit 2;
+```
+
+| 응답 | 원인 |
+|---|---|
+| `404 NOT_FOUND` | 함수 미배포 (이름 확인) |
+| `401` | Vault 키 오류 |
+| `{"skipped":"RESEND_API_KEY not set"}` | 시크릿 설정 후 **재배포** 필요 |
+| `{"sent":N}` | 정상 |
 
 ---
 
