@@ -138,6 +138,31 @@ integrity as (
                         and r.role in ('dress_vendor','vendor','stylist'))
 
   union all
+  -- 휴무일에 잡힌 예약.
+  --
+  -- 2026-09-12 에 찾았다. 예약 화면이 getProviderBusyBlocks(booking_items)만
+  -- 봤다 — 그건 '이미 잡힌 예약'이지 휴무가 아니다.
+  -- 헤메·벤더가 '이 날 휴무' 로 설정하고 저장 성공까지 확인해도
+  -- 고객 화면에는 그대로 떴다. 공급자는 쉬는 줄 아는데 예약이 들어온다.
+  --
+  -- 화면 쪽은 고쳤지만(getProvidersClosedOn), 이미 들어간 예약과
+  -- 앞으로 새는 경로를 잡으려면 이 검사가 필요하다.
+  select '1.정합성', '휴무일에 잡힌 예약', count(*),
+         string_agg(x.provider_type || ' ' || x.d::text, ', ')
+    from (
+      select distinct bi.provider_type, b.date::date as d
+        from public.booking_items bi
+        join public.bookings b on b.id = bi.booking_id
+        join public.provider_schedules ps
+          on ps.provider_type = bi.provider_type
+         and ps.provider_id   = bi.provider_id
+         and ps.date          = b.date::date
+       where b.status in ('pending','confirmed','completed')
+         and bi.status <> 'cancelled'
+         and ps.day_off
+    ) x
+
+  union all
   -- INSERT 정책에 역할 검사가 빠진 테이블이 있는가.
   -- 정책은 OR 로 합쳐지므로 느슨한 게 하나만 남아도 전체가 뚫린다.
   select '1.정합성', 'INSERT 정책에 역할 검사 누락', count(*),

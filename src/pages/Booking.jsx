@@ -380,6 +380,15 @@ const Booking = () => {
   const [selfHmk, setSelfHmk] = useState([]);
   // 작가 본인의 그날 점유 구간. 자체 헤메 시술이 앞 촬영과 겹치는지 본다.
   const [busyArtist, setBusyArtist] = useState([]);
+
+  // 그 날 영업하지 않는 공급자. { [providerId]: true }
+  //
+  // busyStylists/busyVenues 는 booking_items — 이미 잡힌 예약이다.
+  // 휴무는 provider_schedules 에 따로 있는데 예약 화면이 그걸 안 봤다.
+  // 헤메가 '이 날 휴무' 로 설정해도 고객은 그대로 선택할 수 있었다.
+  const [closedStylists, setClosedStylists] = useState({});
+  const [closedVenues,   setClosedVenues]   = useState({});
+  const [closedDress,    setClosedDress]    = useState({});
   const [busyVenues, setBusyVenues] = useState([]);
 
   // 스케줄 초기화 (localStorage mock 데이터 시딩)
@@ -401,15 +410,25 @@ const Booking = () => {
 
       try {
         const { getProviderBusyBlocks } = await import('../lib/supabase');
-        const [st, ve, ar] = await Promise.all([
+        const { getProvidersClosedOn } = await import('../lib/supabase');
+        const dressIds = [...new Set((dbDresses || []).map(d => d.vendorId).filter(Boolean))];
+
+        const [st, ve, ar, cs, cv, cd] = await Promise.all([
           stylistIds.length ? getProviderBusyBlocks('stylist', stylistIds, selectedDate) : { data: [] },
           venueIds.length   ? getProviderBusyBlocks('venue',   venueIds,   selectedDate) : { data: [] },
           needArtist        ? getProviderBusyBlocks('photographer', [p.id], selectedDate) : { data: [] },
+          // 휴무 판정. 예약(busy)과는 다른 정보다.
+          getProvidersClosedOn('stylist', stylistIds, selectedDate),
+          getProvidersClosedOn('venue',   venueIds,   selectedDate),
+          getProvidersClosedOn('dress',   dressIds,   selectedDate),
         ]);
         if (cancelled) return;
         setBusyStylists(st.data || []);
         setBusyVenues(ve.data || []);
         setBusyArtist(ar.data || []);
+        setClosedStylists(cs.data || {});
+        setClosedVenues(cv.data || {});
+        setClosedDress(cd.data || {});
       } catch (err) {
         // 조회에 실패하면 아무것도 막지 않는다. 다만 조용히 넘어가면
         // 중복 예약이 생겨도 원인을 찾을 수 없으므로 반드시 남긴다.
@@ -787,9 +806,19 @@ const Booking = () => {
 
   // 시술이 하나도 가능하지 않은 헤메는 아예 보여주지 않는다.
   // 고객이 골랐다가 마지막 단계에서 막히는 것보다 처음부터 안 보이는 게 낫다.
-  const availableStylists = shootWindow
+  // 그리고 그 날 휴무인 헤메도 뺀다.
+  //
+  // 예전에는 예약(busy)만 봤다. 헤메가 ScheduleManager 에서 '이 날 휴무' 로
+  // 설정하고 저장 성공까지 확인해도 고객 화면에는 그대로 떴다.
+  // 헤메는 쉬는 줄 아는데 예약이 들어온다.
+  // 자체 헤메(id 가 'self:')는 작가 본인이라 이 판정 대상이 아니다.
+  const isStylistClosed = (id) =>
+    !String(id).startsWith('self:') && !!closedStylists[id];
+
+  const availableStylists = (shootWindow
     ? allStylists.filter(s => (s.services || []).some(svc => serviceAvailability(s.id, svc).available))
-    : allStylists;
+    : allStylists
+  ).filter(s => !isStylistClosed(s.id));
 
   const stylistData    = allStylists.find(s => s.id === selectedStylist);
   const stylistSvcData = stylistData?.services?.find(sv => sv.name === selectedStylistSvc);
@@ -800,9 +829,10 @@ const Booking = () => {
   // 벤더 의상은 DB 조회 결과만 사용한다 (mock 벤더 폴백 제거).
   // 예전에는 p.dresses 를 봤는데 그건 mock 전용 필드라 항상 비어 있었다.
   // (게다가 toPhotographerCard 가 dressSelf 를 안 넘겨 분기 자체가 안 탔다)
+  // 휴무인 의상 벤더의 옷은 빼준다. 자체 의상은 작가 본인이라 해당 없다.
   const availableDresses = p.dressSelf
     ? (selfDresses || [])
-    : (dbDresses || []);
+    : (dbDresses || []).filter(d => !d.vendorId || !closedDress[d.vendorId]);
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
   const dressPrice = selectedDressData?.price || 0;
 
@@ -820,6 +850,8 @@ const Booking = () => {
   // 장소도 DB 에서 조회한다 (mock venueVendors 폴백 제거).
   // 촬영 시간에 이미 다른 예약이 잡힌 장소는 제외한다.
   const allVenueItems = (dbVenues || []).filter(v => {
+    // 그 날 휴무인 장소 벤더는 제외한다. (예약 여부와는 별개다)
+    if (v.vendorId && closedVenues[v.vendorId]) return false;
     if (!shootWindow || !v.vendorId) return true;
     return !busyVenues.some(b =>
       b.providerId === v.vendorId &&

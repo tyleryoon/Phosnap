@@ -2958,3 +2958,71 @@ export const closeInquiry = async (id) => {
   if (error) return { data: null, error };
   return { data, error: null };
 };
+
+/**
+ * 여러 공급자의 **특정 날짜 영업 여부**를 한 번에 판정한다.
+ *
+ * 왜 필요한가
+ *   예약 화면은 지금까지 getProviderBusyBlocks 만 봤다. 그건
+ *   booking_items — **이미 잡힌 예약**이지 휴무가 아니다.
+ *   헤메·벤더가 ScheduleManager 에서 "이 날 휴무" 로 설정하고
+ *   저장 성공까지 확인해도, 고객 화면에서는 그대로 선택됐다.
+ *
+ *   공급자는 자기가 쉰다고 알고 있는데 예약이 들어온다.
+ *   설정한 사람 입장에서는 저장이 된 것처럼 보이니 원인을 찾을 수도 없다.
+ *
+ * 반환: { [providerId]: true }  — 그 날 영업하지 않는 공급자
+ */
+export const getProvidersClosedOn = async (providerType, providerIds, date) => {
+  const closed = {};
+  const sb = await getSupabase();
+  const ids = [...new Set((providerIds || []).filter(Boolean))];
+  if (!sb || !ids.length || !date) return { data: closed, error: null };
+
+  try {
+    const [schedRes, defRes] = await Promise.all([
+      sb.from('provider_schedules')
+        .select('provider_id, day_off, slots')
+        .eq('provider_type', providerType)
+        .in('provider_id', ids)
+        .eq('date', date),
+      sb.from('provider_defaults')
+        .select('provider_id, default_slots, weekly_off')
+        .eq('provider_type', providerType)
+        .in('provider_id', ids),
+    ]);
+
+    // 조회가 실패하면 아무도 막지 않는다.
+    // 확실하지 않은데 막아버리면 멀쩡한 공급자가 사라진다.
+    // 다만 조용히 넘어가지는 않는다 — 로그는 남긴다.
+    if (schedRes.error) console.error('[getProvidersClosedOn] 일정 조회 실패:', schedRes.error);
+    if (defRes.error)   console.error('[getProvidersClosedOn] 기본값 조회 실패:', defRes.error);
+    if (schedRes.error || defRes.error) return { data: closed, error: schedRes.error || defRes.error };
+
+    const byDay = {};
+    (schedRes.data || []).forEach(r => { byDay[r.provider_id] = r; });
+    const byDefault = {};
+    (defRes.data || []).forEach(r => { byDefault[r.provider_id] = r; });
+
+    const d = new Date(`${date}T00:00:00`);
+    const dow = Number.isNaN(d.getTime()) ? null : d.getDay();
+
+    ids.forEach(id => {
+      const row = byDay[id];
+      if (row) {
+        // 그 날짜에 레코드가 있으면 그게 우선이다.
+        if (row.day_off) closed[id] = true;
+        else if (Array.isArray(row.slots) && row.slots.length === 0) closed[id] = true;
+        return;
+      }
+      // 레코드가 없으면 정기 휴무 요일을 본다.
+      const def = byDefault[id];
+      if (def && dow !== null && (def.weekly_off || []).includes(dow)) closed[id] = true;
+    });
+
+    return { data: closed, error: null };
+  } catch (e) {
+    console.error('[getProvidersClosedOn] 예외:', e);
+    return { data: closed, error: { message: e.message } };
+  }
+};
