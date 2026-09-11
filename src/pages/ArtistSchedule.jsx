@@ -975,10 +975,18 @@ const ArtistSchedule = () => {
           // 여기에 쓰지 않으면 저장한 상품이 새로고침 후 사라진다.
           const { replacePackages } = await import('../lib/supabase');
           const groups = [
+            // ⚠ replacePackages 는 해당 type 을 통째로 지우고 다시 넣는다.
+            //    빈 배열을 넘기면 그 type 의 DB 행이 전부 사라진다.
+            //
+            //    updated.* 는 profile(localStorage) 에서 온다. 다른 기기에서
+            //    열면 비어 있는데, 그 상태로 다른 섹션(포트폴리오·지역 등)을
+            //    저장하면 의상·소품이 함께 날아간다.
+            //    DB 에서 읽어 둔 React 상태를 폴백으로 둬서 막는다.
+            //    (snap 은 아래 snaps 계산에서 이미 같은 폴백을 쓰고 있다)
             ['snap',    snaps],
             ['tour',    updated.tours || []],
-            ['costume', updated.costumes || []],
-            ['prop',    updated.props || []],
+            ['costume', updated.costumes || costumes || []],
+            ['prop',    updated.props || props || []],
             // 자체 H&M 메뉴. 고객 예약 화면(STEP 03)이 이 행들을 읽는다.
             // profiles.hmk_options 에 두면 고객이 못 읽는다 (본인만 조회 가능).
             ['hmk',     (updated.hmk?.menus || []).filter(m => (m.name || '').trim())],

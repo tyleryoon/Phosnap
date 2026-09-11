@@ -106,6 +106,37 @@ const VendorRegister = () => {
   const [addrBase, setAddrBase] = useState('');       // 업체 주소 (기본)
   const [addrDetail, setAddrDetail] = useState('');   // 업체 주소 (상세)
 
+  // ── Daum 우편번호 (도로명 주소 검색) ────────────────────────────────
+  //
+  // 작가 가입에는 있는데 벤더 가입에는 없어서 손으로 타이핑해야 했다.
+  // 오타가 나면 location_id 매칭과 무관하게 정산·세금계산서 주소가 틀어진다.
+  const runPostcode = () => {
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        setAddrBase(data.roadAddress || data.jibunAddress);
+      },
+    }).open();
+  };
+
+  const openDaumPostcode = () => {
+    if (!window.daum || !window.daum.Postcode) {
+      const script = document.createElement('script');
+      script.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+      script.onload = () => runPostcode();
+      script.onerror = () => {
+        // 스크립트를 못 불러오면 직접 입력할 수 있어야 한다.
+        // 조용히 아무 일도 안 일어나면 사용자는 버튼이 고장난 줄 안다.
+        alert('주소 검색을 불러오지 못했습니다. 주소를 직접 입력해주세요.');
+        setAddrSearchFailed(true);
+      };
+      document.head.appendChild(script);
+    } else {
+      runPostcode();
+    }
+  };
+  // 검색이 안 될 때만 기본 주소를 직접 고칠 수 있게 연다.
+  const [addrSearchFailed, setAddrSearchFailed] = useState(false);
+
   // Debounce refs for duplicate name checking
   const nameKoDebounceRef = useRef(null);
   const nameEnDebounceRef = useRef(null);
@@ -560,9 +591,24 @@ const VendorRegister = () => {
 
             <SectionDivider label="주소" />
             <div style={{ marginBottom: 12 }}>
-              <input style={{ ...INPUT, marginBottom: 8 }}
-                type="text" placeholder="기본 주소 (예: 서울특별시 강남구)"
-                value={addrBase} onChange={e => setAddrBase(e.target.value)} />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <input
+                  style={{ ...INPUT, flex: 1, background: addrBase ? 'var(--bg)' : 'var(--bg2)' }}
+                  type="text"
+                  placeholder={addrSearchFailed ? '기본 주소를 직접 입력해주세요' : '주소 검색을 눌러주세요'}
+                  value={addrBase}
+                  readOnly={!addrSearchFailed}
+                  onChange={e => setAddrBase(e.target.value)}
+                />
+                <button type="button" onClick={openDaumPostcode}
+                  style={{
+                    padding: '11px 16px', background: 'var(--gold)', border: 'none',
+                    color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                    letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap',
+                  }}>
+                  주소 검색
+                </button>
+              </div>
               <input style={{ ...INPUT }}
                 type="text" placeholder="상세 주소 (동, 호수 등)"
                 value={addrDetail} onChange={e => setAddrDetail(e.target.value)} />

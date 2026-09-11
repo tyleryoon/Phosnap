@@ -17,6 +17,11 @@
 //   pg_cron 이 1분마다 호출하거나, 수동으로 POST 해도 된다.
 //   멱등하다 — 보낼 게 없으면 아무 일도 하지 않는다.
 //
+// ⚠ 'sent' 는 도착이 아니다
+//   Resend 가 200 을 주면 'sent' 로 적지만, 그건 접수됐다는 뜻이다.
+//   실제 도착·반송은 email-webhook 이 되받아 'delivered'/'bounced' 로 갱신한다.
+//   반송된 주소는 pending_notification_emails() 가 아예 빼 준다. (FIX_32)
+//
 // 필요한 환경변수
 //   RESEND_API_KEY             Resend API 키
 //   SUPABASE_URL               (자동 주입)
@@ -196,12 +201,17 @@ serve(async (req) => {
     const lang = n.lang === 'ko' ? 'ko' : 'en';
     const copy = COPY[n.type]?.[lang] || COPY[n.type]?.['en'] || fallback(lang);
     try {
-      await sendEmail(
+      // Resend 가 돌려주는 메시지 id 를 같이 적는다.
+      // 나중에 반송 웹훅(email-webhook)이 "이 메일이 반송됐다" 고 알려줄 때
+      // 어느 알림인지 찾으려면 이 id 가 있어야 한다. (FIX_32)
+      const res = await sendEmail(
         n.email,
         `[Phosnap] ${n.title || copy.subject}`,
         buildHtml(n.title || copy.subject, copy.lead, n.body || '', n.link || '/', copy.cta),
       );
-      await sb.rpc('mark_notification_email', { p_id: n.id, p_ok: true });
+      await sb.rpc('mark_notification_email', {
+        p_id: n.id, p_ok: true, p_email_id: res?.id ?? null,
+      });
       sent++;
     } catch (err) {
       // 실패를 기록해 둔다. 조용히 삼키면 왜 메일이 안 왔는지 알 수 없다.

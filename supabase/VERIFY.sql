@@ -163,6 +163,19 @@ ops as (
     from public.notifications where email_status = 'failed'
 
   union all
+  -- 반송·스팸신고. 'sent' 는 Resend 가 접수했다는 뜻일 뿐이라
+  -- 도착 여부는 웹훅(FIX_32)이 되받아야 알 수 있다.
+  -- 반송 주소로 계속 보내면 도메인 평판이 떨어져 정상 메일까지 스팸으로 간다.
+  select '3.운영', '반송·스팸신고된 메일', count(*),
+         coalesce(string_agg(distinct left(coalesce(email_error,''), 60), ' | '), '-')
+    from public.notifications where email_status in ('bounced','complained')
+
+  union all
+  select '3.운영', '발송 불가로 표시된 주소', count(*),
+         coalesce(string_agg(email, ', '), '-')
+    from public.profiles where email_bounced_at is not null
+
+  union all
   select '3.운영', '만료 시각 지난 대기 예약', count(*),
          '크론이 돌지 않는 신호' from public.bookings
    where status = 'pending' and expires_at < now()
