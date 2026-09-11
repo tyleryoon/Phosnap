@@ -2861,3 +2861,22 @@ export const reapplyRole = async (role, note) => {
   if (error) return { data: null, error };
   return { data, error: null };
 };
+
+/**
+ * 관리자 확인이 필요한 항목 수 (Nav 배지용)
+ *
+ * 목록 조회(getPendingRoleRequests)를 배지에 쓰지 않는다. 프로필과
+ * 포트폴리오까지 끌고 오는 쿼리를 1분마다 돌릴 이유가 없다.
+ * 관리자가 아니면 서버가 전부 0 을 준다.
+ */
+export const getAdminAttention = async () => {
+  const sb = await getSupabase();
+  const zero = { pending_roles: 0, reapplied: 0, failed_emails: 0, stale_bookings: 0 };
+  if (!sb) return { data: zero, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('admin_attention');
+  if (error) {
+    console.error('[getAdminAttention] 실패:', error);
+    return { data: zero, error };
+  }
+  return { data: { ...zero, ...(data || {}) }, error: null };
+};

@@ -8,11 +8,16 @@ import logoMark from '../assets/logo-mark.svg';
 import LogoText from './LogoText';
 import NotificationBell from './NotificationBell';
 import RoleSwitcher from './RoleSwitcher';
+import AlertDot from './AlertDot';
+import useAdminAttention from '../hooks/useAdminAttention';
 
 // ─── Navigation ────────────────────────────────────────────────────────
 
 const Nav = ({ onAuthOpen }) => {
   const { isLoggedIn, userName, isArtist, isVendor, isAdmin, logout } = useAuth();
+  // 관리자가 확인해야 할 것이 있으면 링크 옆에 표시한다.
+  // 활성 역할이 작가여도 관리자 계정이면 알려준다.
+  const { counts, total } = useAdminAttention();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   // currency dropdown removed — card payments auto-convert
@@ -179,8 +184,9 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher />
               {isAdmin && (
                 <Link to="/admin"
-                  style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
+                  style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                   ⚙ Admin
+                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건`} />
                 </Link>
               )}
               {isArtist && (
@@ -260,8 +266,9 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher onNavigate={() => setMobileOpen(false)} />
               {/* 모바일 메뉴에는 관리자 링크가 아예 없었다. */}
               {isAdmin && (
-                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
                   ⚙ Admin
+                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건`} />
                 </Link>
               )}
               {isArtist && (

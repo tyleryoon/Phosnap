@@ -36,7 +36,7 @@ const fmtDate = (v) => {
   return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('ko-KR');
 };
 
-const RoleApprovals = () => {
+const RoleApprovals = ({ onChanged }) => {
   const [rows, setRows]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [busyKey, setBusyKey]   = useState(null);   // 처리 중인 행
@@ -74,6 +74,7 @@ const RoleApprovals = () => {
     } else {
       setNotice({ kind: 'ok', text: `${row.full_name || row.email} · ${ROLE_LABEL[row.role] || row.role} 승인 완료. 안내 메일이 발송됩니다.` });
       await load();
+      onChanged?.();   // Nav·탭 배지도 같이 줄어야 한다
     }
     setBusyKey(null);
   };
@@ -92,6 +93,7 @@ const RoleApprovals = () => {
       setRejectFor(null);
       setReason('');
       await load();
+      onChanged?.();
     }
     setBusyKey(null);
   };

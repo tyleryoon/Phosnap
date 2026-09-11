@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import RoleApprovals from '../components/RoleApprovals';
+import AlertDot from '../components/AlertDot';
+import useAdminAttention from '../hooks/useAdminAttention';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -257,6 +259,8 @@ const AdminDashboard = () => {
   //   그래서 "0건" 과 "권한이 없어 안 보임" 이 화면상 구분되지 않는다.
   //   아래에서 error 를 반드시 받아 표시하고, 0건일 때는 그 가능성을 안내한다.
   const [loadError, setLoadError] = useState(null);
+  // 어느 탭을 봐야 하는지 배지로 알려준다.
+  const { counts: attention, refresh: refreshAttention } = useAdminAttention();
 
   useEffect(() => {
     const loadData = async () => {
@@ -683,7 +687,7 @@ const AdminDashboard = () => {
   // 이전 구현은 화면만 있었다. 버튼이 setProfiles() 로 React 상태만 바꿔서
   // 새로고침하면 되돌아갔고, 실제 승인은 SQL 로만 가능했다. 게다가
   // profiles.approved 를 읽었는데 진짜 승인 상태는 user_roles.status 에 있다.
-  const renderApprovalsTab = () => <RoleApprovals />;
+  const renderApprovalsTab = () => <RoleApprovals onChanged={refreshAttention} />;
 
   const renderMembersTab = () => (
     <div>
@@ -827,7 +831,7 @@ const AdminDashboard = () => {
           {[
             { key: 'overview', label: translate('overview') },
             { key: 'bookings', label: translate('bookings') },
-            { key: 'approvals', label: translate('approvals') },
+            { key: 'approvals', label: translate('approvals'), badge: attention.pending_roles },
             { key: 'members', label: translate('members') },
           ].map(tab => (
             <button
@@ -835,6 +839,8 @@ const AdminDashboard = () => {
               onClick={() => setActiveTab(tab.key)}
               style={{
                 padding: '12px 20px',
+                display: 'inline-flex',
+                alignItems: 'center',
                 fontSize: 12,
                 fontFamily: 'var(--font-serif)',
                 letterSpacing: '0.08em',
@@ -848,6 +854,7 @@ const AdminDashboard = () => {
               }}
             >
               {tab.label}
+              <AlertDot count={tab.badge ?? 0} title={`처리 대기 ${tab.badge ?? 0}건`} />
             </button>
           ))}
         </div>

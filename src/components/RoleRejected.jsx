@@ -166,6 +166,9 @@ const RoleRejected = ({ role }) => {
         style={{
           width: '100%', marginTop: 20, padding: '14px 0',
           fontSize: 13, letterSpacing: '0.1em',
+          // btn-primary 가 텍스트를 왼쪽에 붙여 놓는다. 가운데로.
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          textAlign: 'center',
           opacity: (busy || !note.trim()) ? 0.45 : 1,
           cursor: (busy || !note.trim()) ? 'default' : 'pointer',
         }}
