@@ -747,16 +747,16 @@ export const createBooking = async (booking) => {
     }).catch(() => {});
   }
 
-  // 참여자 전원에게 앱 내 알림.
+  // 참여자 전원에게 앱 내 알림 — 서버 함수로 보낸다.
+  //
   // 예전에는 작가에게만, 그것도 항상 null 인 legacy_id 로 조회해서
-  // 실제로는 아무에게도 발송되지 않았다.
-  notifyBookingProviders(priced.items, {
-    title: '새 예약 요청이 있습니다',
-    body:  `${customerName} · ${payload.date} ${payload.time}`,
-    type:  'booking_created',
-    link:  null,
-    bookingId: data.id,
-  }).catch(err => console.error('[createBooking] 공급자 알림 실패:', err));
+  // 아무에게도 발송되지 않았다. 이후 클라이언트에서 직접 넣도록 고쳤지만
+  // notifications 의 INSERT 정책이 user_id = auth.uid() 라 고객이
+  // 공급자에게 알림을 넣는 것 자체가 42501 로 막힌다.
+  sb.rpc('notify_new_booking', { p_booking: data.id })
+    .then(({ error: nErr }) => {
+      if (nErr) console.error('[createBooking] 공급자 알림 실패:', nErr);
+    });
 
   return { data, error };
 };
@@ -937,94 +937,45 @@ export const getBookingByOrderId = async (orderId) => {
 
 // ─── 작가 예약 확정/거절 ──────────────────────────────────────────────
 
-/** 작가가 예약 수락 */
+/**
+ * 작가가 예약 수락
+ *
+ * 확정 처리 전체를 서버 함수(approve_booking)에 맡긴다.
+ * 클라이언트에서 하면 RLS 가 (의도대로) 막아서 반쪽만 처리됐다.
+ *   · notifications INSERT → user_id = auth.uid() 만 허용 (42501)
+ *     → 고객·헤메·벤더 알림이 전부 조용히 실패
+ *   · booking_items UPDATE → 자기 아이템만 → 나머지는 pending 으로 잔류
+ *   · booking_items SELECT → 자기 것만 보여 알림 대상이 빈 목록
+ *
+ * 정책을 열면 누구나 아무에게나 알림을 보낼 수 있어 더 위험하다.
+ * 권한 확인은 함수 안에서 한다.
+ */
 export const approveBooking = async (bookingId) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('bookings')
-    .update({ status: 'confirmed', approved_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('id', bookingId)
-    .select().single();
 
-  if (!error && data) {
-    // 앱 내 알림을 고객에게 보낸다.
-    // 예전에는 존재하지 않는 `_customers` 테이블을 조회해 알림이 전혀
-    // 발송되지 않았다. customer_id 를 바로 쓰면 조회가 필요 없다.
-    sendNotificationTo(data.customer_id, {
-      type:  'booking_confirmed',
-      title: '예약이 확정되었습니다',
-      body:  `${data.photographer_name || '작가'} · ${data.date} ${data.time}`,
-      link:  '/my',
-      metadata: { bookingId: data.id },
-    }).catch(() => {});
-
-    // 아이템도 함께 확정 처리
-    const { error: itemErr } = await sb.from('booking_items')
-      .update({ status: 'confirmed' })
-      .eq('booking_id', bookingId)
-      .eq('status', 'pending');
-    if (itemErr) console.error('[approveBooking] 아이템 상태 갱신 실패:', itemErr);
-
-    // 헤메·벤더에게도 확정 알림.
-    // 작가만 승인하는 구조라, 이 알림이 없으면 나머지 참여자는
-    // 자기가 그날 일한다는 사실 자체를 모른 채 촬영일을 맞는다.
-    const { data: items } = await getBookingItems(bookingId);
-    notifyBookingProviders(
-      items
-        .filter(i => i.provider_type !== 'photographer')
-        .map(i => ({ providerType: i.provider_type, providerId: i.provider_id })),
-      {
-        type:  'booking_confirmed',
-        title: '예약이 확정되었습니다',
-        body:  `${data.date} ${data.time} · ${data.photographer_name || '작가'} 촬영`,
-        bookingId: data.id,
-      },
-    ).catch(err => console.error('[approveBooking] 공급자 알림 실패:', err));
-  }
-
+  const { data, error } = await sb.rpc('approve_booking', { p_booking: bookingId });
+  if (error) console.error('[approveBooking] 확정 실패:', error);
   return { data, error };
 };
 
 /** 작가가 예약 거절 */
+/**
+ * 작가가 예약 거절
+ *
+ * approveBooking 과 같은 이유로 서버 함수에 맡긴다.
+ * 아이템까지 함께 취소해야 헤메·벤더의 시간이 다시 풀린다.
+ * 그러지 않으면 성사되지 않은 예약이 스케줄을 계속 점유한다.
+ */
 export const rejectBooking = async (bookingId, reason = '') => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('bookings')
-    .update({ status: 'cancelled', rejected_reason: reason, cancelled_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-    .eq('id', bookingId)
-    .select().single();
 
-  if (!error && data) {
-    sendNotificationTo(data.customer_id, {
-      type:  'booking_rejected',
-      title: '예약이 거절되었습니다',
-      body:  reason ? `사유: ${reason}` : `${data.photographer_name || '작가'} · ${data.date} ${data.time}`,
-      link:  '/my',
-      metadata: { bookingId: data.id },
-    }).catch(() => {});
-
-    // 아이템도 함께 취소해야 헤메·벤더의 시간이 다시 풀린다.
-    // 이게 없으면 성사되지 않은 예약이 스케줄을 계속 점유한다.
-    const { data: items } = await getBookingItems(bookingId);
-    const { error: itemErr } = await sb.from('booking_items')
-      .update({ status: 'cancelled' })
-      .eq('booking_id', bookingId)
-      .not('status', 'in', '("cancelled","refunded")');
-    if (itemErr) console.error('[rejectBooking] 아이템 취소 실패:', itemErr);
-
-    notifyBookingProviders(
-      items
-        .filter(i => i.provider_type !== 'photographer')
-        .map(i => ({ providerType: i.provider_type, providerId: i.provider_id })),
-      {
-        type:  'booking_cancelled',
-        title: '예약이 취소되었습니다',
-        body:  `${data.date} ${data.time} · 일정이 다시 열렸습니다`,
-        bookingId: data.id,
-      },
-    ).catch(err => console.error('[rejectBooking] 공급자 알림 실패:', err));
-  }
-
+  const { data, error } = await sb.rpc('reject_booking', {
+    p_booking: bookingId,
+    p_reason:  reason || '',
+  });
+  if (error) console.error('[rejectBooking] 거절 실패:', error);
   return { data, error };
 };
 
