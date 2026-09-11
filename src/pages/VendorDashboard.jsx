@@ -325,26 +325,23 @@ function VendorDashboard() {
       });
     });
     // 예약에서 rented 카운트 (confirmed + pending만)
+    //
+    // 예전에는 의상 "이름" 으로 매칭했다. 이름이 조금만 달라도 매칭이
+    // 실패해 재고가 줄지 않았고, 서로 다른 벤더가 같은 이름을 쓰면
+    // 엉뚱한 의상의 재고가 깎였다. 이제 booking_items 의 item_id 로 센다.
     bookings.forEach(bk => {
       if (bk.status === 'cancelled' || bk.status === 'completed') return;
-      // itemName으로 dress 매칭
-      const matchedDress = dresses.find(d => d.name === bk.itemName || d.nameEn === bk.itemName);
-      if (!matchedDress || !inv[matchedDress.id]) return;
-      const size = bk.size || 'Free';
-      if (inv[matchedDress.id][size]) {
-        inv[matchedDress.id][size].rented += 1;
+      for (const item of bk.myItems || []) {
+        if (item.provider_type !== 'dress') continue;
+        if (item.status === 'cancelled' || item.status === 'refunded') continue;
+        const row = inv[item.item_id];
+        if (!row) continue;
+        const size = item.item_option || Object.keys(row)[0];
+        if (size && row[size]) row[size].rented += (item.quantity || 1);
       }
     });
-    // 타임라인 데이터에서도 rented 카운트 (사이즈별)
-    MOCK_RENTAL_TIMELINE.forEach(tl => {
-      if (tl.status === 'cancelled' || tl.status === 'completed') return;
-      const matchedDress = dresses.find(d => d.name === tl.itemName || d.id === tl.itemId);
-      if (!matchedDress || !inv[matchedDress.id]) return;
-      const size = tl.size || Object.keys(inv[matchedDress.id])[0];
-      if (size && inv[matchedDress.id][size]) {
-        inv[matchedDress.id][size].rented += 1;
-      }
-    });
+    // MOCK_RENTAL_TIMELINE 은 재고 계산에서 뺐다.
+    // 데모용 가짜 예약이 실제 재고를 깎고 있었다.
     setSizeInventory(inv);
   }, [dresses, bookings]);
 
@@ -444,27 +441,23 @@ function VendorDashboard() {
               images: d.images || [d.image_url || '/default-dress.jpg'],
               color: d.color,
               sizes: d.sizes || [],
+              // size_stock 을 매핑하지 않아 sizeStock 이 undefined 였고,
+              // 재고가 전부 0 으로 계산되어 "예약 가능 0" 이 떴다.
+              sizeStock: d.size_stock || {},
               description: d.description,
             }));
             setDresses(mapped);
             setAvailability(
               dressData.reduce((acc, d) => ({ ...acc, [d.id]: d.is_available }), {})
             );
-            // Initialize mock inventory for demo
-            const mockInv = {};
-            mapped.forEach(d => {
-              if (d.sizes && d.sizes.length > 0) {
-                mockInv[d.id] = {};
-                d.sizes.forEach(s => {
-                  mockInv[d.id][s] = { total: Math.floor(Math.random() * 4) + 1, rented: Math.floor(Math.random() * 2) };
-                });
-              }
-            });
-            setSizeInventory(mockInv);
+            // 예전에는 여기서 Math.random() 으로 재고를 지어냈다.
+            // 아래 useEffect 가 실제 재고로 덮어쓰긴 하지만, 그 전까지
+            // 벤더에게 존재하지 않는 숫자가 보였다.
+            // 재고는 dress_items.size_stock 에서 예약분을 빼서 계산한다.
           }
 
           const { data: bk } = await getVendorBookings(profile.id);
-          if (bk && bk.length > 0) setBookings(bk);
+          setBookings(bk || []);
         } else if (user) {
           setVendorProfile(null);
         }
@@ -658,13 +651,15 @@ function VendorDashboard() {
           id: d.id, vendorId: vendorProfile.id, name: d.name_ko, nameEn: d.name_en,
           category: d.category, price: d.price, image: d.image_url || '/default-dress.jpg',
           images: d.images || [d.image_url || '/default-dress.jpg'],
+          sizeStock: d.size_stock || {},
           color: d.color, sizes: d.sizes || [], description: d.description,
         }));
         setDresses(mapped);
         setAvailability(dressData.reduce((acc, d) => ({ ...acc, [d.id]: d.is_available }), {}));
       }
       const { data: bk } = await getVendorBookings(vendorProfile.id);
-      if (bk && bk.length > 0) setBookings(bk);
+      // 빈 배열일 때 setBookings 를 건너뛰면 이전 목록이 그대로 남는다
+      setBookings(bk || []);
 
       // Refresh reviews
       const [costumeReviews, venueReviews] = await Promise.all([
@@ -2337,14 +2332,19 @@ function VendorDashboard() {
                       confirmed: 'var(--gold)',
                       pending: '#4A9EFF',
                       completed: '#4AFF6A',
-                      rejected: '#e85d5d',
+                      cancelled: '#e85d5d',
+                      refunded: '#e85d5d',
                     };
 
+                    // 실제 상태값은 cancelled 다. rejected 는 존재하지 않아
+                    // 거절된 예약이 라벨 없이 원문으로 표시됐다.
                     const statusLabels = {
                       confirmed: '확정',
                       pending: '대기',
                       completed: '완료',
-                      rejected: '거절',
+                      cancelled: '취소',
+                      refunded: '환불',
+                      delivered: '전달완료',
                     };
 
                     return (
@@ -2357,17 +2357,21 @@ function VendorDashboard() {
                         <td style={{ padding: '1rem', color: 'var(--text)' }}>
                           {booking.date}
                         </td>
+                        {/* hours · customer · itemName · size 는 mock 시절 필드라
+                            실제 예약에서는 전부 빈 칸으로 나왔다.
+                            실제 컬럼은 time · customer_name 이고, 품목과 사이즈는
+                            booking_items(myItems)에 들어 있다. */}
                         <td style={{ padding: '1rem', color: 'var(--muted)', fontSize: '0.85rem' }}>
-                          {booking.hours || '-'}
+                          {booking.time || '-'}
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text)' }}>
-                          {booking.customer}
+                          {booking.customer_name || '-'}
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text)' }}>
-                          {booking.itemName}
+                          {(booking.myItems || []).map(i => i.item_name).join(', ') || '-'}
                         </td>
                         <td style={{ padding: '1rem', color: 'var(--text)' }}>
-                          {booking.size || '-'}
+                          {(booking.myItems || []).map(i => i.item_option).filter(Boolean).join(', ') || '-'}
                         </td>
                         <td style={{ padding: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
