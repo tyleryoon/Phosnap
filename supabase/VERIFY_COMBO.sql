@@ -66,9 +66,10 @@ m as (
     -- STEP 01 운영 시간
     (select count(*) from public.provider_defaults d
       where d.provider_type = 'photographer' and d.provider_id = a.id)                as s01_기본시간,
-    -- 작가가 가입 때 입력한 자체 헤메 메뉴 (profiles.hmk_options)
-    (select jsonb_array_length(coalesce(pr2.hmk_options, '[]'::jsonb))
-       from public.profiles pr2 where pr2.id = a.user_id)                             as 헤메메뉴_입력값
+    -- 자체 헤메 메뉴. FIX_29 이후로는 packages(type='hmk') 가 정본이다.
+    -- profiles.hmk_options 는 이관 원본으로만 남겨 둔다 (고객이 못 읽는다).
+    (select count(*) from public.packages k
+      where k.photographer_id = a.id and k.type = 'hmk')                              as 자체헤메_메뉴수
   from a
 )
 select 작가, 유형, 지역,
@@ -83,8 +84,11 @@ select 작가, 유형, 지역,
          when s01_기본시간 = 0     then '✗ 운영시간 없음 — 날짜 선택 불가'
          when 자체의상 and s04_자체의상 = 0
                                    then '✗ 자체 의상인데 costume 상품 0'
-         when 자체헤메 and coalesce(헤메메뉴_입력값,0) > 0
-                                   then '⚠ 자체 헤메 메뉴가 예약에 안 쓰임'
+         -- 플래그만 켜고 메뉴가 없는 경우를 잡는다.
+         -- 예전 조건은 '메뉴 > 0' 이어서 이 상태를 통과시켰다.
+         -- 작가는 '내가 헤메도 한다' 고 아는데 고객 화면엔 아무것도 안 뜬다.
+         when 자체헤메 and coalesce(자체헤메_메뉴수,0) = 0
+                                   then '✗ 자체 헤메인데 메뉴 0 — 고객에게 안 보임'
          when s03_헤메 = 0 and s04_벤더의상 = 0 and s05_장소 = 0
                                    then '⚠ 작가 단독만 가능 (협업 공급 없음)'
          else '정상'
@@ -94,32 +98,32 @@ select 작가, 유형, 지역,
 
 
 -- ═══════════════════════════════════════════════════════════════════════
--- 참고 1. 자체 헤메 메뉴가 어디에도 안 쓰인다 (2026-09-11 확인)
+-- 참고 1. 자체 헤메를 켜 놓고 메뉴가 없는 작가
 --
---   ArtistRegister 는 hmkSelf 를 켠 작가에게 메뉴를 입력받아
---   profiles.hmk_options 에 저장한다.
---   그런데 그 값을 읽는 곳이 **한 군데도 없다.**
---     · Booking.jsx STEP 03 은 getStylists(작가지역) 만 부른다
---     · toPhotographerCard 는 hmk_options 를 매핑하지 않는다
---     · 작가 상세 화면도 쓰지 않는다
+--   FIX_29 이전에는 메뉴가 profiles.hmk_options 에 저장됐는데,
+--   profiles 는 본인만 읽을 수 있어서 고객이 볼 방법이 없었다.
+--   지금은 packages(type='hmk') 로 옮겼다.
 --
---   즉 "자체 헤어메이크업 있음" 으로 가입한 작가의 고객은
---   그 작가의 메뉴 대신 **같은 지역 다른 헤메 목록**을 본다.
---
---   의상 쪽은 같은 구조가 제대로 구현돼 있다 —
---   dress_self 면 packages(type='costume') 을 보여준다.
---   헤메만 빠졌다. (예전에 dressSelf 도 toPhotographerCard 가 안 넘겨서
---   분기가 아예 안 탔던 것과 같은 계열의 문제다)
+--   그런데 가입 폼에 "메뉴 최소 1개" 검사가 없어서, 플래그만 켜고
+--   메뉴는 0개인 계정이 만들어졌다(실제로 2건 있었다).
+--   가입 검사는 추가했지만, 이미 만들어진 계정은 여기서 찾는다.
 -- ═══════════════════════════════════════════════════════════════════════
 
 select coalesce(p.name_ko, p.name) as 작가,
-       p.hmk_self                  as 자체헤메_플래그,
-       jsonb_array_length(coalesce(pr.hmk_options,'[]'::jsonb)) as 입력한_메뉴수,
-       '예약 화면에서 사용되지 않음' as 현재상태
+       pr.email,
+       p.is_active,
+       (select count(*) from public.packages k
+         where k.photographer_id = p.id and k.type='hmk')              as packages_메뉴,
+       jsonb_array_length(coalesce(pr.hmk_options,'[]'::jsonb))        as 프로필_원본,
+       case
+         when (select count(*) from public.packages k
+                where k.photographer_id = p.id and k.type='hmk') > 0 then '정상'
+         else '✗ 메뉴 없음 — 고객이 선택할 수 없다'
+       end as 상태
   from public.photographers p
   join public.profiles pr on pr.id = p.user_id
  where coalesce(p.hmk_self,false)
-    or jsonb_array_length(coalesce(pr.hmk_options,'[]'::jsonb)) > 0;
+ order by p.is_active desc;
 
 
 -- ═══════════════════════════════════════════════════════════════════════

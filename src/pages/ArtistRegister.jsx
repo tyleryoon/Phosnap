@@ -354,7 +354,28 @@ const ArtistRegister = () => {
 
   const getStep2Issues = () => {
     if (!artistType) return [{ field: '작가 유형', msg: '작가 유형을 선택해주세요. (사진, 영상, 사진+영상, H&M 중 택 1)' }];
-    return [];
+
+    const issues = [];
+    // "H&M 직접 제공" 을 골랐는데 메뉴가 없으면 고객 화면에 아무것도 안 뜬다.
+    //
+    // 예전에는 그냥 통과했다. 실제로 테스트 계정 2개가 hmk_self=true 인데
+    // 메뉴 0개로 가입돼 있었다. 작가는 "내가 헤메도 한다" 고 알고 있는데
+    // 고객은 그 작가 메뉴를 볼 수 없는 상태다.
+    if (isPhotoVideo && hmkSelf === true) {
+      const named = hmkMenuItems.filter(m => (m.name || '').trim());
+      if (named.length === 0) {
+        issues.push({
+          field: 'H&M 메뉴',
+          msg: 'H&M을 직접 제공하시려면 시술 메뉴를 최소 1개 등록해주세요. 등록하지 않으면 고객이 선택할 수 없습니다.',
+        });
+      } else if (named.some(m => !(Number(m.price) > 0))) {
+        issues.push({
+          field: 'H&M 메뉴',
+          msg: 'H&M 메뉴의 가격을 입력해주세요. 0원이면 고객이 예약할 수 없습니다.',
+        });
+      }
+    }
+    return issues;
   };
 
   const getStep4Issues = () => {
