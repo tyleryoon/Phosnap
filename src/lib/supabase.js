@@ -1975,6 +1975,10 @@ export const toPhotographerCard = (row) => {
     // "작가 자체 의상" 분기가 한 번도 타지 않는다.
     artistType:    row.artist_type || 'photographer',
     dressSelf:     row.dress_self ?? false,
+    // 자체 헤어메이크업 여부. 메뉴 자체는 packages(type='hmk') 에 있다.
+    // profiles.hmk_options 에 두면 고객이 못 읽는다 — profiles 는 본인만
+    // 조회 가능하다. FIX_29 에서 packages 로 옮겼다.
+    hmkSelf:       row.hmk_self ?? false,
     countryCode:   row.country_code || 'KR',
     city:          row.city || '',
   };

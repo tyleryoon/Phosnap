@@ -540,6 +540,39 @@ const ArtistRegister = () => {
       throw new Error(`작가 등록 실패: ${artistErr.message}`);
     }
 
+    // 자체 헤어메이크업 메뉴는 packages(type='hmk') 에 저장한다.
+    //
+    // 예전에는 profiles.hmk_options 에만 넣었다. 그런데 profiles 는
+    // "본인 프로필 조회" 정책으로 본인만 읽을 수 있어서, 고객이 그 작가의
+    // 헤메 메뉴를 볼 방법이 없었다. 입력은 받는데 아무 데도 안 쓰였다.
+    // 자체 의상이 packages(type='costume') 를 쓰는 것과 같은 자리로 맞춘다.
+    if (isPhotoVideo && hmkSelf && hmkMenuItems.length > 0) {
+      try {
+        const { getSupabase } = await import('../lib/supabase');
+        const sb = await getSupabase();
+        const { data: photog } = await sb.from('photographers')
+          .select('id').eq('user_id', userId).maybeSingle();
+        if (photog?.id) {
+          const rows = hmkMenuItems
+            .filter(m => (m.name || '').trim())
+            .map(m => ({
+              photographer_id: photog.id,
+              type:            'hmk',
+              name:            m.name.trim(),
+              price:           Number(m.price) || 0,
+              description:     m.desc || null,
+            }));
+          if (rows.length) {
+            const { error: hmkErr } = await sb.from('packages').insert(rows);
+            // 가입 자체를 막지는 않는다. 나중에 대시보드에서 다시 넣을 수 있다.
+            if (hmkErr) console.error('[ArtistRegister] 자체 H&M 메뉴 저장 실패:', hmkErr);
+          }
+        }
+      } catch (e) {
+        console.error('[ArtistRegister] 자체 H&M 메뉴 저장 중 오류:', e);
+      }
+    }
+
     // Apply referral code if provided
     if (referralCode.trim()) {
       try {

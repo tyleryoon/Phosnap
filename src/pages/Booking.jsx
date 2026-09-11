@@ -370,6 +370,10 @@ const Booking = () => {
   // 선택한 날짜에 헤메·장소가 이미 묶여 있는 구간.
   // 이게 없으면 이미 예약이 찬 헤메를 고객이 그대로 고를 수 있다.
   const [busyStylists, setBusyStylists] = useState([]);
+  // 작가 자체 헤어메이크업 메뉴 (packages type='hmk')
+  const [selfHmk, setSelfHmk] = useState([]);
+  // 작가 본인의 그날 점유 구간. 자체 헤메 시술이 앞 촬영과 겹치는지 본다.
+  const [busyArtist, setBusyArtist] = useState([]);
   const [busyVenues, setBusyVenues] = useState([]);
 
   // 스케줄 초기화 (localStorage mock 데이터 시딩)
@@ -384,17 +388,22 @@ const Booking = () => {
       if (!selectedDate) { setBusyStylists([]); setBusyVenues([]); return; }
       const stylistIds = (dbStylists || []).map(s => s.id).filter(Boolean);
       const venueIds   = [...new Set((dbVenues || []).map(v => v.vendorId).filter(Boolean))];
-      if (!stylistIds.length && !venueIds.length) return;
+      // 자체 헤메가 있으면 작가 본인의 점유 구간도 필요하다.
+      // 없으면 그 시술은 "항상 가능" 으로 보여 앞 촬영과 겹칠 수 있다.
+      const needArtist = !!(p?.hmkSelf && p?.id);
+      if (!stylistIds.length && !venueIds.length && !needArtist) return;
 
       try {
         const { getProviderBusyBlocks } = await import('../lib/supabase');
-        const [st, ve] = await Promise.all([
+        const [st, ve, ar] = await Promise.all([
           stylistIds.length ? getProviderBusyBlocks('stylist', stylistIds, selectedDate) : { data: [] },
           venueIds.length   ? getProviderBusyBlocks('venue',   venueIds,   selectedDate) : { data: [] },
+          needArtist        ? getProviderBusyBlocks('photographer', [p.id], selectedDate) : { data: [] },
         ]);
         if (cancelled) return;
         setBusyStylists(st.data || []);
         setBusyVenues(ve.data || []);
+        setBusyArtist(ar.data || []);
       } catch (err) {
         // 조회에 실패하면 아무것도 막지 않는다. 다만 조용히 넘어가면
         // 중복 예약이 생겨도 원인을 찾을 수 없으므로 반드시 남긴다.
@@ -500,6 +509,26 @@ const Booking = () => {
 
         // 작가 자체 의상. dress_self 가 켜진 작가는 벤더 의상 대신
         // 자기 의상을 보여준다. packages 의 type='costume' 이 그 자리다.
+        // 작가 자체 헤어메이크업. 의상과 같은 구조다 — packages 에 있다.
+        // profiles.hmk_options 에 두면 고객이 못 읽는다 (본인만 조회 가능).
+        if (p?.hmkSelf) {
+          const { getPackages } = await import('../lib/supabase');
+          const { data: hmks } = await getPackages(p.id, 'hmk');
+          setSelfHmk((hmks || []).map(h => ({
+            id:               h.id,
+            name:             h.name,
+            price:            h.price,
+            description:      h.description,
+            // 자체 헤메는 촬영 전 시술이 기본이다. 작가가 따로 정하는
+            // 값이 아직 없으므로 외부 헤메와 같은 기본값을 쓴다.
+            timing:           'before',
+            duration:         60,
+            duration_minutes: 60,
+            offset_minutes:   30,
+            max_hours:        null,
+          })));
+        }
+
         if (p?.dressSelf) {
           const { getPackages } = await import('../lib/supabase');
           const { data: costumes } = await getPackages(p.id, 'costume');
@@ -685,7 +714,31 @@ const Booking = () => {
   // DB 가 유일한 출처다. 예전에는 dbStylists 가 비면 mock 스타일리스트
   // 5명(교토·도쿄·부산 등 지역 무관)이 노출되어, 존재하지 않는 사람을
   // 예약에 포함시킬 수 있었다.
-  const allStylists = dbStylists || [];
+  // 자체 헤메가 있으면 목록 맨 위에 둔다.
+  //
+  // 외부 헤메를 가리지 않는다 — 고객이 비교해서 고를 수 있어야 하고,
+  // 작가 입장에서도 자기 메뉴가 안 팔리면 외부로 연결되는 편이 낫다.
+  // (자체 의상은 외부를 대체하지만, 헤메는 병행이다)
+  const selfStylistEntry = (p?.hmkSelf && selfHmk.length > 0) ? {
+    id:       `self:${p.id}`,
+    selfOwned: true,
+    name:     artistName,
+    nameKo:   artistName,
+    img:      p.img || '/default-stylist.jpg',
+    specialty: 'both',
+    location: '',
+    price:    Math.min(...selfHmk.map(h => Number(h.price) || 0).filter(n => n > 0), Infinity) || 0,
+    services: selfHmk,
+    rating:   p.rating || 0,
+    reviews:  p.reviews || 0,
+    tags:      ['자체'],
+    languages: p.languages || ['KO'],
+    portfolio: [],
+  } : null;
+
+  const allStylists = selfStylistEntry
+    ? [selfStylistEntry, ...(dbStylists || [])]
+    : (dbStylists || []);
 
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay    = getFirstDay(calYear, calMonth);
@@ -718,7 +771,11 @@ const Booking = () => {
         max_hours:        svc.max_hours,
       },
       shootWindow,
-      busyStylists.filter(b => b.providerId === stylistId),
+      // 자체 헤메(id 가 'self:...')는 헤메 점유가 아니라 작가 본인 점유를 본다.
+      // 그냥 두면 필터가 빈 배열이 되어 언제나 "가능" 으로 나온다.
+      String(stylistId).startsWith('self:')
+        ? busyArtist
+        : busyStylists.filter(b => b.providerId === stylistId),
     );
   };
 
@@ -888,9 +945,13 @@ const Booking = () => {
     }
 
     if (stylistData?.id && stylistSvcData) {
+      // 작가 자체 헤메면 정산 대상이 헤메가 아니라 작가 본인이다.
+      // 자체 의상(selfOwned)과 같은 처리다. 수수료도 작가 등급으로 계산되고,
+      // 같은 사람이므로 콜라보 인원에도 더해지지 않는다.
+      const hmkSelfOwned = !!stylistData.selfOwned;
       items.push({
-        providerType:    'stylist',
-        providerId:      stylistData.id,
+        providerType:    hmkSelfOwned ? 'photographer' : 'stylist',
+        providerId:      hmkSelfOwned ? p.id : stylistData.id,
         providerName:    stylistData.name || stylistData.nameKo || '',
         itemId:          stylistSvcData.id || null,
         itemName:        selectedStylistSvc || stylistSvcData.name || '헤어메이크업',
