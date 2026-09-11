@@ -711,6 +711,21 @@ const ArtistSchedule = () => {
               setSnapProducts(mapped.filter(p => p.type === 'snap'));
               setCostumes(mapped.filter(p => p.type === 'costume'));
               setProps(mapped.filter(p => p.type === 'prop'));
+              // 자체 H&M 메뉴는 profile.hmk.menus 에서 편집한다.
+              // 그 값은 localStorage 기반이라 다른 기기에서 열면 비어 있는데,
+              // 그대로 저장하면 packages 의 hmk 행이 지워진다.
+              // 비어 있을 때만 DB 값으로 채워 준다.
+              const hmkRows = mapped.filter(p => p.type === 'hmk');
+              if (hmkRows.length) {
+                setProfileState(prev => {
+                  if (!prev) return prev;
+                  if ((prev.hmk?.menus || []).length) return prev;
+                  return {
+                    ...prev,
+                    hmk: { selfAvailable: false, note: '', ...(prev.hmk || {}), menus: hmkRows },
+                  };
+                });
+              }
               // tours 는 profile 상태로 관리되며 setTours 는 저장을 유발하므로
               // 로드 시점에 호출하지 않는다.
             }
@@ -939,7 +954,15 @@ const ArtistSchedule = () => {
             portfolio:    portfolioItems,
             tags:         updated.snapFilters || [],
             price_from:   priceFrom,
-            hmk_available: updated.hmkSelf ?? false,
+            // photographers 에는 hmk_available 과 hmk_self 두 컬럼이 다 있다.
+            // 예약 화면(toPhotographerCard)과 FIX_29 는 hmk_self 를 읽는다.
+            // 여기서 hmk_available 에만 쓰면 작가가 자체 헤메를 켜도
+            // 고객 화면에는 영영 반영되지 않는다. 둘 다 맞춰 둔다.
+            // 토글은 profile.hmk.selfAvailable 에 저장된다.
+            // 예전에는 updated.hmkSelf 를 읽었는데 그런 필드는 없어서
+            // 작가가 자체 H&M 을 켜도 DB 에는 늘 false 가 들어갔다.
+            hmk_self:      updated.hmk?.selfAvailable ?? false,
+            hmk_available: updated.hmk?.selfAvailable ?? false,
             updated_at:   new Date().toISOString(),
           };
           if (coverImg) payload.img = coverImg;
@@ -956,6 +979,9 @@ const ArtistSchedule = () => {
             ['tour',    updated.tours || []],
             ['costume', updated.costumes || []],
             ['prop',    updated.props || []],
+            // 자체 H&M 메뉴. 고객 예약 화면(STEP 03)이 이 행들을 읽는다.
+            // profiles.hmk_options 에 두면 고객이 못 읽는다 (본인만 조회 가능).
+            ['hmk',     (updated.hmk?.menus || []).filter(m => (m.name || '').trim())],
           ];
           for (const [type, items] of groups) {
             const { error: pkgErr } = await replacePackages(dbPhotographerId, type, items);
@@ -3672,6 +3698,7 @@ const ArtistSchedule = () => {
       saveProfileData({ ...profile, costumes: mergedCostumes });
       showSaved('의상이 저장되었습니다 ✓');
     };
+
 
     // ── 포토 투어 CRUD ─────────────────────────────────────────────
     const tours = profile?.tours || [];
