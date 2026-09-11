@@ -2212,6 +2212,39 @@ export const getMyVenueVendorProfile = async () => {
 /**
  * 새로운 venue vendor 등록 (현재 사용자가 소유)
  */
+/**
+ * 장소 벤더 공개 레코드 확보 (없으면 생성)
+ *
+ * 고객 예약 STEP 05 는 venue_vendors / venue_items 에서 읽는데
+ * 지금까지 여기에 쓰는 화면이 하나도 없었다 (addVenueItem 호출처 0건).
+ * 벤더가 장소 탭에서 무엇을 등록해도 dress_items 로 들어가
+ * 고객에게는 영원히 보이지 않았다.
+ *
+ * @param {object} info - 의상 벤더 프로필에서 지역·이름을 승계한다
+ */
+export const ensureVenueVendor = async (info = {}) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+
+  const { data: existing, error: findErr } = await getMyVenueVendorProfile();
+  if (findErr) console.error('[ensureVenueVendor] 조회 실패:', findErr);
+  if (existing) return { data: existing, error: null };
+
+  const session = await getSession();
+  if (!session?.user) return { data: null, error: { message: '로그인이 필요합니다' } };
+
+  return createVenueVendor({
+    name:           info.name || info.nameKo || '장소 대여',
+    name_i18n:      info.nameI18n || {},
+    bio:            info.bio || '',
+    location_id:    info.locationId || null,
+    location_names: info.locationNames || {},
+    categories:     info.categories || [],
+    img:            info.img || null,
+    is_active:      false,   // 아이템을 등록해야 고객에게 노출된다
+  });
+};
+
 export const createVenueVendor = async (data) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };

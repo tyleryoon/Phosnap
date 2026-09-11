@@ -18,6 +18,8 @@ import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendo
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
 import DragDropImageUpload from '../components/DragDropImageUpload';
+import ScheduleManager from '../components/ScheduleManager';
+import VenueItemsManager from '../components/VenueItemsManager';
 import ReferralCard from '../components/ReferralCard';
 
 const MOCK_BOOKINGS = [
@@ -178,6 +180,9 @@ function VendorDashboard() {
 
   // Vendor type switcher (for vendors with both costume + venue)
   const [selectedVendorTypes, setSelectedVendorTypes] = useState([]);
+  // 장소 대여는 venue_vendors 라는 별도 레코드를 쓴다.
+  // 고객 예약 STEP 05 가 이 테이블을 보기 때문이다.
+  const [venueVendorId, setVenueVendorId] = useState(null);
   const vendorTypeList = selectedVendorTypes;
   const [activeDashboard, setActiveDashboard] = useState('costume'); // Default, will be overridden by vendor data
 
@@ -302,6 +307,26 @@ function VendorDashboard() {
       [activeDashboard]: (prev[activeDashboard] || []).filter(t => t !== tag),
     }));
   };
+
+  // 장소 대시보드로 들어가면 venue_vendors 레코드를 확보한다.
+  // 없으면 만들고(비활성 상태), 아이템을 등록해야 고객에게 노출된다.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (activeDashboard !== 'venue' || venueVendorId) return;
+      const { ensureVenueVendor } = await import('../lib/supabase');
+      const { data, error } = await ensureVenueVendor({
+        name:          vendorProfile?.name_ko || vendorProfile?.name,
+        locationId:    vendorProfile?.location_id,
+        locationNames: vendorProfile?.location_names,
+        bio:           vendorProfile?.intro,
+      });
+      if (cancelled) return;
+      if (error) { console.error('[VendorDashboard] 장소 벤더 확보 실패:', error); return; }
+      if (data) setVenueVendorId(data.id);
+    })();
+    return () => { cancelled = true; };
+  }, [activeDashboard, venueVendorId, vendorProfile]);
 
   // Set initial activeDashboard based on vendorTypeList (after vendor data loads)
   useEffect(() => {
@@ -1336,6 +1361,7 @@ function VendorDashboard() {
             { key: 'manage', label: '아이템 관리' },
             { key: 'profile', label: '업체 프로필' },
             { key: 'bookings', label: '예약 현황' },
+            { key: 'schedule', label: '운영 일정' },
             { key: 'timeline', label: '대여 일정' },
             { key: 'reviews', label: '리뷰 관리' },
           ].map((tab) => {
@@ -1380,7 +1406,15 @@ function VendorDashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === 'manage' && (
+        {/* 장소 대여는 venue_items 에 저장한다.
+            예전에는 장소 탭에서도 dress_items 를 필터링해 보여줬는데,
+            고객 예약 STEP 05 는 venue_items 를 읽으므로 등록해도
+            고객에게는 영원히 보이지 않았다. */}
+        {activeTab === 'manage' && activeDashboard === 'venue' && (
+          <VenueItemsManager vendorProfile={vendorProfile} lang={lang} />
+        )}
+
+        {activeTab === 'manage' && activeDashboard !== 'venue' && (
           <div>
             {/* Filter Bar */}
             <div
@@ -2450,6 +2484,16 @@ function VendorDashboard() {
               </table>
             </div>
           </div>
+        )}
+
+        {/* 운영 일정 — 예전에는 localStorage 전용이라 고객이 볼 수 없었다.
+            이제 provider_schedules 를 쓰고 작가·헤메와 같은 컴포넌트를 공유한다. */}
+        {activeTab === 'schedule' && (
+          <ScheduleManager
+            providerType={activeDashboard === 'venue' ? 'venue' : 'dress'}
+            providerId={activeDashboard === 'venue' ? venueVendorId : vendorProfile?.id}
+            lang={lang}
+          />
         )}
 
         {activeTab === 'timeline' && (
