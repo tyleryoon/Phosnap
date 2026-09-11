@@ -155,7 +155,17 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
     if (data?.skipped?.length) text += ` · ${t.skipped}: ${data.skipped.join(', ')}`;
     if (data?.holiday?.length) text += ` · ${t.holiday} ${data.holiday.length}일`;
     flash(text);
-    await loadMonth();
+
+    // 달력을 방금 설정한 달로 옮긴다.
+    // 다른 달을 보고 있으면 변화가 눈에 안 보여서
+    // 눌렀는데 아무 일도 안 일어난 것처럼 느껴진다.
+    const [fy, fm] = from.split('-').map(Number);
+    if (fy && fm && (fy !== year || fm !== month)) {
+      setYear(fy);
+      setMonth(fm);
+    } else {
+      await loadMonth();
+    }
   };
 
   const move = (delta) => {
@@ -250,11 +260,14 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
       </section>
 
       {(msg || err) && (
-        <div style={{
-          padding: 12, fontSize: 13, lineHeight: 1.7,
-          border: `1px solid ${err ? 'rgba(232,93,93,0.5)' : 'rgba(232,160,32,0.5)'}`,
-          color: err ? '#e85d5d' : 'var(--gold)',
-        }}>{err || msg}</div>
+        <div
+          ref={el => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}
+          style={{
+            padding: 14, fontSize: 13, lineHeight: 1.7,
+            background: err ? 'rgba(232,93,93,0.08)' : 'rgba(232,160,32,0.08)',
+            border: `1px solid ${err ? 'rgba(232,93,93,0.5)' : 'rgba(232,160,32,0.5)'}`,
+            color: err ? '#e85d5d' : 'var(--gold)',
+          }}>{err || msg}</div>
       )}
 
       {/* 달력 */}
