@@ -174,6 +174,12 @@ create trigger trg_notifications_read_cancel
 --    Edge Function 이 이걸 읽어 메일을 보내고 상태를 바꾼다.
 --    수신자 이메일은 profiles 에서 가져온다.
 -- ───────────────────────────────────────────────────────────────────────
+-- 수신자 언어. 메일 문구를 고르는 데 쓴다.
+-- profiles 에 없어서 처음에는 42703 으로 실패했다.
+alter table public.profiles
+  add column if not exists lang text not null default 'ko'
+    check (lang in ('ko','en','ja','zh'));
+
 create or replace function public.pending_notification_emails(p_limit int default 50)
 returns table (
   id uuid, user_id uuid, email text, name text,
