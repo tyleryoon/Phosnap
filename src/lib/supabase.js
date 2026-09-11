@@ -2878,7 +2878,7 @@ export const reapplyRole = async (role, note) => {
  */
 export const getAdminAttention = async () => {
   const sb = await getSupabase();
-  const zero = { pending_roles: 0, reapplied: 0, failed_emails: 0, stale_bookings: 0 };
+  const zero = { pending_roles: 0, reapplied: 0, open_inquiries: 0, failed_emails: 0, stale_bookings: 0 };
   if (!sb) return { data: zero, error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb.rpc('admin_attention');
   if (error) {
@@ -2886,4 +2886,75 @@ export const getAdminAttention = async () => {
     return { data: zero, error };
   }
   return { data: { ...zero, ...(data || {}) }, error: null };
+};
+
+// ─── 문의 (FIX_31) ─────────────────────────────────────────────────────
+//
+// 접수·답변 모두 서버 함수다. 규칙 5-11.
+// 특히 답변은 남의 행을 고치는 일이라 클라이언트에 두면 RLS 에 막혀
+// 조용히 0행이 된다. 화면은 성공한 줄 알고, 문의자는 답을 못 받는다.
+
+export const INQUIRY_CATEGORIES = [
+  { value: 'role_change', ko: '작가 유형 변경', desc: '사진 ↔ 영상 ↔ 사진+영상 등' },
+  { value: 'account',     ko: '계정 · 개인정보', desc: '로그인, 정보 수정, 탈퇴' },
+  { value: 'booking',     ko: '예약 · 일정',    desc: '예약 확정, 변경, 스케줄' },
+  { value: 'payment',     ko: '결제 · 환불',    desc: '결제 오류, 환불 요청' },
+  { value: 'settlement',  ko: '정산 · 수수료',  desc: '정산 금액, 입금일' },
+  { value: 'bug',         ko: '오류 신고',      desc: '화면이 안 뜨거나 버튼이 안 될 때' },
+  { value: 'suggestion',  ko: '개선 제안',      desc: '있으면 좋겠는 기능' },
+  { value: 'other',       ko: '기타',          desc: '위에 없는 문의' },
+];
+
+/** 문의 접수 */
+export const submitInquiry = async ({ category, subject, body }) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('submit_inquiry', {
+    p_category: category,
+    p_subject:  (subject || '').trim(),
+    p_body:     (body || '').trim(),
+  });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};
+
+/** 내 문의 목록 (RLS 로 본인 것만 보인다) */
+export const getMyInquiries = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb
+    .from('inquiries')
+    .select('id, category, subject, body, status, answer, answered_at, created_at')
+    .order('created_at', { ascending: false });
+  if (error) return { data: [], error };
+  return { data: data || [], error: null };
+};
+
+/** 관리자: 문의 목록 */
+export const getAdminInquiries = async (status = null) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('admin_inquiries', { p_status: status });
+  if (error) return { data: [], error };
+  return { data: data || [], error: null };
+};
+
+/** 관리자: 답변 등록 — 문의자에게 알림 + 메일 */
+export const answerInquiry = async (id, answer) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const trimmed = (answer || '').trim();
+  if (!trimmed) return { data: null, error: { message: '답변 내용을 입력해주세요' } };
+  const { data, error } = await sb.rpc('answer_inquiry', { p_id: id, p_answer: trimmed });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};
+
+/** 관리자: 답변 없이 종료 (중복·이미 해결된 문의) */
+export const closeInquiry = async (id) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('close_inquiry', { p_id: id });
+  if (error) return { data: null, error };
+  return { data, error: null };
 };

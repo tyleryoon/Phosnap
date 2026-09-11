@@ -292,7 +292,10 @@ const AccountSettings = () => {
               </span>
             </div>
             <span style={{ fontSize: 11, color: 'var(--muted)', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: 3, whiteSpace: 'nowrap' }}
-              onClick={() => window.open('mailto:support@phosnap.com?subject=작가 유형 변경 요청', '_blank')}>
+              // mailto: 는 메일 클라이언트가 없으면 아무 일도 안 일어난다.
+              // 웹메일 쓰는 사람이 많고, 보냈는지 확인할 수도 없고,
+              // 어디에도 기록이 안 남는다. 문의 화면으로 보낸다.
+              onClick={() => navigate('/support?category=role_change')}>
               {f.typeChangeReq}
             </span>
           </div>

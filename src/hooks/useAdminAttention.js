@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getAdminAttention } from '../lib/supabase';
 
-const ZERO = { pending_roles: 0, reapplied: 0, failed_emails: 0, stale_bookings: 0 };
+const ZERO = { pending_roles: 0, reapplied: 0, open_inquiries: 0, failed_emails: 0, stale_bookings: 0 };
 const POLL_MS = 60_000;
 
 // ─── useAdminAttention ─────────────────────────────────────────────────
@@ -42,7 +42,8 @@ export const useAdminAttention = () => {
     return () => { cancelled = true; clearInterval(id); };
   }, [hasAdminRole]);
 
-  const total = counts.pending_roles + counts.failed_emails + counts.stale_bookings;
+  const total = counts.pending_roles + counts.open_inquiries
+              + counts.failed_emails + counts.stale_bookings;
   return { counts, total, hasAny: total > 0, refresh };
 };
 

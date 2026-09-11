@@ -48,6 +48,9 @@ const Footer = () => {
           <div>
             <div className="footer-col-title">{t('footer.supportTitle')}</div>
             <Link to="/contact" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportCenter')}</Link>
+            {/* 로그인한 사용자를 위한 문의 창구.
+                /contact 는 일반 안내, /support 는 계정에 묶인 1:1 문의다. */}
+            <Link to="/support" className="footer-link" style={{ textDecoration: 'none' }}>1:1 문의</Link>
             <Link to="/terms"   className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportTerms')}</Link>
             <Link to="/privacy" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportPrivacy')}</Link>
             <a

@@ -90,6 +90,33 @@ const COPY: Record<string, Record<string, { subject: string; lead: string; cta: 
           lead: 'Review it alongside the previous rejection note.',
           cta: 'Open approvals' },
   },
+  inquiry_received: {
+    // 문의자 본인에게 가는 접수 확인. "보냈는지" 를 알 수 있어야 한다.
+    ko: { subject: '문의가 접수되었습니다',
+          lead: '답변이 등록되면 다시 알려드립니다. 문의 내역에서도 확인하실 수 있습니다.',
+          cta: '문의 내역 보기' },
+    en: { subject: 'We received your inquiry',
+          lead: "We'll let you know as soon as it's answered.",
+          cta: 'View inquiry' },
+  },
+  inquiry_new: {
+    // 관리자에게. 문의 내용은 body 로 내려간다.
+    ko: { subject: '새 문의가 접수되었습니다',
+          lead: '관리자 화면 문의 탭에서 답변하실 수 있습니다.',
+          cta: '문의 열기' },
+    en: { subject: 'New inquiry received',
+          lead: 'Answer it from the admin inquiries tab.',
+          cta: 'Open inquiries' },
+  },
+  inquiry_answered: {
+    // 답변 내용이 body 로 내려가므로 lead 에서 반복하지 않는다.
+    ko: { subject: '문의에 답변이 등록되었습니다',
+          lead: '추가로 궁금하신 점이 있으면 다시 문의해주세요.',
+          cta: '문의 내역 보기' },
+    en: { subject: 'Your inquiry has been answered',
+          lead: 'Feel free to reach out again if anything is unclear.',
+          cta: 'View inquiry' },
+  },
   photos_delivered: {
     ko: { subject: '사진이 전달되었습니다', lead: '작업물을 확인해 주세요.', cta: '사진 보기' },
     en: { subject: 'Your photos are ready', lead: 'Your gallery is available.', cta: 'View photos' },

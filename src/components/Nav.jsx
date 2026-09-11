@@ -190,7 +190,7 @@ const Nav = ({ onAuthOpen }) => {
                 <Link to="/admin"
                   style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                   ⚙ Admin
-                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건`} />
+                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>
               )}
               {isArtist && (
@@ -272,7 +272,7 @@ const Nav = ({ onAuthOpen }) => {
               {isAdmin && (
                 <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
                   ⚙ Admin
-                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건`} />
+                  <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>
               )}
               {isArtist && (

@@ -3,6 +3,7 @@ import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import RoleApprovals from '../components/RoleApprovals';
 import AlertDot from '../components/AlertDot';
+import InquiryAdmin from '../components/InquiryAdmin';
 import useAdminAttention from '../hooks/useAdminAttention';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -849,6 +850,7 @@ const AdminDashboard = () => {
             { key: 'overview', label: translate('overview') },
             { key: 'bookings', label: translate('bookings') },
             { key: 'approvals', label: translate('approvals'), badge: attention.pending_roles },
+            { key: 'inquiries', label: '문의', badge: attention.open_inquiries },
             { key: 'members', label: translate('members') },
           ].map(tab => (
             <button
@@ -877,7 +879,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* 조회 실패 — 숨기지 않는다. 예전에는 여기서 mock 으로 대체됐다. */}
-        {loadError && activeTab !== 'approvals' && (
+        {loadError && !['approvals','inquiries'].includes(activeTab) && (
           <div style={{
             border: '1px solid #e85d5d', background: 'var(--bg2)',
             padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#e85d5d',
@@ -892,7 +894,7 @@ const AdminDashboard = () => {
         {/* 조회는 됐는데 0건 — RLS 가 조용히 걸러낸 경우와 구분되지 않는다.
             PostgREST 는 정책에 막힌 행을 에러 없이 빼고 돌려주기 때문이다. */}
         {!loadError && !loading && bookings.length === 0 && profiles.length === 0
-          && activeTab !== 'approvals' && (
+          && !['approvals','inquiries'].includes(activeTab) && (
           <div style={{
             border: '1px solid var(--border)', background: 'var(--bg2)',
             padding: '14px 18px', marginBottom: 24, fontSize: 13, color: 'var(--muted)',
@@ -906,6 +908,7 @@ const AdminDashboard = () => {
         {activeTab === 'overview' && renderOverviewTab()}
         {activeTab === 'bookings' && renderBookingsTab()}
         {activeTab === 'approvals' && renderApprovalsTab()}
+        {activeTab === 'inquiries' && <InquiryAdmin onChanged={refreshAttention} />}
         {activeTab === 'members' && renderMembersTab()}
       </div>
 

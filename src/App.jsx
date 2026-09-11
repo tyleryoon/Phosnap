@@ -70,6 +70,7 @@ const MyBookings   = React.lazy(() => import('./pages/MyBookings'));
 const StylistProfile = React.lazy(() => import('./pages/StylistProfile'));
 const ArtistRegister = React.lazy(() => import('./pages/ArtistRegister'));
 const ArtistDashboard = React.lazy(() => import('./pages/ArtistDashboard'));
+const Support = React.lazy(() => import('./pages/Support'));
 const VendorRegister = React.lazy(() => import('./pages/VendorRegister'));
 const VendorDashboard = React.lazy(() => import('./pages/VendorDashboard'));
 const Vendors = React.lazy(() => import('./pages/Vendors'));
@@ -432,6 +433,9 @@ const AppContent = () => {
           <Route path="/vendor/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="vendor"><VendorDashboard /></ProtectedRoute>} />
           <Route path="/tour/:instanceId"    element={<TourDetail />} />
           <Route path="/account/settings"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><AccountSettings /></ProtectedRoute>} />
+          {/* 문의. ProtectedRoute 를 쓰지 않는다 — 비로그인에게는
+              '로그인 필요' 대신 왜 필요한지 설명하는 화면을 보여준다. */}
+          <Route path="/support"            element={<Support onAuthOpen={(m) => setAuthModal(m)} />} />
           <Route path="/admin"              element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="admin"><AdminDashboard /></ProtectedRoute>} />
           {/* 404 */}
           <Route path="*"                    element={<NotFound />} />
