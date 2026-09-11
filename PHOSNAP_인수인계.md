@@ -1265,6 +1265,50 @@ select status_code, content from net._http_response order by created desc limit 
 
 ---
 
+## 10-4-2. 반송 메일 (Resend 웹훅)
+
+`email_status = 'sent'` 은 **Resend 가 접수했다**는 뜻이지 도착이 아니다.
+없는 주소도 200 을 받고 나서 반송된다.
+
+```
+notify-worker  →  Resend           email_id 를 notifications 에 기록
+Resend         →  email-webhook    delivered / bounced / complained
+email-webhook  →  record_email_event()
+```
+
+반송된 주소는 `profiles.email_bounced_at` 에 표시되고,
+`pending_notification_emails()` 가 발송 대상에서 빼 준다.
+계속 보내면 도메인 평판이 떨어져 정상 메일까지 스팸으로 간다.
+
+### ⚠ `--no-verify-jwt` 없이 배포하면 401 로 막힌다
+
+```bash
+npx supabase functions deploy email-webhook --no-verify-jwt
+```
+
+Supabase Edge Function 은 기본으로 `Authorization` 헤더를 요구한다.
+Resend 는 그걸 보낼 수 없어서 **우리 코드가 실행되기도 전에**
+게이트웨이가 `401 UNAUTHORIZED_NO_AUTH_HEADER` 를 돌려준다.
+실제로 이렇게 막혔고, Resend 이벤트 목록에서 401 을 보고 알았다.
+
+안전하다 — 이 함수는 Svix 서명을 직접 검증하고 시크릿이 없으면 요청을
+거부한다. 애초에 그래서 서명 검증을 넣었다.
+
+### 설정
+
+1. Resend → Webhooks → **Add Webhook**
+2. URL `https://<project>.supabase.co/functions/v1/email-webhook`
+3. 이벤트 `email.delivered` `email.bounced` `email.complained`
+4. Signing Secret 을 Supabase → Edge Functions → Secrets 에
+   `RESEND_WEBHOOK_SECRET` 으로 등록
+
+Resend 는 200 을 못 받으면 5초 → 5분 → 30분 → 2시간 → 5시간 → 10시간 으로
+재시도한다. 일시 장애는 저절로 복구된다.
+중복 배달(at-least-once)도 오는데, `record_email_event()` 는 같은 값을
+다시 쓸 뿐이라 문제없다.
+
+---
+
 ## 10-5. 승인 · 문의 (관리자 도구)
 
 ### 승인 — `user_roles.status`

@@ -12,8 +12,20 @@
 //     · 작가가 알림을 못 받는데 우리는 보냈다고 믿는다
 //     · 반송률이 올라가면 도메인 평판이 떨어져 정상 메일까지 스팸으로 간다
 //
+// ⚠ 배포할 때 --no-verify-jwt 를 반드시 붙인다
+//     npx supabase functions deploy email-webhook --no-verify-jwt
+//
+//   Supabase Edge Function 은 기본으로 Authorization 헤더(JWT)를 요구한다.
+//   Resend 는 그걸 보낼 수 없으므로 우리 코드가 실행되기도 전에
+//   게이트웨이에서 401 UNAUTHORIZED_NO_AUTH_HEADER 로 막힌다.
+//   (실제로 그렇게 막혔다 — Resend 이벤트 목록에 401 이 찍혔다)
+//
+//   안전하다. 이 함수는 Svix 서명을 직접 검증하고, 시크릿이 없으면
+//   아예 요청을 거부한다. 애초에 그래서 서명 검증을 넣었다.
+//   Supabase JWT 는 Resend 가 가질 수 없는 값이라 여기선 맞는 인증 수단이 아니다.
+//
 // 설정
-//   Resend 대시보드 → Webhooks → Add Endpoint
+//   Resend 대시보드 → Webhooks → Add Webhook
 //     URL    https://<project>.supabase.co/functions/v1/email-webhook
 //     Events email.delivered, email.bounced, email.complained
 //   받은 Signing Secret 을 Edge Function Secret 으로 넣는다.

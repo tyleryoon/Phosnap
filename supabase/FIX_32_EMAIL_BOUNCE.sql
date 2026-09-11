@@ -25,8 +25,11 @@
 --
 -- 필요한 것
 --   1) 이 SQL
---   2) Edge Function 배포: npx supabase functions deploy email-webhook
---   3) Resend 대시보드 → Webhooks → 엔드포인트 등록
+--   2) Edge Function 배포 — --no-verify-jwt 를 반드시 붙인다
+--        npx supabase functions deploy email-webhook --no-verify-jwt
+--      안 붙이면 Supabase 게이트웨이가 401 로 막는다. Resend 는 JWT 를
+--      보낼 수 없다. 함수가 Svix 서명을 직접 검증하므로 안전하다.
+--   3) Resend 대시보드 → Webhooks → Add Webhook
 --      https://<project>.supabase.co/functions/v1/email-webhook
 --      이벤트: email.bounced, email.complained, email.delivered
 --   4) 서명 검증 키를 Vault 에 저장 (아래 안내)
