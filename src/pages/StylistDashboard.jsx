@@ -9,6 +9,7 @@ import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendo
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
 import { computeSlot } from '../lib/scheduling';
+import ScheduleManager from '../components/ScheduleManager';
 
 const i18n = {
   ko: {
@@ -27,6 +28,7 @@ const i18n = {
     price: '가격',
     duration: '소요 시간 (분)',
     myWork: '내 작업',
+    schedule: '운영 일정',
     dressRentalDay: '의상 대여 · 당일',
     payout: '실수령',
     collab: '콜라보',
@@ -92,6 +94,7 @@ const i18n = {
     price: 'Price',
     duration: 'Duration (minutes)',
     myWork: 'My part',
+    schedule: 'Availability',
     dressRentalDay: 'Dress rental · same day',
     payout: 'Payout',
     collab: 'Collab',
@@ -157,6 +160,7 @@ const i18n = {
     price: '価格',
     duration: '所要時間（分）',
     myWork: '担当作業',
+    schedule: '営業日程',
     dressRentalDay: '衣装レンタル · 当日',
     payout: '受取額',
     collab: 'コラボ',
@@ -222,6 +226,7 @@ const i18n = {
     price: '价格',
     duration: '持续时间（分钟）',
     myWork: '我的工作',
+    schedule: '营业日程',
     dressRentalDay: '服装租赁 · 当天',
     payout: '实收',
     collab: '合作',
@@ -1711,6 +1716,7 @@ export default function StylistDashboard() {
           {[
             { id: 'bookings', label: t.bookings },
             { id: 'serviceMenu', label: t.serviceMenu },
+            { id: 'schedule', label: t.schedule },
             { id: 'dressRental', label: '의상 대여' },
             { id: 'profileEdit', label: t.profileEdit },
             { id: 'reviews', label: t.reviews },
@@ -1739,6 +1745,9 @@ export default function StylistDashboard() {
         {/* 이 컴포넌트는 useLanguage() 를 `language` 로 받는다.
             lang={lang} 로 넘기면 ReferenceError 로 탭 전체가 크래시한다. */}
         {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} lang={language} stylistId={stylistId} />}
+        {activeTab === 'schedule' && (
+          <ScheduleManager providerType="stylist" providerId={stylistId} lang={language} />
+        )}
         {activeTab === 'dressRental' && <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />}
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 

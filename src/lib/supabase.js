@@ -1585,6 +1585,128 @@ export const updateStylistProfile = async (stylistId, updates) => {
 export const getStylistBookings = async (stylistId) =>
   getProviderBookings('stylist', stylistId);
 
+// ─── 공통 스케줄 (작가 · 헤메 · 벤더) ────────────────────────────────
+//
+// 예전에는 역할마다 저장 방식이 달랐다.
+//   작가 : artist_schedules (DB)
+//   헤메 : 관리 화면 자체가 없음
+//   벤더 : localStorage — 고객이 볼 수 없었다
+// provider_schedules 하나로 합쳐 같은 로직을 세 번 쓰지 않는다.
+
+/** 기본 운영 시간 (평상시 슬롯 + 정기 휴무 요일) */
+export const getProviderDefaults = async (providerType, providerId) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { data: null, error: null };
+  const { data, error } = await sb
+    .from('provider_defaults')
+    .select('*')
+    .eq('provider_type', providerType)
+    .eq('provider_id', providerId)
+    .maybeSingle();
+  if (error) console.error('[getProviderDefaults] 조회 실패:', error);
+  return { data, error };
+};
+
+export const upsertProviderDefaults = async (providerType, providerId, { defaultSlots, weeklyOff }) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { error: { message: 'Supabase 연결 실패' } };
+  const payload = {
+    provider_type: providerType,
+    provider_id:   providerId,
+    updated_at:    new Date().toISOString(),
+  };
+  if (defaultSlots) payload.default_slots = defaultSlots;
+  if (weeklyOff)    payload.weekly_off    = weeklyOff;
+
+  const { data, error } = await sb
+    .from('provider_defaults')
+    .upsert(payload, { onConflict: 'provider_type,provider_id' })
+    .select()
+    .maybeSingle();
+  if (error) console.error('[upsertProviderDefaults] 저장 실패:', error);
+  return { data, error };
+};
+
+/** 월 단위 스케줄 — 달력 렌더링용 */
+export const getProviderScheduleMonth = async (providerType, providerId, year, month) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { data: [], error: null };
+  const pad = (n) => String(n).padStart(2, '0');
+  const from = `${year}-${pad(month)}-01`;
+  const to   = `${year}-${pad(month)}-${new Date(year, month, 0).getDate()}`;
+
+  const { data, error } = await sb
+    .from('provider_schedules')
+    .select('*')
+    .eq('provider_type', providerType)
+    .eq('provider_id', providerId)
+    .gte('date', from)
+    .lte('date', to)
+    .order('date');
+  if (error) console.error('[getProviderScheduleMonth] 조회 실패:', error);
+  return { data: data || [], error };
+};
+
+/** 하루 설정 (열기/닫기, 슬롯 조정) */
+export const upsertProviderScheduleDate = async (providerType, providerId, date, patch = {}) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId || !date) return { error: { message: '잘못된 요청' } };
+  const payload = {
+    provider_type: providerType,
+    provider_id:   providerId,
+    date,
+    ...(patch.dayOff  !== undefined ? { day_off: patch.dayOff }  : {}),
+    ...(patch.slots   !== undefined ? { slots:   patch.slots }   : {}),
+    ...(patch.blocked !== undefined ? { blocked: patch.blocked } : {}),
+    ...(patch.note    !== undefined ? { note:    patch.note }    : {}),
+  };
+  const { data, error } = await sb
+    .from('provider_schedules')
+    .upsert(payload, { onConflict: 'provider_type,provider_id,date' })
+    .select()
+    .maybeSingle();
+  if (error) console.error('[upsertProviderScheduleDate] 저장 실패:', error);
+  return { data, error };
+};
+
+/**
+ * 날짜 범위 일괄 오픈/클로즈
+ *
+ * 확정된 예약이 있는 날짜는 닫지 않는다. 닫아버리면 고객은 예약을
+ * 들고 있는데 공급자 일정에는 없는 상태가 되어 촬영 당일 아무도
+ * 나오지 않는다. 건너뛴 날짜는 목록으로 돌려주어 화면에서 안내한다.
+ *
+ * @returns {{ data: { updated:number, skipped:string[], holiday:string[] } }}
+ *   skipped — 예약이 있어 닫지 못한 날짜
+ *   holiday — 정기 휴무 요일이라 열지 않은 날짜
+ */
+export const bulkSetSchedule = async (providerType, providerId, { from, to, open, slots = null }) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { error: { message: 'Supabase 연결 실패' } };
+
+  const { data, error } = await sb.rpc('bulk_set_schedule', {
+    p_type:  providerType,
+    p_id:    providerId,
+    p_from:  from,
+    p_to:    to,
+    p_open:  open,
+    p_slots: slots,
+  });
+  if (error) console.error('[bulkSetSchedule] 일괄 설정 실패:', error);
+  return { data, error };
+};
+
+/**
+ * 특정 날짜에 실제로 운영하는 슬롯
+ * 날짜별 설정 → 없으면 기본 운영시간. blocked 는 제외한다.
+ */
+export const resolveProviderSlots = (daySchedule, defaults) => {
+  if (daySchedule?.day_off) return [];
+  const base = (daySchedule?.slots?.length ? daySchedule.slots : defaults?.default_slots) || [];
+  const blocked = new Set(daySchedule?.blocked || []);
+  return base.filter(s => !blocked.has(s));
+};
+
 /**
  * 현재 로그인한 사람이 소유한 모든 공급자 레코드
  *
