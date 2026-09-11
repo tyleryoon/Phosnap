@@ -244,90 +244,73 @@ const AdminDashboard = () => {
   const langCode = 'ko'; // Would be replaced with actual language context in real app
   const translate = (key) => i18n[langCode]?.[key] || i18n['ko'][key] || key;
 
-  // Load data from Supabase
+  // ─── 데이터 로드 ────────────────────────────────────────────────────
+  //
+  // ⚠ 실패하면 실패라고 말한다. mock 으로 대체하지 않는다.
+  //
+  //   예전에는 catch 에서 getMockBookings() / getMockStats() 를 넣었다.
+  //   조회가 막히면 화면에 847건 · ₩12,450,000 이 떴다. 전부 가짜다.
+  //   관리자가 그 숫자를 보고 판단하면 안 된다.
+  //
+  //   RLS 가 막는 경우는 에러조차 안 난다는 점도 중요하다.
+  //   PostgREST 는 정책에 걸린 행을 조용히 빼고 200 을 돌려준다.
+  //   그래서 "0건" 과 "권한이 없어 안 보임" 이 화면상 구분되지 않는다.
+  //   아래에서 error 를 반드시 받아 표시하고, 0건일 때는 그 가능성을 안내한다.
+  const [loadError, setLoadError] = useState(null);
+
   useEffect(() => {
     const loadData = async () => {
+      setLoading(true);
+      setLoadError(null);
       try {
-        setLoading(true);
         const { getSupabase } = await import('../lib/supabase');
         const sb = await getSupabase();
+        if (!sb) throw new Error('Supabase 연결에 실패했습니다.');
 
-        if (!sb) {
-          // Mock data for demo
-          setBookings(getMockBookings());
-          setProfiles(getMockProfiles());
-          setStats(getMockStats());
-          setLoading(false);
-          return;
-        }
+        const [bookingsRes, profilesRes, photogRes] = await Promise.all([
+          sb.from('bookings').select('*').order('created_at', { ascending: false }),
+          sb.from('profiles').select('*').order('created_at', { ascending: false }),
+          sb.from('photographers').select('id, is_active'),
+        ]);
 
-        // Fetch bookings
-        const { data: bookingsData } = await sb.from('bookings').select('*').order('created_at', { ascending: false });
-        setBookings(bookingsData || []);
+        const firstErr = bookingsRes.error || profilesRes.error || photogRes.error;
+        if (firstErr) throw new Error(firstErr.message);
 
-        // Fetch profiles
-        const { data: profilesData } = await sb.from('profiles').select('*').order('created_at', { ascending: false });
-        setProfiles(profilesData || []);
+        const bookingsData = bookingsRes.data || [];
+        const profilesData = profilesRes.data || [];
 
-        // Calculate stats
+        setBookings(bookingsData);
+        setProfiles(profilesData);
+
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-        const monthlyBookings = (bookingsData || []).filter(b => {
-          const bDate = new Date(b.created_at);
-          return bDate >= monthStart;
-        });
-
-        const monthlyRev = monthlyBookings.reduce((sum, b) => sum + (b.total_price || 0), 0);
-        const newSignups = (profilesData || []).filter(p => {
-          const pDate = new Date(p.created_at);
-          return pDate >= monthStart;
-        }).length;
-
-        const activePhots = (profilesData || []).filter(p => p.role === 'artist' && p.approved === true).length;
+        const inThisMonth = (v) => {
+          const d = new Date(v);
+          return !Number.isNaN(d.getTime()) && d >= monthStart;
+        };
 
         setStats({
-          totalBookings: bookingsData?.length || 0,
-          monthlyRevenue: monthlyRev,
-          newSignups,
-          activePhotographers: activePhots,
+          totalBookings: bookingsData.length,
+          monthlyRevenue: bookingsData
+            .filter(b => inThisMonth(b.created_at))
+            .reduce((sum, b) => sum + (b.total_price || 0), 0),
+          newSignups: profilesData.filter(p => inThisMonth(p.created_at)).length,
+          // 예전에는 profiles.approved 를 셌다. 승인 상태는 user_roles.status 에
+          // 있고 노출 여부는 photographers.is_active 다. 후자가 "고객에게
+          // 실제로 보이는 작가 수" 이므로 그걸 센다.
+          activePhotographers: (photogRes.data || []).filter(p => p.is_active).length,
         });
       } catch (err) {
-        // Use mock data on error
-        setBookings(getMockBookings());
-        setProfiles(getMockProfiles());
-        setStats(getMockStats());
+        setLoadError(err.message || '데이터를 불러오지 못했습니다.');
+        setBookings([]);
+        setProfiles([]);
+        setStats({ totalBookings: 0, monthlyRevenue: 0, newSignups: 0, activePhotographers: 0 });
       } finally {
         setLoading(false);
       }
     };
-
     loadData();
   }, []);
-
-  // Mock data
-  const getMockBookings = () => [
-    { id: 1, date: '2026-04-12', customer_name: 'Kim Sarah', photographer_name: 'Minah Jung', package_name: 'Premium 4h', total_price: 450000, status: 'confirmed' },
-    { id: 2, date: '2026-04-11', customer_name: 'Park Ji-hun', photographer_name: 'Lee Soo-yeon', package_name: 'Standard 2h', total_price: 250000, status: 'completed' },
-    { id: 3, date: '2026-04-10', customer_name: 'Smith James', photographer_name: 'Fujiwara Kana', package_name: 'Deluxe 6h', total_price: 650000, status: 'pending' },
-    { id: 4, date: '2026-04-09', customer_name: 'Choi Min-ji', photographer_name: 'Tanaka Yuki', package_name: 'Standard 2h', total_price: 280000, status: 'cancelled' },
-    { id: 5, date: '2026-04-08', customer_name: 'Zhang Wei', photographer_name: 'Han Se-ri', package_name: 'Premium 4h', total_price: 520000, status: 'delivered' },
-  ];
-
-  const getMockProfiles = () => [
-    { id: 1, full_name: 'Minah Jung', email: 'minah@phosnap.com', role: 'artist', created_at: '2026-03-15', approved: true, is_active: true },
-    { id: 2, full_name: 'Lee Soo-yeon', email: 'soo@phosnap.com', role: 'artist', created_at: '2026-03-20', approved: null, is_active: true },
-    { id: 3, full_name: 'Park Vendor', email: 'vendor@phosnap.com', role: 'vendor', created_at: '2026-04-01', approved: null, is_active: true },
-    { id: 4, full_name: 'Kim Customer', email: 'customer@phosnap.com', role: 'customer', created_at: '2026-04-05', approved: null, is_active: true },
-    { id: 5, full_name: 'Fujiwara Kana', email: 'fujiwara@phosnap.com', role: 'artist', created_at: '2026-02-28', approved: true, is_active: true },
-  ];
-
-  const getMockStats = () => ({
-    totalBookings: 847,
-    monthlyRevenue: 12450000,
-    newSignups: 23,
-    activePhotographers: 45,
-  });
 
   // Filtered data
   const filteredBookings = useMemo(() => {
@@ -868,6 +851,32 @@ const AdminDashboard = () => {
             </button>
           ))}
         </div>
+
+        {/* 조회 실패 — 숨기지 않는다. 예전에는 여기서 mock 으로 대체됐다. */}
+        {loadError && activeTab !== 'approvals' && (
+          <div style={{
+            border: '1px solid #e85d5d', background: 'var(--bg2)',
+            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#e85d5d',
+          }}>
+            데이터를 불러오지 못했습니다 — {loadError}
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
+              아래 숫자는 모두 0으로 표시됩니다. 실제 값이 아닙니다.
+            </div>
+          </div>
+        )}
+
+        {/* 조회는 됐는데 0건 — RLS 가 조용히 걸러낸 경우와 구분되지 않는다.
+            PostgREST 는 정책에 막힌 행을 에러 없이 빼고 돌려주기 때문이다. */}
+        {!loadError && !loading && bookings.length === 0 && profiles.length === 0
+          && activeTab !== 'approvals' && (
+          <div style={{
+            border: '1px solid var(--border)', background: 'var(--bg2)',
+            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: 'var(--muted)',
+          }}>
+            조회 결과가 비어 있습니다. 실제로 데이터가 없거나,
+            관리자 읽기 정책(RLS)이 없어 걸러졌을 수 있습니다.
+          </div>
+        )}
 
         {/* Tab Content */}
         {activeTab === 'overview' && renderOverviewTab()}
