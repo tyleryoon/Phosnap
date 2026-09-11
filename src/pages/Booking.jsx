@@ -951,6 +951,8 @@ const Booking = () => {
       const hmkSelfOwned = !!stylistData.selfOwned;
       items.push({
         providerType:    hmkSelfOwned ? 'photographer' : 'stylist',
+        // 요율은 누가 하든 헤메 요율이다. 정산 대상만 작가로 바뀐다.
+        rateType:        'stylist',
         providerId:      hmkSelfOwned ? p.id : stylistData.id,
         providerName:    stylistData.name || stylistData.nameKo || '',
         itemId:          stylistSvcData.id || null,

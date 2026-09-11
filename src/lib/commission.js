@@ -175,6 +175,22 @@ export const EARLY_BIRD_RATES = {
  */
 export const calculateItemCommission = ({
   providerType = 'photographer',
+  // 요율을 결정하는 기준. 기본은 providerType 과 같다.
+  //
+  // 왜 나눠 놨나
+  //   작가가 자체 헤어메이크업을 제공하면 정산은 작가에게 가야 하므로
+  //   providerType 은 'photographer' 여야 한다. provider_type 은
+  //   provider_user_id() 로 정산 대상을 찾고 owns_provider() 로 RLS 를
+  //   판정하는 데도 쓰이기 때문에, 여기를 'stylist' 로 바꾸면 작가가
+  //   자기 예약 아이템을 못 보게 된다.
+  //
+  //   그런데 요율은 헤메 요율이어야 한다. 같은 시술 같은 금액인데
+  //   누가 하느냐로 수수료가 달라지면 설명할 수 없고, 자체 헤메를 숨기고
+  //   외부로 돌리는 유인이 생긴다.
+  //
+  //   그래서 "돈이 누구에게 가나"(providerType)와
+  //   "무슨 일에 대한 수수료인가"(rateType)를 분리한다.
+  rateType = null,
   price = 0,
   completedCount = 0,
   isEarlyBird = false,
@@ -182,7 +198,8 @@ export const calculateItemCommission = ({
   collabCount = 1,
 }) => {
   const amount = Number(price) || 0;
-  const steps = PROVIDER_STEPS[providerType] || PROVIDER_STEPS.photographer;
+  const kind  = rateType || providerType;
+  const steps = PROVIDER_STEPS[kind] || PROVIDER_STEPS.photographer;
 
   // 1) 기본 요율 — 누적 건수 기반
   const step = [...steps].reverse().find(s => completedCount >= s.minCompleted);
@@ -193,7 +210,7 @@ export const calculateItemCommission = ({
   const earlyActive = isEarlyBird &&
     (!earlyBirdUntil || Date.now() < new Date(earlyBirdUntil).getTime());
   if (earlyActive) {
-    const earlyRate = EARLY_BIRD_RATES[providerType] ?? 0.10;
+    const earlyRate = EARLY_BIRD_RATES[kind] ?? 0.10;
     if (earlyRate < rate) {
       rate = earlyRate;
       tierLabel = '얼리버드';
@@ -224,6 +241,7 @@ export const calculateItemCommission = ({
     effectiveRate: amount > 0 ? commission / amount : 0,
     collabDiscount,
     tierLabel,
+    rateType: kind,
   };
 };
 

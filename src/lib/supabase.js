@@ -713,6 +713,9 @@ export const createBooking = async (booking) => {
     return {
       booking_id:        data.id,
       provider_type:     it.providerType,
+      // 요율 기준. provider_type 과 다를 수 있다 — 작가 자체 헤메가 그 경우다.
+      // 나중에 정산을 재계산할 때 무슨 요율을 썼는지 알아야 한다.
+      rate_type:         it.rateType || it.providerType,
       provider_id:       it.providerId,
       provider_name:     it.providerName || null,
       item_id:           it.itemId || null,
