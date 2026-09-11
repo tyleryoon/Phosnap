@@ -2234,17 +2234,45 @@ export const ensureVenueVendor = async (info = {}) => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
 
+  const session = await getSession();
+  if (!session?.user) return { data: null, error: { message: '로그인이 필요합니다' } };
+
+  // 호출하는 쪽이 프로필을 미리 실어놨는지에 의존하면 안 된다.
+  // 대시보드 진입 시점에 vendorProfile 이 아직 없으면 locationId 가
+  // undefined 로 들어와 location_id = null 인 레코드가 만들어지고,
+  // 그러면 지역 필터에 영원히 걸리지 않아 고객에게 보이지 않는다.
+  // 여기서 직접 의상 벤더 레코드를 찾아 승계한다.
+  let seed = {
+    name:          info.name || info.nameKo,
+    locationId:    info.locationId,
+    locationNames: info.locationNames,
+    bio:           info.bio,
+  };
+  if (!seed.locationId || !seed.name) {
+    const { data: dv, error: dvErr } = await sb
+      .from('dress_vendors')
+      .select('name_ko, name, location_id, location_names, intro')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    if (dvErr) console.error('[ensureVenueVendor] 의상 벤더 조회 실패:', dvErr);
+    if (dv) {
+      seed = {
+        name:          seed.name          || dv.name_ko || dv.name,
+        locationId:    seed.locationId    || dv.location_id,
+        locationNames: seed.locationNames || dv.location_names,
+        bio:           seed.bio           || dv.intro,
+      };
+    }
+  }
+
   const { data: existing, error: findErr } = await getMyVenueVendorProfile();
   if (findErr) console.error('[ensureVenueVendor] 조회 실패:', findErr);
   if (existing) {
-    // 레코드는 있는데 지역이 비어 있으면 채운다.
-    // 대시보드 진입 시점에 벤더 프로필이 아직 안 실려 있으면
-    // location_id 가 null 로 만들어지고, 그러면 지역 필터에
-    // 영원히 걸리지 않아 고객에게 보이지 않는다.
-    if (!existing.location_id && info.locationId) {
+    // 레코드는 있는데 지역이 비어 있으면 채운다
+    if (!existing.location_id && seed.locationId) {
       const { data: fixed, error: fixErr } = await updateVenueVendorProfile(existing.id, {
-        location_id:    info.locationId,
-        location_names: info.locationNames || existing.location_names || {},
+        location_id:    seed.locationId,
+        location_names: seed.locationNames || existing.location_names || {},
       });
       if (fixErr) console.error('[ensureVenueVendor] 지역 보정 실패:', fixErr);
       else if (fixed) return { data: fixed, error: null };
@@ -2252,15 +2280,12 @@ export const ensureVenueVendor = async (info = {}) => {
     return { data: existing, error: null };
   }
 
-  const session = await getSession();
-  if (!session?.user) return { data: null, error: { message: '로그인이 필요합니다' } };
-
   return createVenueVendor({
-    name:           info.name || info.nameKo || '장소 대여',
+    name:           seed.name || '장소 대여',
     name_i18n:      info.nameI18n || {},
-    bio:            info.bio || '',
-    location_id:    info.locationId || null,
-    location_names: info.locationNames || {},
+    bio:            seed.bio || '',
+    location_id:    seed.locationId || null,
+    location_names: seed.locationNames || {},
     categories:     info.categories || [],
     img:            info.img || null,
     is_active:      false,   // 아이템을 등록해야 고객에게 노출된다
