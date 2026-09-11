@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   getProviderDefaults, upsertProviderDefaults,
   getProviderScheduleMonth, upsertProviderScheduleDate,
-  bulkSetSchedule, resolveProviderSlots,
+  bulkSetSchedule, resolveProviderSlots, resolveDayState,
 } from '../lib/supabase';
 
 // ─── 공급자 운영 일정 관리 ────────────────────────────────────────────
@@ -37,7 +37,9 @@ const i18n = {
     save: '저장', saving: '처리 중…',
     saved: '저장되었습니다',
     open: '영업', closed: '휴무',
-    legendOpen: '영업일', legendClosed: '휴무일', legendNone: '미설정',
+    legendOpen: '영업', legendClosed: '휴무',
+    legendWeekly: '정기 휴무', legendDefault: '기본 운영시간 적용',
+    slotUnit: '타임', dayOffShort: '휴무', weeklyShort: '정기',
     hint: '날짜를 누르면 영업/휴무가 바뀝니다',
     bulkDone: (n) => `${n}일 설정 완료`,
     skipped: '예약이 있어 휴무로 바꾸지 못한 날',
@@ -55,7 +57,9 @@ const i18n = {
     save: 'Save', saving: 'Working…',
     saved: 'Saved',
     open: 'Open', closed: 'Closed',
-    legendOpen: 'Open', legendClosed: 'Closed', legendNone: 'Not set',
+    legendOpen: 'Open', legendClosed: 'Closed',
+    legendWeekly: 'Weekly day off', legendDefault: 'Default hours apply',
+    slotUnit: ' slots', dayOffShort: 'Closed', weeklyShort: 'Weekly',
     hint: 'Click a date to toggle open/closed',
     bulkDone: (n) => `${n} day(s) updated`,
     skipped: 'Kept open — bookings exist',
@@ -117,11 +121,15 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
     setTimeout(() => { setMsg(''); setErr(''); }, 5000);
   };
 
+  /** 그 날의 실효 상태 — 정기 휴무까지 반영한다 */
+  const stateOf = (d) => resolveDayState(days[key(d)], defaults, new Date(year, month - 1, d));
+
   const toggleDay = async (d) => {
     const date = key(d);
-    const cur = days[date];
-    // 미설정 → 영업, 영업 → 휴무, 휴무 → 영업
-    const nextOff = cur ? !cur.day_off : false;
+    // 지금 열려 있으면(명시 영업 또는 기본 운영) 닫고,
+    // 닫혀 있으면(명시 휴무 또는 정기 휴무) 그날만 예외로 연다.
+    const st = stateOf(d);
+    const nextOff = (st === 'open' || st === 'default');
     const { error } = await upsertProviderScheduleDate(providerType, providerId, date, { dayOff: nextOff });
     if (error) { flash(error.message, true); return; }
     await loadMonth();
@@ -285,35 +293,60 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
           {Array.from({ length: firstDow }).map((_, i) => <div key={`b${i}`} />)}
           {Array.from({ length: total }).map((_, i) => {
             const d = i + 1;
-            const row = days[key(d)];
-            const isOff = row?.day_off;
-            const isOpen = row && !row.day_off;
-            const slotCount = row ? resolveProviderSlots(row, defaults).length : 0;
+            const dateStr = key(d);
+            const row = days[dateStr];
+            // 정기 휴무까지 반영한 실효 상태.
+            // 예전에는 row 유무만 봐서, 정기 휴무로 지정한 요일이
+            // 달력에 아무 표시 없이 '미설정'으로 보였다.
+            const st = resolveDayState(row, defaults, new Date(year, month - 1, d));
+            const slotCount = resolveProviderSlots(row, defaults, dateStr).length;
+
+            const style = {
+              open:      { bg: 'rgba(72,187,120,0.14)', bd: 'rgba(72,187,120,0.55)', fg: '#48bb78' },
+              default:   { bg: 'rgba(72,187,120,0.05)', bd: 'var(--border)',         fg: 'var(--muted)' },
+              closed:    { bg: 'rgba(232,93,93,0.12)',  bd: 'rgba(232,93,93,0.45)',  fg: '#e85d5d' },
+              weeklyOff: { bg: 'rgba(232,93,93,0.06)',  bd: 'rgba(232,93,93,0.28)',  fg: 'rgba(232,93,93,0.75)' },
+            }[st];
+
+            const caption =
+              st === 'closed'    ? t.dayOffShort
+            : st === 'weeklyOff' ? t.weeklyShort
+            : `${slotCount}${t.slotUnit}`;
+
             return (
               <button key={d} type="button" onClick={() => toggleDay(d)}
+                title={`${dateStr} · ${
+                  st === 'closed' ? t.legendClosed
+                  : st === 'weeklyOff' ? t.legendWeekly
+                  : st === 'default' ? t.legendDefault
+                  : t.legendOpen}`}
                 style={{
                   aspectRatio: '1', cursor: 'pointer', padding: 4,
-                  background: isOpen ? 'rgba(72,187,120,0.12)'
-                            : isOff  ? 'rgba(232,93,93,0.10)' : 'transparent',
-                  border: `1px solid ${isOpen ? 'rgba(72,187,120,0.5)'
-                                     : isOff ? 'rgba(232,93,93,0.4)' : 'var(--border)'}`,
+                  background: style.bg,
+                  border: `1px solid ${style.bd}`,
                   color: 'var(--text)', fontFamily: 'var(--font-body)',
                   display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center', gap: 2,
                 }}>
                 <span style={{ fontSize: 13 }}>{d}</span>
-                {isOpen && <span style={{ fontSize: 9, color: '#48bb78' }}>{slotCount}</span>}
-                {isOff && <span style={{ fontSize: 9, color: '#e85d5d' }}>·</span>}
+                <span style={{ fontSize: 9, color: style.fg, lineHeight: 1 }}>{caption}</span>
               </button>
             );
           })}
         </div>
 
-        <div style={{ display: 'flex', gap: 16, marginTop: 14, fontSize: 11, color: 'var(--muted)' }}>
-          <span>🟢 {t.legendOpen}</span>
-          <span>🔴 {t.legendClosed}</span>
-          <span>⬜ {t.legendNone}</span>
+        <div style={{ display: 'flex', gap: 14, marginTop: 14, fontSize: 11,
+                      color: 'var(--muted)', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ color: '#48bb78' }}>■ {t.legendOpen}</span>
+          <span>■ {t.legendDefault}</span>
+          <span style={{ color: '#e85d5d' }}>■ {t.legendClosed}</span>
+          <span style={{ color: 'rgba(232,93,93,0.75)' }}>■ {t.legendWeekly}</span>
           <span style={{ marginLeft: 'auto' }}>{t.hint}</span>
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
+          {lang === 'ko'
+            ? `칸 아래 숫자는 그날 예약을 받을 수 있는 시간대 개수입니다. 설정하지 않은 날은 기본 운영시간이 그대로 적용됩니다.`
+            : 'The number shows how many time slots are bookable. Days you never touch fall back to your default hours.'}
         </div>
       </section>
     </div>

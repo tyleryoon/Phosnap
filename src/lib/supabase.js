@@ -1700,11 +1700,34 @@ export const bulkSetSchedule = async (providerType, providerId, { from, to, open
  * 특정 날짜에 실제로 운영하는 슬롯
  * 날짜별 설정 → 없으면 기본 운영시간. blocked 는 제외한다.
  */
-export const resolveProviderSlots = (daySchedule, defaults) => {
+export const resolveProviderSlots = (daySchedule, defaults, date = null) => {
   if (daySchedule?.day_off) return [];
+
+  // 정기 휴무 요일. 날짜별 설정이 없는 날에 적용된다.
+  // 이걸 빠뜨리면 "매주 월요일 휴무" 로 설정해도 날짜별 행이 없는
+  // 월요일은 영업으로 계산되어 고객에게 열린 것처럼 보인다.
+  if (!daySchedule && date && defaults?.weekly_off?.length) {
+    const d = date instanceof Date ? date : new Date(`${date}T00:00:00`);
+    if (!Number.isNaN(d.getTime()) && defaults.weekly_off.includes(d.getDay())) return [];
+  }
+
   const base = (daySchedule?.slots?.length ? daySchedule.slots : defaults?.default_slots) || [];
   const blocked = new Set(daySchedule?.blocked || []);
   return base.filter(s => !blocked.has(s));
+};
+
+/**
+ * 특정 날짜의 실효 상태
+ *   closed    — 명시적 휴무
+ *   weeklyOff — 정기 휴무 요일 (날짜별 설정 없음)
+ *   open      — 명시적 영업
+ *   default   — 설정 없음 → 기본 운영시간 적용
+ */
+export const resolveDayState = (daySchedule, defaults, date) => {
+  if (daySchedule) return daySchedule.day_off ? 'closed' : 'open';
+  const d = date instanceof Date ? date : new Date(`${date}T00:00:00`);
+  if (!Number.isNaN(d.getTime()) && defaults?.weekly_off?.includes(d.getDay())) return 'weeklyOff';
+  return 'default';
 };
 
 /**
