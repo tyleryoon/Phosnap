@@ -7,6 +7,15 @@ import useAdminAttention from '../hooks/useAdminAttention';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
+// 가입일 등 타임스탬프 표시용.
+// DB 값을 그대로 쓰면 2026-09-11T08:29:00.110455+00:00 이 화면에 나온다.
+const fmtDate = (v) => {
+  if (!v) return '-';
+  const d = new Date(v);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' });
+};
+
 const AdminDashboard = () => {
   const { t } = useLanguage();
   const { isAdmin } = useAuth();
@@ -70,6 +79,8 @@ const AdminDashboard = () => {
       registrationDate: '등록일',
       artist: '작가',
       vendor: '벤더',
+      stylist: '헤메',
+      dress_vendor: '벤더',
       customer: '고객',
       admin: '관리자',
       approved: '승인됨',
@@ -123,6 +134,8 @@ const AdminDashboard = () => {
       registrationDate: 'Registration Date',
       artist: 'Artist',
       vendor: 'Vendor',
+      stylist: 'Hair & Makeup',
+      dress_vendor: 'Vendor',
       customer: 'Customer',
       admin: 'Admin',
       approved: 'Approved',
@@ -176,6 +189,8 @@ const AdminDashboard = () => {
       registrationDate: '登録日',
       artist: 'アーティスト',
       vendor: 'ベンダー',
+      stylist: 'ヘアメイク',
+      dress_vendor: 'ベンダー',
       customer: 'カスタマー',
       admin: '管理者',
       approved: '承認済み',
@@ -229,6 +244,8 @@ const AdminDashboard = () => {
       registrationDate: '注册日期',
       artist: '艺术家',
       vendor: '供应商',
+      stylist: '化妆造型',
+      dress_vendor: '供应商',
       customer: '客户',
       admin: '管理员',
       approved: '已批准',
@@ -774,7 +791,7 @@ const AdminDashboard = () => {
                       {translate(p.role)}
                     </span>
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text)' }}>{p.created_at}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text)' }}>{fmtDate(p.created_at)}</td>
                   <td style={{ padding: '12px 16px', fontSize: 12 }}>
                     <button
                       onClick={() => {
