@@ -2168,14 +2168,22 @@ export const getReviewReplies = async (reviewIds, reviewType) => {
 /**
  * 모든 활성 venue vendors 조회
  */
-export const getVenueVendors = async () => {
+/**
+ * 활성 장소 벤더 목록
+ *
+ * 지역 필터가 없어서 서울 고객에게 부산 장소가 노출되고 있었다.
+ * 헤메(getStylists)·의상(getDressItems)은 지역으로 거르는데
+ * 장소만 빠져 있었다. 장소가 0개라 드러나지 않았다.
+ *
+ * @param {string} [locationId] - 없으면 전체 (관리자/디버그용)
+ */
+export const getVenueVendors = async (locationId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb
-    .from('venue_vendors')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+  let q = sb.from('venue_vendors').select('*').eq('is_active', true);
+  if (locationId) q = q.eq('location_id', locationId);
+  const { data, error } = await q.order('created_at', { ascending: false });
+  if (error) console.error('[getVenueVendors] 조회 실패:', error);
   return { data: data || [], error };
 };
 
@@ -2228,7 +2236,21 @@ export const ensureVenueVendor = async (info = {}) => {
 
   const { data: existing, error: findErr } = await getMyVenueVendorProfile();
   if (findErr) console.error('[ensureVenueVendor] 조회 실패:', findErr);
-  if (existing) return { data: existing, error: null };
+  if (existing) {
+    // 레코드는 있는데 지역이 비어 있으면 채운다.
+    // 대시보드 진입 시점에 벤더 프로필이 아직 안 실려 있으면
+    // location_id 가 null 로 만들어지고, 그러면 지역 필터에
+    // 영원히 걸리지 않아 고객에게 보이지 않는다.
+    if (!existing.location_id && info.locationId) {
+      const { data: fixed, error: fixErr } = await updateVenueVendorProfile(existing.id, {
+        location_id:    info.locationId,
+        location_names: info.locationNames || existing.location_names || {},
+      });
+      if (fixErr) console.error('[ensureVenueVendor] 지역 보정 실패:', fixErr);
+      else if (fixed) return { data: fixed, error: null };
+    }
+    return { data: existing, error: null };
+  }
 
   const session = await getSession();
   if (!session?.user) return { data: null, error: { message: '로그인이 필요합니다' } };

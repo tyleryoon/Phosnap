@@ -497,7 +497,9 @@ const Booking = () => {
         }
 
         // Load venues from DB (mock venueVendors 폴백을 대체)
-        const { data: vendors } = await getVenueVendors();
+        // 작가와 같은 지역의 장소만 보여준다.
+        // 지역을 넘기지 않아 다른 도시 장소까지 노출되고 있었다.
+        const { data: vendors } = await getVenueVendors(p?.locationId);
         if (vendors && vendors.length > 0) {
           const lists = await Promise.all(
             vendors.map(async v => {
