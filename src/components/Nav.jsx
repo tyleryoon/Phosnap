@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import logoMark from '../assets/logo-mark.svg';
 import LogoText from './LogoText';
 import NotificationBell from './NotificationBell';
+import RoleSwitcher from './RoleSwitcher';
 
 // ─── Navigation ────────────────────────────────────────────────────────
 
@@ -174,6 +175,8 @@ const Nav = ({ onAuthOpen }) => {
           {isLoggedIn ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <NotificationBell />
+              {/* 멀티롤 계정 전환. 역할이 하나면 아무것도 안 그린다. */}
+              <RoleSwitcher />
               {isAdmin && (
                 <Link to="/admin"
                   style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
@@ -253,6 +256,14 @@ const Nav = ({ onAuthOpen }) => {
           {isLoggedIn ? (
             <>
               <div style={{ fontSize: 13, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>{userName}</div>
+              {/* 멀티롤 전환. 고르면 메뉴를 닫고 해당 대시보드로 이동한다. */}
+              <RoleSwitcher onNavigate={() => setMobileOpen(false)} />
+              {/* 모바일 메뉴에는 관리자 링크가 아예 없었다. */}
+              {isAdmin && (
+                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6' }} onClick={() => setMobileOpen(false)}>
+                  ⚙ Admin
+                </Link>
+              )}
               {isArtist && (
                 <Link to="/artist/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/artist/dashboard'); setMobileOpen(false); }}>
                   {t('nav.dashboard')}
