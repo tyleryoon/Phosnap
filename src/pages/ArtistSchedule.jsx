@@ -596,9 +596,10 @@ const ArtistSchedule = () => {
 
   // ── 공통: 저장 피드백 ──
   const [saveMsg, setSaveMsg] = useState('');
-  const showSaved = (msg = '저장되었습니다 ✓') => {
+  // 실패 메시지는 읽을 시간이 필요하므로 더 오래 띄운다.
+  const showSaved = (msg = '저장되었습니다 ✓', ms = 2000) => {
     setSaveMsg(msg);
-    setTimeout(() => setSaveMsg(''), 2000);
+    setTimeout(() => setSaveMsg(''), ms);
   };
 
   // ── 스케줄 상태 ──
@@ -870,6 +871,10 @@ const ArtistSchedule = () => {
   };
 
   const saveProfileData = async (updated) => {
+    // DB 쓰기가 하나라도 실패하면 여기에 메시지가 담긴다.
+    // 성공/실패를 화면이 구분할 수 있어야 한다.
+    let saveFailed = null;
+
     saveProfile('photographer', artistId, updated);
     setProfileState(updated);
     // Supabase photographers 테이블 동기화 (프로필 데이터)
@@ -969,7 +974,10 @@ const ArtistSchedule = () => {
 
           const { error: syncErr } = await sb.from('photographers')
             .update(payload).eq('id', dbPhotographerId);
-          if (syncErr) console.error('[ArtistSchedule] photographers sync failed:', syncErr);
+          if (syncErr) {
+            console.error('[ArtistSchedule] photographers sync failed:', syncErr);
+            saveFailed = syncErr.message;
+          }
 
           // packages 테이블에도 반영한다. load() 가 이 테이블에서 읽으므로
           // 여기에 쓰지 않으면 저장한 상품이 새로고침 후 사라진다.
@@ -993,14 +1001,32 @@ const ArtistSchedule = () => {
           ];
           for (const [type, items] of groups) {
             const { error: pkgErr } = await replacePackages(dbPhotographerId, type, items);
-            if (pkgErr) console.error(`[ArtistSchedule] packages(${type}) sync failed:`, pkgErr);
+            if (pkgErr) {
+              console.error(`[ArtistSchedule] packages(${type}) sync failed:`, pkgErr);
+              saveFailed = pkgErr.message;
+            }
           }
         }
       } catch (e) {
         console.error('[ArtistSchedule] photographers sync threw:', e);
+        saveFailed = e.message || '알 수 없는 오류';
       }
     }
+
+    // ⚠ 실패했으면 성공했다고 하지 않는다.
+    //
+    //   예전에는 DB 쓰기가 실패해도 console.error 만 찍고 showSaved() 를
+    //   무조건 불렀다. 작가는 "저장되었습니다 ✓" 를 보고 창을 닫는데
+    //   상품·포트폴리오·정산계좌가 DB 에 없는 상태가 된다.
+    //
+    //   localStorage 에는 이미 들어갔으므로 **본인 화면에는 계속 보인다.**
+    //   그래서 더 위험하다 — 고객에게만 안 보이고, 작가는 영영 모른다.
+    if (saveFailed) {
+      showSaved(`⚠ 저장하지 못했습니다 — ${saveFailed}`, 6000);
+      return false;
+    }
     showSaved();
+    return true;
   };
 
   // ── 달력 helpers ──
@@ -3180,7 +3206,7 @@ const ArtistSchedule = () => {
           {/* 포트폴리오 저장 버튼 */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
             <button className="btn-primary" style={{ fontSize: 12, padding: '10px 28px', letterSpacing: '0.05em' }}
-              onClick={() => {
+              onClick={async () => {
                 if (portfolio.length === 0) {
                   showSaved('⚠ 등록된 포트폴리오가 없습니다. 포트폴리오를 추가해 주세요.');
                   return;
@@ -3198,8 +3224,10 @@ const ArtistSchedule = () => {
                 // saveProfileData 를 거쳐야 photographers 테이블까지 동기화된다.
                 // 예전에는 saveProfile(localStorage) 만 호출해 DB 의 portfolio
                 // 컬럼이 계속 비어 있었고, 고객 화면에 사진이 나오지 않았다.
-                saveProfileData({ ...profile, portfolio });
-                showSaved('포트폴리오가 저장되었습니다 ✓');
+                                // saveProfileData 는 DB 쓰기 성공 여부를 돌려준다.
+                // 기다리지 않고 성공 메시지를 띄우면 실패해도 '저장됨' 이 뜬다.
+                const ok = await saveProfileData({ ...profile, portfolio });
+                if (ok) showSaved('포트폴리오가 저장되었습니다 ✓');
               }}>
               포트폴리오 저장
             </button>
@@ -3642,7 +3670,7 @@ const ArtistSchedule = () => {
     };
 
     // ── 상품 저장 함수 (필수 필드 검증 포함) ──────────────────────
-    const handleSaveSnapProducts = () => {
+    const handleSaveSnapProducts = async () => {
       if (snapProducts.length === 0) {
         showSaved('⚠ 등록된 스냅 촬영 상품이 없습니다. 상품을 추가해 주세요.');
         return;
@@ -3662,11 +3690,13 @@ const ArtistSchedule = () => {
         return;
       }
       const mergedSnap = snapProducts.map((p, i) => ({ ...p, images: snapImages[i] || p.images || [] }));
-      saveProfileData({ ...profile, snapProducts: mergedSnap, props: profile?.props || [], costumes: profile?.costumes || [], tours: profile?.tours || [] });
-      showSaved('스냅 촬영 상품이 저장되었습니다 ✓');
+            // saveProfileData 는 DB 쓰기 성공 여부를 돌려준다.
+      // 기다리지 않고 성공 메시지를 띄우면 실패해도 '저장됨' 이 뜬다.
+      const ok = await saveProfileData({ ...profile, snapProducts: mergedSnap, props: profile?.props || [], costumes: profile?.costumes || [], tours: profile?.tours || [] });
+      if (ok) showSaved('스냅 촬영 상품이 저장되었습니다 ✓');
     };
 
-    const handleSaveProps = () => {
+    const handleSaveProps = async () => {
       if (props.length === 0) {
         showSaved('⚠ 등록된 소품이 없습니다. 소품을 추가해 주세요.');
         return;
@@ -3682,11 +3712,13 @@ const ArtistSchedule = () => {
         return;
       }
       const mergedProps = props.map((p, i) => ({ ...p, images: propImages[i] || p.images || [] }));
-      saveProfileData({ ...profile, props: mergedProps });
-      showSaved('소품이 저장되었습니다 ✓');
+            // saveProfileData 는 DB 쓰기 성공 여부를 돌려준다.
+      // 기다리지 않고 성공 메시지를 띄우면 실패해도 '저장됨' 이 뜬다.
+      const ok = await saveProfileData({ ...profile, props: mergedProps });
+      if (ok) showSaved('소품이 저장되었습니다 ✓');
     };
 
-    const handleSaveCostumes = () => {
+    const handleSaveCostumes = async () => {
       if (costumes.length === 0) {
         showSaved('⚠ 등록된 의상이 없습니다. 의상을 추가해 주세요.');
         return;
@@ -3703,8 +3735,10 @@ const ArtistSchedule = () => {
         return;
       }
       const mergedCostumes = costumes.map((c, i) => ({ ...c, images: costumeImages[i] || c.images || [] }));
-      saveProfileData({ ...profile, costumes: mergedCostumes });
-      showSaved('의상이 저장되었습니다 ✓');
+            // saveProfileData 는 DB 쓰기 성공 여부를 돌려준다.
+      // 기다리지 않고 성공 메시지를 띄우면 실패해도 '저장됨' 이 뜬다.
+      const ok = await saveProfileData({ ...profile, costumes: mergedCostumes });
+      if (ok) showSaved('의상이 저장되었습니다 ✓');
     };
 
 
@@ -4149,7 +4183,7 @@ const ArtistSchedule = () => {
           {/* 포토 투어 저장 버튼 */}
           <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
             <button className="btn-primary" style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}
-              onClick={() => {
+              onClick={async () => {
                 if (tours.length === 0) {
                   showSaved('⚠ 등록된 포토 투어가 없습니다. 투어를 추가해 주세요.');
                   return;
@@ -4167,8 +4201,10 @@ const ArtistSchedule = () => {
                   showSaved(`⚠ 필수 정보 누락 — ${missing.join(', ')}`);
                   return;
                 }
-                saveProfileData({ ...profile, tours });
-                showSaved('포토 투어가 저장되었습니다 ✓');
+                                // saveProfileData 는 DB 쓰기 성공 여부를 돌려준다.
+                // 기다리지 않고 성공 메시지를 띄우면 실패해도 '저장됨' 이 뜬다.
+                const ok = await saveProfileData({ ...profile, tours });
+                if (ok) showSaved('포토 투어가 저장되었습니다 ✓');
               }}>
               포토 투어 저장
             </button>

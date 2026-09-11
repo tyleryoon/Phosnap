@@ -190,76 +190,19 @@ function VendorDashboard() {
   const VENDOR_TIME_SLOTS = [
     '09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00',
   ];
-  const vendorScheduleKey = `phosnap_vendor_schedule_${activeDashboard}`;
-  const [vendorSchedule, setVendorSchedule] = useState(() => {
-    try {
-      const raw = localStorage.getItem(`phosnap_vendor_schedule_costume`);
-      if (raw) return JSON.parse(raw);
-    } catch {}
-    return { defaultSlots: ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'], holidays: {}, weeklyOff: [] };
-  });
+  // 대여 현황 달력에서 선택한 날짜. (휴무 설정과는 무관하다)
   const [vendorActiveDate, setVendorActiveDate] = useState(null);
-  const [editingVendorDefault, setEditingVendorDefault] = useState(false);
-  const [draftVendorDefault, setDraftVendorDefault] = useState(vendorSchedule.defaultSlots || []);
-  const [editingWeeklyOff, setEditingWeeklyOff] = useState(false);
-  const [vendorSaveMsg, setVendorSaveMsg] = useState('');
 
-  // 벤더 스케줄 로드/저장
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(vendorScheduleKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setVendorSchedule(parsed);
-        setDraftVendorDefault(parsed.defaultSlots || VENDOR_TIME_SLOTS.slice(0, 10));
-      } else {
-        const defaults = { defaultSlots: VENDOR_TIME_SLOTS.slice(0, 10), holidays: {}, weeklyOff: [] };
-        setVendorSchedule(defaults);
-        setDraftVendorDefault(defaults.defaultSlots);
-      }
-    } catch {}
-  }, [activeDashboard]);
-
-  const saveVendorSchedule = (updated) => {
-    setVendorSchedule(updated);
-    localStorage.setItem(vendorScheduleKey, JSON.stringify(updated));
-  };
-
-  const handleSaveVendorDefault = () => {
-    const updated = { ...vendorSchedule, defaultSlots: draftVendorDefault };
-    saveVendorSchedule(updated);
-    setEditingVendorDefault(false);
-    setVendorSaveMsg('기본 운영 시간이 저장되었습니다 ✓');
-    setTimeout(() => setVendorSaveMsg(''), 2000);
-  };
-
-  const toggleVendorHoliday = (dateStr) => {
-    const updated = { ...vendorSchedule, holidays: { ...vendorSchedule.holidays } };
-    if (updated.holidays[dateStr]) {
-      delete updated.holidays[dateStr];
-    } else {
-      updated.holidays[dateStr] = true;
-    }
-    saveVendorSchedule(updated);
-  };
-
-  const toggleVendorWeeklyOff = (dayIdx) => {
-    const updated = { ...vendorSchedule, weeklyOff: [...(vendorSchedule.weeklyOff || [])] };
-    if (updated.weeklyOff.includes(dayIdx)) {
-      updated.weeklyOff = updated.weeklyOff.filter(d => d !== dayIdx);
-    } else {
-      updated.weeklyOff.push(dayIdx);
-    }
-    saveVendorSchedule(updated);
-  };
-
-  // 날짜별 운영 상태 계산
-  const getVendorDateStatus = (dateStr) => {
-    if (vendorSchedule.holidays?.[dateStr]) return 'off';
-    const d = new Date(dateStr);
-    if ((vendorSchedule.weeklyOff || []).includes(d.getDay())) return 'off';
-    return 'open';
-  };
+  // ── 벤더 운영 일정은 provider_schedules 에 있다 ──────────────────────
+  //
+  // 예전에는 여기서 localStorage(`phosnap_vendor_schedule_*`)로 휴무·운영
+  // 시간을 관리했다. 벤더가 설정하고 "저장되었습니다" 를 봐도 고객 예약
+  // 화면에는 전혀 반영되지 않았다. 고객은 provider_schedules 를 읽는다.
+  //
+  // '운영 일정' 탭의 ScheduleManager 가 그 테이블을 쓰므로 여기 있던
+  // 상태·핸들러(vendorSchedule / saveVendorSchedule / toggleVendorHoliday /
+  // getVendorDateStatus 등)는 전부 지웠다.
+  // 두 군데서 설정할 수 있는데 한쪽만 동작하면 벤더는 구분할 수 없다.
 
   // Derived profile form based on activeDashboard
   const profileForm = profileForms[activeDashboard] || emptyProfile;
@@ -2821,8 +2764,13 @@ function VendorDashboard() {
                     const dow = cellIdx % 7; // 0=월 ~ 6=일
                     const isSat = dow === 5;
                     const isSun = dow === 6;
-                    const vendorDateStatus = dateStr ? getVendorDateStatus(dateStr) : 'open';
-                    const isHoliday = vendorDateStatus === 'off';
+                    // 이 달력은 **대여 현황**을 보여준다. 운영/휴무는 표시하지 않는다.
+                    //
+                    // 예전에는 localStorage 의 휴무 설정으로 날짜를 칠했다.
+                    // 그 값은 고객 예약 화면과 무관해서, 벤더는 여기서 회색으로
+                    // 보이는 날에 고객 예약이 들어오는 걸 겪게 된다.
+                    // 진짜 운영 일정은 '운영 일정' 탭(provider_schedules)에 있다.
+                    const isHoliday = false;
                     const isVendorSelected = vendorActiveDate === dateStr;
 
                     // Find rentals that include this date — 아이템별 그룹화
@@ -2948,101 +2896,36 @@ function VendorDashboard() {
                 </div>
               </div>
 
-              {/* ── 날짜별 휴무 설정 (날짜 클릭 시) ── */}
-              {vendorActiveDate && (
-                <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.25em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 4 }}>날짜별 관리</div>
-                      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, letterSpacing: '0.04em' }}>{vendorActiveDate}</div>
-                    </div>
-                    <button onClick={() => setVendorActiveDate(null)} style={{
-                      background: 'transparent', border: '1px solid var(--border)', color: 'var(--muted)',
-                      padding: '6px 12px', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--font-serif)',
-                    }}>닫기</button>
-                  </div>
-                  <button onClick={() => toggleVendorHoliday(vendorActiveDate)} style={{
-                    width: '100%', padding: '12px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
-                    background: vendorSchedule.holidays?.[vendorActiveDate] ? 'rgba(232,80,80,0.08)' : 'transparent',
-                    color: vendorSchedule.holidays?.[vendorActiveDate] ? '#e85d5d' : 'var(--muted)',
-                    border: `1px solid ${vendorSchedule.holidays?.[vendorActiveDate] ? 'rgba(232,80,80,0.3)' : 'var(--border)'}`,
-                    cursor: 'pointer', transition: 'all 0.2s',
-                  }}>
-                    {vendorSchedule.holidays?.[vendorActiveDate] ? '✓ 휴무일 — 운영일로 변경' : '☾ 이 날 휴무로 설정'}
-                  </button>
-                  {!vendorSchedule.holidays?.[vendorActiveDate] && (
-                    <div style={{ marginTop: 12, fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>
-                      이 날은 정상 운영일입니다. 대여 현황은 달력에서 확인하세요.
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* ── 휴무·운영시간 설정은 '운영 일정' 탭으로 옮겼다 ──
+                  여기 있던 편집 UI 는 localStorage 에만 저장됐다.
+                  벤더가 휴무를 설정하고 "저장되었습니다" 를 봐도
+                  고객 예약 화면에는 전혀 반영되지 않았다.
+                  (고객은 provider_schedules 를 읽는다)
 
-              {/* ── 정기 휴무 요일 설정 ── */}
-              <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 12 }}>정기 휴무 요일</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.6 }}>
-                  매주 반복되는 정기 휴무일을 설정하세요. 해당 요일은 달력에 휴무로 표시됩니다.
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  {['일','월','화','수','목','금','토'].map((label, idx) => {
-                    const active = (vendorSchedule.weeklyOff || []).includes(idx);
-                    return (
-                      <button key={idx} onClick={() => toggleVendorWeeklyOff(idx)} style={{
-                        width: 40, height: 40, fontSize: 12, fontFamily: 'var(--font-serif)',
-                        border: `1px solid ${active ? '#e85d5d' : 'var(--border)'}`,
-                        background: active ? 'rgba(232,80,80,0.12)' : 'transparent',
-                        color: active ? '#e85d5d' : (idx === 0 ? 'rgba(232,80,80,0.7)' : idx === 6 ? 'rgba(100,150,255,0.7)' : 'var(--muted)'),
-                        cursor: 'pointer', transition: 'all 0.15s',
-                      }}>{label}</button>
-                    );
-                  })}
-                </div>
-              </div>
+                  게다가 문구가 "고객 예약 시 이 시간대가 기본으로
+                  적용됩니다" 라고 단언하고 있었다. 사실이 아니었다.
 
-              {/* ── 기본 운영 시간 ── */}
-              <div style={{ marginTop: '1.5rem', border: '1px solid var(--gold-dim)', background: 'var(--bg2)', padding: '20px 24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>기본 운영 시간</div>
-                  <button
-                    onClick={() => editingVendorDefault ? handleSaveVendorDefault() : setEditingVendorDefault(true)}
-                    style={{
-                      fontSize: 11, padding: '6px 14px', fontFamily: 'var(--font-serif)',
-                      background: editingVendorDefault ? 'var(--gold)' : 'transparent',
-                      color: editingVendorDefault ? '#0B0B0B' : 'var(--gold)',
-                      border: `1px solid ${editingVendorDefault ? 'var(--gold)' : 'var(--gold-dim)'}`,
-                      cursor: 'pointer', transition: 'all 0.2s',
-                    }}>
-                    {editingVendorDefault ? '저장' : '✎ 편집'}
-                  </button>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 12, lineHeight: 1.6 }}>
-                  대여 운영 시간대를 설정하세요. 고객 예약 시 이 시간대가 기본으로 적용됩니다.
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {VENDOR_TIME_SLOTS.map(time => {
-                    const isOn = (editingVendorDefault ? draftVendorDefault : (vendorSchedule.defaultSlots || [])).includes(time);
-                    return (
-                      <button key={time}
-                        disabled={!editingVendorDefault}
-                        onClick={() => setDraftVendorDefault(prev => prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time].sort())}
-                        style={{
-                          padding: '8px 14px', fontSize: 12, fontFamily: 'var(--font-serif)',
-                          background: isOn ? (editingVendorDefault ? 'var(--gold)' : 'rgba(232,160,32,0.12)') : 'transparent',
-                          color: isOn ? (editingVendorDefault ? '#0B0B0B' : 'var(--gold)') : 'var(--muted)',
-                          border: `1px solid ${isOn ? 'var(--gold-border)' : 'var(--border)'}`,
-                          cursor: editingVendorDefault ? 'pointer' : 'not-allowed', transition: 'all 0.15s',
-                        }}>
-                        {time}
-                      </button>
-                    );
-                  })}
-                </div>
-                {vendorSaveMsg && (
-                  <div style={{ marginTop: 10, padding: '9px 16px', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center' }}>
-                    {vendorSaveMsg}
-                  </div>
-                )}
+                  탭이 두 개인데 하나만 동작하면 벤더는 구분할 방법이
+                  없다. 되는 쪽 하나만 남긴다. */}
+              <div style={{
+                marginTop: 20, padding: '16px 20px',
+                border: '1px solid var(--gold-border)',
+                background: 'rgba(232,160,32,0.05)',
+                fontSize: 12, color: 'var(--muted)', lineHeight: 1.8,
+              }}>
+                휴무일과 운영 시간은 <strong style={{ color: 'var(--gold)' }}>운영 일정</strong> 탭에서 설정하세요.
+                거기서 설정한 내용만 고객 예약 화면에 반영됩니다.
+                <button
+                  onClick={() => setActiveTab('schedule')}
+                  style={{
+                    display: 'block', marginTop: 12, padding: '8px 18px',
+                    background: 'transparent', border: '1px solid var(--gold-border)',
+                    color: 'var(--gold)', fontSize: 12, cursor: 'pointer',
+                    fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
+                  }}
+                >
+                  운영 일정 열기 →
+                </button>
               </div>
               </>
               );

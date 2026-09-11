@@ -163,20 +163,40 @@ const AccountSettings = () => {
     setSaveMsg('');
     try {
       const sb = await getSupabase();
-      if (sb) {
-        const address = `${addrBase} ${addrDetail}`.trim();
-        await sb.from('profiles').update({
-          full_name: displayName,
-          real_name: realName,
-          phone,
-          birthdate: birthdate || null,
-          address,
-        }).eq('id', user.id);
-        setSaveMsg(f.saved);
-        setTimeout(() => setSaveMsg(''), 3000);
+      if (!sb) throw new Error('서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.');
+
+      const address = `${addrBase} ${addrDetail}`.trim();
+
+      // ⚠ error 를 반드시 받는다. select() 로 바뀐 행도 확인한다.
+      //
+      //   예전에는 이랬다.
+      //     await sb.from('profiles').update({...}).eq('id', user.id);
+      //     setSaveMsg(f.saved);          ← 무조건 성공 메시지
+      //     } catch (e) { /* Silently ignore save errors */ }
+      //
+      //   RLS 가 막거나 제약에 걸려도 화면에는 "저장되었습니다" 가 떴다.
+      //   사용자는 실명·연락처가 들어간 줄 알지만 DB 는 그대로다.
+      //   정산·본인확인에 쓰는 값이라 조용히 틀리면 나중에 크게 번진다.
+      //
+      //   PostgREST 는 RLS 에 막힌 UPDATE 를 에러가 아니라 **0행**으로
+      //   돌려준다. error 만 봐서는 구분이 안 되므로 행 수까지 본다.
+      const { data, error } = await sb.from('profiles').update({
+        full_name: displayName,
+        real_name: realName,
+        phone,
+        birthdate: birthdate || null,
+        address,
+      }).eq('id', user.id).select('id');
+
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) {
+        throw new Error('변경 권한이 없거나 계정을 찾을 수 없습니다. 다시 로그인해주세요.');
       }
+
+      setSaveMsg(f.saved);
+      setTimeout(() => setSaveMsg(''), 3000);
     } catch (e) {
-      // Silently ignore save errors
+      setSaveMsg(`저장하지 못했습니다 — ${e.message}`);
     }
     setSaving(false);
   };
