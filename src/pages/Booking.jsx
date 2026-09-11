@@ -1517,12 +1517,24 @@ const Booking = () => {
                               <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', letterSpacing: '0.04em' }}>
                                 {vendor.nameI18n?.[lang] || vendor.name}
                               </div>
-                              <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                                {vendor.locationNames?.[lang] || ''} · {vendor.categories?.map(c => {
-                                  const labels = { studio: '스튜디오', traditional_space: '전통 공간', outdoor: '야외', urban: '도심', event_hall: '이벤트홀' };
-                                  return labels[c] || c;
-                                }).join(', ')}
-                              </div>
+                              {/* 지역·카테고리가 비어 있으면 구분자만 덩그러니 남는다.
+                                  값이 있는 것만 골라 이어 붙인다. */}
+                              {(() => {
+                                const catLabels = {
+                                  studio: '스튜디오', traditional_space: '전통 공간', outdoor: '야외',
+                                  urban: '도심', event_hall: '연회장', other: '기타',
+                                };
+                                const parts = [
+                                  vendor.locationNames?.[lang] || '',
+                                  (vendor.categories || []).map(c => catLabels[c] || c).join(', '),
+                                ].filter(Boolean);
+                                if (!parts.length) return null;
+                                return (
+                                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                                    {parts.join(' · ')}
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </div>
 
@@ -1565,7 +1577,16 @@ const Booking = () => {
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                                       {venue.capacity && `👥 ${venue.capacity}명`}
-                                      {venue.amenities?.length > 0 && ` · ${venue.amenities.slice(0, 3).join(', ')}`}
+                                      {venue.amenities?.length > 0 && (() => {
+                                        // 예전에는 parking, dressing 처럼 내부 ID 가 그대로 노출됐다
+                                        const amenityLabels = {
+                                          parking: '주차', dressing: '탈의실', restroom: '화장실',
+                                          aircon: '냉난방', lighting: '조명 장비', wifi: 'Wi-Fi',
+                                          elevator: '엘리베이터', pet: '반려동물',
+                                        };
+                                        return ` · ${venue.amenities.slice(0, 3)
+                                          .map(a => amenityLabels[a] || a).join(', ')}`;
+                                      })()}
                                     </div>
                                     <div style={{ fontSize: 15, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
                                       ₩{fmt(venue.price)}
