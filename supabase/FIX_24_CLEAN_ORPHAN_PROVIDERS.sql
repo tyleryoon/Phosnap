@@ -84,6 +84,48 @@ returning id, coalesce(name_ko, name) as 지운_이름;
 */
 
 
+-- ── 2-B단계. 의상벤더 쪽 고아 ─────────────────────────────────────────
+--
+-- 2026-09-11 확인: photo@gmail.com(윤작가, artist 역할만 보유)에
+-- 빈 dress_vendors 레코드가 있었다. 작가가 의상벤더 화면에 들어가서
+-- 만들어진 것으로 보인다(같은 권한 우회 경로).
+--
+-- 작가의 '자체 의상'은 dress_vendors 를 쓰지 않는다.
+-- Booking.jsx 는 dress_self 가 켜진 작가에게 packages(type='costume')를
+-- 보여주고 vendorId 는 null 로 둔다. 즉 이 레코드는 아무 역할도 하지 않는다.
+--
+-- 아래도 확인 → 삭제 순서다. 먼저 이걸 돌려라.
+
+select coalesce(v.name_ko, v.name, '(이름없음)') as 이름, pr.email,
+       coalesce((select string_agg(r.role, ', ') from public.user_roles r
+                  where r.user_id = v.user_id), '(역할없음)') as 보유역할,
+       v.created_at
+  from public.dress_vendors v
+  left join public.profiles pr on pr.id = v.user_id
+ where not exists (select 1 from public.user_roles r
+                    where r.user_id = v.user_id
+                      and r.role in ('dress_vendor','vendor','stylist'))
+   and not exists (select 1 from public.dress_items d where d.vendor_id = v.id)
+   and not exists (select 1 from public.booking_items i
+                    where i.provider_type = 'dress' and i.provider_id = v.id)
+   and coalesce(v.location_id, '') = ''
+   and v.is_active = false;
+
+-- 확인했으면 아래 주석을 풀고 실행한다.
+/*
+delete from public.dress_vendors v
+ where not exists (select 1 from public.user_roles r
+                    where r.user_id = v.user_id
+                      and r.role in ('dress_vendor','vendor','stylist'))
+   and not exists (select 1 from public.dress_items d where d.vendor_id = v.id)
+   and not exists (select 1 from public.booking_items i
+                    where i.provider_type = 'dress' and i.provider_id = v.id)
+   and coalesce(v.location_id, '') = ''
+   and v.is_active = false
+returning id, coalesce(name_ko, name) as 지운_이름;
+*/
+
+
 -- ── 3단계. 남은 불일치 점검 (읽기 전용) ───────────────────────────────
 --
 -- 의상벤더·장소벤더 쪽에도 같은 문제가 있는지 본다.
