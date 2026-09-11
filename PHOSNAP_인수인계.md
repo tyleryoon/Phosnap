@@ -1,6 +1,6 @@
 # PhoSnap 프로젝트 인수인계 문서
 
-> **백업 작성일: 2026년 9월 11일**
+> **백업 작성일: 2026년 9월 11일** (2차 검증 반영)
 > 이 문서 하나만 읽으면 다른 AI 플랫폼(ChatGPT, Gemini, Cursor 등)에서도
 > 맥락 손실 없이 작업을 이어갈 수 있도록 작성했다.
 > 프로젝트를 처음 보는 사람/AI를 독자로 가정한다.
@@ -190,7 +190,8 @@ supabase/                    # SQL 마이그레이션 모음
 **예약·소통**
 | 테이블 | 핵심 컬럼 |
 |---|---|
-| `bookings` | `id`, `customer_id`, `photographer_id`, `date`, `time`, `package_name`, `package_price`, `total_price`, `status`, `expires_at`, `stylist_*`, `dress_*` |
+| `bookings` | `id`, `customer_id`, `customer_name`, `photographer_id`, `date`, `time`, `total_price`, `status`, `expires_at`, `shoot_start_at`, `shoot_end_at`, `collab_count`, `commission_total` |
+| **`booking_items`** | **예약 1건 : 아이템 N개.** `booking_id`, `provider_type`(photographer/stylist/dress/venue), `provider_id`, `item_id`, `item_name`, `item_option`, `price`, `timing`, `start_at`, `end_at`, `commission_rate`, `commission_amount`, `payout_amount`, `status` |
 | `chat_rooms` | `booking_id`(unique), `photographer_id`(=photographers.id), `customer_id`(=auth uid) |
 | `messages` | `room_id`, `sender_id`, `content`, `read_at` |
 | `notifications` | `user_id`, `type`, `title`, `body`, `link`, `metadata`, `read_at`, `is_read` |
@@ -237,6 +238,10 @@ RLS가 첫 폴더명 = `auth.uid()` 일치를 요구한다. **절대 다른 ID�
 13. FIX_12_VENDOR_NAME_SYNC.sql  # name 동기화 + is_active 자동화
 14. FIX_13_DRESS_SIZE_STOCK.sql
 15. FIX_14_STYLIST_COLUMNS.sql   # stylists display_name + RLS
+16. FIX_15_BOOKING_ITEMS.sql     # 예약을 참여자별 라인 아이템으로 분해
+17. FIX_16_PROVIDER_BOOKING_ACCESS.sql  # 공급자가 자기 예약을 읽게
+18. FIX_17_CUSTOMER_NAME.sql     # 고객 이름 스냅샷
+19. FIX_18_APPROVE_RPC.sql       # 확정/거절/알림 서버 함수
 ```
 
 > `PATCH_*.sql`, `migration_*.sql`은 과거 파일이라 참고용. 위 순서만 실행하면 된다.
@@ -358,6 +363,74 @@ const [x, setX] = useState();   // 훅 개수가 달라져 React가 깨진다
 
 브라우저를 블로킹해 자동화 테스트가 멈추고, UX도 나쁘다.
 
+### 5-11. 권한이 걸린 쓰기는 서버 함수로 (가장 비싸게 배운 규칙)
+
+**남의 것을 건드리는 작업을 클라이언트에 두면 안 된다.**
+
+RLS 는 의도대로 막는데, 그 결과가 에러로 오지 않는다.
+
+| 상황 | 응답 |
+|---|---|
+| 남에게 알림 INSERT | 403 (42501) |
+| 남의 행 UPDATE | **200 인데 0행 갱신** |
+| 권한 없는 행 SELECT | **빈 배열** |
+
+뒤의 둘은 에러가 아니다. **"권한이 없어 아무 일도 안 일어난 것"과
+"정상 처리"를 구분할 수 없다.** 실제로 `sendNotificationTo()` 는
+한 번도 작동한 적이 없었는데 아무도 몰랐다.
+
+```javascript
+// 금지 — 작가가 고객·헤메·벤더에게 알림을 넣으려 함
+await sb.from('notifications').insert([{ user_id: 남의_id, ... }]);
+await sb.from('booking_items').update({ status:'confirmed' }).eq('booking_id', id);
+
+// 올바름 — 권한 확인과 처리를 서버 함수 안에서
+const { data, error } = await sb.rpc('approve_booking', { p_booking: id });
+if (error) { /* 실패가 예외로 올라온다 */ }
+```
+
+현재 서버 함수 (`FIX_18_APPROVE_RPC.sql`):
+
+```
+approve_booking(uuid)        예약·아이템 확정 + 고객·공급자 알림
+reject_booking(uuid, text)   취소 + 아이템 해제 + 알림
+notify_new_booking(uuid)     새 예약을 공급자 전원에게
+provider_user_id(text, uuid) 공급자 레코드 → 소유자 auth uid
+is_booking_provider(uuid)    이 예약의 참여 공급자인가 (RLS 용)
+owns_provider(text, uuid)    이 공급자 레코드의 소유자인가 (RLS 용)
+```
+
+RLS 정책에서 다른 테이블을 참조할 때는 **반드시 SECURITY DEFINER 함수**를 거친다.
+직접 참조하면 정책끼리 서로를 불러 무한 재귀(42P17)가 난다.
+`profiles` 와 `bookings` 에서 두 번 겪었다.
+
+### 5-12. mock 시절 필드명이 곳곳에 남아 있다
+
+화면 코드가 존재하지 않는 필드를 읽는 경우가 반복해서 나왔다.
+데이터가 없을 땐 멀쩡해 보이다가, 실제 데이터가 들어오는 순간 빈 칸이 된다.
+
+| 잘못된 필드 | 실제 필드 |
+|---|---|
+| `booking.booking_date` | `booking.date` + `booking.time` |
+| `booking.customer` | `booking.customer_name` |
+| `booking.itemName` / `booking.size` | `booking.myItems[].item_name` / `.item_option` |
+| `booking.hours` | `booking.time` |
+| `status === 'rejected'` | `status === 'cancelled'` |
+
+새 화면을 만들 때는 **DB 응답을 먼저 콘솔에 찍어보고** 필드명을 확인한다.
+
+### 5-13. 커밋 전 미정의 변수 검사
+
+npm 레지스트리가 막혀 eslint 를 쓸 수 없다. 대신 이걸 돌린다.
+
+```bash
+node scripts/check-undefined.mjs     # → 미정의 참조 0건
+```
+
+babel 스코프 분석으로 정의되지 않은 식별자를 찾는다.
+실제로 크래시 2건을 잡았다 — 그중 하나는 **장소 벤더가 등록되는 순간
+예약 STEP 05 전체가 죽는** 상태였다.
+
 ---
 
 ## 6. 과거에 발목 잡았던 함정들
@@ -374,6 +447,26 @@ for (const k of keys) await caches.delete(k);
 location.reload();
 ```
 **근본 해결이 필요한 항목이다.**
+
+### 6-1-2. RLS 가 막았는데 코드는 성공으로 안다 ⚠️ 반복된 함정
+
+RLS 는 의도대로 막는데, 그 결과가 **에러로 오지 않는다.**
+
+| 상황 | 응답 |
+|---|---|
+| 남에게 알림 INSERT | 403 (42501) — 이건 그나마 티가 난다 |
+| 남의 행 UPDATE | **200 인데 0행 갱신** |
+| 권한 없는 행 SELECT | **빈 배열** |
+| 권한 없는 행을 조인 | **`null`** |
+
+뒤의 셋은 에러가 아니다. "권한이 없어 아무 일도 안 일어난 것"과
+"정상 처리"를 구분할 수 없다. 실제로 이 때문에
+
+- `sendNotificationTo()` 가 **한 번도 작동하지 않았고** (아무도 몰랐다)
+- 작가가 승인해도 헤메·벤더 아이템이 `pending` 으로 남았고
+- 헤메 대시보드가 조인 `null` 때문에 "예약이 없습니다" 를 띄웠다
+
+**해결: 권한이 걸린 쓰기는 서버 함수(SECURITY DEFINER)로.** 규칙 5-11 참조.
 
 ### 6-2. 데이터가 없으면 검증이 안 된 것이다
 
@@ -410,6 +503,22 @@ UI가 이상할 때 **DB에 실제로 뭐가 들어갔는지** 먼저 확인하�
 ## 7. 현재 검증 완료 상태 (2026-09-11 기준)
 
 실제 계정으로 전 구간을 브라우저에서 직접 수행해 확인했다.
+
+### 2차 검증 (booking_items 개편 후)
+
+| 흐름 | 결과 |
+|---|---|
+| 헤메가 시술 시점 3종 등록 (선행·동행·상주) | ✅ DB 저장값 확인 |
+| 고객 예약 화면에 시술 실제 시각 안내 | ✅ 14:00 / 16:30 / 15:00 |
+| 촬영 시간 겹치는 헤메·장소 자동 제외 | ✅ 시술 단위 판정 |
+| 3자 예약 → 참여자별 아이템 분해 + 수수료 | ✅ |
+| 작가 승인 → 예약·아이템 전체 확정 (RPC) | ✅ 중복 승인 차단 확인 |
+| 확정 알림이 헤메·벤더에게 도달 | ✅ 역할별로 각각 |
+| 새 예약 알림이 공급자 전원에게 도달 | ✅ |
+| 헤메 대시보드 — 시술+의상 한 카드 병합 | ✅ |
+| 벤더 대시보드 — 예약 테이블·재고 | ✅ |
+
+### 1차 검증
 
 | 흐름 | 결과 |
 |---|---|
@@ -465,11 +574,41 @@ UI가 이상할 때 **DB에 실제로 뭐가 들어갔는지** 먼저 확인하�
 | 항목 | 내용 |
 |---|---|
 | 서비스워커 캐시 | 배포해도 사용자가 옛 버전 사용 — **가장 시급** |
+| 채팅·리뷰 재검증 | 1차에서만 확인. booking_items 개편 영향 가능 |
+| 장소(venue) 전 구간 | 장소 벤더 데이터 0건이라 한 번도 실행된 적 없음 |
+| `notifyBookingProviders` | 클라이언트 함수가 남아 있으나 RLS로 막힌다. RPC로 대체됨 |
+| 테스트 데이터 | 예약 3건·알림 다수·리뷰 1건이 DB에 남아 있음 (아래 참조) |
 | `expireStaleBookings` | pg_cron 스케줄 필요 (현재 클라이언트 의존) |
 | `artist_locations` 미사용 | 다중 활동지역(국내3+해외3)이 저장 안 됨 |
 | `AdminDashboard` | 아직 mock 데이터 기반 (실제 검증 안 됨) |
 | `venue_vendors` | 장소 대여 경로가 사실상 미완성 |
 | 남은 `catch {}` 13곳 | 포인트·공유·아바타 등 부가 기능 (주 흐름 영향 없음) |
+
+---
+
+## 8-2. 실서비스 전 테스트 데이터 정리
+
+검증용으로 만든 데이터가 DB에 남아 있다. 실제 고객을 받기 전에 지운다.
+
+```sql
+-- 테스트 예약과 딸린 아이템 (booking_items 는 CASCADE 로 함께 삭제됨)
+delete from public.bookings
+ where customer_id in (select id from public.profiles where email = 'customer@gmail.com');
+
+-- 테스트 알림
+delete from public.notifications
+ where user_id in (
+   select id from public.profiles
+    where email in ('customer@gmail.com','photo@gmail.com','hnm@gmail.com','yoonstudio@gmail.com')
+ );
+
+-- 확인
+select (select count(*) from public.bookings)      as 예약,
+       (select count(*) from public.booking_items) as 아이템,
+       (select count(*) from public.notifications) as 알림;
+```
+
+테스트 계정 4개의 임시 비밀번호(`Rjstlr806!`)도 반드시 변경하거나 계정을 삭제한다.
 
 ---
 
@@ -480,6 +619,12 @@ UI가 이상할 때 **DB에 실제로 뭐가 들어갔는지** 먼저 확인하�
 - **61개 이슈 발견 및 수정** (커밋 49개, 파일 38개 변경, SQL 마이그레이션 14개 작성)
 - 헤메 의상 대여 기능 신규 구현
 - 상세 내역은 `PHOSNAP_검증_리포트.md` 참조
+
+### 2026-09-11 세션 (2차 — 브라우저 실검증)
+- booking_items 개편 후 실제 브라우저로 전 구간 재검증
+- **10건 추가 발견** (커밋 8개, SQL 마이그레이션 4개)
+- 가장 큰 것: `sendNotificationTo()` 가 한 번도 작동한 적 없음 (RLS 403)
+- 10건 중 8건이 실제 데이터를 넣고 실제 버튼을 눌러야만 드러나는 것들
 
 ### 발견된 이슈 유형 분포
 ```
@@ -553,7 +698,18 @@ createBooking  getMyBookings  getBookingByOrderId
 getPendingBookings  getArtistBookings
 approveBooking  rejectBooking  cancelBooking  requestReschedule
 deliverPhotos  expireStaleBookings
+
+getBookingItems          예약 1건의 아이템 목록
+getProviderBookings      특정 공급자가 참여한 예약 (provider_type + id)
+getMyProviderBookings    내가 참여한 모든 예약 — 역할 가리지 않고 병합
+getMyProviderRefs        내가 소유한 공급자 레코드 전부
+getProviderBusyBlocks    특정 공급자의 점유 구간 (충돌 판정용)
 ```
+> `approveBooking` / `rejectBooking` 은 내부적으로 서버 함수(RPC)를 호출한다.
+> 클라이언트에서 직접 처리하면 RLS 때문에 반쪽만 돈다 (규칙 5-11).
+>
+> 한 사람이 여러 역할을 겸할 수 있으므로, 대시보드는
+> `getMyProviderBookings()` 를 쓰는 게 안전하다.
 
 ### 결제
 ```
@@ -618,6 +774,71 @@ subscribeNotifications  unsubscribeNotifications
 ```
 uploadAvatar  getAvatarUrl  saveWaitlistEntry
 ```
+
+---
+
+## 10-2. `src/lib/scheduling.js` — 시간 점유 계산
+
+참여자마다 "언제 일하는가" 가 전혀 다르다. 촬영 시간만 보고 판단하면
+헤메 추천이 통째로 틀린다. **촬영 16:00~19:00 기준:**
+
+| 유형 | `timing` | 시술 구간 | 점유 구간 |
+|---|---|---|---|
+| 작가 · 장소 | `shoot` | 16:00~19:00 | 16:00~19:00 |
+| 샵 헤메 (90분, 이동 30분) | `before` | 14:00~15:30 | **14:00~16:00** |
+| 현장 헤메 (60분, 이동 0) | `before` | 15:00~16:00 | 15:00~16:00 |
+| 헤어변형 (30분, +30분) | `during` | 16:30~17:00 | 16:30~17:00 |
+| 종일 동행 (60분) | `full` | 15:00~16:00 | **15:00~19:00** |
+| 의상 | `day` | — | 하루 전체 |
+
+**시술 구간과 점유 구간을 반드시 구분한다.**
+시술이 15:30 에 끝나도 16:00 까지 이동 중이라 그 30분에 다른 예약을 받으면 안 된다.
+충돌 판정은 항상 점유 구간(`busyStart`/`busyEnd`)으로 한다.
+
+```
+computeSlot({timing, shootStart, shootEnd, durationMinutes, offsetMinutes})
+overlaps(a, b)                두 구간이 겹치는가
+mergeProviderBlocks(items)    같은 사람의 여러 아이템을 통 블록으로
+isServiceAvailable(svc, shoot, busy)   시술 단위 가용 판정
+buildShootWindow(date, time, hours)
+timingLabel(service, lang)
+```
+
+`offset_minutes` 의 의미가 `timing` 에 따라 다르다.
+`before`·`full` 은 **이동 버퍼**(현장 시술이면 0), `during` 은 **합류 지연**이다.
+
+`full` 메뉴에는 `max_hours` 를 둔다. 그보다 긴 촬영에는 노출하지 않는다.
+
+---
+
+## 10-3. 수수료 (`src/lib/commission.js`)
+
+**수수료는 예약 단위가 아니라 정산받는 사람 단위로 계산한다.**
+작가가 헤메를 데려왔다고 작가 요율이 달라지지 않는다.
+
+| 공급자 | 일반 (누적 0 / 15 / 50건) | 얼리버드 |
+|---|---|---|
+| 작가 | 18 / 14 / 11% | 10% |
+| 헤메 | 15 / 12 / 10% | 10% |
+| 의상 벤더 | 20 / 15 / 12% | 12% |
+| 장소 벤더 | 18 / 14 / 10% | 10% |
+
+- **건당 상한 ₩150,000** — 약 83만원부터 실효 요율이 자동으로 내려간다.
+  고액 예약에서 이탈 유인이 폭발하는 것을 막는 장치다.
+- **콜라보 우대** 2인 −1%p / 3인 −2%p / 4인 −3%p, 하한 8%
+- 얼리버드 유효기간 **12개월**, 선착순 50명
+
+```
+calculateItemCommission({providerType, price, completedCount, isEarlyBird, collabCount})
+calculateBookingCommissions(items)   → { items, collabCount, commissionTotal, payoutTotal }
+```
+
+**콜라보 인원은 사람(`ownerId` = auth uid) 기준으로 센다.**
+`provider_id` 로 세면 한 사람이 헤메이면서 의상 벤더일 때 혼자 2인이 되어
+할인을 한 단계 더 받는다. 금액 0원인 참여자는 인원에서 제외한다(어뷰징 방어).
+
+> 요율을 바꾸면 `src/data/legal.js` TERMS_VENDOR 제3조,
+> `VendorRegister.jsx` 동의 문구, 대시보드 안내 문구도 함께 고쳐야 한다.
 
 ---
 
