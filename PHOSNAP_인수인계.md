@@ -510,6 +510,57 @@ select tablename, policyname, with_check from pg_policies
  where schemaname='public' and cmd='INSERT' and tablename='photographers';
 ```
 
+### 5-15. 역할 부여도 잠겨 있어야 한다 (2026-09-11)
+
+5-14 에서 "역할 출처는 `user_roles` 하나뿐" 으로 정리했다.
+그런데 **그 테이블에 자기 역할을 마음대로 쓸 수 있으면** 아무 의미가 없다.
+승인 도구를 만들다가 발견했다.
+
+| 구멍 | 내용 |
+|---|---|
+| `user_roles_self_insert` | `with check (auth.uid() = user_id)` 뿐. `role`·`status` 무제한 → `{role:'admin', status:'active'}` 삽입 가능 |
+| `user_roles_self_update` | `with check` 없음. UPDATE 는 `using` 이 검사로 재사용되므로 `user_id` 만 고정되고 `role`·`status` 는 자유 |
+| **`is_admin()`** | `profiles.role` 을 읽는데, `switchUserRole()` 이 그 값을 사용자 권한으로 UPDATE 한다 → `update profiles set role='admin'` 한 줄로 **전 DB 관리자 정책이 열림** |
+| `status` 제약 | `('active','pending','suspended')` — `'rejected'` 가 없어서 반려 화면이 한 번도 뜰 수 없었다 |
+
+세 번째가 범위가 가장 넓다. `is_admin()` 은 여러 테이블의 관리자 정책이 쓴다.
+
+실제로 FIX_25 를 처음 돌렸을 때 **`profiles.role='admin'` 인 사람이 0명**이라
+안전장치가 걸려 멈췄다. 즉 관리자 판정이 `user_metadata.role` 에만 의존하고
+있었고, 그건 `auth.updateUser()` 로 누구나 쓸 수 있는 값이다.
+
+#### 지금 구조
+
+```
+user_roles  ← 유일한 권한 출처
+  본인 INSERT:  customer(active) 또는 공급자(pending) 만. admin 금지
+  본인 UPDATE:  없음
+  관리자 UPDATE: is_admin() 일 때만
+  승인/반려:    approve_role() / reject_role()  (SECURITY DEFINER)
+
+is_admin()  ← user_roles 만 본다
+profiles.role  ← "지금 어느 역할로 보고 있나" 표시용. 권한 판정에 쓰지 않는다
+```
+
+#### ⚠ `is_admin()` 을 바꿀 때는 순서가 있다
+
+**관리자 행을 `user_roles` 에 먼저 만들고** 판정 기준을 바꾼다.
+반대로 하면 아무도 관리자가 아니게 되고, 되돌릴 방법도 관리자 권한이 필요하다.
+FIX_25 는 이 순서를 강제하고, 관리자가 0명이면 `raise exception` 으로 멈춘다
+(SQL Editor 는 전체를 한 트랜잭션으로 돌리므로 안전하게 롤백된다).
+
+#### 승인 도구
+
+`/admin` → 승인 탭. `src/components/RoleApprovals.jsx`.
+
+이전 구현은 화면만 있었다. 버튼이 `setProfiles()` 로 React 상태만 바꿔서
+새로고침하면 되돌아갔고, 목록은 `profiles.approved` 라는 엉뚱한 컬럼을 읽었다.
+진짜 승인 상태는 `user_roles.status` 다.
+
+반려는 **사유가 필수**다. 입력값이 `user_roles.reject_reason` 에 남고
+그대로 신청자 메일 본문이 된다. 사유 없이 반려하면 신청자는 뭘 고쳐야 할지
+알 수 없다.
+
 ---
 
 ## 6. 과거에 발목 잡았던 함정들
