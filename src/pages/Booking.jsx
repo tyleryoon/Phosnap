@@ -318,6 +318,12 @@ const Booking = () => {
   const { lang, t } = useLanguage();
   const { userName, userRole } = useAuth();
 
+  // 공급자(작가·헤메·벤더)도 고객 화면을 둘러볼 수 있다.
+  // 자기가 어떻게 노출되는지 확인하려면 필요한 일이라 막지 않는다.
+  // 다만 실제 결제는 막는다 — 공급자 계정으로 예약이 생기면
+  // 정산·수수료·일정이 전부 꼬인다.
+  const isSupplierViewing = ['artist', 'stylist', 'vendor', 'dress_vendor'].includes(userRole);
+
   // 실제 가입 작가는 UUID 를 쓰므로 Number(id) 로는 mock 배열에서 절대
   // 찾을 수 없다(NaN). Supabase 에서 먼저 조회하고, 없을 때만 mock 을 쓴다.
   const [dbPhotographer, setDbPhotographer] = useState(null);
@@ -1000,6 +1006,10 @@ const Booking = () => {
   };
 
   const handleConfirm = async () => {
+    if (isSupplierViewing) {
+      setPayError('공급자 계정으로는 예약할 수 없습니다. 화면 확인 용도로만 이용해주세요. 실제 예약은 고객 계정으로 진행해주세요.');
+      return;
+    }
     setPayLoading(true);
     setPayError('');
     try {
@@ -1040,6 +1050,18 @@ const Booking = () => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      {/* 공급자가 고객 화면을 보고 있을 때. 끝까지 채우고 나서 막히면
+          시간만 버린다. 처음부터 알려준다. */}
+      {isSupplierViewing && (
+        <div style={{
+          background: 'rgba(232,160,32,0.08)', borderTop: '1px solid var(--gold-border)',
+          borderBottom: '1px solid var(--gold-border)', padding: '12px 24px',
+          fontSize: 12, color: 'var(--gold)', textAlign: 'center',
+          fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
+        }}>
+          공급자 계정으로 보고 있습니다 — 고객에게 보이는 화면을 그대로 확인하실 수 있지만, 결제는 되지 않습니다.
+        </div>
+      )}
       <div className="section">
         <button className="back-btn" onClick={() => navigate(-1)}>
           <ArrowLeftIcon /> {t('booking.backBtn')}

@@ -783,6 +783,23 @@ const ArtistDashboard = () => {
               </Link>
             );
           })()}
+
+          {/* 고객에게 어떻게 보이는지 확인. 공급자가 자기 노출 상태를
+              알 방법이 없었다 — Nav 에서 '작가 찾기' 를 숨기고 있었고
+              /explore 에 들어가면 대시보드로 튕겼다. */}
+          {artistLegacyId && (
+            <Link to={`/photographer/${artistLegacyId}`} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px',
+              border: '1px solid var(--border)', color: 'var(--muted)',
+              fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.08em',
+              textDecoration: 'none', transition: 'border-color 0.2s',
+            }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold-border)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            >
+              👁 고객에게 보이는 내 페이지 →
+            </Link>
+          )}
         </div>
 
         {/* ── 탭 ── */}

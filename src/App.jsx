@@ -373,16 +373,16 @@ const RoleAwareHome = ({ onAuthOpen }) => {
   return <Home onAuthOpen={onAuthOpen} />;
 };
 
-// ─── Role-aware Explore: activeRole 기반 리다이렉트 ────────────────────
-const RoleAwareExplore = () => {
-  const { activeRole, roleLoading, loading } = useAuth();
-  if (loading || roleLoading) return null;
-  if (activeRole === 'artist')                                          return <Navigate to="/artist/dashboard" replace />;
-  if (activeRole === 'stylist')                                         return <Navigate to="/stylist/dashboard" replace />;
-  if (activeRole === 'dress_vendor' || activeRole === 'vendor')         return <Navigate to="/vendor/dashboard" replace />;
-  // customer 또는 기타 → Explore 페이지
-  return <Explore />;
-};
+// ─── Explore ──────────────────────────────────────────────────────────
+//
+// 예전에는 작가·헤메·벤더로 로그인하면 여기서 대시보드로 튕겼다.
+// 그래서 공급자는 자기가 고객에게 어떻게 보이는지 확인할 방법이 없었다.
+// (Nav 에서도 '지역 탐색'·'작가 찾기' 를 숨기고 있었다)
+//
+// 둘러보기는 누구나 할 수 있어야 한다. 자기 노출 상태를 보는 건
+// 공급자에게 필요한 일이지 막을 이유가 없다.
+// 다만 실제 결제는 Booking 화면에서 따로 막는다.
+const RoleAwareExplore = () => <Explore />;
 
 // ─── App Root ──────────────────────────────────────────────────────────
 

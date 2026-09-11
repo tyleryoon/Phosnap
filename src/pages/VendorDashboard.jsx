@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Corners from '../components/Corners';
 import DressCard from '../components/DressCard';
 import { ArrowLeftIcon } from '../components/Icons';
@@ -1085,6 +1085,19 @@ function VendorDashboard() {
             >
               벤더 대시보드
             </h1>
+            {/* 고객에게 어떻게 보이는지 확인.
+                벤더는 개별 상세 페이지가 없어 목록으로 보낸다. */}
+            <Link to="/vendors" style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
+              padding: '9px 18px', border: '1px solid var(--border)',
+              color: 'var(--muted)', fontFamily: 'var(--font-serif)',
+              fontSize: 12, letterSpacing: '0.08em', textDecoration: 'none',
+            }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold-border)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            >
+              👁 고객에게 보이는 화면 →
+            </Link>
           </div>
 
           {/* Vendor Type Dashboard Switcher */}

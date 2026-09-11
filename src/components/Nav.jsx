@@ -57,9 +57,13 @@ const Nav = ({ onAuthOpen }) => {
   };
 
   const navLinks = [
-    // 지역탐색 + 작가 찾기: 작가 또는 벤더 로그인 시 숨김
-    ...(!isArtist && !isVendor ? [{ to: '/explore', label: t('nav.explore') }] : []),
-    ...(!isArtist && !isVendor ? [{ to: '/photographers', label: t('nav.photographers') }] : []),
+    // 지역탐색 + 작가 찾기는 누구에게나 보인다.
+    //
+    // 예전에는 작가·벤더 로그인 시 숨겼다. 그래서 공급자가 자기 프로필이
+    // 고객에게 어떻게 보이는지, 같은 지역에 누가 있는지 확인할 수 없었다.
+    // 노출 상태를 아는 건 공급자에게 필요한 일이다.
+    { to: '/explore',       label: t('nav.explore') },
+    { to: '/photographers', label: t('nav.photographers') },
     // 작가 등록 탭: 비로그인 시에만 표시
     ...(!isLoggedIn ? [{ to: '/for-artists', label: t('nav.forArtists') }] : []),
   ];
