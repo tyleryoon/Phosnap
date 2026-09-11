@@ -2826,3 +2826,47 @@ export const unsubscribeNotifications = async (channel) => {
   if (!sb) return;
   sb.removeChannel(channel);
 };
+
+// ─── 관리자 승인 (FIX_25) ──────────────────────────────────────────────
+//
+// 승인·반려는 전부 서버 함수다. 규칙 5-11.
+//   · user_roles 의 UPDATE 정책을 관리자에게만 열어 두면, 관리자가 아닌
+//     사람이 눌렀을 때 PostgREST 가 200 + 0행 을 돌려준다. 화면은 성공한
+//     줄 안다. 그 구분이 안 되는 게 이 프로젝트에서 제일 비쌌던 실수다.
+//   · RPC 는 raise exception 으로 실패가 그대로 올라온다.
+
+/** 승인 대기 중인 역할 신청 목록 (관리자 전용 — 아니면 빈 배열) */
+export const getPendingRoleRequests = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('pending_role_requests');
+  if (error) {
+    console.error('[getPendingRoleRequests] 실패:', error);
+    return { data: [], error };
+  }
+  return { data: data || [], error: null };
+};
+
+/** 역할 승인 — 성공 시 신청자에게 알림 + 메일이 나간다 */
+export const approveRole = async (userId, role) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('approve_role', { p_user: userId, p_role: role });
+  if (error) return { data: null, error };
+  // 서버가 { ok: false, message } 를 돌려주는 경우가 있다 (이미 처리된 신청).
+  // 에러는 아니지만 성공도 아니므로 호출부가 구분할 수 있게 넘긴다.
+  return { data, error: null };
+};
+
+/** 역할 반려 — 사유 필수. 사유가 그대로 신청자에게 전달된다 */
+export const rejectRole = async (userId, role, reason) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const trimmed = (reason || '').trim();
+  if (!trimmed) return { data: null, error: { message: '반려 사유를 입력해주세요' } };
+  const { data, error } = await sb.rpc('reject_role', {
+    p_user: userId, p_role: role, p_reason: trimmed,
+  });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};

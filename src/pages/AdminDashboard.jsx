@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
+import RoleApprovals from '../components/RoleApprovals';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -365,10 +366,6 @@ const AdminDashboard = () => {
     return filtered;
   }, [profiles, memberRoleFilter, memberSearch]);
 
-  const pendingApprovals = useMemo(() => {
-    return profiles.filter(p => (p.role === 'artist' || p.role === 'vendor') && (!p.approved || p.approved === null));
-  }, [profiles]);
-
   const fmt = (n) => Number(n || 0).toLocaleString();
 
   // ─── Tab: Overview ───
@@ -698,110 +695,13 @@ const AdminDashboard = () => {
   );
 
   // ─── Tab: Approvals ───
-  const renderApprovalsTab = () => (
-    <div>
-      {pendingApprovals.length === 0 ? (
-        <div style={{
-          padding: '48px 32px',
-          textAlign: 'center',
-          color: 'var(--muted)',
-          border: '1px solid var(--border)',
-          background: 'var(--bg2)',
-        }}>
-          {translate('noData')}
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {pendingApprovals.map(profile => (
-            <div key={profile.id} style={{
-              border: '1px solid var(--border)',
-              background: 'var(--bg2)',
-              padding: '20px 24px',
-              position: 'relative',
-            }}>
-              <Corners />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24 }}>
-                <div>
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 14, fontFamily: 'var(--font-serif)', color: 'var(--text)', marginBottom: 4 }}>
-                      {profile.full_name}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                      {profile.email}
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, fontSize: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
-                        {translate('role')}
-                      </div>
-                      <div style={{ color: 'var(--text)' }}>
-                        {translate(profile.role)}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
-                        {translate('registrationDate')}
-                      </div>
-                      <div style={{ color: 'var(--text)' }}>
-                        {profile.created_at}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
-                        {translate('status')}
-                      </div>
-                      <div style={{ color: 'var(--gold)' }}>
-                        {translate('pending')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 12, flexDirection: 'column', justifyContent: 'center' }}>
-                  <button
-                    onClick={() => {
-                      setProfiles(profiles.map(p => p.id === profile.id ? { ...p, approved: true } : p));
-                    }}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#22c55e',
-                      color: '#fff',
-                      border: 'none',
-                      fontSize: 12,
-                      fontFamily: 'var(--font-serif)',
-                      cursor: 'pointer',
-                      letterSpacing: '0.1em',
-                    }}
-                  >
-                    {translate('approve')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setProfiles(profiles.map(p => p.id === profile.id ? { ...p, approved: false } : p));
-                    }}
-                    style={{
-                      padding: '10px 20px',
-                      background: '#ef4444',
-                      color: '#fff',
-                      border: 'none',
-                      fontSize: 12,
-                      fontFamily: 'var(--font-serif)',
-                      cursor: 'pointer',
-                      letterSpacing: '0.1em',
-                    }}
-                  >
-                    {translate('reject')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  // 승인 탭은 RoleApprovals 로 분리했다.
+  //
+  // 이전 구현은 화면만 있었다. 버튼이 setProfiles() 로 React 상태만 바꿔서
+  // 새로고침하면 되돌아갔고, 실제 승인은 SQL 로만 가능했다. 게다가
+  // profiles.approved 를 읽었는데 진짜 승인 상태는 user_roles.status 에 있다.
+  const renderApprovalsTab = () => <RoleApprovals />;
 
-  // ─── Tab: Members ───
   const renderMembersTab = () => (
     <div>
       {/* Filters */}

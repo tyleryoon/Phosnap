@@ -63,6 +63,24 @@ const COPY: Record<string, Record<string, { subject: string; lead: string; cta: 
     en: { subject: 'New message',
           lead: 'You have an unread message.', cta: 'Reply' },
   },
+  role_approved: {
+    ko: { subject: '가입이 승인되었습니다',
+          lead: '대시보드에서 상품과 일정을 등록하시면 고객에게 노출됩니다.',
+          cta: '대시보드 열기' },
+    en: { subject: 'Your application was approved',
+          lead: 'Add your packages and schedule to appear in search results.',
+          cta: 'Open dashboard' },
+  },
+  role_rejected: {
+    // 반려 사유는 notifications.body 에 담겨 본문으로 내려간다.
+    // 여기 lead 에 또 쓰면 같은 말이 두 번 나온다.
+    ko: { subject: '가입 심사 결과 안내',
+          lead: '아래 내용을 보완해 다시 신청해 주시면 재심사해 드립니다.',
+          cta: '포스냅 열기' },
+    en: { subject: 'About your application',
+          lead: 'Please address the note below and apply again.',
+          cta: 'Open Phosnap' },
+  },
   photos_delivered: {
     ko: { subject: '사진이 전달되었습니다', lead: '작업물을 확인해 주세요.', cta: '사진 보기' },
     en: { subject: 'Your photos are ready', lead: 'Your gallery is available.', cta: 'View photos' },
