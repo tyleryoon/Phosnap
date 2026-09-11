@@ -2470,16 +2470,27 @@ export const getChatMessages = async (roomId, limit = 100) => {
 };
 
 /** 메시지 전송 */
+/**
+ * 채팅 메시지 전송
+ *
+ * 서버 함수를 쓴다. 예전에는 messages 에 INSERT 만 하고 끝나서
+ * 상대방에게 알림이 가지 않았다 — 채팅창을 직접 열어보기 전에는
+ * 메시지가 온 줄도 몰랐다.
+ *
+ * 클라이언트에서 상대방 알림을 만들려 해도 RLS 가 막는다
+ * (notifications INSERT 는 user_id = auth.uid() 만 허용).
+ *
+ * 알림에는 5분 유예가 붙는다. 그 안에 읽으면 메일을 보내지 않는다.
+ */
 export const sendChatMessage = async (roomId, content) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session?.user) return { error: { message: 'Auth required' } };
-  const { data, error } = await sb.from('messages').insert([{
-    room_id: roomId,
-    sender_id: session.user.id,
-    content,
-  }]).select().single();
+
+  const { data, error } = await sb.rpc('send_chat_message', {
+    p_room:    roomId,
+    p_content: content,
+  });
+  if (error) console.error('[sendChatMessage] 전송 실패:', error);
   return { data, error };
 };
 
