@@ -359,46 +359,12 @@ export const getUserRolesWithStatus = async (userId) => {
   return roles.map(r => ({ role: r.role, status: r.status || 'active' }));
 };
 
-/**
- * 관리자: 특정 유저의 역할 승인 (pending → active)
- */
-export const approveUserRole = async (userId, role) => {
-  const sb = await getSupabase();
-  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('user_roles')
-    .update({ status: 'active' })
-    .eq('user_id', userId)
-    .eq('role', role)
-    .select();
-  return { data, error };
-};
-
-/**
- * 관리자: 특정 유저의 역할 거절 (pending → rejected)
- */
-export const rejectUserRole = async (userId, role) => {
-  const sb = await getSupabase();
-  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('user_roles')
-    .update({ status: 'rejected' })
-    .eq('user_id', userId)
-    .eq('role', role)
-    .select();
-  return { data, error };
-};
-
-/**
- * 관리자: 승인 대기 중인 모든 역할 조회
- */
-export const getPendingRoleRequests = async () => {
-  const sb = await getSupabase();
-  if (!sb) return { data: [], error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('user_roles')
-    .select('user_id, role, status, created_at, profiles(full_name, phone, real_name)')
-    .eq('status', 'pending')
-    .order('created_at', { ascending: true });
-  return { data: data || [], error };
-};
+// 관리자 승인 함수는 파일 하단(FIX_25 절)으로 옮겼다.
+//
+// 여기 있던 approveUserRole / rejectUserRole / getPendingRoleRequests 는
+// 클라이언트에서 user_roles 를 직접 UPDATE 했다. 규칙 5-11 위반이고,
+// FIX_25 가 self_update 정책을 없앤 뒤로는 조용히 0행이 됐을 것이다.
+// 지금은 approve_role / reject_role RPC 를 쓴다. 아무 데서도 쓰지 않아 삭제.
 
 /**
  * 기존 이메일로 로그인 시도 → 성공하면 역할 추가
