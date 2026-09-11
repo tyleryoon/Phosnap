@@ -2836,3 +2836,28 @@ export const rejectRole = async (userId, role, reason) => {
   if (error) return { data: null, error };
   return { data, error: null };
 };
+
+/** 내 역할 신청 상태 (반려 사유 포함) */
+export const getMyRoleStatus = async (role) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('my_role_status', { p_role: role });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};
+
+/**
+ * 반려된 신청을 보완해서 다시 올린다.
+ *
+ * 보완 메모를 필수로 받는다. 버튼만 다시 누르는 재신청을 막고,
+ * 관리자가 이전 반려 사유와 나란히 놓고 재심사할 수 있게 하기 위해서다.
+ */
+export const reapplyRole = async (role, note) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const trimmed = (note || '').trim();
+  if (!trimmed) return { data: null, error: { message: '무엇을 보완했는지 적어주세요' } };
+  const { data, error } = await sb.rpc('reapply_role', { p_role: role, p_note: trimmed });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};

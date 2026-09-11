@@ -200,6 +200,35 @@ const RoleApprovals = () => {
                       ))}
                     </div>
 
+                    {/* 재신청이면 맥락을 먼저 보여준다.
+                        이전에 뭘 지적했고 이번에 뭘 고쳤다는지 나란히 놓아야
+                        재심사가 의미가 있다. */}
+                    {row.reapply_count > 0 && (
+                      <div style={{
+                        border: '1px solid var(--border)', borderLeft: '3px solid var(--gold)',
+                        background: 'var(--bg)', padding: '12px 16px', marginBottom: 14,
+                      }}>
+                        <div style={{
+                          fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)',
+                          letterSpacing: '0.1em', marginBottom: 8,
+                        }}>
+                          {row.reapply_count}번째 재신청 · {fmtDate(row.reapplied_at)}
+                        </div>
+                        {row.reject_reason && (
+                          <div style={{ fontSize: 12, marginBottom: 8 }}>
+                            <span style={{ color: 'var(--muted)' }}>이전 반려 사유 — </span>
+                            <span style={{ color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{row.reject_reason}</span>
+                          </div>
+                        )}
+                        {row.reapply_note && (
+                          <div style={{ fontSize: 12 }}>
+                            <span style={{ color: 'var(--muted)' }}>보완했다는 내용 — </span>
+                            <span style={{ color: 'var(--text)', whiteSpace: 'pre-wrap' }}>{row.reapply_note}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {(row.instagram || row.website || portfolio.length > 0) && (
                       <div style={{ fontSize: 12, display: 'flex', gap: 14, flexWrap: 'wrap' }}>
                         {row.instagram && (

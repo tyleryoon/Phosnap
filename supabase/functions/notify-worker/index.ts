@@ -81,6 +81,15 @@ const COPY: Record<string, Record<string, { subject: string; lead: string; cta: 
           lead: 'Please address the note below and apply again.',
           cta: 'Open Phosnap' },
   },
+  role_reapplied: {
+    // 관리자에게 간다. 보완 내용은 body 로 내려간다.
+    ko: { subject: '보완 후 재신청이 접수되었습니다',
+          lead: '승인 탭에서 이전 반려 사유와 함께 확인하실 수 있습니다.',
+          cta: '승인 화면 열기' },
+    en: { subject: 'An applicant resubmitted',
+          lead: 'Review it alongside the previous rejection note.',
+          cta: 'Open approvals' },
+  },
   photos_delivered: {
     ko: { subject: '사진이 전달되었습니다', lead: '작업물을 확인해 주세요.', cta: '사진 보기' },
     en: { subject: 'Your photos are ready', lead: 'Your gallery is available.', cta: 'View photos' },

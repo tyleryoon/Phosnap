@@ -1,5 +1,6 @@
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import RoleRejected from './RoleRejected';
 
 // ─── ProtectedRoute ────────────────────────────────────────────────────
 // 비로그인 시 → 로그인 유도 화면 (AuthModal 오픈)
@@ -165,16 +166,10 @@ const ProtectedRoute = ({ children, onAuthOpen, requiredRole }) => {
       );
     }
     if (status === 'rejected') {
-      const roleLabel = ROLE_LABELS[lang]?.[requiredRole] ?? requiredRole;
-      return (
-        <div className="page-enter" style={{ paddingTop: 160, textAlign: 'center', minHeight: '60vh' }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>❌</div>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, letterSpacing: '0.1em', marginBottom: 12, color: '#e85d5d' }}>
-            {m.rejectedTitle}
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--muted)' }}>{m.rejectedSub.replace('{role}', roleLabel)}</p>
-        </div>
-      );
+      // 반려는 막다른 길이 아니다. 사유를 보여주고 보완해서 다시 올리게 한다.
+      // (user_roles 는 (user_id, role) 유니크라 새 신청을 만들 수 없고
+      //  본인 수정 정책도 없앴으므로, 재신청은 reapply_role() RPC 로만 된다)
+      return <RoleRejected role={requiredRole} />;
     }
   }
 
