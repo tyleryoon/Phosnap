@@ -21,7 +21,10 @@ import { getVenueVendorsByLocation, getVenueItemsByVendor, getVenueItemById } fr
 import { getTagLabel } from '../data/tagRegistry';
 import { loadTossPayments, generateOrderId } from '../lib/payment';
 import { computeSlot, buildShootWindow, isServiceAvailable } from '../lib/scheduling';
-import { getAvailableSlots, getAvailableSlotsForDuration, getDateStatus, initSchedules, buildSlotData } from '../data/schedules';
+// buildSlotData 만 쓴다. 나머지(getDateStatus / getAvailableSlots*)는
+// localStorage 를 읽는 함수라 고객 화면에서는 작가 스케줄을 알 수 없다.
+// 폴백으로 두면 없는 데이터를 지어내 보여주게 되므로 아예 들이지 않는다.
+import { initSchedules, buildSlotData } from '../data/schedules';
 import WeatherGoldenHour from '../components/WeatherGoldenHour';
 import PopularityIndicator from '../components/PopularityIndicator';
 
@@ -368,6 +371,8 @@ const Booking = () => {
   // 고객 브라우저에서는 작가의 운영 시간을 알 수 없다.
   const [dbDaySchedule, setDbDaySchedule] = useState(null);   // { slots, blocked, dayOff }
   const [dbDefaultSlots, setDbDefaultSlots] = useState(null); // string[]
+  // 일정을 못 불러왔을 때의 사유. 있으면 달력을 잠근다.
+  const [scheduleError, setScheduleError] = useState(null);
   const [dbMonthSchedule, setDbMonthSchedule] = useState(null); // { 'YYYY-MM-DD': row }
   const [dbDresses, setDbDresses] = useState(null);
   // 작가 자체 보유 의상 (packages 테이블의 type='costume')
@@ -658,20 +663,42 @@ const Booking = () => {
   const [showNoticeModal, setShowNoticeModal] = useState(false);
 
   // 달력에 표시할 월 단위 스케줄을 Supabase 에서 가져온다.
-  // getDateStatus 는 localStorage 를 읽어 고객 화면에서는 모든 날짜가
-  // '휴무'로 보이던 문제를 막는다.
+  //
+  // ⚠ 실패하면 추측하지 않는다.
+  //
+  //   예전에는 두 가지로 새고 있었다.
+  //     1) const { data } = ... 로 error 를 버렸다.
+  //        조회가 실패해도 data 가 [] 라 '레코드 없음 → 열림' 으로 처리돼
+  //        **모든 날짜가 예약 가능**으로 보였다. 고객이 작가 휴무일에 예약한다.
+  //     2) 예외가 나면 getDateStatus(localStorage) 로 폴백했다.
+  //        그건 **고객 브라우저**의 localStorage 다. 작가 스케줄이 있을 리 없다.
+  //        없는 데이터를 지어내 보여주는 셈이다.
+  //
+  //   달력을 믿을 수 없으면 예약을 받지 않는 게 맞다.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!p?.id) return;
+      setScheduleError(null);
       try {
         const { getScheduleMonth } = await import('../lib/supabase');
-        const { data } = await getScheduleMonth(p.id, calYear, calMonth + 1);
+        const { data, error } = await getScheduleMonth(p.id, calYear, calMonth + 1);
         if (cancelled) return;
+        if (error) {
+          console.error('[Booking] 스케줄 조회 실패:', error);
+          setDbMonthSchedule(null);
+          setScheduleError(error.message || '일정을 불러오지 못했습니다.');
+          return;
+        }
         const map = {};
         (data || []).forEach(row => { map[row.date] = row; });
         setDbMonthSchedule(map);
-      } catch (_) { /* localStorage 폴백 */ }
+      } catch (e) {
+        if (cancelled) return;
+        console.error('[Booking] 스케줄 조회 예외:', e);
+        setDbMonthSchedule(null);
+        setScheduleError(e.message || '일정을 불러오지 못했습니다.');
+      }
     })();
     return () => { cancelled = true; };
   }, [p?.id, calYear, calMonth]);
@@ -682,9 +709,9 @@ const Booking = () => {
    * (작가 대시보드와 동일한 규칙).
    */
   const resolveDateStatus = (dateStr) => {
-    if (!dbMonthSchedule || !dbDefaultSlots) {
-      return getDateStatus('photographer', p.id, dateStr);
-    }
+    // 아직 못 받았거나 실패했으면 'unknown'.
+    // 예전에는 여기서 localStorage 를 읽어 지어낸 값을 돌려줬다.
+    if (!dbMonthSchedule || !dbDefaultSlots) return 'unknown';
     const row = dbMonthSchedule[dateStr];
     if (!row) return dbDefaultSlots.length ? 'open' : 'off';
     if (row.day_off) return 'off';
@@ -1145,6 +1172,18 @@ const Booking = () => {
                   }}>{t('booking.calNext')}</button>
                 </div>
 
+                {scheduleError && (
+                  <div style={{
+                    border: '1px solid #e85d5d', background: 'var(--bg2)',
+                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#e85d5d',
+                  }}>
+                    일정을 불러오지 못했습니다 — {scheduleError}
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
+                      잘못된 날짜로 예약되는 것을 막기 위해 날짜 선택을 잠갔습니다.
+                      새로고침 후 다시 시도해주세요.
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 32 }}>
                   {(Array.isArray(DAYS) ? DAYS : ['일','월','화','수','목','금','토']).map((d, i) => (
                     <div key={i} style={{ textAlign: 'center', fontSize: 11, color: 'var(--muted)', padding: '8px 0', fontFamily: 'var(--font-serif)' }}>
@@ -1159,14 +1198,17 @@ const Booking = () => {
                     const selected = selectedDate === dateStr;
                     const status   = past ? 'past' : resolveDateStatus(dateStr);
                     // status: 'open' | 'partial' | 'full' | 'off' | 'past'
-                    const isOff    = status === 'off';
-                    const isFull   = status === 'full';
+                    const isOff     = status === 'off';
+                    const isFull    = status === 'full';
+                    // 상태를 모르면 고를 수 없다. 되는 줄 알고 눌렀다가
+                    // 마지막에 막히는 것보다 처음부터 잠그는 게 낫다.
+                    const isUnknown = status === 'unknown';
 
                     return (
                       <button
                         key={day}
-                        disabled={past || isOff || isFull}
-                        onClick={() => !past && !isOff && !isFull && handleDateSelect(dateStr)}
+                        disabled={past || isOff || isFull || isUnknown}
+                        onClick={() => !past && !isOff && !isFull && !isUnknown && handleDateSelect(dateStr)}
                         style={{
                           position: 'relative',
                           padding: '10px 0 14px', textAlign: 'center', fontSize: 13,
@@ -1276,9 +1318,15 @@ const Booking = () => {
                         ? []
                         : (dbDaySchedule.slots || dbDefaultSlots || []))
                     : null;
+                  // DB 스케줄이 없으면 빈 목록이다.
+                  //
+                  // 예전에는 getAvailableSlotsForDuration(localStorage)로
+                  // 폴백했다. 그건 고객 브라우저의 저장소라 작가 운영시간이
+                  // 있을 리 없다. 지어낸 시간대를 보여주고 예약까지 받으면
+                  // 작가는 자기가 열지 않은 시간에 예약을 받게 된다.
                   const rawSlotData = dbSlots
                     ? buildSlotData(dbSlots, dbDaySchedule.blocked || [], pkgHours)
-                    : getAvailableSlotsForDuration('photographer', p.id, selectedDate, pkgHours);
+                    : [];
                   // 예약 충돌 체크: DB에서 이미 예약된 슬롯 비활성화
                   const slotData = rawSlotData.map(s => {
                     if (s.available && bookedSlots.includes(s.time)) {
