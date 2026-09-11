@@ -5,6 +5,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { fmt } from '../data/photographers';
 import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
 import LazyImage from './LazyImage';
+import { ARTIST_TYPES } from '../lib/supabase';
 
 // 지역 id → 다국어 이름 조회용 인덱스 (순수 데이터라 순환 참조 없음)
 const LOCATION_NAME_INDEX = [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS]
@@ -196,7 +197,27 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
         </div>
 
         <div className="photo-card-tags">
-          {p.tags.slice(0, 3).map(tagKey => (
+          {/* 작가 유형. 사진 작가와 영상 작가는 고객이 찾는 것이 전혀 다른데
+              지금까지 카드에 구분이 없어 알 방법이 없었다. */}
+          {(() => {
+            const at = ARTIST_TYPES[p.artistType];
+            if (!at || p.artistType === 'hmk') return null;
+            return (
+              <span className="tag" style={{
+                borderColor: 'rgba(232,160,32,0.5)', color: 'var(--gold)',
+              }}>
+                {at.icon} {lang === 'ko' ? at.ko : at.en}
+              </span>
+            );
+          })()}
+          {p.hmkAvailable && (
+            <span className="tag" style={{
+              borderColor: 'rgba(232,160,32,0.5)', color: 'var(--gold)',
+            }}>
+              💄 {lang === 'ko' ? '헤메 가능' : 'H&M'}
+            </span>
+          )}
+          {p.tags.slice(0, 2).map(tagKey => (
             <span key={tagKey} className="tag">{t(`tags.${tagKey}`)}</span>
           ))}
         </div>

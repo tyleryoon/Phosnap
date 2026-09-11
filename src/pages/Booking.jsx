@@ -364,6 +364,8 @@ const Booking = () => {
   const [dbDefaultSlots, setDbDefaultSlots] = useState(null); // string[]
   const [dbMonthSchedule, setDbMonthSchedule] = useState(null); // { 'YYYY-MM-DD': row }
   const [dbDresses, setDbDresses] = useState(null);
+  // 작가 자체 보유 의상 (packages 테이블의 type='costume')
+  const [selfDresses, setSelfDresses] = useState(null);
   const [dbVenues, setDbVenues] = useState(null);
   // 선택한 날짜에 헤메·장소가 이미 묶여 있는 구간.
   // 이게 없으면 이미 예약이 찬 헤메를 고객이 그대로 고를 수 있다.
@@ -494,6 +496,27 @@ const Booking = () => {
             description: d.description,
           }));
           setDbDresses(mapped);
+        }
+
+        // 작가 자체 의상. dress_self 가 켜진 작가는 벤더 의상 대신
+        // 자기 의상을 보여준다. packages 의 type='costume' 이 그 자리다.
+        if (p?.dressSelf) {
+          const { getPackages } = await import('../lib/supabase');
+          const { data: costumes } = await getPackages(p.id, 'costume');
+          setSelfDresses((costumes || []).map(c => ({
+            id: c.id,
+            vendorId: null,          // 작가 본인이므로 별도 벤더가 없다
+            selfOwned: true,
+            name: c.name,
+            nameI18n: c.name_i18n || {},
+            category: c.category,
+            price: c.price,
+            image: (c.images && c.images[0]) || '/default-dress.jpg',
+            sizes: c.sizes || [],
+            description: c.description,
+          })));
+        } else {
+          setSelfDresses(null);
         }
 
         // Load venues from DB (mock venueVendors 폴백을 대체)
@@ -712,8 +735,10 @@ const Booking = () => {
   const dressVendor = p.dressVendorId ? getVendorById(p.dressVendorId) : null;
   // 작가 본인 보유 의상(photographers.dresses)은 실제 데이터이므로 유지하고,
   // 벤더 의상은 DB 조회 결과만 사용한다 (mock 벤더 폴백 제거).
+  // 예전에는 p.dresses 를 봤는데 그건 mock 전용 필드라 항상 비어 있었다.
+  // (게다가 toPhotographerCard 가 dressSelf 를 안 넘겨 분기 자체가 안 탔다)
   const availableDresses = p.dressSelf
-    ? (p.dresses || [])
+    ? (selfDresses || [])
     : (dbDresses || []);
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
   const dressPrice = selectedDressData?.price || 0;
@@ -878,17 +903,22 @@ const Booking = () => {
       });
     }
 
-    if (selectedDressData?.id && selectedDressData?.vendorId) {
-      items.push({
-        providerType: 'dress',
-        providerId:   selectedDressData.vendorId,
-        providerName: selectedDressData.vendorName || '',
-        itemId:       selectedDressData.id,
-        itemName:     selectedDressData.nameI18n?.[lang] || selectedDressData.name || '의상',
-        itemOption:   selectedDressSize || null,
-        price:        toAmount(dressPrice),
-        timing:       'day',   // 의상은 하루 단위 점유
-      });
+    if (selectedDressData?.id) {
+      // 작가 자체 의상이면 정산 대상이 벤더가 아니라 작가 본인이다.
+      const selfOwned = !!selectedDressData.selfOwned;
+      const providerId = selfOwned ? p?.id : selectedDressData.vendorId;
+      if (providerId) {
+        items.push({
+          providerType: selfOwned ? 'photographer' : 'dress',
+          providerId,
+          providerName: selfOwned ? artistName : (selectedDressData.vendorName || ''),
+          itemId:       selectedDressData.id,
+          itemName:     selectedDressData.nameI18n?.[lang] || selectedDressData.name || '의상',
+          itemOption:   selectedDressSize || null,
+          price:        toAmount(dressPrice),
+          timing:       'day',   // 의상은 하루 단위 점유
+        });
+      }
     }
 
     if (selectedVenueData?.id && selectedVenueData?.vendorId) {
@@ -1240,6 +1270,21 @@ const Booking = () => {
 
                   {/* ── 메인: 스타일리스트 목록 + 서비스 선택 + 버튼 ── */}
                   <div>
+                    {/* 작가가 헤어메이크업도 하는 경우.
+                        따로 헤메를 부를 필요가 없다는 것을 알려준다. */}
+                    {p.hmkAvailable && (
+                      <div style={{
+                        padding: '12px 16px', marginBottom: 20,
+                        background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)',
+                        fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
+                      }}>
+                        <span style={{ color: 'var(--gold)' }}>💄</span>{' '}
+                        {lang === 'ko'
+                          ? '이 작가님은 헤어메이크업도 직접 진행합니다. 별도 스타일리스트 없이 촬영하실 수 있어요.'
+                          : 'This artist also does hair & makeup. You can book without a separate stylist.'}
+                      </div>
+                    )}
+
                     {availableStylists.length > 0 ? (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 20, marginBottom: 32 }}>
                         {availableStylists.map(s => (

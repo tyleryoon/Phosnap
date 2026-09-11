@@ -1956,14 +1956,28 @@ export const toPhotographerCard = (row) => {
     packages:      Array.isArray(row.packages) ? row.packages : [],
     featuredPortfolio: Array.isArray(row.portfolio) ? row.portfolio.slice(0, 5) : [],
     hmkAvailable:  row.hmk_available ?? false,
+    // DB 는 snake_case, 화면 코드는 camelCase 를 쓴다.
+    // 별칭을 안 만들면 p.dressSelf 가 영원히 undefined 라
+    // "작가 자체 의상" 분기가 한 번도 타지 않는다.
+    artistType:    row.artist_type || 'photographer',
+    dressSelf:     row.dress_self ?? false,
     countryCode:   row.country_code || 'KR',
     city:          row.city || '',
   };
 };
 
+/** 작가 유형 표시 정보 */
+export const ARTIST_TYPES = {
+  photographer: { icon: '📸',   ko: '사진',      en: 'Photo' },
+  videographer: { icon: '🎬',   ko: '영상',      en: 'Video' },
+  both:         { icon: '📸🎬', ko: '사진·영상', en: 'Photo & Video' },
+  hmk:          { icon: '💄',   ko: '헤어메이크업', en: 'Hair & Makeup' },
+};
+
 /** Fetch photographers with filters (replaces client-side filtering) */
 export const fetchPhotographers = async ({
   countryCode, city, genre, language, tags,
+  artistType,
   minPrice, maxPrice, minRating,
   sortBy, search, limit = 50, offset = 0
 } = {}) => {
@@ -1976,6 +1990,11 @@ export const fetchPhotographers = async ({
   if (countryCode) q = q.eq('country_code', countryCode);
   if (city) q = q.eq('city', city);
   if (genre) q = q.contains('tags', [genre]);
+  // 작가 유형(사진/영상/사진+영상). genre 는 tags 기반이라 별개다.
+  // '사진+영상' 작가는 사진으로도 영상으로도 검색돼야 한다.
+  if (artistType === 'photographer') q = q.in('artist_type', ['photographer', 'both']);
+  else if (artistType === 'videographer') q = q.in('artist_type', ['videographer', 'both']);
+  else if (artistType) q = q.eq('artist_type', artistType);
   if (language) q = q.contains('languages', [language]);
   if (minRating) q = q.gte('rating', parseFloat(minRating));
   if (minPrice) q = q.gte('price_from', parseInt(minPrice));

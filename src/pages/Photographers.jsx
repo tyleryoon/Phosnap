@@ -165,6 +165,8 @@ const Photographers = ({ onAuthOpen }) => {
   // ─── Filter State ─────────────────────────────────────────────────────
   const [activeFilter,   setActiveFilter]   = useState('all');
   const [activeLanguage, setActiveLanguage] = useState('all');
+  // 작가 유형(사진/영상/사진+영상). genre 는 tags 기반이라 별개다.
+  const [activeArtistType, setActiveArtistType] = useState('all');
   const [activeLocation, setActiveLocation] = useState(initialLocation);
   const [searchQuery,    setSearchQuery]    = useState(initialSearch);
   const [activeSnapFilters, setActiveSnapFilters] = useState(new Set());
@@ -244,6 +246,7 @@ const Photographers = ({ onAuthOpen }) => {
     if (maxPrice) params.set('maxPrice', maxPrice);
     if (sortBy !== 'popular') params.set('sort', sortBy);
     if (activeFilter !== 'all') params.set('genre', activeFilter);
+    if (activeArtistType !== 'all') params.set('atype', activeArtistType);
     if (activeLanguage !== 'all') params.set('lang', activeLanguage);
     if (activeLocation !== 'all') params.set('location', activeLocation);
     if (activeSnapFilters.size > 0) params.set('tags', Array.from(activeSnapFilters).join(','));
@@ -255,7 +258,7 @@ const Photographers = ({ onAuthOpen }) => {
     } else {
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, [selectedCountry, selectedCity, minPrice, maxPrice, sortBy, activeFilter, activeLanguage, activeLocation, activeSnapFilters, searchQuery]);
+  }, [selectedCountry, selectedCity, minPrice, maxPrice, sortBy, activeFilter, activeArtistType, activeLanguage, activeLocation, activeSnapFilters, searchQuery]);
 
   // TASK 1C: 마운트 시 DB에서 지역 레지스트리 새로고침
   useEffect(() => {
@@ -302,6 +305,7 @@ const Photographers = ({ onAuthOpen }) => {
         countryCode: selectedCountry !== 'all' ? selectedCountry : undefined,
         city: selectedCity !== 'all' ? selectedCity : undefined,
         genre: activeFilter !== 'all' ? activeFilter : undefined,
+        artistType: activeArtistType !== 'all' ? activeArtistType : undefined,
         language: activeLanguage !== 'all' ? activeLanguage : undefined,
         minPrice: minPrice ? parseInt(minPrice) : undefined,
         maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
@@ -758,6 +762,28 @@ const Photographers = ({ onAuthOpen }) => {
               ))}
             </div>
           )}
+        </div>
+
+        {/* 작가 유형 필터 — 사진 작가와 영상 작가는 고객이 찾는 것이 다르다 */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', marginRight: 8 }}>
+            {lang === 'ko' ? '작가 유형' : 'Artist type'}
+          </span>
+          {[
+            { id: 'all',          ko: '전체',      en: 'All',   icon: '' },
+            { id: 'photographer', ko: '사진',      en: 'Photo', icon: '📸' },
+            { id: 'videographer', ko: '영상',      en: 'Video', icon: '🎬' },
+            { id: 'both',         ko: '사진·영상', en: 'Both',  icon: '📸🎬' },
+          ].map(o => (
+            <button
+              key={o.id}
+              className={`filter-btn ${activeArtistType === o.id ? 'active' : ''}`}
+              onClick={() => setActiveArtistType(o.id)}
+              style={{ padding: '6px 14px', fontSize: 11 }}
+            >
+              {o.icon} {lang === 'ko' ? o.ko : o.en}
+            </button>
+          ))}
         </div>
 
         {/* 언어 필터 */}
