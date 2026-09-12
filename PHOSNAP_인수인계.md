@@ -749,6 +749,81 @@ grep -rn "Silently ignore\|무시" src/
 
 ---
 
+### 5-19. 서버가 거부한 것과 서버에 못 닿은 것은 다르다 (2026-09-12)
+
+이 규칙은 결제에서 나왔다. 가장 크게 데일 뻔한 자리다.
+
+#### 무슨 일이 있었나
+
+`BookingSuccess.jsx` 는 이렇게 생겼었다.
+
+```javascript
+try {
+  const result = await confirmPayment({ ... });
+  if (result.duplicate) { ...; return; }
+  if (result.success)   { ...; return; }
+} catch (edgeFnErr) {
+  // silently handled
+}
+
+// ── Fallback: 클라이언트 직접 저장 ──
+// ⚠ 개발/테스트 환경 전용
+```
+
+두 가지가 겹쳐 있었다.
+
+1. `confirmPayment` 는 **예외를 던지지 않는다.** `{ success:false, error }` 를
+   돌려준다. 그래서 `catch` 는 거의 안 걸리고, `result.error` 는 아무도 안 읽는다.
+2. `success` 도 `duplicate` 도 아니면 **그냥 아래로 흘러내려** 클라이언트가
+   직접 저장한다.
+
+그 결과가 이렇다. Edge Function 이 `AMOUNT_MISMATCH`(금액 위조)로 400 을
+돌려줘도 → 클라이언트가 **URL 파라미터의 금액 그대로** 예약을 저장하고
+→ 화면에는 초록색 "예약이 저장되었습니다" 가 뜬다.
+
+서버 검증을 넣은 이유 자체가 무력화돼 있었다.
+
+#### 규칙
+
+서버를 호출하는 모든 자리에서 이 둘을 구분해야 한다.
+
+| | 뜻 | 해야 할 일 |
+|---|---|---|
+| **거부** (400/401/409 …) | 서버가 판단을 내렸고, 안 된다고 했다 | 우회하지 않는다. 사용자에게 이유를 보여준다 |
+| **미도달** (fetch 실패, 404) | 서버는 아무 판단도 하지 않았다 | 대체 경로가 있다면 그때만 쓴다 |
+
+`confirmPayment` / `cancelPaymentServer` 는 이제 `reached` 를 같이 돌려준다.
+`reached === true` 면 **절대** 클라이언트 저장으로 내려가지 않는다.
+
+#### 돈이 걸린 화면은 "완료" 로 보이면 안 된다
+
+결제창을 통과했다는 건 **돈이 나갔다**는 뜻이다.
+예약이 저장되지 않았는데 ✓ 와 "작가 확정 대기 중" 을 띄우면
+고객은 몇 주 뒤에야 알게 된다.
+
+`BookingSuccess` 는 `saveStatus === 'error'` 일 때
+헤더 아이콘·제목·설명을 전부 바꾸고, 주문번호와
+`/support?category=payment&order=...` 로 가는 버튼을 띄운다.
+문의 폼은 주문번호를 미리 채워 넣는다 — 고객이 옮겨 적다 틀리면 우리가 못 찾는다.
+
+#### 결제했는데 항목이 사라지던 문제
+
+`createBooking` 의 payload 에 `venue_price` 가 아예 없었다.
+(`bookings` 에는 `venue_price` 는 있고 `venue_name` 은 없다.)
+결제 초안(`sessionStorage`)이 없으면 라인 아이템도 작가 것 하나만 만들어졌다.
+
+→ 고객은 헤메·의상·장소 값을 다 냈는데
+   예약에는 작가만 남고, 공급자들은 자기가 불린 줄도 모른다.
+
+지금은
+* `venue_price` 를 payload 에 넣는다
+* 초안이 없으면 빠진 항목을 `note` 에 `[항목 복원 필요 — 결제 초안 없음]` 으로 남긴다
+* `BookingSuccess` 가 화면에 "일부 항목이 저장되지 않았을 수 있다" 고 알린다
+* `VERIFY.sql` 이 `결제했는데 라인 아이템 없는 항목` 과
+  `아이템 합계 ≠ 결제 총액` 을 상시 검사한다
+
+---
+
 ---
 
 ## 6. 과거에 발목 잡았던 함정들
@@ -1441,6 +1516,60 @@ Nav 의 `⚙ Admin` 과 관리자 탭에 숫자가 붙는다.
 역할이 하나뿐이면 아무것도 그리지 않는다.
 없을 때는 관리자 역할을 받아도 활성 역할이 `artist` 면 `⚙ Admin` 링크가
 보이지 않았고, 헤메 겸 벤더는 한쪽 대시보드에서 돌아올 길이 없었다.
+
+---
+
+## 10-6. Edge Function 배포 현황 ⚠️ (2026-09-12 확인)
+
+저장소에 소스는 6개 있는데 **실제로 배포된 건 2개뿐이다.**
+소스가 있다고 도는 게 아니다. 대시보드에서 눈으로 확인해야 한다.
+
+| 함수 | 배포 | 역할 | 없으면 |
+|---|---|---|---|
+| `notify-worker` | ✅ | 알림 메일 발송 | — |
+| `email-webhook` | ✅ | 반송·수신 결과 기록 | — |
+| `confirm-payment` | ❌ | **Toss 결제 승인 + 금액 검증** | 서버 검증이 아예 없다 |
+| `cancel-payment` | ❌ | **환불** | 작가 거절 시 환불이 안 된다 |
+| `expire-bookings` | ❌ | 만료 예약 정리 | `pending` 이 영원히 남는다 |
+| `send-notification` | ❌ | 단건 알림 | — |
+
+확인하는 곳: Supabase 대시보드 → Edge Functions → Functions
+
+### 지금 당장 문제가 되진 않는 이유
+
+`confirm-payment` 가 없으면 게이트웨이가 404 를 주고, 클라이언트는
+`reached === false` 로 보고 대체 경로(클라이언트 직접 저장)로 내려간다.
+테스트 결제는 그래서 잘 됐던 것이다.
+
+**실서비스에서는 이게 곧 금액 검증이 없다는 뜻이다.**
+
+### 배포 순서 — 순서를 지켜야 한다
+
+`confirm-payment` 는 `TOSS_SECRET_KEY` 가 없으면 500 을 돌려준다.
+이제 500 은 "서버가 거부함" 으로 취급돼서 예약이 아예 저장되지 않는다.
+**시크릿을 먼저 넣고 배포한다.** 거꾸로 하면 결제가 전부 막힌다.
+
+1. Supabase 대시보드 → Edge Functions → Secrets
+   `TOSS_SECRET_KEY = live_sk_...` (클라이언트 키 아님)
+2. 배포
+
+```
+npx supabase functions deploy confirm-payment --no-verify-jwt
+npx supabase functions deploy cancel-payment --no-verify-jwt
+npx supabase functions deploy expire-bookings --no-verify-jwt
+```
+
+3. 브라우저 콘솔에서 도달 여부 확인 (401/400 이 나오면 도달한 것이다. 404 면 미배포)
+
+```
+await fetch('https://znjkyvijjlahsxczweqh.supabase.co/functions/v1/confirm-payment',{method:'OPTIONS'}).then(r=>r.status)
+```
+
+4. 테스트 결제 1건 → `VERIFY.sql` 에서 `아이템 합계 ≠ 결제 총액` 이 0 인지 확인
+
+`--no-verify-jwt` 를 빼면 Supabase 게이트웨이가 CORS 프리플라이트(OPTIONS)를
+401 로 막아서, 브라우저에서는 `Failed to fetch` 로만 보인다.
+함수 코드는 실행조차 되지 않는다. 함수 안에서 사용자 토큰을 직접 검증한다.
 
 ---
 

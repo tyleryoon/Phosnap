@@ -44,6 +44,15 @@ const CONTENT = {
     saved:       '예약이 저장되었습니다',
     saveError:   '예약 저장에 실패했습니다. 고객센터에 문의해주세요.',
     alreadySaved:'이미 저장된 예약입니다.',
+    // 결제는 됐는데 예약이 안 남은 경우 — 이걸 "완료" 로 보여주면 안 된다.
+    failTitle:   '결제는 됐지만 예약이 저장되지 않았습니다',
+    failLabel:   '확인 필요',
+    failSub:     '결제 금액은 정상 청구되었습니다.\n아래 주문번호로 문의해주시면 예약을 복구하거나 전액 환불해드립니다.',
+    failGuide:   '이 화면을 닫아도 주문번호로 처리 가능합니다. 결제가 중복되니 다시 결제하지 마세요.',
+    inquiryBtn:  '이 주문으로 문의하기',
+    notLoggedIn: '로그인이 풀려 예약을 저장하지 못했습니다. 주문번호로 문의해주세요.',
+    partialWarn: '헤메·의상·장소 항목이 함께 저장되지 않았을 수 있습니다. 예약 내역을 확인하고 빠진 항목이 있으면 문의해주세요.',
+    rejectedBy:  '서버 검증에서 거부되었습니다',
   },
   en: {
     label:      'Payment Complete',
@@ -75,6 +84,14 @@ const CONTENT = {
     saved:       'Booking saved successfully',
     saveError:   'Failed to save booking. Please contact support.',
     alreadySaved:'Booking already saved.',
+    failTitle:   'Payment went through, but the booking was not saved',
+    failLabel:   'Action needed',
+    failSub:     'You were charged successfully.\nContact us with the order number below and we will restore the booking or refund you in full.',
+    failGuide:   'You can close this page — the order number is enough. Do not pay again; you would be charged twice.',
+    inquiryBtn:  'Contact us about this order',
+    notLoggedIn: 'Your session expired, so the booking was not saved. Please contact us with the order number.',
+    partialWarn: 'Stylist, dress or venue items may not have been saved. Please check your bookings and contact us if anything is missing.',
+    rejectedBy:  'Rejected by server verification',
   },
   ja: {
     label:      'お支払い完了',
@@ -106,6 +123,14 @@ const CONTENT = {
     saved:       '予約が保存されました',
     saveError:   '予約の保存に失敗しました。サポートにお問い合わせください。',
     alreadySaved:'すでに保存済みの予約です。',
+    failTitle:   'お支払いは完了しましたが、予約が保存されませんでした',
+    failLabel:   '要確認',
+    failSub:     'お支払いは正常に処理されています。\n下記の注文番号でお問い合わせいただければ、予約の復旧または全額返金いたします。',
+    failGuide:   'この画面を閉じても注文番号で対応できます。二重請求になりますので、再度お支払いはしないでください。',
+    inquiryBtn:  'この注文について問い合わせる',
+    notLoggedIn: 'ログインが切れたため予約を保存できませんでした。注文番号でお問い合わせください。',
+    partialWarn: 'ヘアメイク・衣装・場所の項目が保存されていない可能性があります。予約内容をご確認ください。',
+    rejectedBy:  'サーバー検証で拒否されました',
   },
   zh: {
     label:      '支付完成',
@@ -137,6 +162,14 @@ const CONTENT = {
     saved:       '预约已保存',
     saveError:   '保存预约失败，请联系客服。',
     alreadySaved:'预约已保存。',
+    failTitle:   '支付已完成，但预约未能保存',
+    failLabel:   '需要确认',
+    failSub:     '款项已正常扣除。\n请使用下方订单号联系我们，我们将恢复预约或全额退款。',
+    failGuide:   '关闭此页面也没关系，凭订单号即可处理。请勿重复支付，否则会被扣款两次。',
+    inquiryBtn:  '就此订单联系我们',
+    notLoggedIn: '登录已失效，预约未能保存。请凭订单号联系我们。',
+    partialWarn: '化妆造型、服装或场地项目可能未一并保存。请查看预约记录，如有遗漏请联系我们。',
+    rejectedBy:  '服务器验证已拒绝',
   },
 };
 
@@ -198,6 +231,10 @@ const BookingSuccess = () => {
   // 저장 상태
   const [saveStatus,  setSaveStatus]  = useState('saving'); // 'saving' | 'saved' | 'error' | 'duplicate'
   const [saveMessage, setSaveMessage] = useState(c.saving);
+  // 실패했을 때 왜 실패했는지. 화면에 보여주고 문의 본문에도 넣는다.
+  const [failDetail, setFailDetail]   = useState('');
+  // 초안이 없어 작가 항목만 저장된 경우. 돈은 전부 받았는데 일부가 빠졌다.
+  const [partial,    setPartial]      = useState(false);
   // 중복 실행 방지 — sessionStorage 키로 브라우저 뒤로가기도 차단
   const savedRef = useRef(false);
   const SAVE_KEY = `phosnap_saved_${orderId}`;
@@ -225,18 +262,25 @@ const BookingSuccess = () => {
     }
     savedRef.current = true;
 
+    const fail = (msg, detail = '') => {
+      setSaveStatus('error');
+      setSaveMessage(msg);
+      setFailDetail(detail);
+    };
+
     const save = async () => {
       // 로그인 안 된 경우 → 저장 건너뜀 (게스트 체크아웃은 미구현)
+      // 돈은 이미 나갔다. "저장 실패" 로 뭉뚱그리지 말고 이유를 알려준다.
       if (!isLoggedIn || !user) {
-        setSaveStatus('error');
-        setSaveMessage(c.saveError);
+        fail(c.notLoggedIn, 'NOT_LOGGED_IN');
         return;
       }
 
       // ── 서버 검증 우선 (Edge Function: confirm-payment) ──
       // TossPayments confirm API를 서버에서 호출 → 금액 검증 → DB 저장
+      let result;
       try {
-        const result = await confirmPayment({
+        result = await confirmPayment({
           paymentKey,
           orderId,
           amount:                 Number(amount),
@@ -255,23 +299,44 @@ const BookingSuccess = () => {
           venuePrice:             Number(venuePrice),
           lang,
         });
-
-        if (result.duplicate) {
-          setSaveStatus('duplicate');
-          setSaveMessage(c.alreadySaved);
-          sessionStorage.setItem(SAVE_KEY, '1');
-          return;
-        }
-
-        if (result.success) {
-          sessionStorage.setItem(SAVE_KEY, '1');
-          setSaveStatus('saved');
-          setSaveMessage(c.saved);
-          return;
-        }
       } catch (edgeFnErr) {
-        // silently handled
+        // confirmPayment 는 보통 던지지 않지만, 던졌다면 서버에 닿지 못한 것이다.
+        console.error('[BookingSuccess] confirm-payment 호출 실패:', edgeFnErr);
+        result = { success: false, reached: false, error: edgeFnErr?.message || String(edgeFnErr) };
       }
+
+      if (result?.duplicate) {
+        sessionStorage.setItem(SAVE_KEY, '1');
+        setSaveStatus('duplicate');
+        setSaveMessage(c.alreadySaved);
+        return;
+      }
+
+      if (result?.success) {
+        sessionStorage.setItem(SAVE_KEY, '1');
+        setSaveStatus('saved');
+        setSaveMessage(c.saved);
+        return;
+      }
+
+      // ── 서버가 "안 된다" 고 판단한 경우 ────────────────────────────────
+      //
+      // 여기서 대체 경로로 넘어가면 안 된다.
+      // 금액 위조(AMOUNT_MISMATCH)·인증 실패·결제 승인 실패를 서버가 걸렀는데
+      // 클라이언트가 URL 파라미터의 금액으로 다시 저장해버리면
+      // 서버 검증이 있으나 마나가 된다. 실제로 그렇게 동작하고 있었다.
+      //
+      // 서버에 닿지 못한 경우(reached=false)만 대체 경로로 내려간다.
+      if (result?.reached) {
+        console.error('[BookingSuccess] 서버가 결제를 거부했습니다:', result);
+        fail(
+          c.saveError,
+          `${c.rejectedBy} — ${result.code || `HTTP ${result.status}`}${result.error ? `: ${result.error}` : ''}`,
+        );
+        return;
+      }
+
+      console.warn('[BookingSuccess] confirm-payment 에 닿지 못해 대체 경로로 저장합니다:', result?.error);
 
       // ── Fallback: 클라이언트 직접 저장 (Edge Function 미배포 시) ──
       // ⚠ 개발/테스트 환경 전용 — 프로덕션에서는 반드시 Edge Function 사용
@@ -282,7 +347,11 @@ const BookingSuccess = () => {
           setSaveMessage(c.alreadySaved);
           return;
         }
-      } catch (_) { /* ignore */ }
+      } catch (dupErr) {
+        // 조회 실패는 치명적이지 않다 — 중복이면 아래 insert 가 걸러낸다.
+        // 다만 조용히 넘기지는 않는다.
+        console.error('[BookingSuccess] 기존 예약 조회 실패:', dupErr);
+      }
 
       // 결제 전에 남겨둔 초안에서 참여자별 아이템을 복원한다.
       // 초안이 없으면(다른 탭에서 결제 완료 등) URL 파라미터만으로
@@ -294,11 +363,18 @@ const BookingSuccess = () => {
       } catch (err) {
         console.error('[BookingSuccess] 예약 초안 복원 실패:', err);
       }
+      // 헤메·의상·장소 값을 결제했는데 초안이 없으면 그 항목들이 통째로 빠진다.
+      // 돈은 다 받아놓고 조용히 사라지는 것이라 반드시 화면에 알려야 한다.
+      const paidForExtras =
+        Number(stylistPrice) > 0 || Number(dressPrice) > 0 || Number(venuePrice) > 0;
       if (!draft?.items?.length) {
         console.warn('[BookingSuccess] 예약 초안이 없어 작가 항목만 저장합니다:', orderId);
+        if (paidForExtras) setPartial(true);
       }
 
-      const { error } = await createBooking({
+      let error = null;
+      try {
+        ({ error } = await createBooking({
         customer_id:            user.id,
         photographer_id:        artistId || null,
         photographer_name:      decodeURIComponent(artist),
@@ -320,11 +396,15 @@ const BookingSuccess = () => {
         toss_order_id:          orderId,
         toss_payment_key:       paymentKey,
         lang,
-      });
+        }));
+      } catch (insertErr) {
+        // 던져서 나오면 배지가 "저장 중" 에 영원히 멈춘다. 그건 실패를 숨기는 것이다.
+        console.error('[BookingSuccess] 예약 생성 중 예외:', insertErr);
+        error = { message: insertErr?.message || String(insertErr) };
+      }
 
       if (error) {
-        setSaveStatus('error');
-        setSaveMessage(c.saveError);
+        fail(c.saveError, error.message || '');
       } else {
         sessionStorage.setItem(SAVE_KEY, '1');
         setSaveStatus('saved');
@@ -332,35 +412,92 @@ const BookingSuccess = () => {
       }
     };
 
-    save();
+    // save() 안에서 미처 못 잡은 예외가 나와도 배지가 멈춰 있으면 안 된다.
+    save().catch((err) => {
+      console.error('[BookingSuccess] 저장 처리 중 예기치 못한 오류:', err);
+      fail(c.saveError, err?.message || String(err));
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId, paymentKey, isLoggedIn, user, authLoading]);
+
+  const failed = saveStatus === 'error';
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '60px 24px 80px' }}>
 
-        {/* ── 성공 헤더 ── */}
-        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+        {/* ── 헤더 ──
+            예약이 저장되지 않았으면 "완료" 로 보이면 안 된다.
+            결제만 되고 예약이 없는 상태를 고객이 즉시 알아야 한다. */}
+        <div style={{ textAlign: 'center', marginBottom: failed ? 32 : 48 }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
-            background: 'rgba(232,160,32,0.12)', border: '1px solid var(--gold-border)',
+            background: failed ? 'rgba(245,101,101,0.12)' : 'rgba(232,160,32,0.12)',
+            border: `1px solid ${failed ? 'rgba(245,101,101,0.45)' : 'var(--gold-border)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 24px', fontSize: 28,
+            color: failed ? '#f56565' : 'inherit',
           }}>
-            ✓
+            {failed ? '!' : '✓'}
           </div>
-          <div className="section-label">{c.label}</div>
+          <div className="section-label">{failed ? c.failLabel : c.label}</div>
           <h1 className="section-title" style={{ fontSize: 'clamp(22px, 4vw, 36px)', marginBottom: 16 }}>
-            {c.title}
+            {failed ? c.failTitle : c.title}
           </h1>
           <p style={{ color: 'var(--muted)', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-line', fontFamily: 'var(--font-elegant)', fontStyle: 'italic', marginBottom: 20 }}>
-            {c.sub}
+            {failed ? c.failSub : c.sub}
           </p>
 
           {/* 저장 상태 배지 */}
           <SaveBadge status={saveStatus} message={saveMessage} />
         </div>
+
+        {/* ── 저장 실패 안내 ──
+            돈은 나갔는데 예약이 없다. 무엇을 하면 되는지 바로 알려준다. */}
+        {failed && (
+          <div style={{
+            border: '1px solid rgba(245,101,101,0.4)', background: 'rgba(245,101,101,0.06)',
+            padding: '24px 28px', marginBottom: 24, position: 'relative',
+          }}>
+            <Corners />
+            <p style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.8, marginBottom: 16 }}>
+              {c.failGuide}
+            </p>
+            <div style={{
+              fontSize: 12, fontFamily: 'var(--font-serif)', color: 'var(--muted)',
+              wordBreak: 'break-all', marginBottom: 16,
+            }}>
+              {c.orderId}: <span style={{ color: 'var(--text)' }}>{orderId}</span>
+            </div>
+            {failDetail && (
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16, wordBreak: 'break-all' }}>
+                {failDetail}
+              </div>
+            )}
+            <button
+              onClick={() => navigate(`/support?category=payment&order=${encodeURIComponent(orderId)}`)}
+              style={{
+                padding: '10px 20px', fontSize: 12, letterSpacing: '0.1em',
+                border: '1px solid rgba(245,101,101,0.5)', background: 'transparent',
+                color: '#f56565', cursor: 'pointer', fontFamily: 'var(--font-serif)',
+              }}
+            >
+              {c.inquiryBtn}
+            </button>
+          </div>
+        )}
+
+        {/* ── 일부 항목 누락 안내 ──
+            헤메·의상·장소 값을 받았는데 그 항목이 예약에 안 들어간 경우 */}
+        {partial && !failed && (
+          <div style={{
+            border: '1px solid rgba(232,160,32,0.45)', background: 'rgba(232,160,32,0.07)',
+            padding: '20px 24px', marginBottom: 24, fontSize: 12,
+            color: 'var(--text)', lineHeight: 1.8,
+          }}>
+            {c.partialWarn}
+          </div>
+        )}
 
         {/* ── 주문 정보 ── */}
         <div style={{ border: '1px solid var(--gold-border)', padding: '40px 36px', background: 'var(--gold-dim)', position: 'relative', marginBottom: 24 }}>

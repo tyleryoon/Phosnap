@@ -529,12 +529,15 @@ export const confirmPayment = async ({
   stylistPrice, dressPrice, lang, note,
 }) => {
   const sb = await getSupabase();
-  if (!sb) return { success: false, error: 'Supabase 연결 실패' };
+  // reached: 서버가 실제로 판단을 내렸는가.
+  //   true  → 서버가 거부했다. 클라이언트가 우회 저장하면 안 된다.
+  //   false → 서버에 닿지 못했다(네트워크·미배포). 이때만 대체 경로가 의미 있다.
+  if (!sb) return { success: false, reached: false, error: 'Supabase 연결 실패' };
 
   // 현재 세션 토큰 가져오기
   const { data: { session } } = await sb.auth.getSession();
   if (!session?.access_token) {
-    return { success: false, error: 'Authentication required' };
+    return { success: false, reached: false, code: 'NO_SESSION', error: 'Authentication required' };
   }
 
   const fnUrl = `${SUPABASE_URL}/functions/v1/confirm-payment`;
@@ -557,10 +560,26 @@ export const confirmPayment = async ({
       }),
     });
 
-    const data = await res.json();
-    return data;
+    // 404 는 함수가 배포되지 않은 것이다 — 서버가 판단한 게 아니다.
+    const deployed = res.status !== 404;
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      // JSON 이 아니면 게이트웨이 오류다. 서버 판단이 아니다.
+      return {
+        success: false, reached: false, status: res.status,
+        error: `서버 응답을 읽지 못했습니다 (HTTP ${res.status})`,
+      };
+    }
+
+    // 서버가 400/401/409 등으로 명시적으로 거부한 경우 reached=true.
+    // 이 값을 무시하고 클라이언트가 직접 저장하면 금액 검증이 무력화된다.
+    return { ...data, reached: deployed, status: res.status };
   } catch (err) {
-    return { success: false, error: err.message || 'Network error' };
+    // fetch 자체가 실패 — 네트워크 문제. 서버는 아무 판단도 하지 않았다.
+    return { success: false, reached: false, error: err.message || 'Network error' };
   }
 };
 
@@ -594,9 +613,23 @@ export const cancelPaymentServer = async (bookingId, reason = '') => {
       body: JSON.stringify({ bookingId, reason }),
     });
 
-    return await res.json();
+    // reached 의 뜻은 confirmPayment 와 같다 — 5-19 규칙 참조.
+    // 404 면 함수가 배포되지 않은 것이다. 환불이 "실패" 가 아니라
+    // **시도조차 되지 않은** 상태라서, 사람이 손으로 처리해야 한다.
+    if (res.status === 404) {
+      console.error('[cancelPaymentServer] cancel-payment 함수가 배포되어 있지 않습니다.');
+      return { success: false, reached: false, status: 404, error: '환불 기능이 배포되지 않았습니다' };
+    }
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      return { success: false, reached: false, status: res.status,
+               error: `서버 응답을 읽지 못했습니다 (HTTP ${res.status})` };
+    }
+    return { ...data, reached: true, status: res.status };
   } catch (err) {
-    return { success: false, error: err.message || 'Network error' };
+    return { success: false, reached: false, error: err.message || 'Network error' };
   }
 };
 
@@ -640,6 +673,10 @@ export const createBooking = async (booking) => {
     dress_name:               booking.dress_name || null,
     dress_size:               booking.dress_size || null,
     dress_price:              Number(booking.dress_price) || 0,
+    // 장소 금액. 예전엔 이 줄이 없어서 고객이 낸 장소 비용이
+    // total_price 에만 섞여 들어가고 항목으로는 사라졌다.
+    // bookings 에는 venue_name 컬럼이 없으므로 이름은 note 와 라인 아이템에 남긴다.
+    venue_price:              Number(booking.venue_price) || 0,
     toss_order_id:            booking.toss_order_id || null,
     toss_payment_key:         booking.toss_payment_key || null,
     paid_at:                  booking.toss_payment_key ? new Date().toISOString() : null,
@@ -668,8 +705,32 @@ export const createBooking = async (booking) => {
   }
 
   // ── 참여자별 라인 아이템 ───────────────────────────────────────────
-  // items 가 없으면 레거시 필드로부터 작가 아이템 하나를 만들어 준다.
-  const rawItems = Array.isArray(booking.items) && booking.items.length
+  //
+  // items 가 없으면 레거시 필드로부터 만들어 준다.
+  // 예전에는 작가 항목 하나만 만들었다. 그래서 고객이 헤메·의상·장소까지
+  // 결제했는데 초안이 없으면 그 금액이 total_price 에만 남고
+  // 어떤 항목이었는지는 아무 데도 남지 않았다. 정산도 불가능했다.
+  //
+  // 공급자 id 를 모르면 라인 아이템으로는 못 넣는다(정산 대상이 없다).
+  // 그래도 무엇을 팔았는지는 note 에 남겨서 사람이 추적할 수 있게 한다.
+  const legacyExtras = [
+    { label: '헤메',   name: booking.stylist_name, detail: booking.stylist_service, price: Number(booking.stylist_price) || 0 },
+    { label: '의상',   name: booking.dress_name,   detail: booking.dress_size,      price: Number(booking.dress_price)   || 0 },
+    { label: '장소',   name: booking.venue_name,   detail: null,                    price: Number(booking.venue_price)   || 0 },
+  ].filter(x => x.name || x.price > 0);
+
+  const hasItems = Array.isArray(booking.items) && booking.items.length > 0;
+
+  if (!hasItems && legacyExtras.length) {
+    const memo = legacyExtras
+      .map(x => `${x.label}: ${x.name || '(이름 없음)'}${x.detail ? ` / ${x.detail}` : ''} ₩${x.price.toLocaleString()}`)
+      .join('\n');
+    payload.note = [payload.note, '[항목 복원 필요 — 결제 초안 없음]', memo]
+      .filter(Boolean).join('\n');
+    console.warn('[createBooking] 라인 아이템 없이 저장합니다. note 에 남겼습니다:\n' + memo);
+  }
+
+  const rawItems = hasItems
     ? booking.items
     : [{
         providerType: 'photographer',

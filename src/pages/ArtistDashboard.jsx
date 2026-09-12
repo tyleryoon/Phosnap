@@ -172,6 +172,8 @@ const ArtistDashboard = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMsg, setActionMsg]         = useState('');
+  // 'ok' | 'warn' — 실패를 초록색 상자에 담아 4초 뒤 지우면 안 된다.
+  const [actionKind, setActionKind]       = useState('ok');
 
   // 사진 전달
   const [deliverTarget, setDeliverTarget] = useState(null);
@@ -372,8 +374,14 @@ const ArtistDashboard = () => {
   const handleApprove = async (id) => {
     setActionLoading(true);
     const { error } = await approveBooking(id);
-    if (!error) {
+    if (error) {
+      // 예전에는 실패해도 아무 일이 없었다. 버튼이 먹통인 것처럼 보인다.
+      console.error('[ArtistDashboard] 예약 확정 실패:', error);
+      setActionKind('warn');
+      setActionMsg(`예약을 확정하지 못했습니다 — ${error.message || '알 수 없는 오류'}`);
+    } else {
       setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'confirmed' } : b));
+      setActionKind('ok');
       setActionMsg('예약을 확정했습니다 ✓');
       setTimeout(() => setActionMsg(''), 2500);
     }
@@ -384,23 +392,46 @@ const ArtistDashboard = () => {
     if (!rejectTarget) return;
     setActionLoading(true);
     const { error } = await rejectBooking(rejectTarget, rejectReason);
-    if (!error) {
-      setBookings(prev => prev.map(b => b.id === rejectTarget ? { ...b, status: 'cancelled' } : b));
-      // ── 환불 처리: cancel-payment Edge Function 호출 ──
-      // 취소 정책에 따라 자동으로 전액/50%/0% 환불 계산
-      try {
-        const refundResult = await cancelPaymentServer(rejectTarget, `작가 거절: ${rejectReason}`);
-        if (refundResult.success) {
-          const rate = refundResult.refundRate ?? '?';
-          setActionMsg(`예약을 거절했습니다. 고객에게 ${rate}% 환불 처리됨.`);
-        } else {
-          setActionMsg('예약을 거절했습니다. (환불 처리 실패 — 고객센터 확인 필요)');
-        }
-      } catch (_) {
-        setActionMsg('예약을 거절했습니다. (환불 처리 연결 실패)');
-      }
-      setTimeout(() => setActionMsg(''), 4000);
+
+    if (error) {
+      console.error('[ArtistDashboard] 예약 거절 실패:', error);
+      setActionKind('warn');
+      setActionMsg(`예약을 거절하지 못했습니다 — ${error.message || '알 수 없는 오류'}`);
+      setActionLoading(false);
+      return;
     }
+
+    setBookings(prev => prev.map(b => b.id === rejectTarget ? { ...b, status: 'cancelled' } : b));
+
+    // ── 환불 처리: cancel-payment Edge Function 호출 ──
+    // 취소 정책에 따라 자동으로 전액/50%/0% 환불 계산
+    //
+    // 환불은 돈이다. 실패를 초록색 상자에 담아 4초 뒤 지우면
+    // 작가도 우리도 모르는 채로 고객 돈만 묶여 있게 된다.
+    let refund;
+    try {
+      refund = await cancelPaymentServer(rejectTarget, `작가 거절: ${rejectReason}`);
+    } catch (err) {
+      console.error('[ArtistDashboard] 환불 호출 예외:', err);
+      refund = { success: false, reached: false, error: err?.message || String(err) };
+    }
+
+    if (refund?.success) {
+      const rate = refund.refundRate ?? '?';
+      setActionKind('ok');
+      setActionMsg(`예약을 거절했습니다. 고객에게 ${rate}% 환불 처리됨.`);
+      setTimeout(() => setActionMsg(''), 4000);
+    } else {
+      console.error('[ArtistDashboard] 환불 실패:', refund);
+      setActionKind('warn');
+      setActionMsg(
+        '예약은 거절되었지만 환불이 처리되지 않았습니다.\n' +
+        '고객 돈이 묶여 있는 상태입니다 — 관리자에게 바로 알려주세요.\n' +
+        `사유: ${refund?.error || '알 수 없음'}`,
+      );
+      // 이 메시지는 자동으로 지우지 않는다.
+    }
+
     setRejectTarget(null);
     setRejectReason('');
     setActionLoading(false);
@@ -827,8 +858,22 @@ const ArtistDashboard = () => {
 
         {/* 저장 메시지 */}
         {actionMsg && (
-          <div style={{ padding: '10px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', color: '#4ade80', fontSize: 13, marginBottom: 20 }}>
-            {actionMsg}
+          <div style={{
+            padding: '10px 16px',
+            background: actionKind === 'warn' ? 'rgba(245,101,101,0.1)' : 'rgba(34,197,94,0.1)',
+            border: `1px solid ${actionKind === 'warn' ? 'rgba(245,101,101,0.4)' : 'rgba(34,197,94,0.3)'}`,
+            color: actionKind === 'warn' ? '#f56565' : '#4ade80',
+            fontSize: 13, marginBottom: 20, whiteSpace: 'pre-line', lineHeight: 1.7,
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+          }}>
+            <span style={{ flex: 1 }}>{actionMsg}</span>
+            {actionKind === 'warn' && (
+              <button
+                onClick={() => setActionMsg('')}
+                style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: 0 }}
+                aria-label="닫기"
+              >×</button>
+            )}
           </div>
         )}
 

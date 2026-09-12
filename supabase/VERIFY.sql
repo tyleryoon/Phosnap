@@ -172,6 +172,46 @@ integrity as (
      and cmd = 'INSERT'
      and tablename in ('photographers','stylists','dress_vendors','venue_vendors')
      and coalesce(with_check, '') not ilike '%has_role%'
+
+  union all
+  -- 돈은 받았는데 그 항목이 예약에 없는 경우.
+  -- 결제 초안(sessionStorage)이 없으면 작가 항목만 저장되던 적이 있다.
+  -- 고객은 헤메·의상·장소 값을 냈는데 공급자는 아무것도 모른다.
+  select '1.정합성', '결제했는데 라인 아이템 없는 항목', count(*),
+         string_agg(distinct toss_order_id, ', ')
+    from (
+      select b.toss_order_id
+        from public.bookings b
+       where b.status <> 'cancelled'
+         and (
+           (coalesce(b.stylist_price,0) > 0
+             and not exists (select 1 from public.booking_items i
+                              where i.booking_id = b.id and i.rate_type = 'stylist'))
+        or (coalesce(b.dress_price,0) > 0
+             and not exists (select 1 from public.booking_items i
+                              where i.booking_id = b.id and i.provider_type = 'dress'))
+        or (coalesce(b.venue_price,0) > 0
+             and not exists (select 1 from public.booking_items i
+                              where i.booking_id = b.id and i.provider_type = 'venue'))
+         )
+    ) x
+
+  union all
+  -- 라인 아이템 합계와 결제 총액이 다른 경우.
+  -- 어느 쪽이 맞는지 우리가 모른다는 뜻이고, 정산이 틀어진다.
+  select '1.정합성', '아이템 합계 ≠ 결제 총액', count(*),
+         string_agg(toss_order_id || ' (' || 합계 || ' vs ' || 총액 || ')', ', ')
+    from (
+      select b.toss_order_id,
+             coalesce(sum(i.price * coalesce(i.quantity,1)), 0)::text as 합계,
+             b.total_price::text as 총액
+        from public.bookings b
+        left join public.booking_items i on i.booking_id = b.id
+       where b.status <> 'cancelled'
+         and b.total_price > 0
+       group by b.id, b.toss_order_id, b.total_price
+      having coalesce(sum(i.price * coalesce(i.quantity,1)), 0) <> b.total_price
+    ) y
 ),
 
 -- ── 운영 ──────────────────────────────────────────────────────────────

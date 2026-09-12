@@ -38,9 +38,16 @@ const Support = ({ onAuthOpen }) => {
   const { isLoggedIn, loading: authLoading } = useAuth();
   const [params] = useSearchParams();
 
+  // ?order=... 로 오면 주문번호를 미리 채워준다.
+  // 결제는 됐는데 예약 저장이 실패한 화면에서 넘어오는 경우다.
+  // 고객이 주문번호를 옮겨 적다 틀리면 우리가 찾을 수 없다.
+  const orderNo = params.get('order') || '';
+
   const [category, setCategory] = useState(params.get('category') || '');
-  const [subject, setSubject]   = useState('');
-  const [body, setBody]         = useState('');
+  const [subject, setSubject]   = useState(orderNo ? `주문번호 ${orderNo}` : '');
+  const [body, setBody]         = useState(
+    orderNo ? `주문번호: ${orderNo}\n\n결제는 완료되었으나 예약이 저장되지 않았습니다.\n\n(추가로 알려주실 내용이 있으면 아래에 적어주세요)\n` : '',
+  );
   const [busy, setBusy]         = useState(false);
   const [notice, setNotice]     = useState(null);   // { kind, text }
 
