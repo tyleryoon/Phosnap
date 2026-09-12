@@ -36,11 +36,19 @@ const TIME_OPTIONS = [
   '14:00', '15:00', '16:00', '17:00', '18:00',
 ];
 
+// 무엇도 필수가 아니다. 헤메만·의상만·장소만 예약할 수 있다 (FIX_40).
+//
+// 예전에는 작가가 뿌리였다 — bookings.photographer_id 가 NOT NULL 이라
+// 작가 없는 예약을 만들 수가 없었다. 그래서 "헤메만 부르고 싶다" 는
+// 고객은 아예 쓸 수가 없었다.
+//
+// 다만 작가를 고르면 선택지가 **늘어난다**. 그 작가의 자체 헤메·의상이
+// 목록에 붙기 때문이다. 그래서 작가 탭이 먼저 온다.
 const TABS = [
-  { key: 'photographer', label: '작가',  required: true  },
-  { key: 'stylist',      label: '헤어메이크업', required: false },
-  { key: 'dress',        label: '의상',  required: false },
-  { key: 'venue',        label: '장소',  required: false },
+  { key: 'photographer', label: '작가' },
+  { key: 'stylist',      label: '헤어메이크업' },
+  { key: 'dress',        label: '의상' },
+  { key: 'venue',        label: '장소' },
 ];
 
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
@@ -177,6 +185,11 @@ const BookCompose = () => {
   const [notReady, setNotReady] = useState(false);
   // 담은 헤메의 자체 의상 (그 사람을 골라야 받을 수 있다)
   const [stylistDresses, setStylistDresses] = useState([]);
+  // 담은 작가의 자체 헤메·의상.
+  // available_providers 는 앵커만 보므로 여기에 없다 —
+  // 작가를 골라야 비로소 선택지가 된다.
+  const [artistHmk,     setArtistHmk]     = useState([]);
+  const [artistDresses, setArtistDresses] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -203,6 +216,54 @@ const BookCompose = () => {
     })();
     return () => { cancelled = true; };
   }, [cart.stylist?.stylistId, cart.stylist?.dressSelf, cart.stylist?.name]);
+
+  // 담은 작가가 바뀌면 그 사람의 자체 헤메·의상을 가져온다.
+  //
+  // 예전에는 이게 없어서 반쪽이었다 — 헤메의 자체 의상은 붙는데
+  // 작가의 자체 헤메·의상은 아무 데도 안 나왔다.
+  useEffect(() => {
+    let cancelled = false;
+    const a = cart.photographer;
+    if (!a?.id) { setArtistHmk([]); setArtistDresses([]); return undefined; }
+
+    (async () => {
+      const jobs = [];
+      jobs.push(a.hmkSelf   ? getPackages(a.id, 'hmk')     : Promise.resolve({ data: [] }));
+      jobs.push(a.dressSelf ? getPackages(a.id, 'costume') : Promise.resolve({ data: [] }));
+      const [hmkRes, dressRes] = await Promise.all(jobs);
+      if (cancelled) return;
+
+      // 자체 헤메는 시술 시점 정보가 없다(packages 에는 그 칸이 없다).
+      // 예약 화면과 같은 기본값을 쓴다 — 촬영 전 완료, 60분, 이동 30분.
+      setArtistHmk((hmkRes.data || []).map(h => ({
+        service_id:   `self-hmk:${h.id}`,
+        stylist_id:   a.id,
+        name_ko:      a.name,
+        service_name: h.name,
+        price:        h.price,
+        timing:       'before',
+        duration_minutes: 60,
+        offset_minutes:   30,
+        max_hours:    null,
+        specialty:    '작가 자체 헤어메이크업',
+        portfolio_images: [],
+        __fromArtist: a.name,
+      })));
+
+      setArtistDresses((dressRes.data || []).map(d => ({
+        id:       d.id,
+        name_ko:  d.name,
+        price:    d.price,
+        sizes:    d.sizes || [],
+        size_stock: null,
+        images:   d.images || [],
+        description: d.description,
+        category: d.category,
+        __fromArtist: a.name,
+      })));
+    })();
+    return () => { cancelled = true; };
+  }, [cart.photographer?.id, cart.photographer?.hmkSelf, cart.photographer?.dressSelf, cart.photographer?.name]);
 
   const canSearch = date && time && !loading;
 
@@ -231,11 +292,17 @@ const BookCompose = () => {
     const { data } = await getPackages(a.id, 'snap');
     const fits = (data || []).filter(k => Number(k.duration_hours ?? 2) === Number(hours));
     if (fits.length === 1) {
-      pick('photographer', { id: a.id, name: a.name_ko || a.name, pkg: fits[0] });
+      pick('photographer', {
+        id: a.id, name: a.name_ko || a.name, pkg: fits[0],
+        hmkSelf: a.hmk_self === true, dressSelf: a.dress_self === true,
+      });
     } else {
       setPkgChoice({ artist: a, packages: fits });
     }
   };
+
+  // 무엇이든 하나는 담아야 진행할 수 있다.
+  const hasAny = !!(cart.photographer || cart.stylist || cart.dress || cart.venue);
 
   const total = useMemo(() => (
     (cart.photographer?.pkg?.price || 0)
@@ -244,15 +311,25 @@ const BookCompose = () => {
     + (cart.venue?.price || 0)
   ), [cart]);
 
+  // 의상은 세 곳에서 온다 — 벤더 · 담은 헤메 · 담은 작가.
+  // 고객 입장에서는 그날 현장에 오는 사람이 가진 옷이 전부 선택지다.
   const allDresses = useMemo(() => ([
     ...((result?.dresses) || []),
     ...stylistDresses,
-  ]), [result, stylistDresses]);
+    ...artistDresses,
+  ].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i)),
+  [result, stylistDresses, artistDresses]);
+
+  // 헤메도 두 곳 — 독립 헤메 · 담은 작가의 자체 헤메
+  const allStylists = useMemo(() => ([
+    ...((result?.stylists) || []),
+    ...artistHmk,
+  ]), [result, artistHmk]);
 
   // ── 목록 ──
   const list = {
     photographer: result?.photographers || [],
-    stylist:      result?.stylists || [],
+    stylist:      allStylists,
     dress:        allDresses,
     venue:        result?.venues || [],
   }[tab] || [];
@@ -381,14 +458,13 @@ const BookCompose = () => {
                   {TABS.map(t => {
                     const n = {
                       photographer: result.photographers?.length || 0,
-                      stylist:      result.stylists?.length || 0,
+                      stylist:      allStylists.length,
                       dress:        allDresses.length,
                       venue:        result.venues?.length || 0,
                     }[t.key];
                     return (
                       <Pill key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
-                        {t.label} {n}
-                        {cart[t.key] ? ' ✓' : t.required ? ' *' : ''}
+                        {t.label} {n}{cart[t.key] ? ' ✓' : ''}
                       </Pill>
                     );
                   })}
@@ -432,7 +508,9 @@ const BookCompose = () => {
                         key={s.service_id}
                         title={s.service_name}
                         subtitle={`${s.name_ko} · ${s.specialty || ''}`}
-                        note={`${hhmm(s.busy_from)} ~ ${hhmm(s.busy_to)} 묶임`}
+                        note={s.__fromArtist
+                          ? `${s.__fromArtist} 작가님이 직접 진행`
+                          : `${hhmm(s.busy_from)} ~ ${hhmm(s.busy_to)} 묶임`}
                         price={s.price}
                         image={s.portfolio_images?.[0] || null}
                         picked={cart.stylist?.serviceId === s.service_id}
@@ -457,13 +535,17 @@ const BookCompose = () => {
                         key={d.id}
                         title={d.name_ko}
                         subtitle={`${(d.sizes || []).join(', ')}${d.color ? ` · ${d.color}` : ''}`}
-                        note={d.__fromStylist ? `${d.__fromStylist} 님이 가져오심` : (d.vendor_name || null)}
+                        note={d.__fromStylist ? `${d.__fromStylist} 님이 가져오심`
+                            : d.__fromArtist ? `${d.__fromArtist} 작가님 보유`
+                            : (d.vendor_name || null)}
                         price={d.price}
                         image={d.image_url || d.images?.[0]?.url || d.images?.[0] || null}
                         picked={cart.dress?.id === d.id}
                         onDetail={() => setDetail({
                           kind: 'dress', data: d,
-                          ownerNote: d.__fromStylist ? `${d.__fromStylist} 님이 직접 가져오십니다` : null,
+                          ownerNote: d.__fromStylist ? `${d.__fromStylist} 님이 직접 가져오십니다`
+                                   : d.__fromArtist ? `${d.__fromArtist} 작가님이 보유한 의상입니다`
+                                   : null,
                         })}
                         onToggle={() => (
                           cart.dress?.id === d.id
@@ -473,6 +555,8 @@ const BookCompose = () => {
                                 size: (d.sizes || [])[0] || null,
                                 stylistId: d.stylist_id || null,
                                 vendorId: d.vendor_id || null,
+                                // 작가 자체 의상이면 정산 대상이 작가 본인이다
+                                artistId: d.__fromArtist ? cart.photographer?.id : null,
                               })
                         )}
                       />
@@ -521,9 +605,7 @@ const BookCompose = () => {
                       padding: '10px 0', borderBottom: '1px solid var(--border)',
                       fontSize: 12.5,
                     }}>
-                      <div style={{ color: 'var(--muted)', flexShrink: 0 }}>
-                        {t.label}{t.required && <span style={{ color: 'var(--gold)' }}> *</span>}
-                      </div>
+                      <div style={{ color: 'var(--muted)', flexShrink: 0 }}>{t.label}</div>
                       <div style={{ textAlign: 'right', flex: 1 }}>
                         {v ? (
                           <>
@@ -549,9 +631,7 @@ const BookCompose = () => {
                             </button>
                           </>
                         ) : (
-                          <span style={{ color: 'var(--muted)' }}>
-                            {t.required ? '필요' : '없이 진행'}
-                          </span>
+                          <span style={{ color: 'var(--muted)' }}>없이 진행</span>
                         )}
                       </div>
                     </div>
@@ -568,22 +648,28 @@ const BookCompose = () => {
 
                 <button
                   type="button"
-                  disabled={!cart.photographer}
+                  disabled={!hasAny}
                   onClick={() => setNotReady(true)}
                   style={{
                     width: '100%', padding: '13px 0', border: 'none',
-                    background: cart.photographer ? 'var(--gold)' : 'var(--border)',
-                    color: cart.photographer ? '#0B0B0B' : 'var(--muted)',
+                    background: hasAny ? 'var(--gold)' : 'var(--border)',
+                    color: hasAny ? '#0B0B0B' : 'var(--muted)',
                     fontFamily: 'var(--font-serif)', fontSize: 13,
                     letterSpacing: '0.1em',
-                    cursor: cart.photographer ? 'pointer' : 'default',
+                    cursor: hasAny ? 'pointer' : 'default',
                   }}
                 >
                   예약 확인으로
                 </button>
-                {!cart.photographer && (
+                {!hasAny && (
                   <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
-                    작가는 반드시 골라야 합니다. 나머지는 없이도 예약할 수 있습니다.
+                    하나 이상 담아주세요. 작가 없이 헤어메이크업·의상·장소만 예약하셔도 됩니다.
+                  </div>
+                )}
+                {hasAny && !cart.photographer && (
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
+                    작가 없이 진행합니다. 작가를 담으면 그 작가의 자체 헤어메이크업·의상도
+                    선택지에 추가됩니다.
                   </div>
                 )}
                 {notReady && (
@@ -640,6 +726,8 @@ const BookCompose = () => {
                         id: pkgChoice.artist.id,
                         name: pkgChoice.artist.name_ko || pkgChoice.artist.name,
                         pkg: k,
+                        hmkSelf: pkgChoice.artist.hmk_self === true,
+                        dressSelf: pkgChoice.artist.dress_self === true,
                       });
                       setPkgChoice(null);
                     }}

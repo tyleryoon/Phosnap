@@ -4,6 +4,7 @@ import Corners from '../components/Corners';
 import Footer  from '../components/Footer';
 import Chat from '../components/Chat';
 import ListingStatus from '../components/ListingStatus';
+import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -891,6 +892,10 @@ const ArtistDashboard = () => {
             {/* 고객에게 보이고 있는지. 안 보이면 무엇이 비었는지 알려준다.
                 승인만으로는 노출되지 않는다 — 지역과 상품도 있어야 한다. */}
             <ListingStatus kind="photographer" id={artistLegacyId} />
+
+            {/* 내가 결정해야 할 예약 항목. 역할 공용이다 (FIX_40).
+                예전에는 작가가 수락하면 헤메·벤더 항목까지 전부 확정됐다. */}
+            <PendingItems onChanged={() => window.location.reload()} />
 
             {/* ════════════════════════ 탭: 홈 ════════════════════════ */}
             {activeTab === 'home' && (

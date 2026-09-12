@@ -5,6 +5,7 @@ import DressCard from '../components/DressCard';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationPicker from '../components/LocationPicker';
+import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../data/photographers';
 import {
@@ -2309,6 +2310,12 @@ function VendorDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* 내가 결정해야 할 항목. 역할 공용이다 (FIX_40).
+            예전 확정 버튼은 React 상태만 바꿔서 DB 에 가지 않았다. */}
+        {activeTab === 'bookings' && (
+          <PendingItems onChanged={() => window.location.reload()} />
         )}
 
         {activeTab === 'bookings' && (
