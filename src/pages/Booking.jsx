@@ -1758,7 +1758,17 @@ const Booking = () => {
                           key={dress.id}
                           dress={dress}
                           selected={selectedDress === dress.id}
-                          onSelect={(dressId, size) => {
+                          // 선택된 카드의 사이즈는 여기가 정답이다.
+                          // 카드가 자기 안에만 기억하면 요약과 어긋날 수 있다.
+                          selectedSize={selectedDress === dress.id ? selectedDressSize : ''}
+                          onSelect={(dressId, size, intent) => {
+                            // 사이즈를 고르는 건 취소가 아니다.
+                            // 예전에는 S → M 으로 바꾸면 선택이 풀렸다.
+                            if (intent === 'size') {
+                              setSelectedDress(dressId);
+                              setSelectedDressSize(size || '');
+                              return;
+                            }
                             if (selectedDress === dressId) {
                               setSelectedDress(null);
                               setSelectedDressSize('');

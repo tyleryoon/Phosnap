@@ -33,9 +33,14 @@ const DressCard = ({
   compact = false,
   showPrice = true,
   bookedSizes = [],
+  // 부모가 고른 사이즈. 주면 그게 정답이다.
+  // 안 주면 카드 안에서만 기억한다(기존 동작).
+  selectedSize: selectedSizeProp,
 }) => {
   const { lang } = useLanguage();
-  const [selectedSize, setSelectedSize] = useState('');
+  const [innerSize, setInnerSize] = useState('');
+  const selectedSize = selectedSizeProp !== undefined ? selectedSizeProp : innerSize;
+  const setSelectedSize = selectedSizeProp !== undefined ? () => {} : setInnerSize;
   const [imgIdx, setImgIdx] = useState(0);
 
   if (!dress) return null;
@@ -47,14 +52,27 @@ const DressCard = ({
   const currentImg = images[imgIdx]?.url || images[imgIdx] || '';
   const price = dress.price || 0;
 
-  const handleSelect = (size) => {
+  // 세 번째 인자는 **의도**다.
+  //
+  //   'size'   사이즈만 바꾼다 — 선택 상태는 유지된다
+  //   'toggle' 선택/해제를 뒤집는다
+  //
+  // 예전에는 둘 다 같은 콜백이었다. 그래서 선택된 의상의 사이즈를
+  // S → M 으로 바꾸면 부모가 "같은 id 를 또 눌렀다" 고 보고 선택을 풀었다.
+  // 사이즈를 고르는 행동은 취소가 아니다.
+  const handleSizeChange = (size) => {
     setSelectedSize(size);
-    onSelect?.(dress.id, size);
+    onSelect?.(dress.id, size, 'size');
+  };
+
+  const handleToggle = (size) => {
+    setSelectedSize(size);
+    onSelect?.(dress.id, size, 'toggle');
   };
 
   const handleCardClick = () => {
     if (compact && onSelect) {
-      onSelect(dress.id, selectedSize || dress.sizes?.[0] || '');
+      handleToggle(selectedSize || dress.sizes?.[0] || '');
     }
   };
 
@@ -218,7 +236,7 @@ const DressCard = ({
           <SizeSelector
             sizes={dress.sizes}
             selected={selectedSize}
-            onChange={handleSelect}
+            onChange={handleSizeChange}
             bookedSizes={bookedSizes}
           />
         )}
@@ -227,7 +245,7 @@ const DressCard = ({
         {onSelect && (
           <button
             type="button"
-            onClick={() => handleSelect(selectedSize || dress.sizes?.[0] || 'Free')}
+            onClick={() => handleToggle(selectedSize || dress.sizes?.[0] || 'Free')}
             style={{
               marginTop: 14, width: '100%', padding: '11px 0',
               border: selected ? 'none' : '1px solid var(--gold)',
