@@ -939,12 +939,16 @@ const Booking = () => {
   // 선택한 헤메의 의상은 항상 목록에 더한다.
   // 작가가 자체 의상을 가진 경우에도 마찬가지다 — 고객 입장에서는
   // 그날 현장에 오는 사람이 가진 옷이 다 선택지다.
+  //
+  // 같은 의상이 두 번 들어오지 않게 id 로 한 번 거른다.
+  // getDressItems 가 벤더 의상만 주도록 고쳤지만, 출처가 둘인 목록은
+  // 언제든 다시 겹칠 수 있다. 겹치면 고객에게 같은 옷이 두 줄로 보인다.
   const availableDresses = [
     ...(p.dressSelf
       ? (selfDresses || [])
       : (dbDresses || []).filter(d => !d.vendorId || !closedDress[d.vendorId])),
     ...stylistDresses,
-  ];
+  ].filter((d, i, arr) => arr.findIndex(x => x.id === d.id) === i);
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
 
   const dressPrice = selectedDressData?.price || 0;

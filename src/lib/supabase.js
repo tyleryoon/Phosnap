@@ -1996,8 +1996,15 @@ export const deleteStylistService = async (serviceId) => {
 export const getDressItems = async ({ vendorId, locationId, category } = {}) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
+  // 의상 벤더의 의상만 돌려준다.
+  //
+  // FIX_33 이후 dress_items 에는 헤메 소유(stylist_id)도 들어 있다.
+  // 그건 그 헤메를 선택했을 때만 보여야 하는데, 여기서 같이 가져오면
+  // 헤메를 고르지 않아도 목록에 뜨고, 고른 뒤에는 두 번 뜬다.
+  // (실제로 "웨딩 드레스 (A라인)" 이 두 줄로 나왔다)
   let q = sb.from('dress_items').select('*, dress_vendors(id, name_ko, location_id)')
-    .eq('is_available', true);
+    .eq('is_available', true)
+    .not('vendor_id', 'is', null);
   if (vendorId) q = q.eq('vendor_id', vendorId);
   if (category) q = q.eq('category', category);
   if (locationId) {

@@ -940,6 +940,18 @@ DB 제약 `dress_items_owner_check` 가 강제한다.
 지금은 `stylists.dress_self` 를 켜고 `dress_items.stylist_id` 로 바로 붙인다.
 역할은 `stylist` 하나 그대로다.
 
+#### ⚠ getDressItems 는 벤더 의상만 돌려준다
+
+`dress_items` 에는 이제 벤더 것과 헤메 것이 섞여 있다.
+`getDressItems()` 에 `.not('vendor_id','is',null)` 이 없으면
+헤메 의상까지 가져와서 두 가지가 동시에 깨진다.
+
+* 헤메를 고르지 않아도 그 사람 의상이 목록에 뜬다 (노출 규칙 위반)
+* 헤메를 고르면 같은 옷이 **두 줄로** 뜬다 — 실제로 그랬다
+
+`availableDresses` 에서도 id 로 한 번 더 거른다.
+출처가 둘인 목록은 언제든 다시 겹칠 수 있다.
+
 #### 노출 규칙
 
 헤메의 자체 의상은 **그 헤메를 선택했을 때만** 의상 목록에 뜬다.
