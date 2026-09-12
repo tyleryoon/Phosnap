@@ -1358,7 +1358,14 @@ const ArtistDashboard = () => {
                 {/* 포트폴리오 진위 검증 */}
                 <div style={{ marginBottom: 32 }}>
                   <ImageVerification
-                    images={(artistData?.portfolio || []).map((url, i) => ({ url, id: `portfolio-${i}` }))}
+                    // portfolio 는 [{ url, caption, regionId }] 다.
+                    // 그대로 넘기면 url 자리에 객체가 들어간다.
+                    images={(artistData?.portfolio || [])
+                      .map((x, i) => ({
+                        url: typeof x === 'string' ? x : x?.url || '',
+                        id: `portfolio-${i}`,
+                      }))
+                      .filter(x => x.url)}
                     onVerified={(results) => {}}
                   />
                 </div>

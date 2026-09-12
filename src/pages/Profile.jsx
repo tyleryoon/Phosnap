@@ -330,6 +330,27 @@ const Profile = ({ onAuthOpen }) => {
     return ids.map(id => allLocs.find(l => l.id === id) || { id, ko: id, en: id });
   }, [portfolioItems]);
 
+  // ⚠ 아래 early return(dbLoading / !p) 보다 위에 있어야 한다.
+  //    밑에 두면 로딩이 끝나는 순간 훅 개수가 달라져 화면이 통째로 죽는다.
+  const filteredPortfolio = useMemo(() => (
+    portfolioLocation === 'all'
+      ? portfolioItems
+      : portfolioItems.filter(item => item.locationId === portfolioLocation)
+  ), [portfolioItems, portfolioLocation]);
+
+  // 라이트박스는 지금 보고 있는 목록 **전체**를 하나의 갤러리로 다룬다.
+  // startAt[i] = i번째 게시물의 첫 사진이 전체에서 몇 번째인가.
+  const lightboxImages = useMemo(() => {
+    const images = [];
+    const startAt = [];
+    for (const post of filteredPortfolio) {
+      startAt.push(images.length);
+      const imgs = (post.images?.length ? post.images : [post.cover || post.url]).filter(Boolean);
+      images.push(...imgs);
+    }
+    return { images, startAt };
+  }, [filteredPortfolio]);
+
   // Loading state
   if (dbLoading) {
     return (
@@ -377,9 +398,7 @@ const Profile = ({ onAuthOpen }) => {
     ?? PROFILE_LOCATION_NAMES[p.location]?.ko
     ?? p.location;
 
-  const filteredPortfolio = portfolioLocation === 'all'
-    ? portfolioItems
-    : portfolioItems.filter(item => item.locationId === portfolioLocation);
+
 
   const packages = p.packages || [];
   const pkg = packages.find(pk => pk.popular) || packages[0];
@@ -667,11 +686,17 @@ const Profile = ({ onAuthOpen }) => {
               })}
             </div>
 
-            {/* 포트폴리오 라이트박스 — 클릭한 게시물의 사진들만 표시 */}
-            {lightboxIndex !== null && filteredPortfolio[lightboxIndex] && (
+            {/* ── 포트폴리오 라이트박스 ──
+                예전에는 **클릭한 게시물의 사진만** 넘겼다.
+                그런데 실제 데이터는 게시물 하나에 사진 한 장씩이라
+                열어봐야 갈 데가 없었다 — 화살표도 썸네일도 안 떴다.
+
+                지금은 지금 보고 있는 목록 전체를 넘기고 클릭한 위치에서
+                시작한다. 하단 썸네일로 원하는 사진에 바로 갈 수 있다. */}
+            {lightboxIndex !== null && lightboxImages.images.length > 0 && (
               <PortfolioLightbox
-                images={filteredPortfolio[lightboxIndex].images || [filteredPortfolio[lightboxIndex].cover || filteredPortfolio[lightboxIndex].url]}
-                startIndex={0}
+                images={lightboxImages.images}
+                startIndex={lightboxImages.startAt[lightboxIndex] ?? 0}
                 onClose={() => setLightboxIndex(null)}
               />
             )}

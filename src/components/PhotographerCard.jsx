@@ -20,7 +20,15 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
   const { lang, t } = useLanguage();
 
   // 대표 포트폴리오: featuredPortfolio가 있으면 우선, 없으면 portfolio 앞 5장
-  const featured = (p.featuredPortfolio?.length ? p.featuredPortfolio : p.portfolio?.slice(0, MAX_FEATURED)) || [];
+  //
+  // ⚠ portfolio 는 [{ url, caption, regionId }] 객체 배열이다.
+  //    예전에는 그걸 그대로 <LazyImage src={...}> 에 넘겨서
+  //    src 에 객체가 들어갔다. 슬라이더도 화살표도 멀쩡히 있었는데
+  //    사진만 안 나왔다. URL 문자열로 맞춘 뒤에 쓴다.
+  const toUrl = (x) => (typeof x === 'string' ? x : x?.url || '');
+  const featured = (
+    (p.featuredPortfolio?.length ? p.featuredPortfolio : p.portfolio?.slice(0, MAX_FEATURED)) || []
+  ).map(toUrl).filter(Boolean);
   // 이미지가 아예 없으면 기존 img 사용
   const slides = featured.length > 0 ? featured : (p.img ? [p.img] : []);
 
