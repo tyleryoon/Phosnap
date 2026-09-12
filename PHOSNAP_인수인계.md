@@ -1267,10 +1267,15 @@ select (select count(*) from public.bookings)      as 예약,
 | 4 | `FIX_35_LISTABLE.sql` | 노출을 계산값으로 (`provider_listable`) |
 | 5 | `FIX_36_LISTING_FIXES.sql` | 배너 함수 버그 + 헤메 벤더 잔재 정리 |
 | 6 | `FIX_37_TRIGGER_ORDER.sql` | 트리거 이름순 충돌 해소 |
+| 7 | `FIX_38_AVAILABLE_PROVIDERS.sql` | 앵커 조회 — 그 시간에 가능한 공급자 |
+| 8 | `FIX_39_WINDOW_OPEN.sql` | 운영 시간 밖 시술 차단 + 노출 조건에 운영 시간 추가 |
 
 34~37 은 한 덩어리다. **35만 돌리고 멈추면 안 된다** —
 36 이 배너 함수 버그를, 37 이 트리거 순서를 고친다.
-새로 세팅할 때는 34~37 을 연달아 돌리면 된다.
+새로 세팅할 때는 34~39 를 연달아 돌리면 된다.
+
+`TEST_PORTFOLIO_GROUP.sql` · `TEST_STYLIST_HOURS.sql` 은 테스트 데이터용이다.
+실서비스 데이터에는 돌리지 않는다.
 
 
 ### 2026-09-10 ~ 09-11 세션
