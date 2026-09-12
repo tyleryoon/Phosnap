@@ -1222,6 +1222,21 @@ select (select count(*) from public.bookings)      as 예약,
 
 적용한 SQL: `FIX_23` ~ `FIX_31`, 검증용 `VERIFY.sql` · `VERIFY_COMBO.sql`
 
+#### 2026-09-12 추가분 — 반드시 이 순서로
+
+| 순서 | 파일 | 무엇 |
+|---|---|---|
+| 1 | `FIX_32_EMAIL_BOUNCE.sql` | 반송 메일 처리 (Resend 웹훅) |
+| 2 | `FIX_33_STYLIST_DRESS.sql` | 헤메 자체 의상 — `dress_items.stylist_id` |
+| 3 | `FIX_34_APPROVAL_GATE.sql` | 승인 전 노출 차단 |
+| 4 | `FIX_35_LISTABLE.sql` | 노출을 계산값으로 (`provider_listable`) |
+| 5 | `FIX_36_LISTING_FIXES.sql` | 배너 함수 버그 + 헤메 벤더 잔재 정리 |
+| 6 | `FIX_37_TRIGGER_ORDER.sql` | 트리거 이름순 충돌 해소 |
+
+34~37 은 한 덩어리다. **35만 돌리고 멈추면 안 된다** —
+36 이 배너 함수 버그를, 37 이 트리거 순서를 고친다.
+새로 세팅할 때는 34~37 을 연달아 돌리면 된다.
+
 
 ### 2026-09-10 ~ 09-11 세션
 - **DB를 완전히 비우고 mock 데이터를 제거한 상태에서 전 구간 실검증**
