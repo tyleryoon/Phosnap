@@ -377,6 +377,13 @@ const Booking = () => {
   const [dbDresses, setDbDresses] = useState(null);
   // 작가 자체 보유 의상 (packages 테이블의 type='costume')
   const [selfDresses, setSelfDresses] = useState(null);
+  // 선택한 헤메가 직접 보유한 의상 (dress_items.stylist_id).
+  // 헤메를 고르기 전에는 비어 있다 — 다른 헤메 의상을 섞어 보여주면
+  // 고객이 고른 뒤에 "그 헤메를 불러야만 받을 수 있다" 는 걸 알게 된다.
+  const [stylistDresses, setStylistDresses] = useState([]);
+  // 공급자 정보(헤메·의상·장소) 조회가 통째로 실패했을 때의 사유.
+  // 빈 목록과 구분해야 한다 — 빈 목록은 "없다", 이건 "모른다" 다.
+  const [loadError, setLoadError] = useState(null);
   const [dbVenues, setDbVenues] = useState(null);
   // 선택한 날짜에 헤메·장소가 이미 묶여 있는 구간.
   // 이게 없으면 이미 예약이 찬 헤메를 고객이 그대로 고를 수 있다.
@@ -514,6 +521,9 @@ const Booking = () => {
             tags:      s.specialty ? [s.specialty] : [],
             languages: s.languages || ['KO'],
             portfolio: s.portfolio_images || [],
+            // 자체 의상 보유 여부 (FIX_33). 이 헤메를 고르면 그 사람의
+            // 의상이 의상 목록에 함께 붙는다.
+            dressSelf: s.dress_self === true,
           }));
           setDbStylists(mapped);
         }
@@ -600,7 +610,11 @@ const Booking = () => {
           setDbVenues([]);
         }
       } catch (err) {
-        // silently handled
+        // 여기서 조용히 넘어가면 고객은 "이 작가는 의상 대여를 제공하지
+        // 않습니다" 같은 문구를 보게 된다. 사실은 못 불러온 것이다.
+        // 없는 것과 모르는 것을 같게 취급하지 않는다.
+        console.error('[Booking] 공급자 정보를 불러오지 못했습니다:', err);
+        setLoadError(err?.message || '정보를 불러오지 못했습니다.');
       }
     };
     if (p) loadDbData();
@@ -850,6 +864,49 @@ const Booking = () => {
   const stylistData    = allStylists.find(s => s.id === selectedStylist);
   const stylistSvcData = stylistData?.services?.find(sv => sv.name === selectedStylistSvc);
 
+  // ── 선택한 헤메의 자체 의상 ────────────────────────────────────────
+  //
+  // 헤메가 한복·드레스를 들고 다니는 경우가 많다. 그 사람을 부르면
+  // 의상도 함께 받을 수 있어야 한다 (FIX_33).
+  //
+  // '자체 의상 보유' 라고 해놓고 아무것도 안 올린 헤메가 있을 수 있다.
+  // 그때는 그냥 빈 목록이 된다 — 없는 걸 있다고 하지 않는다.
+  useEffect(() => {
+    let cancelled = false;
+    const sid = stylistData?.id;
+    if (!sid || String(sid).startsWith('self:') || !stylistData?.dressSelf) {
+      setStylistDresses([]);
+      return undefined;
+    }
+    (async () => {
+      const { getStylistDresses } = await import('../lib/supabase');
+      const { data, error } = await getStylistDresses(sid);
+      if (cancelled) return;
+      if (error) {
+        // 못 불러왔으면 안 보여준다. 있는데 없는 것처럼 보이는 게
+        // 없는데 있는 것처럼 보이는 것보다 낫다 — 후자는 결제까지 간다.
+        console.error('[Booking] 헤메 자체 의상 조회 실패:', error);
+        setStylistDresses([]);
+        return;
+      }
+      setStylistDresses((data || []).map(d => ({
+        id:        d.id,
+        vendorId:  null,
+        stylistId: sid,
+        stylistName: stylistData?.name || '',
+        name:      d.name_ko,
+        nameI18n:  { ko: d.name_ko, en: d.name_en, ja: d.name_ja, zh: d.name_zh },
+        category:  d.category,
+        price:     d.price,
+        image:     d.image_url || (d.images && d.images[0]) || '/default-dress.jpg',
+        color:     d.color,
+        sizes:     d.sizes || [],
+        description: d.description,
+      })));
+    })();
+    return () => { cancelled = true; };
+  }, [stylistData?.id, stylistData?.dressSelf, stylistData?.name]);
+
   // 의상 관련 데이터
   const dressVendor = p.dressVendorId ? getVendorById(p.dressVendorId) : null;
   // 작가 본인 보유 의상(photographers.dresses)은 실제 데이터이므로 유지하고,
@@ -857,10 +914,26 @@ const Booking = () => {
   // 예전에는 p.dresses 를 봤는데 그건 mock 전용 필드라 항상 비어 있었다.
   // (게다가 toPhotographerCard 가 dressSelf 를 안 넘겨 분기 자체가 안 탔다)
   // 휴무인 의상 벤더의 옷은 빼준다. 자체 의상은 작가 본인이라 해당 없다.
-  const availableDresses = p.dressSelf
-    ? (selfDresses || [])
-    : (dbDresses || []).filter(d => !d.vendorId || !closedDress[d.vendorId]);
+  // 선택한 헤메의 의상은 항상 목록에 더한다.
+  // 작가가 자체 의상을 가진 경우에도 마찬가지다 — 고객 입장에서는
+  // 그날 현장에 오는 사람이 가진 옷이 다 선택지다.
+  const availableDresses = [
+    ...(p.dressSelf
+      ? (selfDresses || [])
+      : (dbDresses || []).filter(d => !d.vendorId || !closedDress[d.vendorId])),
+    ...stylistDresses,
+  ];
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
+
+  // 헤메를 바꾸면 그 헤메의 의상은 목록에서 사라진다.
+  // 선택만 남아 있으면 화면에는 골라둔 것처럼 보이는데 실제로는
+  // 아무 의상도 담기지 않은 채 결제까지 간다.
+  useEffect(() => {
+    if (selectedDress && !selectedDressData) {
+      setSelectedDress(null);
+      setSelectedDressSize('');
+    }
+  }, [selectedDress, selectedDressData]);
   const dressPrice = selectedDressData?.price || 0;
 
   // 선택한 날짜에 이 의상의 해당 사이즈가 이미 나갔는지 확인한다.
@@ -1032,14 +1105,24 @@ const Booking = () => {
     }
 
     if (selectedDressData?.id) {
-      // 작가 자체 의상이면 정산 대상이 벤더가 아니라 작가 본인이다.
-      const selfOwned = !!selectedDressData.selfOwned;
-      const providerId = selfOwned ? p?.id : selectedDressData.vendorId;
+      // 의상은 세 사람 중 하나가 판다 — 의상 벤더 / 작가 본인 / 헤메 본인.
+      //
+      // providerType 은 "누가 정산받는가", rateType 은 "무슨 요율인가" 다.
+      // 요율은 누가 팔든 의상 요율로 통일한다. 같은 드레스인데 파는 사람에
+      // 따라 수수료가 다르면 불만이 생긴다 — 헤메 요율을 통일한 것과 같은 이유다.
+      const selfOwned  = !!selectedDressData.selfOwned;          // 작가 자체 의상
+      const byStylist  = !!selectedDressData.stylistId;          // 헤메 자체 의상
+      const providerType = selfOwned ? 'photographer' : byStylist ? 'stylist' : 'dress';
+      const providerId   = selfOwned ? p?.id : byStylist ? selectedDressData.stylistId : selectedDressData.vendorId;
+      const providerName = selfOwned ? artistName
+                         : byStylist ? (selectedDressData.stylistName || '')
+                         : (selectedDressData.vendorName || '');
       if (providerId) {
         items.push({
-          providerType: selfOwned ? 'photographer' : 'dress',
+          providerType,
+          rateType:     'dress',
           providerId,
-          providerName: selfOwned ? artistName : (selectedDressData.vendorName || ''),
+          providerName,
           itemId:       selectedDressData.id,
           itemName:     selectedDressData.nameI18n?.[lang] || selectedDressData.name || '의상',
           itemOption:   selectedDressSize || null,
@@ -1172,6 +1255,18 @@ const Booking = () => {
                   }}>{t('booking.calNext')}</button>
                 </div>
 
+                {loadError && (
+                  <div style={{
+                    border: '1px solid #e85d5d', background: 'var(--bg2)',
+                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#e85d5d',
+                  }}>
+                    헤어메이크업·의상·장소 정보를 불러오지 못했습니다 — {loadError}
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
+                      목록이 비어 보이더라도 실제로 없는 것이 아닐 수 있습니다.
+                      새로고침 후 다시 시도해주세요.
+                    </div>
+                  </div>
+                )}
                 {scheduleError && (
                   <div style={{
                     border: '1px solid #e85d5d', background: 'var(--bg2)',
@@ -1624,6 +1719,18 @@ const Booking = () => {
                         fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
                       }}>
                         <span style={{ color: 'var(--gold)' }}>✦</span> {t('booking.dressArtistOwned') || '이 작가님은 자체 의상을 보유하고 있습니다.'}
+                      </div>
+                    )}
+
+                    {stylistDresses.length > 0 && (
+                      <div style={{
+                        padding: '12px 16px', marginBottom: 24,
+                        background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)',
+                        fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
+                      }}>
+                        <span style={{ color: 'var(--gold)' }}>✦</span>{' '}
+                        {stylistData?.name} 님이 보유한 의상 {stylistDresses.length}벌이 함께 표시됩니다.
+                        헤어메이크업을 맡은 분이 직접 가져오시므로 별도 수령이 필요 없습니다.
                       </div>
                     )}
 

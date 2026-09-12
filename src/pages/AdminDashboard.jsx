@@ -23,6 +23,11 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [bookings, setBookings] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  // user_id → { kind, hmkSelf, hmkCount, dressSelf, dressCount, ... }
+  // 플래그만 보면 "한다고 해놓고 아무것도 안 올린" 상태를 놓친다.
+  const [capabilities, setCapabilities] = useState({});
+  // 의상 벤더의 의상 개수 — user_id 가 아니라 vendor_id 기준이다.
+  const [vendorDress, setVendorDress] = useState({});
   const [stats, setStats] = useState({
     totalBookings: 0,
     monthlyRevenue: 0,
@@ -289,10 +294,14 @@ const AdminDashboard = () => {
         const sb = await getSupabase();
         if (!sb) throw new Error('Supabase 연결에 실패했습니다.');
 
-        const [bookingsRes, profilesRes, photogRes] = await Promise.all([
+        const [bookingsRes, profilesRes, photogRes, stylistRes, pkgRes, dressRes, dvRes] = await Promise.all([
           sb.from('bookings').select('*').order('created_at', { ascending: false }),
           sb.from('profiles').select('*').order('created_at', { ascending: false }),
-          sb.from('photographers').select('id, is_active'),
+          sb.from('photographers').select('id, user_id, artist_type, hmk_self, dress_self, is_active'),
+          sb.from('stylists').select('id, user_id, dress_self, is_active'),
+          sb.from('packages').select('photographer_id, type'),
+          sb.from('dress_items').select('vendor_id, stylist_id'),
+          sb.from('dress_vendors').select('id, user_id, is_active'),
         ]);
 
         const firstErr = bookingsRes.error || profilesRes.error || photogRes.error;
@@ -303,6 +312,66 @@ const AdminDashboard = () => {
 
         setBookings(bookingsData);
         setProfiles(profilesData);
+
+        // ── 공급 역량 표 ──
+        //
+        // "자체 헤메 한다" 고 체크만 하고 메뉴를 하나도 안 올린 작가가 있다.
+        // 고객 화면에서는 선택지가 비어 보인다. 관리자가 그걸 알아야
+        // 연락해서 채우게 할 수 있다. 그래서 플래그와 실제 개수를 같이 센다.
+        //
+        // 헤메·의상 테이블 조회가 실패해도 회원 목록 자체는 보여야 한다.
+        // 실패했으면 "모름" 으로 두고, 있는 척하지 않는다.
+        if (stylistRes.error) console.error('[AdminDashboard] 헤메 조회 실패:', stylistRes.error);
+        if (pkgRes.error)     console.error('[AdminDashboard] 상품 조회 실패:', pkgRes.error);
+        if (dressRes.error)   console.error('[AdminDashboard] 의상 조회 실패:', dressRes.error);
+        if (dvRes.error)      console.error('[AdminDashboard] 의상벤더 조회 실패:', dvRes.error);
+
+        const countBy = (rows, key) => (rows || []).reduce((m, r) => {
+          if (r[key]) m[r[key]] = (m[r[key]] || 0) + 1;
+          return m;
+        }, {});
+
+        const hmkPkgCount     = countBy((pkgRes.data || []).filter(x => x.type === 'hmk'), 'photographer_id');
+        const costumePkgCount = countBy((pkgRes.data || []).filter(x => x.type === 'costume'), 'photographer_id');
+        const stylistDress    = countBy(dressRes.data, 'stylist_id');
+        const vendorDress     = countBy(dressRes.data, 'vendor_id');
+
+        const caps = {};
+        for (const ph of photogRes.data || []) {
+          if (!ph.user_id) continue;
+          caps[ph.user_id] = {
+            kind:      'photographer',
+            type:      ph.artist_type,
+            active:    ph.is_active,
+            hmkSelf:   ph.hmk_self === true,
+            hmkCount:  pkgRes.error ? null : (hmkPkgCount[ph.id] || 0),
+            dressSelf: ph.dress_self === true,
+            dressCount: pkgRes.error ? null : (costumePkgCount[ph.id] || 0),
+          };
+        }
+        for (const dv of dvRes.data || []) {
+          if (!dv.user_id) continue;
+          caps[dv.user_id] = {
+            kind:       'dress_vendor',
+            active:     dv.is_active,
+            hmkSelf:    false,
+            dressSelf:  true,          // 의상 벤더는 정의상 의상을 판다
+            dressCount: dressRes.error ? null : (vendorDress[dv.id] || 0),
+          };
+        }
+        for (const st of stylistRes.data || []) {
+          if (!st.user_id) continue;
+          caps[st.user_id] = {
+            kind:       'stylist',
+            active:     st.is_active,
+            hmkSelf:    true,           // 헤메 작가는 정의상 헤메를 한다
+            hmkCount:   null,           // 시술 메뉴는 stylist_services 라 여기선 안 센다
+            dressSelf:  st.dress_self === true,
+            dressCount: dressRes.error ? null : (stylistDress[st.id] || 0),
+          };
+        }
+        setCapabilities(caps);
+        setVendorDress(dressRes.error ? null : vendorDress);
 
         const now = new Date();
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -707,6 +776,33 @@ const AdminDashboard = () => {
   // profiles.approved 를 읽었는데 진짜 승인 상태는 user_roles.status 에 있다.
   const renderApprovalsTab = () => <RoleApprovals onChanged={refreshAttention} />;
 
+  // 공급 역량 배지.
+  //
+  // 색으로 세 가지를 구분한다.
+  //   금색  — 하겠다고 했고 실제로 등록도 했다
+  //   붉은색 — 하겠다고 했는데 등록한 게 0개다 (고객 화면에서 빈칸으로 보인다)
+  //   회색  — 개수를 못 세어서 모른다. 0개인 척하지 않는다.
+  const CapBadge = ({ label, on, count }) => {
+    if (!on) return null;
+    const unknown = count === null || count === undefined;
+    const empty   = !unknown && count === 0;
+    const color  = empty ? '#f56565' : unknown ? 'var(--muted)' : 'var(--gold)';
+    return (
+      <span
+        title={empty ? '보유로 표시했지만 등록된 항목이 0개입니다 — 고객 화면에서 빈칸으로 보입니다'
+                     : unknown ? '개수를 확인하지 못했습니다' : undefined}
+        style={{
+          display: 'inline-block', padding: '2px 8px', marginRight: 6, marginBottom: 4,
+          fontSize: 10, borderRadius: 2, whiteSpace: 'nowrap',
+          border: `1px solid ${color}`, color,
+          background: empty ? 'rgba(245,101,101,0.08)' : 'transparent',
+        }}
+      >
+        {label}{unknown ? '' : ` ${count}`}{empty ? ' ⚠' : ''}
+      </span>
+    );
+  };
+
   const renderMembersTab = () => (
     <div>
       {/* Filters */}
@@ -761,14 +857,15 @@ const AdminDashboard = () => {
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>{translate('name')}</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>{translate('email')}</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>{translate('role')}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>제공</th>
               <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>{translate('joined')}</th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>{translate('action')}</th>
+              <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', color: 'var(--muted)', fontWeight: 'normal' }}>노출</th>
             </tr>
           </thead>
           <tbody>
             {filteredProfiles.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>
+                <td colSpan="6" style={{ padding: '32px 16px', textAlign: 'center', color: 'var(--muted)', fontSize: 12 }}>
                   {translate('noData')}
                 </td>
               </tr>
@@ -792,25 +889,60 @@ const AdminDashboard = () => {
                       {translate(p.role)}
                     </span>
                   </td>
+                  <td style={{ padding: '12px 16px', fontSize: 12, minWidth: 170 }}>
+                    {(() => {
+                      const cap = capabilities[p.id];
+                      if (!cap) {
+                        // 공급자 레코드가 없는 회원(고객·관리자)이거나 조회 실패다.
+                        return <span style={{ color: 'var(--muted)', fontSize: 11 }}>—</span>;
+                      }
+                      return (
+                        <>
+                          {cap.kind === 'photographer' && cap.type && (
+                            <span style={{ display: 'inline-block', padding: '2px 8px', marginRight: 6, marginBottom: 4, fontSize: 10, borderRadius: 2, border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                              {cap.type === 'both' ? '사진+영상' : cap.type === 'videographer' ? '영상' : '사진'}
+                            </span>
+                          )}
+                          {cap.kind === 'dress_vendor' && (
+                            <span style={{ display: 'inline-block', padding: '2px 8px', marginRight: 6, marginBottom: 4, fontSize: 10, borderRadius: 2, border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                              의상 벤더
+                            </span>
+                          )}
+                          {cap.kind === 'stylist' && (
+                            <span style={{ display: 'inline-block', padding: '2px 8px', marginRight: 6, marginBottom: 4, fontSize: 10, borderRadius: 2, border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                              헤메
+                            </span>
+                          )}
+                          <CapBadge label="자체 헤메" on={cap.hmkSelf && cap.kind === 'photographer'} count={cap.hmkCount} />
+                          <CapBadge label="자체 의상" on={cap.dressSelf} count={cap.dressCount} />
+                          {!cap.active && (
+                            <span style={{ display: 'inline-block', padding: '2px 8px', fontSize: 10, borderRadius: 2, border: '1px solid var(--border)', color: 'var(--muted)' }}>
+                              비노출
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </td>
                   <td style={{ padding: '12px 16px', fontSize: 12, color: 'var(--text)' }}>{fmtDate(p.created_at)}</td>
                   <td style={{ padding: '12px 16px', fontSize: 12 }}>
-                    <button
-                      onClick={() => {
-                        setProfiles(profiles.map(profile => profile.id === p.id ? { ...profile, is_active: !profile.is_active } : profile));
-                      }}
-                      style={{
-                        padding: '4px 12px',
-                        background: p.is_active ? '#22c55e' : '#6b7280',
-                        color: '#fff',
-                        border: 'none',
-                        fontSize: 11,
-                        fontFamily: 'var(--font-serif)',
-                        cursor: 'pointer',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {p.is_active ? translate('active') : translate('inactive')}
-                    </button>
+                    {/* 예전에는 여기 버튼이 있었는데 setProfiles() 로 React 상태만
+                        바꿨다. 새로고침하면 되돌아간다 — 누른 사람은 바꾼 줄 안다.
+                        노출 여부는 photographers/stylists 의 is_active 이고,
+                        승인은 '작가/벤더 승인' 탭에서 한다. 여기서는 보여주기만 한다. */}
+                    {(() => {
+                      const cap = capabilities[p.id];
+                      if (!cap) return <span style={{ color: 'var(--muted)', fontSize: 11 }}>—</span>;
+                      return (
+                        <span style={{
+                          display: 'inline-block', padding: '3px 10px', fontSize: 10, borderRadius: 2,
+                          border: `1px solid ${cap.active ? 'rgba(34,197,94,0.4)' : 'var(--border)'}`,
+                          color: cap.active ? '#4ade80' : 'var(--muted)',
+                        }}>
+                          {cap.active ? '고객에게 노출' : '비노출'}
+                        </span>
+                      );
+                    })()}
                   </td>
                 </tr>
               ))

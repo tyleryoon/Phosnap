@@ -491,8 +491,16 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
 // ─── 의상 대여 탭 (헤메가 의상도 함께 대여하는 경우) ──────────────────
 // 별도 테이블을 만들지 않고 벤더와 동일한 dress_vendors / dress_items 를
 // 사용한다. 고객 예약의 의상 조회 로직을 그대로 재사용할 수 있다.
+// 헤메 자체 의상 관리.
+//
+// 예전에는 여기서 dress_vendors 레코드를 만들어 벤더로 둔갑시켰다.
+// 그런데 역할 가드(FIX_23) 때문에 vendor 역할이 없는 헤메는 그 insert 가
+// RLS 에 막힌다. 버튼은 있는데 눌러도 안 되는 상태였다.
+//
+// 이제 dress_items 에 stylist_id 로 바로 붙인다 (FIX_33).
+// 역할도 하나(stylist)로 유지되고, 승인·전환 UI 도 그대로다.
 const DressRentalTab = ({ t, lang, stylistProfile }) => {
-  const [vendorId, setVendorId] = useState(null);
+  const stylistId = stylistProfile?.id || null;
   const [enabled, setEnabled] = useState(false);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -500,60 +508,44 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '' });
-  const { user } = useAuth();
 
-  // 이미 연결된 dress_vendors 레코드가 있는지 확인
+  // 자체 의상 보유 여부와 등록된 의상을 읽어온다.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!user?.id) { setLoading(false); return; }
+      if (!stylistId) { setLoading(false); return; }
       try {
-        const { getSupabase } = await import('../lib/supabase');
-        const sb = await getSupabase();
-        if (!sb) return;
-        const { data: v } = await sb.from('dress_vendors')
-          .select('id').eq('user_id', user.id).maybeSingle();
+        const { getStylistDresses } = await import('../lib/supabase');
+        const { data, error } = await getStylistDresses(stylistId);
         if (cancelled) return;
-        if (v?.id) {
-          setVendorId(v.id);
-          setEnabled(true);
-          const { getVendorDresses } = await import('../lib/supabase');
-          const { data } = await getVendorDresses(v.id);
-          if (!cancelled) setItems(data || []);
+        if (error) {
+          // 조용히 "의상 없음" 으로 보이면 안 된다. 등록해둔 게 사라진 줄 안다.
+          setErrorMsg(`의상 목록을 불러오지 못했습니다 — ${error.message}`);
+        } else {
+          setItems(data || []);
         }
+        // 가입 때 "보유" 로 답했거나, 이미 의상을 올렸으면 켜진 상태다.
+        setEnabled(stylistProfile?.dress_self === true || (data || []).length > 0);
       } catch (e) {
         console.error('[StylistDashboard] 의상 정보 로드 실패:', e);
+        if (!cancelled) setErrorMsg(e?.message || t.error);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [stylistId, stylistProfile?.dress_self]);
 
-  // 의상 대여 활성화 — dress_vendors 레코드를 만들고 헤메 프로필 정보를 승계
+  // 의상 대여 활성화 — stylists.dress_self 를 켠다.
+  // 벤더 레코드를 만들지 않으므로 역할은 stylist 하나 그대로다.
   const handleEnable = async () => {
     setSaving(true);
     setErrorMsg('');
     try {
-      const { ensureVendorRecord, updateVendorProfile } = await import('../lib/supabase');
-      const { data: created, error } = await ensureVendorRecord(user.id, {
-        nameKo:     stylistProfile?.name_ko || stylistProfile?.display_name || '',
-        nameEn:     stylistProfile?.name_en || '',
-        vendorType: 'costume',
-      });
+      const { setStylistDressSelf } = await import('../lib/supabase');
+      const { error } = await setStylistDressSelf(stylistId, true);
       if (error) throw error;
-      // 헤메의 지역·연락처를 그대로 물려받아 고객 검색에 바로 잡히게 한다
-      if (created?.id) {
-        await updateVendorProfile(created.id, {
-          location_id:  stylistProfile?.location_id || null,
-          country_code: stylistProfile?.country_code || 'KR',
-          city:         stylistProfile?.city || null,
-          contact_phone: stylistProfile?.phone || null,
-          intro:        stylistProfile?.specialty || '',
-        });
-        setVendorId(created.id);
-        setEnabled(true);
-      }
+      setEnabled(true);
     } catch (e) {
       console.error('[StylistDashboard] 의상 대여 활성화 실패:', e);
       setErrorMsg(e?.message || t.error);
@@ -570,10 +562,9 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
     setSaving(true);
     setErrorMsg('');
     try {
-      const { addVendorDress } = await import('../lib/supabase');
+      const { addStylistDress } = await import('../lib/supabase');
       const sizes = form.size.split(',').map(s => s.trim()).filter(Boolean);
-      const { data, error } = await addVendorDress({
-        vendor_id:  vendorId,
+      const { data, error } = await addStylistDress(stylistId, {
         name_ko:    form.nameKo.trim(),
         name_en:    form.nameEn.trim() || null,
         category:   'traditional',

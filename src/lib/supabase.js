@@ -475,6 +475,9 @@ export const ensureArtistRecord = async (userId, info = {}) => {
         specialty:        'both',
         instagram,
         portfolio_images: portfolioUrls,
+        // 헤메도 자체 의상을 가질 수 있다 (FIX_33).
+        // 작가에게만 묻던 질문이라 헤메 값은 여기까지 오지 못했다.
+        dress_self:       dressSelf,
         is_active:        false,   // 필수 정보 입력 전까지 비노출
       }
     : {
@@ -1319,6 +1322,61 @@ export const updateVendorDress = async (dressId, updates) => {
 /**
  * 의상 삭제
  */
+// ─── 헤메 자체 의상 (FIX_33) ───────────────────────────────────────────
+//
+// dress_items 를 벤더와 헤메가 같이 쓴다. vendor_id / stylist_id 중
+// 하나만 채워진다 (DB 제약으로 강제).
+//
+// 예전에는 헤메가 의상을 팔려면 dress_vendors 레코드를 따로 만들었는데,
+// 역할 가드(FIX_23) 때문에 vendor 역할이 없는 헤메는 그 insert 가 막혔다.
+// 버튼은 있는데 눌러도 안 되는 상태였다.
+
+/** 헤메 본인의 자체 의상 목록 */
+export const getStylistDresses = async (stylistId) => {
+  const sb = await getSupabase();
+  if (!sb || !stylistId) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('dress_items')
+    .select('*')
+    .eq('stylist_id', stylistId)
+    .order('created_at', { ascending: false });
+  if (error) console.error('[getStylistDresses] 조회 실패:', error);
+  return { data: data || [], error };
+};
+
+/** 헤메 자체 의상 등록 */
+export const addStylistDress = async (stylistId, dress) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  if (!stylistId) return { data: null, error: { message: '헤메 정보를 찾을 수 없습니다.' } };
+  const { data, error } = await sb
+    .from('dress_items')
+    .insert([{ ...dress, stylist_id: stylistId, vendor_id: null }])
+    .select()
+    .single();
+  return { data, error };
+};
+
+/**
+ * 헤메의 "자체 의상 보유" 스위치.
+ *
+ * 0행이 돌아오면 실패다 — RLS 가 막았거나 내 레코드가 아니다.
+ * PostgREST 는 그걸 오류가 아니라 200 + 빈 배열로 준다.
+ */
+export const setStylistDressSelf = async (stylistId, on) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.from('stylists')
+    .update({ dress_self: !!on })
+    .eq('id', stylistId)
+    .select('id');
+  if (error) return { error };
+  if (!data || data.length === 0) {
+    return { error: { message: '변경 권한이 없습니다. 다시 로그인해주세요.' } };
+  }
+  return { error: null };
+};
+
 export const deleteVendorDress = async (dressId) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };

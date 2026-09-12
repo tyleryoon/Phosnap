@@ -77,7 +77,7 @@ const FORM_I18N = {
     agreePayment: '결제 및 수수료 정책을 확인했습니다.',
     agreeTerms: '이용약관, 개인정보 처리방침, 환불 정책에 동의합니다.',
     agreeMarketing: '(선택) 포트폴리오가 Phosnap 플랫폼의 마케팅에 활용될 수 있음에 동의합니다.',
-    successMsg: '🎉 가입 신청이 완료됐습니다! 관리자 승인 후 작가 서비스 이용이 가능합니다. 이메일을 확인하고 인증을 완료해주세요.',
+    successMsg: '🎉 가입 신청이 완료됐습니다!\n관리자 승인이 끝나면 예약 관리 대시보드를 쓰실 수 있습니다. 예약 요청 확인·수락·거절, 운영 일정과 휴무 설정, 상품과 가격 등록, 정산 내역 확인이 모두 여기서 이뤄집니다.\n먼저 이메일을 확인하고 인증을 완료해주세요.',
     goHome: '홈으로 이동',
     hmkSelf: 'H&M 서비스를 직접 제공할 수 있나요?', yes: '네', no: '아니요',
     hmkExternal: 'Phosnap H&M 전문가 매칭을 원하시나요?',
@@ -104,7 +104,7 @@ const FORM_I18N = {
     agreePayment: 'I have reviewed the payment and commission policy.',
     agreeTerms: 'I agree to the Terms of Service, Privacy Policy, and Refund Policy.',
     agreeMarketing: '(Optional) I agree that my portfolio may be used for Phosnap platform marketing.',
-    successMsg: '🎉 Registration submitted! Your account will be activated after admin approval. Please check your email to complete verification.',
+    successMsg: '🎉 Registration submitted!\nOnce an admin approves your account, you can use the booking dashboard — accept or decline requests, set your working hours and days off, list your services and prices, and check your payouts.\nPlease check your email to complete verification first.',
     goHome: 'Go Home',
     hmkSelf: 'Can you provide H&M services yourself?', yes: 'Yes', no: 'No',
     hmkExternal: 'Would you like Phosnap H&M specialist matching?',
@@ -131,7 +131,7 @@ const FORM_I18N = {
     agreePayment: '決済・手数料ポリシーを確認しました。',
     agreeTerms: '利用規約、プライバシーポリシー、返金ポリシーに同意します。',
     agreeMarketing: '（任意）ポートフォリオがPhosnapプラットフォームのマーケティングに活用されることに同意します。',
-    successMsg: '🎉 登録申請が完了しました！管理者の承認後にサービスをご利用いただけます。メールを確認して認証を完了してください。',
+    successMsg: '🎉 登録申請が完了しました！\n管理者の承認後、予約管理ダッシュボードをご利用いただけます。予約リクエストの確認・承諾・辞退、営業時間と休業日の設定、商品と価格の登録、精算内容の確認がすべてこちらで行えます。\nまずメールを確認して認証を完了してください。',
     goHome: 'ホームへ',
     hmkSelf: 'H&Mサービスを自分で提供できますか？', yes: 'はい', no: 'いいえ',
     hmkExternal: 'Phosnap H&M専門家マッチングを希望しますか？',
@@ -158,7 +158,7 @@ const FORM_I18N = {
     agreePayment: '已确认支付及佣金政策。',
     agreeTerms: '同意服务条款、隐私政策和退款政策。',
     agreeMarketing: '（选填）同意作品集可用于Phosnap平台的营销。',
-    successMsg: '🎉 注册申请已完成！管理员审批后即可使用服务。请检查您的邮箱完成验证。',
+    successMsg: '🎉 注册申请已完成！\n管理员审批通过后，即可使用预约管理面板 — 查看并接受或拒绝预约请求、设置营业时间与休息日、登记商品与价格、查看结算明细。\n请先检查您的邮箱完成验证。',
     goHome: '返回首页',
     hmkSelf: '您能自己提供H&M服务吗？', yes: '是', no: '否',
     hmkExternal: '是否需要Phosnap H&M专家匹配？',
@@ -530,7 +530,9 @@ const ArtistRegister = () => {
       hmk_self:         isPhotoVideo ? (hmkSelf === true) : false,
       hmk_external_connect: isPhotoVideo ? hmkExternalConnect : false,
       hmk_options:      hmkSelf ? hmkMenuItems : [],
-      dress_self:       isPhotoVideo ? dressSelf : false,
+      // 의상 보유 여부는 사진·영상 작가와 헤메 작가 모두에게 묻는다.
+      // isPhotoVideo 로만 막아두면 헤메가 고른 값이 조용히 버려진다.
+      dress_self:       dressSelf === true,
       referral_code:    myCode,
       referred_by_code: referralCode.trim() || null,
       phone,
@@ -555,7 +557,7 @@ const ArtistRegister = () => {
       portfolioUrls,
       instagram: instagram.trim() || null,
       hmkSelf:   isPhotoVideo ? (hmkSelf === true) : false,
-      dressSelf: isPhotoVideo ? dressSelf : false,
+      dressSelf: dressSelf === true,
     });
     if (artistErr) {
       throw new Error(`작가 등록 실패: ${artistErr.message}`);
@@ -1226,6 +1228,26 @@ const ArtistRegister = () => {
                   </div>
                 )}
 
+              </>
+            )}
+
+            {/* H&M 작가 선택 시 안내 */}
+            {artistType === 'hmk' && (
+              <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
+                <Corners />
+                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8 }}>
+                  <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>H&M 전문 작가</span>로 등록하셨습니다.
+                  시술 메뉴와 가격은 가입 후 대시보드에서 설정합니다. 아래 의상 보유 여부만 알려주세요.
+                </div>
+              </div>
+            )}
+
+            {/* ── 의상 자체 보유 여부 ──
+                사진·영상 작가와 헤메 작가 모두에게 똑같이 묻는다.
+                헤메가 한복·드레스를 들고 다니는 경우가 많은데
+                예전에는 등록할 자리가 아예 없었다. ── */}
+            {(isPhotoVideo || artistType === 'hmk') && (
+              <>
                 {/* ── Q2: 의상 자체 보유 여부 ── */}
                 <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
                   <Corners />
@@ -1261,7 +1283,7 @@ const ArtistRegister = () => {
 
                   {dressSelf && (
                     <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
-                      <span style={{ color: 'var(--gold)' }}>안내</span> · 자체 의상 목록은 가입 완료 후 작가 대시보드에서 등록하실 수 있습니다.
+                      <span style={{ color: 'var(--gold)' }}>안내</span> · 자체 의상 목록은 가입 완료 후 대시보드 &gt; 의상 관리에서 등록하실 수 있습니다.
                     </div>
                   )}
                 </div>
@@ -1273,17 +1295,6 @@ const ArtistRegister = () => {
                   </div>
                 )}
               </>
-            )}
-
-            {/* H&M 작가 선택 시 안내 */}
-            {artistType === 'hmk' && (
-              <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
-                <Corners />
-                <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8 }}>
-                  <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>H&M 전문 작가</span>로 등록하셨습니다.
-                  서비스 메뉴와 가격은 가입 후 대시보드에서 상세히 설정할 수 있습니다. 이 단계에서는 추가 설정이 필요 없습니다.
-                </div>
-              </div>
             )}
 
             {!isPhotoVideo && artistType !== 'hmk' && (
@@ -1472,7 +1483,7 @@ const ArtistRegister = () => {
                 { label: '작가 유형', value: ARTIST_TYPES.find(a => a.id === artistType)?.label || '' },
                 isPhotoVideo && hmkSelf ? { label: 'H&M 자체', value: `메뉴 ${hmkMenuItems.length}개` } : null,
                 isPhotoVideo && hmkExternalConnect ? { label: 'H&M 별도 연결', value: '신청' } : null,
-                isPhotoVideo ? { label: '의상 보유', value: dressSelf ? '자체 보유' : '없음 (Phosnap 벤더 이용 가능)' } : null,
+                (isPhotoVideo || artistType === 'hmk') ? { label: '의상 보유', value: dressSelf ? '자체 보유' : '없음 (Phosnap 벤더 이용 가능)' } : null,
                 referralCode ? { label: '초대코드', value: referralCode } : null,
               ].filter(Boolean).map(item => (
                 <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 10, marginBottom: 10, borderBottom: '1px solid var(--border)' }}>
@@ -1484,7 +1495,7 @@ const ArtistRegister = () => {
 
             {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
             {success && (
-              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: '#4ade80', lineHeight: 1.7 }}>
+              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: '#4ade80', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
                 {success}
                 <div style={{ marginTop: 12 }}>
                   <button type="button" className="btn-outline" style={{ fontSize: 12 }} onClick={() => navigate('/')}>{f.goHome}</button>

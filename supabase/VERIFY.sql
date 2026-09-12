@@ -197,6 +197,54 @@ integrity as (
     ) x
 
   union all
+  -- 주인 없는 의상. vendor_id 와 stylist_id 가 둘 다 비었거나 둘 다 찼다.
+  -- 전자는 정산 대상이 없고, 후자는 둘이 된다.
+  select '1.정합성', '소유자가 불명확한 의상', count(*),
+         string_agg(name_ko, ', ')
+    from public.dress_items
+   where (vendor_id is null and stylist_id is null)
+      or (vendor_id is not null and stylist_id is not null)
+
+  union all
+  -- "자체 의상 보유" 라고 해놓고 하나도 안 올린 헤메.
+  -- 고객 화면에서는 의상 칸이 비어 보인다. 막을 일은 아니고 알려줄 일이다.
+  select '1.정합성', '자체 의상 보유인데 0벌 (헤메)', count(*),
+         string_agg(coalesce(name_ko, display_name, '이름 미설정'), ', ')
+    from public.stylists s
+   where s.dress_self
+     and s.is_active
+     and not exists (select 1 from public.dress_items i where i.stylist_id = s.id)
+
+  union all
+  -- 같은 문제의 작가 쪽. 자체 의상은 packages(type='costume') 에 있다.
+  select '1.정합성', '자체 의상 보유인데 0벌 (작가)', count(*),
+         string_agg(coalesce(name_ko, name), ', ')
+    from public.photographers p
+   where p.dress_self
+     and p.is_active
+     and not exists (select 1 from public.packages k
+                      where k.photographer_id = p.id and k.type = 'costume')
+
+  union all
+  -- 자체 헤메라고 해놓고 메뉴가 없는 작가. 예약 화면 헤메 칸이 빈다.
+  select '1.정합성', '자체 헤메인데 메뉴 0개', count(*),
+         string_agg(coalesce(name_ko, name), ', ')
+    from public.photographers p
+   where p.hmk_self
+     and p.is_active
+     and not exists (select 1 from public.packages k
+                      where k.photographer_id = p.id and k.type = 'hmk')
+
+  union all
+  -- 의상을 팔았는데 의상 요율이 아닌 경우.
+  -- 같은 드레스인데 파는 사람에 따라 수수료가 다르면 불만이 생긴다.
+  select '1.정합성', '의상 아이템인데 의상 요율이 아님', count(*),
+         string_agg(distinct item_name, ', ')
+    from public.booking_items
+   where item_id in (select id from public.dress_items)
+     and coalesce(rate_type, provider_type) <> 'dress'
+
+  union all
   -- 라인 아이템 합계와 결제 총액이 다른 경우.
   -- 어느 쪽이 맞는지 우리가 모른다는 뜻이고, 정산이 틀어진다.
   select '1.정합성', '아이템 합계 ≠ 결제 총액', count(*),
