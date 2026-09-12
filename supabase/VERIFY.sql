@@ -268,7 +268,7 @@ integrity as (
   union all
   -- "자체 의상 보유" 라고 해놓고 하나도 안 올린 헤메.
   -- 고객 화면에서는 의상 칸이 비어 보인다. 막을 일은 아니고 알려줄 일이다.
-  select '1.정합성', '자체 의상 보유인데 0벌 (헤메)', count(*),
+  select '2.대기', '자체 의상 보유인데 0벌 (헤메)', count(*),
          string_agg(coalesce(name_ko, display_name, '이름 미설정'), ', ')
     from public.stylists s
    where s.dress_self
@@ -277,7 +277,7 @@ integrity as (
 
   union all
   -- 같은 문제의 작가 쪽. 자체 의상은 packages(type='costume') 에 있다.
-  select '1.정합성', '자체 의상 보유인데 0벌 (작가)', count(*),
+  select '2.대기', '자체 의상 보유인데 0벌 (작가)', count(*),
          string_agg(coalesce(name_ko, name), ', ')
     from public.photographers p
    where p.dress_self
@@ -287,7 +287,7 @@ integrity as (
 
   union all
   -- 자체 헤메라고 해놓고 메뉴가 없는 작가. 예약 화면 헤메 칸이 빈다.
-  select '1.정합성', '자체 헤메인데 메뉴 0개', count(*),
+  select '2.대기', '자체 헤메인데 메뉴 0개', count(*),
          string_agg(coalesce(name_ko, name), ', ')
     from public.photographers p
    where p.hmk_self
@@ -404,6 +404,10 @@ select 구분,
             -- '2.대기' 는 사고가 아니라 사람이 챙길 일이다.
             -- 승인은 났는데 프로필이 덜 채워진 공급자 같은 것.
             when 구분 like '2.%'          then 'WARN'
+            -- 반송은 버그가 아니라 사실이다. 웹훅이 돌고 있다는 증거이기도 하다.
+            -- 다만 쌓이면 도메인 평판이 떨어지므로 계속 보이게 둔다.
+            when 검사 in ('반송·스팸신고된 메일', '발송 불가로 표시된 주소')
+                                          then 'WARN'
             else 'FAIL' end as 상태,
        수,
        coalesce(nullif(상세,''), '-') as 상세
