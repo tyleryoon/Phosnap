@@ -15,14 +15,34 @@
 export function normalizePortfolio(portfolio, locations = [], photographerId = 0) {
   if (!Array.isArray(portfolio) || portfolio.length === 0) return [];
 
-  // 이미 새 형식인 경우 (첫 요소가 object)
+  const toUrl = (x) => (typeof x === 'string' ? x : x?.url || '');
+
+  // ── 게시물 형식 — { id, images[], coverIdx, caption, regionId } ──
+  //
+  // 작가 대시보드의 포트폴리오 편집기가 이 형식으로 저장한다.
+  //
+  // 고쳤던 것 둘
+  //   1) coverIdx 를 무시하고 늘 images[0] 을 대표로 썼다.
+  //      작가가 세 번째 사진을 대표로 골라도 첫 장이 나왔다.
+  //   2) regionId 를 안 봐서 지역 필터에 걸리지 않았다.
+  //      (flat 형식 분기는 regionId 를 보고 있었다 — 형식마다 달랐다)
   if (typeof portfolio[0] === 'object' && portfolio[0] !== null && portfolio[0].images) {
-    return portfolio.map((post, i) => ({
-      cover:    post.cover || post.images?.[0] || '',
-      images:   post.images || [post.cover],
-      location: post.location || locations[i] || null,
-      caption:  post.caption || '',
-    }));
+    return portfolio.map((post, i) => {
+      const imgs = (post.images || []).map(toUrl).filter(Boolean);
+      const ci = Number.isInteger(post.coverIdx) ? post.coverIdx : 0;
+      const cover = post.cover || imgs[ci] || imgs[0] || '';
+
+      // 대표를 맨 앞으로 옮긴다. 그래야 cover === images[0] 이 늘 성립하고,
+      // 라이트박스를 열었을 때 대표부터 보인다.
+      const ordered = cover ? [cover, ...imgs.filter(u => u !== cover)] : imgs;
+
+      return {
+        cover,
+        images:   ordered.length ? ordered : [cover].filter(Boolean),
+        location: post.location || post.regionId || locations[i] || null,
+        caption:  post.caption || '',
+      };
+    }).filter(post => post.cover);
   }
 
   // ── Flat format → 게시물로 변환 ──
