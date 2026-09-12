@@ -108,7 +108,10 @@ function VendorDashboard() {
   const [dataError, setDataError] = useState(null);
   const [saveStatus, setSaveStatus] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [bookingActionConfirm, setBookingActionConfirm] = useState(null); // { bookingId, action }
+  const [bookingActionConfirm, setBookingActionConfirm] = useState(null); // { bookingId, action, reason }
+  const [bookingBusy,  setBookingBusy]  = useState(false);
+  // 처리 실패를 조용히 넘기면 벤더는 확정된 줄 안다.
+  const [bookingError, setBookingError] = useState(null);
 
   // mock 업체 폴백 제거.
   // 예전에는 DRESS_VENDORS[0] 로 폴백해, 레코드가 없는 벤더 계정이
@@ -468,22 +471,57 @@ function VendorDashboard() {
   // Booking confirm/reject — 확인 다이얼로그 표시
   const handleBookingAction = (bookingId, action) => {
     const booking = bookings.find(b => b.id === bookingId);
+    setBookingError(null);
     setBookingActionConfirm({ bookingId, action, booking });
   };
 
   // 실제 확정/거절 실행
-  const executeBookingAction = () => {
+  //
+  // 예전에는 setBookings() 로 **React 상태만** 바꿨다. DB 에 가지 않았다.
+  // 새로고침하면 되돌아가는데 누른 사람은 확정한 줄 알았다.
+  // 고객도 작가도 아무것도 몰랐다.
+  //
+  // 이제 내 아이템만 서버에서 처리한다 (FIX_40).
+  // 같은 예약의 다른 참여자 항목은 각자가 결정한다.
+  const executeBookingAction = async () => {
     if (!bookingActionConfirm) return;
-    const { bookingId, action } = bookingActionConfirm;
-    setBookings(prev => prev.map(b => {
-      if (b.id !== bookingId) return b;
-      if (action === 'confirm') return { ...b, status: 'confirmed' };
-      if (action === 'reject') return { ...b, status: 'rejected' };
-      return b;
-    }));
-    setSaveStatus('saved');
-    setTimeout(() => setSaveStatus(null), 2000);
-    setBookingActionConfirm(null);
+    const { bookingId, action, reason } = bookingActionConfirm;
+    setBookingBusy(true);
+    try {
+      const { getMyPendingItems, acceptBookingItem, declineBookingItem } =
+        await import('../lib/supabase');
+
+      // 이 예약에서 내가 결정해야 할 항목만 고른다.
+      const { data: mine, error: listErr } = await getMyPendingItems();
+      if (listErr) throw new Error(listErr.message);
+      const targets = (mine || []).filter(x => x.booking_id === bookingId);
+
+      if (targets.length === 0) {
+        throw new Error('결정할 항목이 없습니다. 이미 처리되었을 수 있습니다.');
+      }
+
+      for (const t of targets) {
+        const { error } = action === 'confirm'
+          ? await acceptBookingItem(t.item_id)
+          : await declineBookingItem(t.item_id, reason || '');
+        if (error) throw new Error(error.message);
+      }
+
+      // 화면을 서버 상태로 다시 맞춘다. 내 머릿속 상태를 믿지 않는다.
+      if (vendorProfile?.id) {
+        const { getVendorBookings } = await import('../lib/supabase');
+        const { data: bk } = await getVendorBookings(vendorProfile.id);
+        setBookings(bk || []);
+      }
+      setSaveStatus('saved');
+      setTimeout(() => setSaveStatus(null), 2000);
+      setBookingActionConfirm(null);
+    } catch (e) {
+      console.error('[VendorDashboard] 예약 처리 실패:', e);
+      setBookingError(e.message || '처리하지 못했습니다.');
+    } finally {
+      setBookingBusy(false);
+    }
   };
 
   // Toggle booking mode for a dress
@@ -4386,7 +4424,38 @@ function VendorDashboard() {
                   borderRadius: '2px',
                   lineHeight: 1.6,
                 }}>
-                  ⚠ {lang === 'ko' ? '예약 거절 시 고객에게 자동으로 전액 환불됩니다' : 'The customer will receive a full refund if this booking is rejected'}
+                  {/* 예전 문구는 "자동으로 전액 환불됩니다" 였다. 사실이 아니다.
+                      환불은 관리자가 처리하고, 여러 항목 중 내 것만 거절되면
+                      나머지는 그대로 진행된다. 없는 일을 약속하면 안 된다. */}
+                  ⚠ {lang === 'ko'
+                      ? '거절하면 고객에게 사유가 전달되고, 해당 금액은 관리자 확인 후 환불됩니다. 같은 예약의 다른 항목은 그대로 진행됩니다.'
+                      : 'The customer will be told why. The amount is refunded after an admin review. Other items in the same booking continue.'}
+                </div>
+              )}
+
+              {/* 거절 사유 — 고객에게 그대로 전달된다 */}
+              {bookingActionConfirm.action === 'reject' && (
+                <textarea
+                  value={bookingActionConfirm.reason || ''}
+                  onChange={(e) => setBookingActionConfirm(v => ({ ...v, reason: e.target.value }))}
+                  placeholder={lang === 'ko' ? '사유 (고객에게 그대로 전달됩니다)' : 'Reason (shown to the customer)'}
+                  rows={2}
+                  style={{
+                    width: '100%', boxSizing: 'border-box', marginBottom: 16,
+                    background: 'var(--bg)', border: '1px solid var(--border)',
+                    color: 'var(--text)', padding: '10px 12px', fontSize: 13,
+                    resize: 'vertical', fontFamily: 'inherit',
+                  }}
+                />
+              )}
+
+              {bookingError && (
+                <div style={{
+                  border: '1px solid rgba(232,85,85,0.4)', background: 'rgba(232,85,85,0.1)',
+                  padding: '10px 12px', marginBottom: 16, fontSize: 12.5, color: '#e85d5d',
+                  lineHeight: 1.7,
+                }}>
+                  처리하지 못했습니다 — {bookingError}
                 </div>
               )}
 
@@ -4403,9 +4472,12 @@ function VendorDashboard() {
                 </button>
                 <button
                   onClick={executeBookingAction}
+                  disabled={bookingBusy}
                   style={{
                     flex: 1, padding: '12px 0', border: 'none',
-                    fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+                    fontFamily: 'var(--font-serif)', fontSize: 13,
+                    cursor: bookingBusy ? 'default' : 'pointer',
+                    opacity: bookingBusy ? 0.6 : 1,
                     background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
                     color: bookingActionConfirm.action === 'confirm' ? '#0B0B0B' : '#fff',
                   }}

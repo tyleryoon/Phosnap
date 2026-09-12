@@ -1326,6 +1326,48 @@ export const updateVendorDress = async (dressId, updates) => {
 /**
  * 의상 삭제
  */
+// ─── 아이템 단위 수락 (FIX_40) ─────────────────────────────────────────
+//
+// 예전에는 작가만 수락할 수 있었고, 작가가 수락하면 헤메·벤더 아이템까지
+// 전부 confirmed 가 됐다. 헤메·벤더는 거절할 방법이 아예 없었다.
+// (벤더 대시보드의 확정 버튼은 React 상태만 바꿨다 — DB 에 안 갔다)
+//
+// 이제 각자 자기 아이템만 수락·거절한다. 예약 상태는 아이템에서 계산된다.
+
+/** 내가 결정해야 할 항목 — 역할마다 따로 만들지 않는다 */
+export const getMyPendingItems = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb.rpc('my_pending_items');
+  if (error) {
+    console.error('[getMyPendingItems] 조회 실패:', error);
+    return { data: [], error };
+  }
+  return { data: data || [], error: null };
+};
+
+/** 내 항목 수락 */
+export const acceptBookingItem = async (itemId) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('accept_booking_item', { p_item: itemId });
+  if (error) return { data: null, error };
+  if (data && data.ok === false) return { data, error: { message: data.message } };
+  return { data, error: null };
+};
+
+/** 내 항목 거절. 사유는 고객에게 그대로 전달된다. */
+export const declineBookingItem = async (itemId, reason = '') => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('decline_booking_item', {
+    p_item: itemId, p_reason: reason || '',
+  });
+  if (error) return { data: null, error };
+  if (data && data.ok === false) return { data, error: { message: data.message } };
+  return { data, error: null };
+};
+
 // ─── 앵커 조회 (FIX_38) ────────────────────────────────────────────────
 
 /**
