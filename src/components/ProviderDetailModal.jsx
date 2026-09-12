@@ -131,6 +131,8 @@ const factsOf = (kind, d) => {
 const ProviderDetailModal = ({ kind, data, onClose, children, ownerNote }) => {
   const { lang } = useLanguage();
   const [lightboxAt, setLightboxAt] = useState(null);
+  // 크게 보고 있는 사진. 아래 썸네일을 누르면 바뀐다.
+  const [heroIdx, setHeroIdx] = useState(0);
 
   // 모달이 열려 있는 동안 뒤 배경이 스크롤되면 안 된다.
   useEffect(() => {
@@ -189,21 +191,55 @@ const ProviderDetailModal = ({ kind, data, onClose, children, ownerNote }) => {
             ×
           </button>
 
-          {/* ── 사진 ── */}
+          {/* ── 사진 ──
+              대표 한 장을 크게 보여주고, 나머지는 아래 썸네일로 늘어놓는다.
+              가로로 전부 늘어놓으면 두 번째 사진부터는 있는 줄도 모른다. */}
           {images.length > 0 ? (
-            <div style={{ display: 'flex', gap: 4, overflowX: 'auto', background: 'var(--bg2)' }}>
-              {images.map((src, i) => (
+            <div style={{ background: 'var(--bg2)' }}>
+              <div style={{ position: 'relative' }}>
                 <img
-                  key={src + i}
-                  src={src}
-                  alt={`${title} ${i + 1}`}
-                  onClick={() => setLightboxAt(i)}
+                  src={images[heroIdx] || images[0]}
+                  alt={`${title} ${heroIdx + 1}`}
+                  onClick={() => setLightboxAt(heroIdx)}
                   style={{
-                    height: 260, width: images.length === 1 ? '100%' : 'auto',
-                    objectFit: 'cover', cursor: 'zoom-in', flexShrink: 0,
+                    width: '100%', height: 320, objectFit: 'cover',
+                    cursor: 'zoom-in', display: 'block',
                   }}
                 />
-              ))}
+                {images.length > 1 && (
+                  <div style={{
+                    position: 'absolute', bottom: 10, right: 12,
+                    background: 'rgba(0,0,0,0.6)', color: '#fff',
+                    fontSize: 11, padding: '4px 10px',
+                    fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
+                  }}>
+                    {heroIdx + 1} / {images.length}
+                  </div>
+                )}
+              </div>
+
+              {images.length > 1 && (
+                <div style={{
+                  display: 'flex', gap: 6, overflowX: 'auto',
+                  padding: '8px 10px', scrollbarWidth: 'thin',
+                }}>
+                  {images.map((src, i) => (
+                    <img
+                      key={src + i}
+                      src={src}
+                      alt={`${title} 미리보기 ${i + 1}`}
+                      onClick={() => setHeroIdx(i)}
+                      style={{
+                        width: 62, height: 62, objectFit: 'cover', flexShrink: 0,
+                        cursor: 'pointer',
+                        border: i === heroIdx ? '2px solid var(--gold)' : '2px solid transparent',
+                        opacity: i === heroIdx ? 1 : 0.6,
+                        transition: 'opacity 0.2s',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             // 사진이 없다는 사실도 알려준다. 빈 영역만 두면 로딩 중인 줄 안다.

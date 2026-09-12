@@ -165,7 +165,8 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
         </div>
       )}
 
-      {/* 하단 썸네일 스트립 (6장 이상일 때) */}
+      {/* 하단 썸네일 스트립 — 2장 이상이면 늘 보여준다.
+          화살표만 있으면 몇 장이 더 있는지, 무엇이 있는지 알 수 없다. */}
       {total > 1 && (
         <div style={{
           position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
