@@ -1272,7 +1272,8 @@ const ProfileEditTab = ({ t, stylistId }) => {
     const fetchProfile = async () => {
       try {
         const { getStylistProfile } = await import('../lib/supabase');
-        const { data } = await getStylistProfile(stylistId);
+        const { data, error } = await getStylistProfile(stylistId);
+        if (error) throw new Error(error.message);
         if (data) {
           setProfile({
             displayName: data.display_name || '',
@@ -1287,11 +1288,12 @@ const ProfileEditTab = ({ t, stylistId }) => {
             portfolioImages: data.portfolio_images || [],
           });
         }
-      } catch {
-        const cached = localStorage.getItem(`profile_${stylistId}`);
-        if (cached) {
-          setProfile(JSON.parse(cached));
-        }
+      } catch (err) {
+        // 예전에는 localStorage 캐시로 폴백했다. 그러면 DB 에 저장되지
+        // 않은 값을 화면에 띄우고, 헤메는 저장된 줄 안다.
+        // 못 읽었으면 못 읽었다고 해야 한다.
+        console.error('[StylistDashboard] 프로필 조회 실패:', err);
+        setSaveStatus('error');
       }
     };
 
@@ -1306,7 +1308,9 @@ const ProfileEditTab = ({ t, stylistId }) => {
 
     try {
       const { updateStylistProfile } = await import('../lib/supabase');
-      await updateStylistProfile(stylistId, {
+      // error 를 안 받으면 저장이 실패해도 '저장되었습니다' 가 뜬다.
+      // 헤메는 저장된 줄 알고 화면을 닫는다.
+      const { error } = await updateStylistProfile(stylistId, {
         display_name: profile.displayName,
         specialty: profile.specialty,
         phone: profile.phone,
@@ -1316,11 +1320,12 @@ const ProfileEditTab = ({ t, stylistId }) => {
         city: profile.location?.city || null,
         portfolio_images: profile.portfolioImages,
       });
+      if (error) throw new Error(error.message);
 
-      localStorage.setItem(`profile_${stylistId}`, JSON.stringify(profile));
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
+      console.error('[StylistDashboard] 프로필 저장 실패:', error);
       setSaveStatus('error');
     } finally {
       setSaving(false);

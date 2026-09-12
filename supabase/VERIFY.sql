@@ -197,6 +197,42 @@ integrity as (
     ) x
 
   union all
+  -- 승인되지 않았는데 고객에게 노출되는 공급자.
+  -- 이게 있으면 승인 절차 자체가 없는 것과 같다 (FIX_34).
+  select '1.정합성', '미승인인데 고객에게 노출', count(*), string_agg(누구, ', ')
+    from (
+      select coalesce(name_ko, name) || '(작가)' as 누구
+        from public.photographers
+       where is_active and not public.is_provider_approved(user_id, 'artist')
+      union all
+      select coalesce(name_ko, display_name) || '(헤메)'
+        from public.stylists
+       where is_active and not public.is_provider_approved(user_id, 'stylist')
+      union all
+      select coalesce(name_ko, name) || '(의상)'
+        from public.dress_vendors
+       where is_active and not public.is_provider_approved(user_id, 'vendor')
+      union all
+      select coalesce(name_ko, name) || '(장소)'
+        from public.venue_vendors
+       where is_active and not public.is_provider_approved(user_id, 'vendor')
+    ) z
+
+  union all
+  -- 승인했는데 고객에게 안 보이는 공급자. 반대 방향의 사고다.
+  -- 작가는 승인됐다고 알고 있는데 예약이 한 건도 안 들어온다.
+  select '1.정합성', '승인됐는데 고객에게 비노출', count(*), string_agg(누구, ', ')
+    from (
+      select coalesce(name_ko, name) || '(작가)' as 누구
+        from public.photographers
+       where not is_active and public.is_provider_approved(user_id, 'artist')
+      union all
+      select coalesce(name_ko, display_name) || '(헤메)'
+        from public.stylists
+       where not is_active and public.is_provider_approved(user_id, 'stylist')
+    ) w
+
+  union all
   -- 주인 없는 의상. vendor_id 와 stylist_id 가 둘 다 비었거나 둘 다 찼다.
   -- 전자는 정산 대상이 없고, 후자는 둘이 된다.
   select '1.정합성', '소유자가 불명확한 의상', count(*),
