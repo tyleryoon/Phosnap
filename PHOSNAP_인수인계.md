@@ -742,7 +742,30 @@ ArtistSchedule 이 `hmk_available` 에만 쓰고 있어서, 작가가 대시보�
 grep -rn "catch {}\|catch (_) {}" src/
 grep -rn "const { data } = await sb\." src/
 grep -rn "Silently ignore\|무시" src/
+node scripts/check-undefined.mjs
 ```
+
+##### 조건부 훅 — "문제가 발생했습니다" 의 정체
+
+검사기가 이것도 본다. React 는 훅을 호출 **순서**로 식별하는데,
+컴포넌트 본문 최상위에 `if (loading) return <Spinner/>` 가 있고
+그 아래에 훅이 있으면 로딩이 끝나는 순간 훅 개수가 달라진다.
+
+```
+Rendered more hooks than during the previous render.
+```
+
+화면에는 **"문제가 발생했습니다" 만** 뜬다. 원인을 알려주지 않는다.
+실제로 `Booking.jsx` 에 `useEffect` 두 개를 early return 아래에 넣어
+예약 화면 전체를 죽였다. 검사기에 규칙을 넣자마자
+`PortfolioLightbox.jsx` 의 같은 버그가 하나 더 나왔다 —
+보던 이미지가 삭제되면 라이트박스가 통째로 죽는 상태였다.
+
+`Booking.jsx` 에는 그래서 이런 주석이 붙어 있다.
+
+> (아래 early return 들은 모든 훅 선언 이후로 옮겨져 있어야 한다)
+
+주석만으로는 못 막는다. 검사기가 막는다.
 
 그리고 쓰기 경로는 **호출부**를 봐야 한다.
 `supabase.js` 가 `error` 를 돌려줘도 화면이 안 보면 소용없다.

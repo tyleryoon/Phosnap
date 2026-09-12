@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import StylistCard from '../components/StylistCard';
@@ -666,6 +666,70 @@ const Booking = () => {
   };
 
   const today = new Date();
+  // ── 선택한 헤메의 자체 의상 ────────────────────────────────────────
+  //
+  // 헤메가 한복·드레스를 들고 다니는 경우가 많다. 그 사람을 부르면
+  // 의상도 함께 받을 수 있어야 한다 (FIX_33).
+  //
+  // ⚠ 이 훅은 반드시 아래 early return 들보다 위에 있어야 한다.
+  //    (isArtistRole / artistLoading / !p 세 개)
+  //    아래에 두면 로딩이 끝나는 순간 훅 개수가 달라져
+  //    "Rendered more hooks than during the previous render" 로 죽는다.
+  //    그래서 stylistData 대신 selectedStylist + dbStylists 로 직접 찾는다.
+  useEffect(() => {
+    let cancelled = false;
+    const st  = (dbStylists || []).find(x => x.id === selectedStylist);
+    const sid = st?.id;
+
+    if (!sid || String(sid).startsWith('self:') || !st?.dressSelf) {
+      setStylistDresses([]);
+      return undefined;
+    }
+
+    (async () => {
+      const { getStylistDresses } = await import('../lib/supabase');
+      const { data, error } = await getStylistDresses(sid);
+      if (cancelled) return;
+      if (error) {
+        // 못 불러왔으면 안 보여준다. 있는데 없는 것처럼 보이는 게
+        // 없는데 있는 것처럼 보이는 것보다 낫다 — 후자는 결제까지 간다.
+        console.error('[Booking] 헤메 자체 의상 조회 실패:', error);
+        setStylistDresses([]);
+        return;
+      }
+      setStylistDresses((data || []).map(d => ({
+        id:          d.id,
+        vendorId:    null,
+        stylistId:   sid,
+        stylistName: st?.name || '',
+        name:        d.name_ko,
+        nameI18n:    { ko: d.name_ko, en: d.name_en, ja: d.name_ja, zh: d.name_zh },
+        category:    d.category,
+        price:       d.price,
+        image:       d.image_url || (d.images && d.images[0]) || '/default-dress.jpg',
+        color:       d.color,
+        sizes:       d.sizes || [],
+        description: d.description,
+      })));
+    })();
+    return () => { cancelled = true; };
+  }, [selectedStylist, dbStylists]);
+
+  // 헤메를 바꾸면 그 헤메의 의상은 목록에서 사라진다.
+  // 선택만 남아 있으면 화면에는 골라둔 것처럼 보이는데 실제로는
+  // 아무 의상도 담기지 않은 채 결제까지 간다.
+  //
+  // availableDresses 는 early return 아래에서 계산되므로 여기서 못 본다.
+  // 대신 "헤메가 바뀌었다" 는 사실만 보고 비운다.
+  const prevStylistRef = useRef(selectedStylist);
+  useEffect(() => {
+    if (prevStylistRef.current !== selectedStylist) {
+      prevStylistRef.current = selectedStylist;
+      setSelectedDress(null);
+      setSelectedDressSize('');
+    }
+  }, [selectedStylist]);
+
   const [calYear,  setCalYear]  = useState(today.getFullYear());
   const [calMonth, setCalMonth] = useState(today.getMonth());
 
@@ -864,48 +928,6 @@ const Booking = () => {
   const stylistData    = allStylists.find(s => s.id === selectedStylist);
   const stylistSvcData = stylistData?.services?.find(sv => sv.name === selectedStylistSvc);
 
-  // ── 선택한 헤메의 자체 의상 ────────────────────────────────────────
-  //
-  // 헤메가 한복·드레스를 들고 다니는 경우가 많다. 그 사람을 부르면
-  // 의상도 함께 받을 수 있어야 한다 (FIX_33).
-  //
-  // '자체 의상 보유' 라고 해놓고 아무것도 안 올린 헤메가 있을 수 있다.
-  // 그때는 그냥 빈 목록이 된다 — 없는 걸 있다고 하지 않는다.
-  useEffect(() => {
-    let cancelled = false;
-    const sid = stylistData?.id;
-    if (!sid || String(sid).startsWith('self:') || !stylistData?.dressSelf) {
-      setStylistDresses([]);
-      return undefined;
-    }
-    (async () => {
-      const { getStylistDresses } = await import('../lib/supabase');
-      const { data, error } = await getStylistDresses(sid);
-      if (cancelled) return;
-      if (error) {
-        // 못 불러왔으면 안 보여준다. 있는데 없는 것처럼 보이는 게
-        // 없는데 있는 것처럼 보이는 것보다 낫다 — 후자는 결제까지 간다.
-        console.error('[Booking] 헤메 자체 의상 조회 실패:', error);
-        setStylistDresses([]);
-        return;
-      }
-      setStylistDresses((data || []).map(d => ({
-        id:        d.id,
-        vendorId:  null,
-        stylistId: sid,
-        stylistName: stylistData?.name || '',
-        name:      d.name_ko,
-        nameI18n:  { ko: d.name_ko, en: d.name_en, ja: d.name_ja, zh: d.name_zh },
-        category:  d.category,
-        price:     d.price,
-        image:     d.image_url || (d.images && d.images[0]) || '/default-dress.jpg',
-        color:     d.color,
-        sizes:     d.sizes || [],
-        description: d.description,
-      })));
-    })();
-    return () => { cancelled = true; };
-  }, [stylistData?.id, stylistData?.dressSelf, stylistData?.name]);
 
   // 의상 관련 데이터
   const dressVendor = p.dressVendorId ? getVendorById(p.dressVendorId) : null;
@@ -925,15 +947,6 @@ const Booking = () => {
   ];
   const selectedDressData = availableDresses.find(d => d.id === selectedDress);
 
-  // 헤메를 바꾸면 그 헤메의 의상은 목록에서 사라진다.
-  // 선택만 남아 있으면 화면에는 골라둔 것처럼 보이는데 실제로는
-  // 아무 의상도 담기지 않은 채 결제까지 간다.
-  useEffect(() => {
-    if (selectedDress && !selectedDressData) {
-      setSelectedDress(null);
-      setSelectedDressSize('');
-    }
-  }, [selectedDress, selectedDressData]);
   const dressPrice = selectedDressData?.price || 0;
 
   // 선택한 날짜에 이 의상의 해당 사이즈가 이미 나갔는지 확인한다.

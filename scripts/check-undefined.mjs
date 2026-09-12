@@ -19,9 +19,12 @@ const GLOBALS = new Set(['window','document','console','navigator','localStorage
 'CustomEvent','HTMLElement','Node','DOMParser','XMLHttpRequest','WebSocket','Worker','matchMedia',
 'getComputedStyle','scrollTo','open','close','print','React','arguments','OffscreenCanvas','ImageData','Path2D','SVGElement','Notification','Audio','MediaRecorder','indexedDB','screen','frames','self','top','parent']);
 
+const HOOKS = /^use[A-Z]/;
+
 let total = 0;
 let parseFails = 0;
 let dupes = 0;
+let hookOrder = 0;
 
 for (const f of files) {
   const rel = f.replace(root, 'src');
@@ -68,7 +71,52 @@ for (const f of files) {
     }
   }
 
+  // 조건부 훅 — early return 뒤에 오는 useXxx().
+  //
+  // React 는 훅을 호출 **순서**로 식별한다. 컴포넌트 본문 최상위에
+  // `if (loading) return <Spinner/>` 가 있고 그 아래에 훅이 있으면,
+  // 로딩이 끝나는 순간 훅 개수가 달라져 렌더가 통째로 죽는다.
+  //   Rendered more hooks than during the previous render.
+  //
+  // 화면에는 "문제가 발생했습니다" 만 뜬다. 원인을 알려주지 않는다.
+  // 실제로 Booking.jsx 에서 이걸로 예약 화면 전체가 죽었다.
   traverse(ast, {
+    Function(path) {
+      const body = path.node.body;
+      if (!body || body.type !== 'BlockStatement') return;
+
+      // 컴포넌트/훅처럼 생긴 것만 본다 (대문자 시작 또는 useXxx).
+      const name =
+        path.node.id?.name ||
+        (path.parent.type === 'VariableDeclarator' && path.parent.id.type === 'Identifier'
+          ? path.parent.id.name : null);
+      if (!name || !(/^[A-Z]/.test(name) || HOOKS.test(name))) return;
+
+      let returnedAt = null;
+      for (const st of body.body) {
+        if (st.type === 'ReturnStatement' || st.type === 'IfStatement') {
+          // if 안에 return 이 있으면 그 지점부터 '조건부' 구간이다.
+          const hasReturn =
+            st.type === 'ReturnStatement' ||
+            JSON.stringify(st.consequent || {}).includes('"ReturnStatement"');
+          if (hasReturn && returnedAt === null) returnedAt = st.loc.start.line;
+          continue;
+        }
+        if (returnedAt === null) continue;
+
+        // 이 지점 이후의 훅 호출을 찾는다.
+        const src = code.slice(st.start, st.end);
+        const m = src.match(/\b(use[A-Z]\w*)\s*\(/);
+        if (m) {
+          hookOrder++;
+          console.log(
+            `✗ ${rel}:${st.loc.start.line}  '${m[1]}()' 가 early return(${returnedAt}행) 뒤에 있음 — 조건부 훅`,
+          );
+          break;   // 함수당 한 번만 알린다
+        }
+      }
+    },
+
     ReferencedIdentifier(path) {
       const n = path.node.name;
       if (GLOBALS.has(n)) return;
@@ -78,6 +126,6 @@ for (const f of files) {
     }
   });
 }
-const bad = total + parseFails + dupes;
-console.log(`\n미정의 참조 ${total}건 · 파싱 실패 ${parseFails}건 · 중복 선언 ${dupes}건`);
+const bad = total + parseFails + dupes + hookOrder;
+console.log(`\n미정의 참조 ${total}건 · 파싱 실패 ${parseFails}건 · 중복 선언 ${dupes}건 · 조건부 훅 ${hookOrder}건`);
 if (bad > 0) process.exitCode = 1;

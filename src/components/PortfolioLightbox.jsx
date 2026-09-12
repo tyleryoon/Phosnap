@@ -9,9 +9,14 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
   const touchStartX = useRef(null);
   const touchStartY = useRef(null);
 
-  const total = images.length;
-  const current = images[idx];
-  if (!current) return null;
+  const total = images?.length || 0;
+  const current = images?.[idx];
+
+  // ⚠ `if (!current) return null;` 은 여기 있으면 안 된다.
+  //    아래에 useCallback 2개와 useEffect 1개가 있어서,
+  //    보고 있던 이미지가 사라지는 순간(목록 갱신·삭제) 훅 개수가 달라져
+  //    "Rendered more hooks than during the previous render" 로 죽는다.
+  //    훅을 다 부른 뒤에 내보낸다. 아래를 보라.
 
   // 이미지 URL (문자열 또는 { url, caption } 객체 모두 지원)
   const getUrl = (img) => typeof img === 'string' ? img : img?.url || '';
@@ -34,6 +39,9 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
       document.body.style.overflow = '';
     };
   }, [onClose, goPrev, goNext]);
+
+  // 훅을 전부 호출한 뒤에 내보낸다 (위 주석 참조).
+  if (!current) return null;
 
   // 터치 스와이프
   const handleTouchStart = (e) => {
