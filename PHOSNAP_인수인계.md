@@ -807,6 +807,37 @@ FIX_34 의 첫 판은 **승인되면 무조건 켰다.** 그건 틀렸다.
 `활성 장소벤더에 아이템 0개` 가 **구조적으로 0** 이 된다.
 사람이 실수로 켤 수 있는 자리를 없앤 것이다.
 
+##### ⚠ 트리거 이름은 실행 순서다
+
+PostgreSQL 은 같은 시점의 트리거를 **이름 알파벳순**으로 실행한다.
+
+FIX_14 가 만들어 둔 `trg_sync_stylist_name` 이 이렇게 하고 있었다.
+
+```sql
+-- 이름과 전문분야가 채워지면 고객에게 노출
+new.is_active := (name_ko 있음 and specialty 있음);
+```
+
+그래서 순서가 이랬다.
+
+```
+trg_guard_activation   →  is_active := false   (자격 없음)
+trg_sync_stylist_name  →  is_active := true    (이름 있음)   ← 나중
+```
+
+guard 가 내려놓은 값을 sync 가 그대로 덮었다.
+`update ... set is_active = false` 라는 **직접 UPDATE 조차 먹지 않았다.**
+`photographers` 에는 이 트리거가 없어서 혼자만 정상 동작했고,
+그래서 "작가만 고쳐지고 헤메·벤더는 안 고쳐지는" 이상한 그림이 나왔다.
+
+두 가지로 막았다 (FIX_37).
+
+1. `sync_stylist_name` 에서 `is_active` 를 뺐다.
+   **노출을 정하는 자리는 하나여야 한다.**
+2. 가드 트리거 이름을 `zzz_guard_activation` 으로 바꿔
+   항상 마지막에 돌게 했다. 아직 못 찾은 트리거가 `is_active` 를
+   건드려도 마지막에 자격대로 되돌린다.
+
 ##### ⚠ BEFORE UPDATE 안에서 provider_listable() 을 부르지 마라
 
 `provider_listable(kind, id)` 는 테이블을 다시 읽는다.
