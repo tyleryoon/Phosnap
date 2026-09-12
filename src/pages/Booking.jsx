@@ -27,6 +27,7 @@ import { computeSlot, buildShootWindow, isServiceAvailable } from '../lib/schedu
 import { initSchedules, buildSlotData } from '../data/schedules';
 import WeatherGoldenHour from '../components/WeatherGoldenHour';
 import PopularityIndicator from '../components/PopularityIndicator';
+import ProviderDetailModal, { AMENITY_LABELS } from '../components/ProviderDetailModal';
 
 // ─── Booking Page ──────────────────────────────────────────────────────
 
@@ -384,6 +385,9 @@ const Booking = () => {
   // 공급자 정보(헤메·의상·장소) 조회가 통째로 실패했을 때의 사유.
   // 빈 목록과 구분해야 한다 — 빈 목록은 "없다", 이건 "모른다" 다.
   const [loadError, setLoadError] = useState(null);
+  // 상세 모달. { kind, data, ownerNote, onPick }
+  // 예전에는 장소를 이름과 가격만 보고 골라야 했다.
+  const [detail, setDetail] = useState(null);
   const [dbVenues, setDbVenues] = useState(null);
   // 선택한 날짜에 헤메·장소가 이미 묶여 있는 구간.
   // 이게 없으면 이미 예약이 찬 헤메를 고객이 그대로 고를 수 있다.
@@ -542,6 +546,8 @@ const Booking = () => {
             image: d.image_url || '/default-dress.jpg',
             color: d.color,
             sizes: d.sizes || [],
+            // 상세 모달이 사이즈별 보유 수량을 보여준다.
+            size_stock: d.size_stock || null,
             description: d.description,
           }));
           setDbDresses(mapped);
@@ -709,6 +715,7 @@ const Booking = () => {
         image:       d.image_url || (d.images && d.images[0]) || '/default-dress.jpg',
         color:       d.color,
         sizes:       d.sizes || [],
+        size_stock:  d.size_stock || null,
         description: d.description,
       })));
     })();
@@ -1778,6 +1785,20 @@ const Booking = () => {
                             }
                           }}
                           bookedSizes={dress.sizes?.filter(size => isDressSizeBooked(dress.id, size)) || []}
+                          onDetail={() => setDetail({
+                            kind: 'dress',
+                            data: dress,
+                            ownerNote: dress.stylistId
+                              ? `${dress.stylistName} 님이 직접 가져오십니다`
+                              : dress.selfOwned
+                                ? '작가님이 보유한 의상입니다'
+                                : null,
+                            onPick: () => {
+                              setSelectedDress(dress.id);
+                              setSelectedDressSize(selectedDress === dress.id ? selectedDressSize : (dress.sizes?.[0] || ''));
+                              setDetail(null);
+                            },
+                          })}
                         />
                       ))}
                     </div>
@@ -1921,16 +1942,9 @@ const Booking = () => {
                                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                                       {venue.capacity && `👥 ${venue.capacity}명`}
-                                      {venue.amenities?.length > 0 && (() => {
-                                        // 예전에는 parking, dressing 처럼 내부 ID 가 그대로 노출됐다
-                                        const amenityLabels = {
-                                          parking: '주차', dressing: '탈의실', restroom: '화장실',
-                                          aircon: '냉난방', lighting: '조명 장비', wifi: 'Wi-Fi',
-                                          elevator: '엘리베이터', pet: '반려동물',
-                                        };
-                                        return ` · ${venue.amenities.slice(0, 3)
-                                          .map(a => amenityLabels[a] || a).join(', ')}`;
-                                      })()}
+                                      {venue.amenities?.length > 0 &&
+                                        ` · ${venue.amenities.slice(0, 3)
+                                          .map(a => AMENITY_LABELS[a] || a).join(', ')}`}
                                     </div>
                                     <div style={{ fontSize: 15, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
                                       ₩{fmt(venue.price)}
@@ -1939,6 +1953,32 @@ const Booking = () => {
                                       </span>
                                     </div>
                                   </div>
+                                  {/* 사진·수용 인원·편의시설을 보고 고를 수 있어야 한다.
+                                      카드 클릭은 선택이므로 버튼을 따로 둔다. */}
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDetail({
+                                        kind: 'venue',
+                                        data: venue,
+                                        ownerNote: vendor?.name ? `${vendor.name} 제공` : null,
+                                        onPick: () => {
+                                          setSelectedVenue(venue.id);
+                                          setSelectedVenueVendor(vendor.id);
+                                          setDetail(null);
+                                        },
+                                      });
+                                    }}
+                                    style={{
+                                      marginTop: 12, width: '100%', padding: '8px 0',
+                                      border: '1px solid var(--border)', background: 'transparent',
+                                      color: 'var(--muted)', fontFamily: 'var(--font-serif)',
+                                      fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer',
+                                    }}
+                                  >
+                                    상세 보기
+                                  </button>
                                 </div>
                               </div>
                             ))}
@@ -2279,6 +2319,41 @@ const Booking = () => {
           </div>
         </div>
       </div>
+
+      {/* ── 공급자 상세 모달 ──
+          장소·의상은 상세 페이지가 없어서 이름과 가격만 보고 골라야 했다.
+          (작가·헤메는 프로필 페이지가 따로 있다) */}
+      {detail && (
+        <ProviderDetailModal
+          kind={detail.kind}
+          data={detail.data}
+          ownerNote={detail.ownerNote}
+          onClose={() => setDetail(null)}
+        >
+          <button
+            type="button"
+            onClick={detail.onPick}
+            style={{
+              flex: 1, padding: '12px 0', border: 'none', background: 'var(--gold)',
+              color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 13,
+              letterSpacing: '0.08em', cursor: 'pointer',
+            }}
+          >
+            선택하기
+          </button>
+          <button
+            type="button"
+            onClick={() => setDetail(null)}
+            style={{
+              padding: '12px 24px', border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--muted)',
+              fontFamily: 'var(--font-serif)', fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            닫기
+          </button>
+        </ProviderDetailModal>
+      )}
 
       {/* ── 결제 전 안내 체크리스트 모달 ── */}
       {showNoticeModal && (

@@ -36,6 +36,8 @@ const DressCard = ({
   // 부모가 고른 사이즈. 주면 그게 정답이다.
   // 안 주면 카드 안에서만 기억한다(기존 동작).
   selectedSize: selectedSizeProp,
+  // 상세 보기. 주면 '상세 보기' 버튼이 생긴다.
+  onDetail,
 }) => {
   const { lang } = useLanguage();
   const [innerSize, setInnerSize] = useState('');
@@ -239,6 +241,22 @@ const DressCard = ({
             onChange={handleSizeChange}
             bookedSizes={bookedSizes}
           />
+        )}
+
+        {/* 상세 보기 — 사진·재고·설명을 보고 고를 수 있어야 한다 */}
+        {onDetail && (
+          <button
+            type="button"
+            onClick={onDetail}
+            style={{
+              marginTop: 12, width: '100%', padding: '8px 0',
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--muted)', fontFamily: 'var(--font-serif)',
+              fontSize: 11, letterSpacing: '0.08em', cursor: 'pointer',
+            }}
+          >
+            상세 보기
+          </button>
         )}
 
         {/* 선택 버튼 */}
