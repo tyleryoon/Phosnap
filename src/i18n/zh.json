@@ -9,7 +9,8 @@
     "dashboard": "仪表板",
     "myBookings": "我的预约",
     "myPage": "我的页面",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "book": "预约"
   },
   "tags": {
     "all": "全部",
@@ -335,8 +336,8 @@
     "tabLogin": "登录",
     "tabSignup": "注册",
     "roleCustomer": "客户",
-    "rolePhotographer": "摄影·摄像艺术家",
-    "roleStylist": "发型·化妆",
+    "rolePhotographer": "摄影师",
+    "roleStylist": "造型师",
     "nameLabel": "姓名",
     "namePlaceholder": "张三",
     "nativeNameLabel": "母语姓名",
@@ -392,8 +393,6 @@
     "orDivider": "或者",
     "selectRole": "请选择您的角色",
     "selectRoleSub": "选择一个角色以开始使用Phosnap。",
-    "rolePhotographer": "摄影师",
-    "roleStylist": "造型师",
     "roleVendor": "服装供应商",
     "processing": "处理中…",
     "emailVerifyRequired": "完成邮箱验证后即可注册",

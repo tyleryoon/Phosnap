@@ -9,7 +9,8 @@
     "dashboard": "ダッシュボード",
     "myBookings": "予約一覧",
     "myPage": "マイページ",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "book": "予約する"
   },
   "tags": {
     "all": "すべて",
@@ -335,8 +336,8 @@
     "tabLogin": "ログイン",
     "tabSignup": "会員登録",
     "roleCustomer": "お客様",
-    "rolePhotographer": "写真・映像作家",
-    "roleStylist": "ヘア・メイクアップ",
+    "rolePhotographer": "撮影作家",
+    "roleStylist": "スタイリスト",
     "nameLabel": "名前",
     "namePlaceholder": "山田太郎",
     "nativeNameLabel": "母国語の名前",
@@ -392,8 +393,6 @@
     "orDivider": "または",
     "selectRole": "役割を選択してください",
     "selectRoleSub": "Phosnapで活動するための役割を選択してください。",
-    "rolePhotographer": "撮影作家",
-    "roleStylist": "スタイリスト",
     "roleVendor": "衣装ベンダー",
     "processing": "処理中…",
     "emailVerifyRequired": "メール認証後に登録が完了します",

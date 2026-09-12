@@ -51,6 +51,7 @@ const Nav = ({ onAuthOpen }) => {
   // ── 활성 탭 판별 (하위 경로 포함) ───────────────────────────────────
   const isActive = (to) => {
     if (to === '/photographers') return pathname.startsWith('/photographer');
+    if (to === '/book')          return pathname.startsWith('/book');
     if (to === '/explore')       return pathname === '/explore';
     if (to === '/for-artists')   return pathname === '/for-artists';
     return pathname === to;
@@ -64,6 +65,9 @@ const Nav = ({ onAuthOpen }) => {
     // 노출 상태를 아는 건 공급자에게 필요한 일이다.
     { to: '/explore',       label: t('nav.explore') },
     { to: '/photographers', label: t('nav.photographers') },
+    // 새 예약 흐름. 날짜·시각을 먼저 정하고 자유롭게 구성한다.
+    // 로그인한 사람에게만 보인다 — 비로그인은 눌러도 로그인 벽에 막힌다.
+    ...(isLoggedIn ? [{ to: '/book', label: t('nav.book') }] : []),
     // 작가 등록 탭: 비로그인 시에만 표시
     ...(!isLoggedIn ? [{ to: '/for-artists', label: t('nav.forArtists') }] : []),
   ];

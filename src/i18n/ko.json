@@ -9,7 +9,8 @@
     "dashboard": "대시보드",
     "myBookings": "내 예약",
     "myPage": "마이페이지",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "book": "예약하기"
   },
   "tags": {
     "all": "전체",
@@ -381,8 +382,8 @@
     "tabLogin": "로그인",
     "tabSignup": "회원가입",
     "roleCustomer": "고객",
-    "rolePhotographer": "사진·영상 작가",
-    "roleStylist": "헤어·메이크업",
+    "rolePhotographer": "촬영 작가",
+    "roleStylist": "스타일리스트",
     "nameLabel": "이름",
     "namePlaceholder": "홍길동",
     "nativeNameLabel": "자국어 이름",
@@ -438,8 +439,6 @@
     "orDivider": "또는",
     "selectRole": "역할을 선택해주세요",
     "selectRoleSub": "Phosnap에서 활동할 역할을 선택해주세요.",
-    "rolePhotographer": "촬영 작가",
-    "roleStylist": "스타일리스트",
     "roleVendor": "의상 벤더",
     "processing": "처리 중…",
     "emailVerifyRequired": "이메일 인증 후 가입이 완료됩니다",

@@ -9,7 +9,8 @@
     "dashboard": "Dashboard",
     "myBookings": "My Bookings",
     "myPage": "My Page",
-    "logout": "Log out"
+    "logout": "Log out",
+    "book": "Book"
   },
   "tags": {
     "all": "All",
@@ -335,8 +336,8 @@
     "tabLogin": "Log In",
     "tabSignup": "Sign Up",
     "roleCustomer": "Client",
-    "rolePhotographer": "Photo & Video Artist",
-    "roleStylist": "Hair & Makeup",
+    "rolePhotographer": "Photographer",
+    "roleStylist": "Stylist",
     "nameLabel": "Name",
     "namePlaceholder": "Your name",
     "nativeNameLabel": "Native Name",
@@ -392,8 +393,6 @@
     "orDivider": "or",
     "selectRole": "Select your role",
     "selectRoleSub": "Choose a role to get started on Phosnap.",
-    "rolePhotographer": "Photographer",
-    "roleStylist": "Stylist",
     "roleVendor": "Dress Vendor",
     "processing": "Processing…",
     "emailVerifyRequired": "Email verification required to complete signup",
