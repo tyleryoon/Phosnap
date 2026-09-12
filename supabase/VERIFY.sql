@@ -257,6 +257,41 @@ integrity as (
     ) u
 
   union all
+  -- 점유 구간 계산이 JS 와 SQL 에서 어긋나는가 (FIX_38).
+  --
+  -- 같은 규칙이 두 곳에 있다.
+  --   src/lib/scheduling.js  computeSlot        — 예약을 만들 때
+  --   provider_busy_window()                    — 가능한 공급자를 찾을 때
+  --
+  -- 한쪽만 고치면 "목록에는 떴는데 저장하면 겹치는" 예약이 생긴다.
+  -- 이미 저장된 아이템의 start_at/end_at 을 SQL 로 다시 계산해 비교한다.
+  select '1.정합성', '점유 구간이 JS·SQL 에서 다름', count(*),
+         string_agg(item_name || ' (' || 저장 || ' vs ' || 계산 || ')', ', ')
+    from (
+      select i.item_name,
+             to_char(i.start_at at time zone 'Asia/Seoul', 'MM-DD HH24:MI') as 저장,
+             to_char(lower(public.provider_busy_window(
+                       i.timing, b.shoot_start_at, b.shoot_end_at,
+                       i.duration_minutes, i.offset_minutes))
+                     at time zone 'Asia/Seoul', 'MM-DD HH24:MI') as 계산
+        from public.booking_items i
+        join public.bookings b on b.id = i.booking_id
+       where b.status in ('pending','confirmed','completed')
+         and i.status <> 'cancelled'
+         and b.shoot_start_at is not null
+         and i.start_at is not null
+         and i.timing is not null
+         -- 의상은 하루 단위라 분 단위 비교가 의미 없다
+         and i.timing <> 'day'
+         -- FIX_38 이전 예약은 소요·버퍼가 없어 다시 계산할 수 없다
+         and i.duration_minutes is not null
+         and abs(extract(epoch from (
+               i.start_at - lower(public.provider_busy_window(
+                 i.timing, b.shoot_start_at, b.shoot_end_at,
+                 i.duration_minutes, i.offset_minutes))))) > 60
+    ) bw
+
+  union all
   -- 주인 없는 의상. vendor_id 와 stylist_id 가 둘 다 비었거나 둘 다 찼다.
   -- 전자는 정산 대상이 없고, 후자는 둘이 된다.
   select '1.정합성', '소유자가 불명확한 의상', count(*),

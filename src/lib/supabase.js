@@ -788,6 +788,10 @@ export const createBooking = async (booking) => {
       quantity:          it.quantity || 1,
       price:             Number(it.price) || 0,
       timing:            it.timing || 'shoot',
+      // 소요·버퍼를 같이 남긴다. 이게 없으면 촬영 시간이 바뀌었을 때
+      // 점유 구간을 다시 계산할 수가 없다 (FIX_38).
+      duration_minutes:  it.durationMinutes ?? null,
+      offset_minutes:    it.offsetMinutes ?? null,
       start_at:          slot ? (slot.busyStart ?? slot.start).toISOString() : null,
       end_at:            slot ? (slot.busyEnd   ?? slot.end).toISOString()   : null,
       commission_rate:   it.rate,
@@ -1322,6 +1326,56 @@ export const updateVendorDress = async (dressId, updates) => {
 /**
  * 의상 삭제
  */
+// ─── 앵커 조회 (FIX_38) ────────────────────────────────────────────────
+
+/**
+ * "이 시간에 가능한 공급자" 를 한 번에 가져온다.
+ *
+ * 새 예약 흐름은 지역·날짜·시각·길이를 먼저 정하고, 그 조건에
+ * 가능한 것만 보여준다. 판정은 서버가 한다 —
+ * 작가가 100명이면 스케줄 조회가 100번 나갈 수는 없다.
+ *
+ * 돌아오는 모양
+ *   { shootStart, shootEnd, photographers[], stylists[], dresses[], venues[] }
+ *
+ *   stylists 는 **사람이 아니라 시술 메뉴 단위**다.
+ *   같은 헤메라도 샵 시술은 되는데 종일 동행은 안 될 수 있다.
+ *
+ *   dresses 의 booked_sizes 는 그 날 이미 나간 사이즈별 개수다.
+ *   화면이 size_stock 과 비교해 사이즈 버튼을 잠근다.
+ *
+ * @param {Object} anchor
+ * @param {string} anchor.locationId  'seoul' 등. 없으면 전 지역
+ * @param {string} anchor.date        'YYYY-MM-DD'
+ * @param {string} anchor.time        'HH:MM'
+ * @param {number} anchor.hours       촬영 길이
+ */
+export const getAvailableProviders = async ({ locationId, date, time, hours = 2 }) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  if (!date || !time) {
+    return { data: null, error: { message: '날짜와 시각이 필요합니다.' } };
+  }
+
+  const { data, error } = await sb.rpc('available_providers', {
+    p_location: locationId || null,
+    p_date:     date,
+    p_start:    time.length === 5 ? `${time}:00` : time,
+    p_hours:    Number(hours) || 2,
+  });
+
+  if (error) {
+    // 조용히 빈 목록을 주면 "그 시간엔 아무도 없다" 로 보인다.
+    // 못 물어본 것과 없는 것은 다르다.
+    console.error('[getAvailableProviders] 조회 실패:', error);
+    return { data: null, error };
+  }
+  if (data?.error) {
+    return { data: null, error: { message: data.error } };
+  }
+  return { data, error: null };
+};
+
 // ─── 헤메 자체 의상 (FIX_33) ───────────────────────────────────────────
 //
 // dress_items 를 벤더와 헤메가 같이 쓴다. vendor_id / stylist_id 중
