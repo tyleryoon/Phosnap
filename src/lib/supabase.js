@@ -1329,6 +1329,30 @@ export const updateVendorDress = async (dressId, updates) => {
 // ─── 앵커 조회 (FIX_38) ────────────────────────────────────────────────
 
 /**
+ * 공급자가 실제로 있는 지역만 돌려준다.
+ *
+ * mock 레지스트리(data/locationUtils)는 예전 더미 작가 기준이라
+ * 고객에게 "서울 말고도 있다" 는 인상을 주지만 골라도 아무도 없다.
+ * 활성 작가가 있는 지역만 보여준다.
+ */
+export const getActiveLocations = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('photographers')
+    .select('location_id')
+    .eq('is_active', true)
+    .not('location_id', 'is', null);
+  if (error) {
+    console.error('[getActiveLocations] 조회 실패:', error);
+    return { data: [], error };
+  }
+  const ids = [...new Set((data || []).map(r => r.location_id).filter(Boolean))];
+  return { data: ids.sort(), error: null };
+};
+
+
+/**
  * "이 시간에 가능한 공급자" 를 한 번에 가져온다.
  *
  * 새 예약 흐름은 지역·날짜·시각·길이를 먼저 정하고, 그 조건에

@@ -72,6 +72,9 @@ const ArtistRegister = React.lazy(() => import('./pages/ArtistRegister'));
 const ArtistDashboard = React.lazy(() => import('./pages/ArtistDashboard'));
 const Support = React.lazy(() => import('./pages/Support'));
 const VendorRegister = React.lazy(() => import('./pages/VendorRegister'));
+// 새 예약 흐름 — 지역·날짜·시각·길이를 먼저 정하고 자유롭게 구성한다.
+// 기존 /booking/:id 는 작가 프로필에서 바로 예약하는 경로로 남겨둔다.
+const BookCompose = React.lazy(() => import('./pages/BookCompose'));
 const VendorDashboard = React.lazy(() => import('./pages/VendorDashboard'));
 const Vendors = React.lazy(() => import('./pages/Vendors'));
 const CustomerDashboard = React.lazy(() => import('./pages/CustomerDashboard'));
@@ -413,6 +416,7 @@ const AppContent = () => {
           <Route path="/explore"             element={<RoleAwareExplore />} />
           <Route path="/photographers"       element={<Photographers onAuthOpen={(m) => setAuthModal(m)} />} />
           <Route path="/photographer/:id"    element={<Profile      onAuthOpen={(m) => setAuthModal(m)} />} />
+          <Route path="/book"                element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><BookCompose /></ProtectedRoute>} />
           <Route path="/booking/:id"         element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><Booking /></ProtectedRoute>} />
           <Route path="/for-artists"         element={<ForArtists   onAuthOpen={(m) => setAuthModal(m)} />} />
           <Route path="/waitlist"            element={<Waitlist />} />
