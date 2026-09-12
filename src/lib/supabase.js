@@ -1331,6 +1331,26 @@ export const updateVendorDress = async (dressId, updates) => {
 // 역할 가드(FIX_23) 때문에 vendor 역할이 없는 헤메는 그 insert 가 막혔다.
 // 버튼은 있는데 눌러도 안 되는 상태였다.
 
+/**
+ * 공급자가 고객에게 노출되고 있는지, 아니면 무엇이 비었는지 (FIX_35).
+ *
+ * 노출 조건은 승인 하나가 아니다 — 지역과 판매 항목도 있어야 한다.
+ * 그 사실을 화면에 보여주지 않으면 공급자는 이유를 알 수 없다.
+ *
+ * @param {'photographer'|'stylist'|'dress_vendor'|'venue_vendor'} kind
+ * @param {string} id
+ */
+export const getListingStatus = async (kind, id) => {
+  const sb = await getSupabase();
+  if (!sb || !kind || !id) return { data: null, error: null };
+  const { data, error } = await sb.rpc('provider_listing_status', {
+    p_kind: kind,
+    p_id:   id,
+  });
+  if (error) return { data: null, error };
+  return { data, error: null };
+};
+
 /** 헤메 본인의 자체 의상 목록 */
 export const getStylistDresses = async (stylistId) => {
   const sb = await getSupabase();

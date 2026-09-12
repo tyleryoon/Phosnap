@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import Footer  from '../components/Footer';
 import Chat from '../components/Chat';
+import ListingStatus from '../components/ListingStatus';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
@@ -886,6 +887,10 @@ const ArtistDashboard = () => {
 
         {!loading && (
           <>
+
+            {/* 고객에게 보이고 있는지. 안 보이면 무엇이 비었는지 알려준다.
+                승인만으로는 노출되지 않는다 — 지역과 상품도 있어야 한다. */}
+            <ListingStatus kind="photographer" id={artistLegacyId} />
 
             {/* ════════════════════════ 탭: 홈 ════════════════════════ */}
             {activeTab === 'home' && (

@@ -219,18 +219,42 @@ integrity as (
     ) z
 
   union all
-  -- 승인했는데 고객에게 안 보이는 공급자. 반대 방향의 사고다.
-  -- 작가는 승인됐다고 알고 있는데 예약이 한 건도 안 들어온다.
-  select '1.정합성', '승인됐는데 고객에게 비노출', count(*), string_agg(누구, ', ')
+  -- 노출 자격과 실제 노출이 어긋난 경우. 트리거가 도는 한 0이어야 한다 (FIX_35).
+  -- 자격 = 승인됨 AND 지역 있음 AND 팔 것이 하나 이상.
+  select '1.정합성', '노출 자격과 실제가 불일치', count(*), string_agg(누구, ', ')
     from (
       select coalesce(name_ko, name) || '(작가)' as 누구
         from public.photographers
-       where not is_active and public.is_provider_approved(user_id, 'artist')
+       where is_active is distinct from public.provider_listable('photographer', id)
       union all
       select coalesce(name_ko, display_name) || '(헤메)'
         from public.stylists
-       where not is_active and public.is_provider_approved(user_id, 'stylist')
+       where is_active is distinct from public.provider_listable('stylist', id)
+      union all
+      select coalesce(name_ko, name) || '(의상)'
+        from public.dress_vendors
+       where is_active is distinct from public.provider_listable('dress_vendor', id)
+      union all
+      select coalesce(name_ko, name) || '(장소)'
+        from public.venue_vendors
+       where is_active is distinct from public.provider_listable('venue_vendor', id)
     ) w
+
+  union all
+  -- 승인은 났는데 프로필이 덜 채워져 아직 안 보이는 공급자.
+  -- 사고는 아니지만 연락해서 채우게 해야 한다. 본인은 승인만 보고 기다린다.
+  select '2.대기', '승인됐지만 프로필 미완성', count(*), string_agg(누구, ', ')
+    from (
+      select coalesce(name_ko, name) || '(작가)' as 누구
+        from public.photographers
+       where public.is_provider_approved(user_id, 'artist')
+         and not public.provider_listable('photographer', id)
+      union all
+      select coalesce(name_ko, display_name) || '(헤메)'
+        from public.stylists
+       where public.is_provider_approved(user_id, 'stylist')
+         and not public.provider_listable('stylist', id)
+    ) u
 
   union all
   -- 주인 없는 의상. vendor_id 와 stylist_id 가 둘 다 비었거나 둘 다 찼다.
@@ -375,8 +399,11 @@ all_rows as (
 
 select 구분,
        검사,
-       case when kind = 'info' then 'INFO'
-            when 수 = 0       then 'PASS'
+       case when kind = 'info'           then 'INFO'
+            when 수 = 0                   then 'PASS'
+            -- '2.대기' 는 사고가 아니라 사람이 챙길 일이다.
+            -- 승인은 났는데 프로필이 덜 채워진 공급자 같은 것.
+            when 구분 like '2.%'          then 'WARN'
             else 'FAIL' end as 상태,
        수,
        coalesce(nullif(상세,''), '-') as 상세

@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LocationPicker from '../components/LocationPicker';
+import ListingStatus from '../components/ListingStatus';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
@@ -1751,6 +1752,10 @@ export default function StylistDashboard() {
             </button>
           ))}
         </div>
+
+        {/* 고객에게 보이고 있는지. 승인만으로는 노출되지 않는다 —
+            지역과 시술 메뉴도 있어야 한다 (FIX_35). */}
+        <ListingStatus kind="stylist" id={stylistId} />
 
         {activeTab === 'bookings' && <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />}
         {/* 이 컴포넌트는 useLanguage() 를 `language` 로 받는다.
