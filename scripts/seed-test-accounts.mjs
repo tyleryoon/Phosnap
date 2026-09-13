@@ -6,11 +6,14 @@
 // 쓰는 법 (프로젝트 루트에서)
 //
 //   SUPABASE_URL=https://znjkyvijjlahsxczweqh.supabase.co \
-//   SUPABASE_SERVICE_KEY=<Supabase 대시보드 > Settings > API > service_role> \
+//   SUPABASE_SERVICE_KEY=<Settings > API > Legacy API keys > service_role> \
 //   SEED_PASSWORD=<테스트 계정 공통 비밀번호> \
 //   node scripts/seed-test-accounts.mjs
 //
 //   개수를 바꾸려면  SEED_COUNT=10  (기본 10)
+//
+// ⚠ key 는 반드시 **Legacy API keys 의 service_role**(eyJ… 로 시작)을 쓴다.
+//   새 형식(sb_secret_…)은 REST 는 통과하지만 계정 생성 API 가 거부한다.
 //
 // ⚠ 비밀번호와 service_role key 는 **이 파일에 적지 않는다.**
 //   적으면 GitHub 에 그대로 올라간다. 실행할 때만 환경변수로 준다.
@@ -36,12 +39,44 @@ const KEY   = process.env.SUPABASE_SERVICE_KEY;
 const PW    = process.env.SEED_PASSWORD;
 const COUNT = Number(process.env.SEED_COUNT || 10);
 
+// ── key 형식 진단 ──────────────────────────────────────────────────────
+//
+// Supabase 가 API key 체계를 바꾸면서 두 종류가 공존한다.
+//
+//   sb_secret_... / sb_publishable_...   새 형식. 불투명 문자열
+//   eyJ...                               예전 형식. JWT
+//
+// REST(/rest/v1)는 둘 다 받는데, **계정을 만드는 인증 서버(/auth/v1/admin)는
+// 아직 JWT 만 받는다.** 새 형식을 주면 이렇게 거부한다.
+//
+//   401 This endpoint requires a valid Bearer token
+//
+// key 가 틀린 게 아니라 **형식이 안 맞는 것**이라 메시지만 보면 헤매게 된다.
+// 실행하기 전에 알려준다.
+const looksJwt = (k) => typeof k === 'string' && k.startsWith('eyJ');
+
+if (KEY && !looksJwt(KEY)) {
+  console.error(`
+이 key 로는 계정을 만들 수 없습니다.
+
+  받은 key   ${KEY.slice(0, 12)}…
+  필요한 것  eyJ… 로 시작하는 JWT
+
+  계정 생성 API(/auth/v1/admin)는 아직 JWT 형식만 받습니다.
+  sb_secret_… 같은 새 형식은 REST 에서는 통하지만 여기서는 401 이 납니다.
+
+  Supabase 대시보드 > Settings > API > **Legacy API keys** 탭에서
+  service_role (eyJ… 로 시작) 을 복사해 다시 실행하세요.
+`);
+  process.exit(1);
+}
+
 if (!URL || !KEY || !PW) {
   console.error(`
 필요한 환경변수가 없습니다.
 
   SUPABASE_URL           https://<project>.supabase.co
-  SUPABASE_SERVICE_KEY   Supabase 대시보드 > Settings > API > service_role
+  SUPABASE_SERVICE_KEY   Settings > API > Legacy API keys > service_role (eyJ… 로 시작)
   SEED_PASSWORD          테스트 계정 공통 비밀번호
 
 예시
