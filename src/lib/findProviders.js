@@ -44,11 +44,39 @@ export const KIND_LABEL = {
 
 const first = (...xs) => xs.find(x => x !== undefined && x !== null) ?? null;
 
+// 대표사진을 포트폴리오에서 뽑는다.
+//
+// 왜 필요한가
+//   stylists 테이블에는 img 컬럼이 아예 없다. 사진은 portfolio_images 에만
+//   있다. 그래서 img 만 보면 **헤메 카드가 전부 '사진 없음' 으로 나온다** —
+//   사진이 멀쩡히 있는데도. 실제로 33개 메뉴 중 30개가 그랬다. (규칙 5-18)
+//
+//   작가 포트폴리오는 모양이 다르다. 게시물 배열이고 각 게시물이 사진을
+//   여럿 갖는다: [{ images: [...], coverIdx }]. 대표사진은 coverIdx 가
+//   가리키는 장이다 (드래그로 순서를 바꿔 대표를 정하는 기능이 있다).
+//
+//   두 모양을 다 받는다. 못 찾으면 null 을 돌려준다 —
+//   빈 문자열로 채우면 <img src=""> 가 되어 깨진 아이콘이 뜬다.
+const coverOf = (portfolio) => {
+  if (!Array.isArray(portfolio) || !portfolio.length) return null;
+  const p0 = portfolio[0];
+  // 헤메: ['https://…', …]
+  if (typeof p0 === 'string') return p0;
+  // 작가: [{ images: [...], coverIdx }]
+  if (Array.isArray(p0?.images) && p0.images.length) {
+    const i = Number.isInteger(p0.coverIdx) ? p0.coverIdx : 0;
+    const hit = p0.images[i] ?? p0.images[0];
+    return typeof hit === 'string' ? hit : (hit?.url ?? null);
+  }
+  // 기타: [{ url }]
+  return p0?.url ?? null;
+};
+
 const normalizePhotographer = (p) => ({
   kind: 'photographer',
   id: p.id,
   name: first(p.name_ko, p.name),
-  image: first(p.img, p.image, p.avatar_url),
+  image: first(p.img, p.image, p.avatar_url, coverOf(p.portfolio)),
   portfolio: Array.isArray(p.portfolio) ? p.portfolio : [],
   price: first(p.price_from, p.price),
   rating: first(p.rating),
@@ -76,6 +104,8 @@ const normalizeStylist = (s) => {
   const services = Array.isArray(s.stylist_services) ? s.stylist_services : [];
   const prices = services.map(v => v.price).filter(v => typeof v === 'number');
   const byPerson = !s.service_id;   // 둘러보기 경로인가
+  const photos = Array.isArray(s.portfolio) ? s.portfolio
+               : Array.isArray(s.portfolio_images) ? s.portfolio_images : [];
 
   return {
     kind: 'stylist',
@@ -88,9 +118,9 @@ const normalizeStylist = (s) => {
     name: first(s.name_ko, s.display_name, s.name),
     serviceName: first(s.service_name),
     serviceCount: byPerson ? services.length : null,
-    image: first(s.img, s.image, s.avatar_url),
-    portfolio: Array.isArray(s.portfolio) ? s.portfolio
-             : Array.isArray(s.portfolio_images) ? s.portfolio_images : [],
+    // stylists 에는 img 컬럼이 없다. 포트폴리오 첫 장이 대표사진이다.
+    image: first(s.img, s.image, s.avatar_url, coverOf(photos)),
+    portfolio: photos,
     // 메뉴 단위면 그 메뉴 값, 사람 단위면 최저가.
     price: first(s.price, prices.length ? Math.min(...prices) : null),
     rating: first(s.rating),
