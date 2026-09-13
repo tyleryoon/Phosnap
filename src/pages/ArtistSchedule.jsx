@@ -2786,6 +2786,19 @@ const ArtistSchedule = () => {
     };
     const setCover = (pfIdx, imgIdx) => updatePf(pfIdx, 'coverIdx', imgIdx);
 
+    // 드래그로 순서 바꾸기. 맨 앞이 대표사진이다.
+    //
+    // coverIdx 는 남겨두되 0 으로 맞춘다 — 순서가 곧 대표이므로
+    // 두 값이 어긋날 여지를 없앤다. (normalizePortfolio 도 대표를
+    // images 맨 앞으로 옮기므로 저장 형태와 표시가 일치한다)
+    const reorderPfImages = (pfIdx, nextImages) => {
+      const next = portfolio.map((p, i) =>
+        i === pfIdx ? { ...p, images: nextImages, coverIdx: 0 } : p);
+      const updated = { ...profile, portfolio: next };
+      saveProfile('photographer', artistId, updated);
+      setProfileState(updated);
+    };
+
     // ── 대표 게시글 토글 (최대 5개) ──
     const featuredCount = portfolio.filter(pf => pf.featured).length;
     const toggleFeatured = (idx) => {
@@ -3178,7 +3191,7 @@ const ArtistSchedule = () => {
                   {isExpanded && (
                     <div style={{ borderTop: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg2)' }}>
                       <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 10 }}>
-                        사진 관리 (최대 10장) — ★ 클릭으로 게시글 대표사진 지정
+                        사진 관리 (최대 10장) — 끌어서 순서 변경, 맨 앞이 대표사진 (★ 로도 지정 가능)
                       </div>
                       {/* 드래그앤드롭 업로드 영역 */}
                       <PortfolioDropZone
@@ -3187,6 +3200,7 @@ const ArtistSchedule = () => {
                         onUpload={(files) => addPfImages(idx, files)}
                         onRemove={(imgIdx) => removePfImage(idx, imgIdx)}
                         onSetCover={(imgIdx) => setCover(idx, imgIdx)}
+                        onReorder={(nextImages) => reorderPfImages(idx, nextImages)}
                         maxCount={10}
                       />
                     </div>
@@ -3443,9 +3457,13 @@ const ArtistSchedule = () => {
   };
 
   // ── 포트폴리오 드래그앤드롭 이미지 관리 영역 ──
-  const PortfolioDropZone = ({ images, coverIdx, onUpload, onRemove, onSetCover, maxCount }) => {
+  // onReorder 를 주면 썸네일을 끌어 순서를 바꿀 수 있다.
+  // 맨 앞이 대표사진이다 — ★ 버튼과 결과가 같지만 조작이 더 직관적이다.
+  const PortfolioDropZone = ({ images, coverIdx, onUpload, onRemove, onSetCover, onReorder, maxCount }) => {
     const [dragOver, setDragOver] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [dragFrom, setDragFrom] = useState(null);
+    const [dragTo,   setDragTo]   = useState(null);
     const fileRef = useRef(null);
     const canAdd = images.length < maxCount;
 
@@ -3460,13 +3478,39 @@ const ArtistSchedule = () => {
     return (
       <div>
         {/* 현재 이미지 그리드 */}
+        {onReorder && images.length > 1 && (
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
+            끌어서 순서를 바꾸세요. <span style={{ color: 'var(--gold)' }}>맨 앞이 대표사진</span>입니다.
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
           {images.map((img, i) => (
-            <div key={i} style={{
-              position: 'relative', width: 90, height: 90,
-              border: i === coverIdx ? '2px solid var(--gold)' : '1px solid var(--border)',
-            }}>
-              <img src={img} alt={`pf-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div
+              key={i}
+              draggable={!!onReorder}
+              onDragStart={() => setDragFrom(i)}
+              onDragEnter={() => setDragTo(i)}
+              onDragOver={(e) => { if (onReorder) e.preventDefault(); }}
+              onDragEnd={() => {
+                if (onReorder && dragFrom !== null && dragTo !== null && dragFrom !== dragTo) {
+                  const next = [...images];
+                  const [moved] = next.splice(dragFrom, 1);
+                  next.splice(dragTo, 0, moved);
+                  onReorder(next);
+                }
+                setDragFrom(null); setDragTo(null);
+              }}
+              style={{
+                position: 'relative', width: 90, height: 90,
+                border: i === coverIdx ? '2px solid var(--gold)' : '1px solid var(--border)',
+                cursor: onReorder ? 'grab' : 'default',
+                opacity: dragFrom === i ? 0.4 : 1,
+                outline: dragTo === i && dragFrom !== null && dragFrom !== i
+                  ? '2px solid var(--gold)' : 'none',
+                outlineOffset: 2,
+              }}
+            >
+              <img src={img} alt={`pf-${i}`} draggable={false} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               {/* 대표 지정 버튼 */}
               <button
                 onClick={() => onSetCover(i)}
@@ -3522,9 +3566,14 @@ const ArtistSchedule = () => {
   // ── TAB 4: 상품 관리 (소품, 의상, 스냅촬영상품) ────────────────────────────────────────────
 
   // ── 공통: 드래그앤드롭 이미지 업로드 컴포넌트 ──
-  const ImageDropZone = ({ images, onUpload, onRemove, maxCount = 5, label = '사진', bucket = 'portfolios' }) => {
+  // onReorder 를 주면 썸네일을 드래그해 순서를 바꿀 수 있다.
+  // 맨 앞이 대표사진이다 (normalizePortfolio 가 coverIdx 를 보고,
+  // 대표를 images 맨 앞으로 옮긴다).
+  const ImageDropZone = ({ images, onUpload, onRemove, onReorder, maxCount = 5, label = '사진', bucket = 'portfolios' }) => {
     const [dragOver, setDragOver] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [dragFrom, setDragFrom] = useState(null);
+    const [dragTo,   setDragTo]   = useState(null);
     const fileRef = useRef(null);
 
     const processFiles = async (files) => {
@@ -3566,16 +3615,64 @@ const ArtistSchedule = () => {
             {uploading ? '⟳ 업로드 중...' : dragOver ? '여기에 놓으세요' : '클릭 또는 드래그하여 이미지 업로드'}
           </div>
         </div>
-        {/* 미리보기 */}
+        {/* 미리보기 — 맨 앞이 대표사진 */}
         {images && images.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {images.map((img, imgIdx) => (
-              <div key={imgIdx} style={{ position: 'relative', width: 60, height: 60 }}>
-                <img src={img} alt={`img-${imgIdx}`} style={{ width: '100%', height: '100%', objectFit: 'cover', border: '1px solid var(--border)' }} />
-                <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: '#e85d5d', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <>
+            {onReorder && images.length > 1 && (
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+                끌어서 순서를 바꾸세요. <span style={{ color: 'var(--gold)' }}>맨 앞이 대표사진</span>입니다.
               </div>
-            ))}
-          </div>
+            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {images.map((img, imgIdx) => (
+                <div
+                  key={imgIdx}
+                  draggable={!!onReorder}
+                  onDragStart={() => setDragFrom(imgIdx)}
+                  onDragEnter={() => setDragTo(imgIdx)}
+                  onDragOver={(e) => { if (onReorder) e.preventDefault(); }}
+                  onDragEnd={() => {
+                    if (onReorder && dragFrom !== null && dragTo !== null && dragFrom !== dragTo) {
+                      const next = [...images];
+                      const [moved] = next.splice(dragFrom, 1);
+                      next.splice(dragTo, 0, moved);
+                      onReorder(next);
+                    }
+                    setDragFrom(null); setDragTo(null);
+                  }}
+                  style={{
+                    position: 'relative', width: 60, height: 60,
+                    cursor: onReorder ? 'grab' : 'default',
+                    opacity: dragFrom === imgIdx ? 0.4 : 1,
+                    outline: dragTo === imgIdx && dragFrom !== null && dragFrom !== imgIdx
+                      ? '2px solid var(--gold)' : 'none',
+                    outlineOffset: 2,
+                  }}
+                >
+                  <img
+                    src={img}
+                    alt={`img-${imgIdx}`}
+                    draggable={false}
+                    style={{
+                      width: '100%', height: '100%', objectFit: 'cover',
+                      border: imgIdx === 0 ? '2px solid var(--gold)' : '1px solid var(--border)',
+                    }}
+                  />
+                  {imgIdx === 0 && (
+                    <div style={{
+                      position: 'absolute', bottom: 0, left: 0, right: 0,
+                      background: 'var(--gold)', color: '#0B0B0B',
+                      fontSize: 9, textAlign: 'center', padding: '1px 0',
+                      fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
+                    }}>
+                      대표
+                    </div>
+                  )}
+                  <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: '#e85d5d', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     );
