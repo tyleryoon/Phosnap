@@ -2517,6 +2517,48 @@ export const getVenueVendors = async (locationId) => {
 };
 
 /**
+ * 지역 전체의 장소 아이템. 찾기 페이지가 쓴다.
+ *
+ * getVenueItems(vendorId) 는 벤더 한 곳의 것만 준다 — 대시보드용이다.
+ * 고객이 "서울 장소" 를 둘러볼 때는 벤더를 모르므로 여기가 필요하다.
+ */
+export const getVenueItemsByLocation = async (locationId) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  let q = sb.from('venue_items')
+    .select('*, venue_vendors!inner(id, name_ko, location_id, is_active)')
+    .eq('venue_vendors.is_active', true);
+  if (locationId) q = q.eq('venue_vendors.location_id', locationId);
+  const { data, error } = await q.order('created_at', { ascending: false });
+  if (error) console.error('[getVenueItemsByLocation] 조회 실패:', error);
+  return { data: data || [], error };
+};
+
+/** 헤메 한 명. /stylist/:id 상세가 쓴다. */
+export const getStylistById = async (id) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.from('stylists')
+    .select('*, stylist_services(*)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) console.error('[getStylistById] 조회 실패:', error);
+  return { data: data || null, error };
+};
+
+/** 의상 벤더 한 곳 + 보유 의상. /vendor/:id 상세가 쓴다. */
+export const getDressVendorById = async (id) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.from('dress_vendors')
+    .select('*, dress_items(*)')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) console.error('[getDressVendorById] 조회 실패:', error);
+  return { data: data || null, error };
+};
+
+/**
  * 특정 venue vendor를 ID로 조회
  */
 export const getVenueVendorById = async (id) => {

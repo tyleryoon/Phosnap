@@ -76,7 +76,12 @@ const VendorRegister = React.lazy(() => import('./pages/VendorRegister'));
 // 기존 /booking/:id 는 작가 프로필에서 바로 예약하는 경로로 남겨둔다.
 const BookCompose = React.lazy(() => import('./pages/BookCompose'));
 const VendorDashboard = React.lazy(() => import('./pages/VendorDashboard'));
-const Vendors = React.lazy(() => import('./pages/Vendors'));
+// 찾기 페이지 — 주소는 유형별로 넷, 속은 FindShell 하나.
+// 갈라놓되 구현은 한 벌만 둔다. (인수인계 5-23)
+const FindStylists = React.lazy(() => import('./pages/FindStylists'));
+const FindDresses  = React.lazy(() => import('./pages/FindDresses'));
+const FindVenues   = React.lazy(() => import('./pages/FindVenues'));
+const VendorProfile = React.lazy(() => import('./pages/VendorProfile'));
 const CustomerDashboard = React.lazy(() => import('./pages/CustomerDashboard'));
 const StylistDashboard = React.lazy(() => import('./pages/StylistDashboard'));
 const AdminDashboard = React.lazy(() => import('./pages/AdminDashboard'));
@@ -432,7 +437,15 @@ const AppContent = () => {
           <Route path="/my-bookings"        element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><MyBookings /></ProtectedRoute>} />
           <Route path="/stylist/dashboard"  element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="stylist"><StylistDashboard /></ProtectedRoute>} />
           <Route path="/stylist/:id"        element={<StylistProfile />} />
-          <Route path="/vendors"             element={<Vendors />} />
+          {/* 찾기 — 유형별 주소. 검색 노출과 메뉴를 위해 넷으로 나눠뒀다. */}
+          <Route path="/stylists"            element={<FindStylists />} />
+          <Route path="/dresses"             element={<FindDresses />} />
+          <Route path="/venues"              element={<FindVenues />} />
+          {/* 예전 /vendors 는 하드코딩 목록을 그리던 가짜였다.
+              기존 링크·북마크가 죽지 않게 의상 찾기로 넘긴다. */}
+          <Route path="/vendors"             element={<Navigate to="/dresses" replace />} />
+          {/* 이 라우트가 없어서 목록의 업체 카드가 전부 404 로 떨어졌다. */}
+          <Route path="/vendor/:id"          element={<VendorProfile />} />
           <Route path="/vendor/register"    element={<VendorRegister />} />
           <Route path="/vendor/dashboard"   element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)} requiredRole="vendor"><VendorDashboard /></ProtectedRoute>} />
           <Route path="/tour/:instanceId"    element={<TourDetail />} />

@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import { SearchIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { submitWaitlist } from '../lib/waitlist';
-import { PHOTOGRAPHERS } from '../data/photographers';
+
 import { getMergedProfile } from '../data/artistProfile';
 import { getAllLocationsSorted } from '../data/locationUtils';
 import { HomeSEO } from '../components/SEO';

@@ -1111,6 +1111,90 @@ export const normalizeCart = (c) => {
 
 ---
 
+### 5-23. 페이지는 넷, 속은 하나 (2026-09-13)
+
+#### /vendors 는 DB 를 한 번도 안 읽었다
+
+찾기 페이지를 유형별로 나눠 만들자는 얘기를 하다 발견했다.
+
+```js
+// src/pages/Vendors.jsx
+import { DRESS_VENDORS } from '../data/dressVendors';   // 하드코딩 195줄
+let vendors = DRESS_VENDORS.filter(v => v.isActive);
+```
+
+벤더를 15곳 등록해도 그 페이지에는 "교토 한복 & 기모노 전문" 같은
+**존재하지 않는 업체**만 나왔다. 오류도 빈 화면도 아니고 멀쩡한 목록이라
+몇 달간 아무도 몰랐다. (규칙 5-18)
+
+한 곳이 아니었다. 전수 조사 결과 21곳:
+
+| 화면 | 증상 |
+|---|---|
+| `/vendors` | 전부 가짜 |
+| `/stylist/:id` | `STYLISTS.find(st => st.id === Number(id))` — DB id 는 uuid 라 **NaN**. 등록된 헤메를 한 명도 못 찾고 "존재하지 않는 아티스트입니다" 가 떴다 |
+| `/vendor/:id` | 라우트 자체가 없어 전부 404 |
+| 지도(WorldMap) | mock 을 세서 등록 1명인데 "서울 4" |
+| 내 대시보드 찜 | mock 에서 찾아 DB 작가를 찜하면 안 나옴 |
+
+#### 갈라놓으면 썩는다 — 그래도 갈라야 한다면
+
+주소는 넷이어야 한다. 검색 노출도, 유형별 필터도, 메뉴도 그게 맞다.
+문제는 갈라진 게 아니라 **각자 자기 데이터 경로를 가진 것**이었다.
+
+```
+src/lib/findProviders.js     ← 조회. 네 유형이 전부 여기만 부른다
+src/components/FindShell.jsx ← 화면. 필터·그리드·상세 모달
+src/pages/FindStylists.jsx   ← kind 와 문구만 (15줄)
+src/pages/FindDresses.jsx
+src/pages/FindVenues.jsx
+```
+
+#### 두 경로가 같은 모양을 내야 한다
+
+`findProviders` 안에 길이 둘이다.
+
+```
+날짜·시각 없음 → 테이블 조회 (둘러보기)
+날짜·시각 있음 → available_providers RPC (그때 가능한 것만)
+```
+
+둘은 컬럼 모양이 다르다. 한쪽만 보고 카드를 만들면 **다른 경로에서
+그 칸만 조용히 빈다.** 그래서 두 경로 모두 같은 `normalize*` 를 지난다.
+
+실제로 셋이 어긋나 있었고, 실제 DB 로 양쪽을 돌려서 찾았다.
+
+| 어긋남 | 원인 | 처리 |
+|---|---|---|
+| 의상·장소 `location_id` 가 앵커에서만 빔 | RPC 가 안 내보냄 | **FIX_42** 로 RPC 에서 고침 |
+| 헤메 `serviceName`·`price` 가 둘러보기에서만 빔 | 앵커는 *메뉴* 단위, 둘러보기는 *사람* 단위 | 사람 단위면 최저가·시술 수로 요약 |
+
+두 번째는 화면에서 메울 수도 있었지만 첫 번째는 아니다 —
+전 지역 조회면 그 아이템이 어느 지역인지 화면은 알 수 없다.
+**아는 쪽이 말해주게** 한다.
+
+#### 체커가 다시는 못 새게 한다
+
+`scripts/check-undefined.mjs` 에 규칙을 넣었다.
+`src/pages` · `src/components` 가 `src/data` 의 *데이터* export 를
+import 하면 실패한다. `fmt()` 나 `SNAP_FILTER_LABELS` 같은 서식·라벨은 뺐다.
+
+남은 14건은 `MOCK_DEBT` 에 적어뒀는데, 이 목록은 **한 방향으로만 움직인다**.
+
+- 목록에 없는 파일에서 위반 → 실패 (새로 만들지 마라)
+- 목록에 있는 파일이 깨끗해짐 → 실패 (목록에서 지워 되돌아갈 수 없게 하라)
+
+두 번째가 핵심이다. 안 지우면 나중에 누가 다시 mock 을 끌어다 써도
+조용히 통과한다.
+
+#### 아직 안 한 것
+
+`/photographers` 는 FindShell 로 안 옮겼다. 1099줄에 StyleMatcher·
+MatchingRecommendation 같은 게 붙어 있고 이미 DB 를 읽고 있어서,
+지금 옮기면 이득보다 위험이 크다. 나머지 셋이 자리를 잡은 뒤에 판단한다.
+
+---
+
 ## 6. 과거에 발목 잡았던 함정들
 
 ### 6-1. 서비스워커가 새 배포를 막는다 ⚠️ 미해결

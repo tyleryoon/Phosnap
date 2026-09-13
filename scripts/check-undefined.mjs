@@ -39,17 +39,38 @@ const MOCK_DATA_EXPORTS = new Set([
   'getStylistsByLocation', 'getDressesByVendor', 'getDressesByCategory',
   'getVendorsByLocation', 'getVendorById',
   'getVenueVendorsByLocation', 'getVenueItemsByVendor', 'getVenueItemById',
-  'getPhotographerById', 'getCountriesFromPortfolio',
+  'getPhotographerById',
 ]);
-// 이 파일들은 아직 갈아타는 중이다. 새로 늘리지 말 것 —
-// 하나씩 지워나가는 목록이지 추가하는 목록이 아니다.
-const MOCK_ALLOWED = new Set([]);
+// getCountriesFromPortfolio 는 일부러 뺐다. 나라 이름·국기를 찾아주는
+// 레지스트리이고, 모르는 나라는 { code, name: code, flag: '' } 로 돌려준다.
+// 목록의 내용이 아니라 라벨이라서 하드코딩이 맞다.
+// ── 아직 안 고친 곳 (부채 목록) ──────────────────────────────────────
+//
+// 한 방향으로만 움직인다.
+//   · 여기 없는 파일에서 위반이 나오면  → 실패 (새로 만들지 마라)
+//   · 여기 있는 파일이 깨끗해지면       → 실패 (목록에서 지워서 못 돌아가게 하라)
+//
+// 그래서 이 목록은 줄기만 하고 늘지 않는다.
+// 한 줄 지울 때마다 그만큼 되돌아갈 수 없게 된다.
+const MOCK_DEBT = new Set([
+  // 예전 예약 화면. /book 으로 대체하는 중이다 (작업 #32·#33).
+  'src/pages/Booking.jsx',
+  // 작가 상세·투어. DB 조회와 mock 을 같이 쓴다 (pMock 변수가 그 흔적).
+  'src/pages/Profile.jsx',
+  'src/pages/TourDetail.jsx',
+  // 작가 본인용 화면. 고객에게는 안 보인다.
+  'src/pages/ArtistDashboard.jsx',
+  'src/pages/ArtistSchedule.jsx',
+  'src/components/CollaboChat.jsx',
+]);
 
 let total = 0;
 let parseFails = 0;
 let dupes = 0;
 let hookOrder = 0;
 let mockUse = 0;
+let mockDebt = 0;
+const mockSeen = new Set();
 
 for (const f of files) {
   const rel = f.replace(root, 'src');
@@ -147,10 +168,11 @@ for (const f of files) {
       if (!src.includes('/data/')) return;
       // 화면(pages·components)만 본다. src/data 안끼리 참조하는 건 정상이다.
       if (!/^src\/(pages|components)\//.test(rel)) return;
-      if (MOCK_ALLOWED.has(rel)) return;
       for (const sp of path.node.specifiers) {
         const name = sp.imported?.name || sp.local?.name;
         if (!MOCK_DATA_EXPORTS.has(name)) continue;
+        mockSeen.add(rel);
+        if (MOCK_DEBT.has(rel)) { mockDebt++; continue; }
         mockUse++;
         console.log(
           `✗ ${rel}:${path.node.loc.start.line}  '${name}' — 화면이 하드코딩 목록을 읽음. DB 조회로 바꿀 것`,
@@ -167,6 +189,17 @@ for (const f of files) {
     }
   });
 }
-const bad = total + parseFails + dupes + hookOrder + mockUse;
+// 부채 목록에 있는데 실제로는 깨끗해진 파일 — 목록에서 지워야 한다.
+// 안 지우면 나중에 누가 다시 mock 을 끌어다 써도 조용히 통과한다.
+let mockStale = 0;
+for (const f of MOCK_DEBT) {
+  if (!mockSeen.has(f)) {
+    mockStale++;
+    console.log(`✗ ${f}  이제 하드코딩 목록을 안 읽습니다 — check-undefined.mjs 의 MOCK_DEBT 에서 이 줄을 지우세요`);
+  }
+}
+
+const bad = total + parseFails + dupes + hookOrder + mockUse + mockStale;
 console.log(`\n미정의 참조 ${total}건 · 파싱 실패 ${parseFails}건 · 중복 선언 ${dupes}건 · 조건부 훅 ${hookOrder}건 · 하드코딩 목록 ${mockUse}건`);
+if (mockDebt > 0) console.log(`남은 부채 ${mockDebt}건 (${MOCK_DEBT.size}개 파일) — 줄어들기만 해야 합니다`);
 if (bad > 0) process.exitCode = 1;

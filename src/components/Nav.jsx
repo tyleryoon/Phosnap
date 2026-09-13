@@ -65,6 +65,11 @@ const Nav = ({ onAuthOpen }) => {
     // 노출 상태를 아는 건 공급자에게 필요한 일이다.
     { to: '/explore',       label: t('nav.explore') },
     { to: '/photographers', label: t('nav.photographers') },
+    // 유형별 찾기. 헤메만·의상만·장소만 찾으러 오는 사람이 있다.
+    // 주소는 넷으로 나뉘지만 화면은 FindShell 하나다 (인수인계 5-23).
+    { to: '/stylists',      label: '헤어메이크업' },
+    { to: '/dresses',       label: '의상' },
+    { to: '/venues',        label: '장소' },
     // 새 예약 흐름. 날짜·시각을 먼저 정하고 자유롭게 구성한다.
     // 로그인한 사람에게만 보인다 — 비로그인은 눌러도 로그인 벽에 막힌다.
     ...(isLoggedIn ? [{ to: '/book', label: t('nav.book') }] : []),

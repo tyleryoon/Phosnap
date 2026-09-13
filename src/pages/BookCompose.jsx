@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import ProviderDetailModal from '../components/ProviderDetailModal';
@@ -179,11 +180,21 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
 
 const BookCompose = () => {
 
+  // 찾기 페이지에서 조건을 들고 넘어올 수 있다.
+  //   /book?loc=seoul&date=2026-09-25&time=14:00&hours=3&tab=stylist
+  //
+  // 안 읽으면 '예약 구성하기' 버튼이 조건을 넘기는 시늉만 하고
+  // 고객은 방금 고른 걸 처음부터 다시 입력하게 된다.
+  const [urlParams] = useSearchParams();
+
   // ── 앵커 ──
-  const [locationId, setLocationId] = useState('');
-  const [date,  setDate]  = useState('');
-  const [time,  setTime]  = useState('');
-  const [hours, setHours] = useState(2);
+  const [locationId, setLocationId] = useState(() => urlParams.get('loc') || '');
+  const [date,  setDate]  = useState(() => urlParams.get('date') || '');
+  const [time,  setTime]  = useState(() => urlParams.get('time') || '');
+  const [hours, setHours] = useState(() => {
+    const h = Number(urlParams.get('hours'));
+    return [2, 3, 4, 8].includes(h) ? h : 2;
+  });
 
   const [locations, setLocations] = useState([]);
   const [result,  setResult]  = useState(null);   // available_providers 응답
@@ -191,8 +202,13 @@ const BookCompose = () => {
   const [error,   setError]   = useState(null);
   const [searched, setSearched] = useState(false);
 
-  const [tab, setTab] = useState('photographer');
+  const [tab, setTab] = useState(() => {
+    const t = urlParams.get('tab');
+    return TABS.some(x => x.key === t) ? t : 'photographer';
+  });
   const [detail, setDetail] = useState(null);
+  // 주소로 받은 탭은 첫 조회까지만 유효하다 (아래 search 참고)
+  const urlTabUsed = useRef(!urlParams.get('tab'));
 
   // 담은 것. 각 칸은 하나씩만 담는다.
   const [cart, setCartRaw] = useState({
@@ -315,7 +331,11 @@ const BookCompose = () => {
     setSearched(true);
     if (e) { setError(e.message || '조회에 실패했습니다.'); setResult(null); return; }
     setResult(data);
-    setTab('photographer');
+    // 조회하면 작가 탭으로 돌아간다 — 작가를 고르면 선택지가 늘어나니까.
+    // 다만 찾기 페이지에서 '의상' 을 보다 넘어온 첫 조회는 예외다.
+    // 그때까지 보던 걸 빼앗으면 왜 화면이 바뀌었는지 알 수 없다.
+    if (urlTabUsed.current) setTab('photographer');
+    urlTabUsed.current = true;
   }, [locationId, date, time, hours]);
 
   // ── 담기 ──

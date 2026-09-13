@@ -4,7 +4,7 @@ import PhotographerCard from '../components/PhotographerCard';
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { PHOTOGRAPHERS, ALL_TAG_KEYS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
+import { ALL_TAG_KEYS, SNAP_FILTER_KEYS, SNAP_FILTER_LABELS } from '../data/photographers';
 import { getMergedProfile } from '../data/artistProfile';
 import { fetchPhotographers } from '../lib/supabase';
 import SEO from '../components/SEO';

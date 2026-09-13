@@ -4,9 +4,60 @@ import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import { MapPinIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
-import { STYLISTS, fmtStylist } from '../data/stylists';
+import { fmtStylist } from '../data/stylists';
 import PortfolioLightbox from '../components/PortfolioLightbox';
 import { normalizePortfolio } from '../utils/portfolioUtils';
+import { getStylistById } from '../lib/supabase';
+
+// 이 화면은 원래 mock 배열에서 사람을 찾았다.
+//
+//   STYLISTS.find(st => st.id === Number(id))
+//
+// DB 의 id 는 uuid 라 Number() 가 항상 NaN 이 된다.
+// 그래서 **실제로 등록된 헤메는 한 명도 찾을 수 없었다.**
+// 화면은 오류 없이 "존재하지 않는 아티스트입니다" 라고 멀쩡히 말했고,
+// 그래서 버그로 보이지 않았다. (규칙 5-18)
+//
+// 아래 어댑터는 DB 행을 이 화면이 이미 쓰고 있는 모양으로 옮긴다.
+// 렌더링 코드는 건드리지 않는다 — 건드릴수록 새 구멍이 생긴다.
+//
+// DB 에 없는 칸(languages·tags)은 빈 배열로 둔다.
+// undefined 로 두면 s.languages.join() 에서 화면이 통째로 죽는다.
+const adapt = (row) => {
+  if (!row) return null;
+  const services = Array.isArray(row.stylist_services) ? row.stylist_services : [];
+  const active = services.filter(v => v.is_active !== false);
+  const prices = active.map(v => v.price).filter(v => typeof v === 'number');
+  const photos = Array.isArray(row.portfolio_images) ? row.portfolio_images : [];
+
+  return {
+    id: row.id,
+    name: row.name_en || row.name_ko || row.display_name || null,
+    nameKo: row.name_ko || row.display_name || null,
+    img: photos[0] || null,
+    portfolio: photos,
+    location: row.city || row.location_id || null,
+    rating: row.rating ?? 0,
+    reviews: row.review_count ?? 0,
+    languages: [],
+    tags: [],
+    bio: row.description || null,
+    specialty: row.specialty || null,
+    dressSelf: row.dress_self === true,
+    price: prices.length ? Math.min(...prices) : null,
+    services: active
+      .slice()
+      .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+      .map(v => ({
+        name: v.name_ko || v.name_en || '이름 없는 시술',
+        desc: v.description || null,
+        price: v.price ?? 0,
+        popular: false,
+        durationMinutes: v.duration_minutes ?? null,
+        timing: v.timing ?? null,
+      })),
+  };
+};
 
 // ─── Stylist Profile Page  (/stylist/:id) ────────────────────────────
 // 헤어메이크업 아티스트 상세 프로필 페이지
@@ -64,8 +115,25 @@ const StylistProfile = () => {
   const { lang }     = useLanguage();
   const L = LABEL[lang] ?? LABEL['ko'];
 
-  const s = STYLISTS.find(st => st.id === Number(id));
+  const [s, setS] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+
+  useEffect(() => {
+    let dead = false;
+    setLoading(true);
+    setLoadError(null);
+    getStylistById(id).then(({ data, error }) => {
+      if (dead) return;
+      setLoading(false);
+      // 못 불러온 것과 없는 것은 다르다. 둘 다 "없습니다" 로 말하면
+      // 장애가 났을 때 헤메가 탈퇴한 줄 안다.
+      if (error) { setLoadError(error.message || '불러오지 못했습니다.'); return; }
+      setS(adapt(data));
+    });
+    return () => { dead = true; };
+  }, [id]);
 
   // 포트폴리오를 Instagram 게시물 형태로 정규화
   const portfolioPosts = useMemo(() => {
@@ -74,6 +142,32 @@ const StylistProfile = () => {
   }, [s]);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  if (loading) {
+    return (
+      <div style={{ paddingTop: 160, textAlign: 'center', color: 'var(--muted)' }}>
+        불러오는 중…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div style={{ paddingTop: 160, textAlign: 'center', color: 'var(--muted)', lineHeight: 1.8 }}>
+        <div style={{ fontFamily: 'var(--font-serif)', color: 'var(--text)', fontSize: 15 }}>
+          프로필을 불러오지 못했습니다
+        </div>
+        <div style={{ fontSize: 12.5, marginTop: 10 }}>{loadError}</div>
+        <button type="button" onClick={() => navigate(0)} style={{
+          marginTop: 16, padding: '8px 16px', border: '1px solid var(--border)',
+          background: 'transparent', color: 'var(--gold)', fontSize: 12,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}>
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   if (!s) {
     return (

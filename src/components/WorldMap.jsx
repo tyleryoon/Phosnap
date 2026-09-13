@@ -1,7 +1,7 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../contexts/LanguageContext';
-import { PHOTOGRAPHERS } from '../data/photographers';
+import { fetchPhotographers } from '../lib/supabase';
 import Corners from './Corners';
 
 // ─── 도시별 좌표 (위도/경도) ────────────────────────────────────────────
@@ -123,17 +123,30 @@ const WorldMap = () => {
   const [tooltip, setTooltip] = useState({ x: 0, y: 0 });
 
   // 도시별 작가 수 집계
+  //
+  // 예전에는 mock PHOTOGRAPHERS 를 셌다. 그래서 지도의 숫자가
+  // 실제 등록 작가와 아무 상관이 없었다 — 등록이 1명인데 "서울 4" 처럼
+  // 보였고, 반대로 새로 등록한 작가는 지도에 영영 안 나타났다.
+  const [artists, setArtists] = useState([]);
+  useEffect(() => {
+    let dead = false;
+    fetchPhotographers({ limit: 500 }).then(({ data }) => {
+      if (!dead) setArtists(data || []);
+    });
+    return () => { dead = true; };
+  }, []);
+
   const cityCounts = useMemo(() => {
     const counts = {};
-    PHOTOGRAPHERS.forEach(p => {
-      const lid = p.locationId;
+    artists.forEach(p => {
+      const lid = p.location_id || p.locationId;
       if (lid) {
         const ids = lid.includes('_') ? lid.split('_') : [lid];
         ids.forEach(id => { if (CITY_COORDS[id]) counts[id] = (counts[id] || 0) + 1; });
       }
     });
     return counts;
-  }, []);
+  }, [artists]);
 
   // 세계지도 도시 (한국·일본 제외)
   const worldCities = useMemo(() =>

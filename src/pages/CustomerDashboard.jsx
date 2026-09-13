@@ -4,14 +4,14 @@ import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
-import { PHOTOGRAPHERS, fmt } from '../data/photographers';
+import { fmt } from '../data/photographers';
 import { getMergedProfile } from '../data/artistProfile';
 import { getTagLabel } from '../data/tagRegistry';
 import UnifiedReviewModal from '../components/UnifiedReviewModal';
 import CarbonFootprint from '../components/CarbonFootprint';
 import ReferralCard from '../components/ReferralCard';
 import PointsCard from '../components/PointsCard';
-import { getSupabase } from '../lib/supabase';
+import { getSupabase, fetchPhotographers } from '../lib/supabase';
 
 // ─── Customer Dashboard (/my) ─────────────────────────────────────────
 // 고객 전용 대시보드: 즐겨찾기, 예약, 리뷰, 쿠폰, 프로필, 설정
@@ -240,10 +240,25 @@ const CustomerDashboard = () => {
   const [favArtistIds, setFavArtistIds] = useState(() => {
     try { return JSON.parse(localStorage.getItem('phosnap_fav_artists') || '[]'); } catch { return []; }
   });
+  // 찜한 작가는 DB 에서 가져온다.
+  //
+  // 예전에는 mock PHOTOGRAPHERS 에서 찾았다. 실제로 등록된 작가를
+  // 찜하면 id 가 목록에 없으니 **찜 목록에 영영 안 나타났다.**
+  // 화면은 "찜한 작가가 없습니다" 라고 멀쩡히 말했다. (규칙 5-18)
+  const [allArtists, setAllArtists] = useState([]);
+  useEffect(() => {
+    if (!favArtistIds.length) { setAllArtists([]); return undefined; }
+    let dead = false;
+    fetchPhotographers({ limit: 500 }).then(({ data }) => {
+      if (!dead) setAllArtists(data || []);
+    });
+    return () => { dead = true; };
+  }, [favArtistIds.length]);
+
   const favArtists = useMemo(() =>
-    PHOTOGRAPHERS.filter(p => favArtistIds.includes(p.id))
+    allArtists.filter(p => favArtistIds.includes(p.id))
       .map(p => getMergedProfile(p, 'photographer', p.id)),
-    [favArtistIds]
+    [allArtists, favArtistIds]
   );
   const removeFav = (id) => {
     const next = favArtistIds.filter(fid => fid !== id);
