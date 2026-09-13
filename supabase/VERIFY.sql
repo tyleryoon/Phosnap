@@ -292,6 +292,25 @@ integrity as (
     ) bw
 
   union all
+  -- 한 사람이 같은 공급자 테이블에 레코드를 여러 개 가진 경우 (FIX_41).
+  -- 코드는 하나뿐이라고 가정하고 maybeSingle() 로 조회한다.
+  -- 2행이면 오류가 나서 그 사람은 대시보드에 들어가지 못한다.
+  select '1.정합성', '한 사람이 공급자 레코드 중복 보유', count(*), string_agg(누구, ', ')
+    from (
+      select '작가 ' || user_id::text as 누구 from public.photographers
+       where user_id is not null group by user_id having count(*) > 1
+      union all
+      select '헤메 ' || user_id::text from public.stylists
+       where user_id is not null group by user_id having count(*) > 1
+      union all
+      select '의상 ' || user_id::text from public.dress_vendors
+       where user_id is not null group by user_id having count(*) > 1
+      union all
+      select '장소 ' || user_id::text from public.venue_vendors
+       where user_id is not null group by user_id having count(*) > 1
+    ) dup
+
+  union all
   -- 주인 없는 의상. vendor_id 와 stylist_id 가 둘 다 비었거나 둘 다 찼다.
   -- 전자는 정산 대상이 없고, 후자는 둘이 된다.
   select '1.정합성', '소유자가 불명확한 의상', count(*),
