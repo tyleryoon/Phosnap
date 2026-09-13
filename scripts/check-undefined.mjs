@@ -17,7 +17,8 @@ const GLOBALS = new Set(['window','document','console','navigator','localStorage
 'decodeURIComponent','parseInt','parseFloat','isNaN','isFinite','Symbol','WeakMap','WeakSet','Proxy',
 'Reflect','BigInt','queueMicrotask','MutationObserver','IntersectionObserver','ResizeObserver','Event',
 'CustomEvent','HTMLElement','Node','DOMParser','XMLHttpRequest','WebSocket','Worker','matchMedia',
-'getComputedStyle','scrollTo','open','close','print','React','arguments','OffscreenCanvas','ImageData','Path2D','SVGElement','Notification','Audio','MediaRecorder','indexedDB','screen','frames','self','top','parent']);
+'getComputedStyle','scrollTo','open','close','print','React','arguments',
+'__BUILD_COMMIT__','__BUILD_TIME__','OffscreenCanvas','ImageData','Path2D','SVGElement','Notification','Audio','MediaRecorder','indexedDB','screen','frames','self','top','parent']);
 
 const HOOKS = /^use[A-Z]/;
 
