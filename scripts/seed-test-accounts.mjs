@@ -145,12 +145,45 @@ const ensureUser = async (email) => {
 
 const upsert = (table, rows, onConflict) =>
   api(`/rest/v1/${table}${onConflict ? `?on_conflict=${onConflict}` : ''}`, {
-    body: rows,
+    body: rows,   // 아래 alignKeys 와 같은 이유 — 지금은 한 행씩만 쓴다
     prefer: `resolution=merge-duplicates,return=representation`,
   });
 
+/**
+ * 여러 행을 한 번에 넣을 때 **모든 객체의 키가 같아야 한다.**
+ *
+ * PostgREST 는 배열 insert 를 하나의 INSERT 문으로 만들기 때문에
+ * 행마다 키가 다르면 거부한다.
+ *
+ *   400 All object keys must match
+ *
+ * 실제로 stylist_services 에서 걸렸다 — 종일 동행 메뉴에만 max_hours 가
+ * 있고 앞의 두 메뉴에는 없었다. 헤메 10개가 전부 실패했다.
+ *
+ * 호출부마다 null 을 채워 넣게 하면 또 빠뜨린다. 여기서 맞춘다.
+ */
+const alignKeys = (rows) => {
+  const keys = [...new Set(rows.flatMap(r => Object.keys(r)))];
+  return rows.map(r => Object.fromEntries(keys.map(k => [k, r[k] ?? null])));
+};
+
 const insert = (table, rows) =>
-  api(`/rest/v1/${table}`, { body: rows, prefer: 'return=representation' });
+  api(`/rest/v1/${table}`, { body: alignKeys(rows), prefer: 'return=representation' });
+
+/**
+ * 자식 레코드를 **갈아끼운다** — 지우고 다시 넣는다.
+ *
+ * 그냥 insert 만 하면 스크립트를 두 번 돌렸을 때 상품이 두 배가 된다.
+ * "여러 번 실행해도 된다" 고 해놓고 실제로는 쌓이면 안 된다.
+ *
+ * 테스트 계정 소유분만 지우므로 다른 데이터는 건드리지 않는다.
+ * 예약이 걸린 아이템은 FK 때문에 삭제가 막히는데, 그때는 오류가
+ * 그대로 올라온다 — 조용히 넘기지 않는다.
+ */
+const replaceChildren = async (table, filter, rows) => {
+  await api(`/rest/v1/${table}?${filter}`, { method: 'DELETE' });
+  if (rows.length) await insert(table, rows);
+};
 
 /** 포트폴리오 3게시물 × 5장. 맨 앞이 대표. */
 const buildPortfolio = (key, region) =>
@@ -218,7 +251,7 @@ const seedOne = async (kind, i) => {
 
     // 촬영 상품 — 길이를 섞어야 '4시간으로 조회' 같은 필터를 볼 수 있다
     const hoursSet = [[2, 3], [3, 4], [2, 4], [2, 3, 4]][i % 4];
-    await insert('packages', hoursSet.map((h, k) => ({
+    await replaceChildren('packages', `photographer_id=eq.${p.id}`, hoursSet.map((h, k) => ({
       photographer_id: p.id,
       type: 'snap',
       name: `${h}시간 ${['데이','골든아워','스튜디오'][k % 3]} 패키지`,
@@ -227,27 +260,26 @@ const seedOne = async (kind, i) => {
       description: `${h}시간 촬영. 보정본 ${h * 15}장 전달.`,
       images: [img(`${kind}${n}-pkg-${h}`)],
       is_active: true,
-    })));
-
-    if (hmkSelf) {
-      await insert('packages', [{
+    })).concat(
+      // 자체 헤메·의상도 packages 에 들어간다. 위에서 통째로 지웠으므로
+      // 같은 호출에 함께 넣어야 한다.
+      hmkSelf ? [{
         photographer_id: p.id, type: 'hmk',
         name: '작가 제공 헤어메이크업',
         price: 80000 + (i % 4) * 10000,
         description: '촬영 전 현장에서 진행합니다.',
         is_active: true,
-      }]);
-    }
-    if (dressSelf) {
-      await insert('packages', [{
+      }] : [],
+    ).concat(
+      dressSelf ? [{
         photographer_id: p.id, type: 'costume',
         name: pick(['작가 보유 한복', '작가 보유 드레스', '작가 보유 정장'], i),
         price: 60000 + (i % 3) * 20000,
         sizes: ['S', 'M', 'L'],
         images: [img(`${kind}${n}-dress`)],
         is_active: true,
-      }]);
-    }
+      }] : [],
+    ));
     return;
   }
 
@@ -270,7 +302,7 @@ const seedOne = async (kind, i) => {
       default_slots: SLOTS, weekly_off: [],
     }], 'provider_type,provider_id');
 
-    await insert('stylist_services', [
+    await replaceChildren('stylist_services', `stylist_id=eq.${s.id}`, [
       { stylist_id: s.id, name_ko: '웨딩 헤어메이크업', price: 100000 + (i % 5) * 20000,
         duration_minutes: 90, timing: 'before', offset_minutes: 30, is_active: true },
       { stylist_id: s.id, name_ko: '헤어 변형 (촬영 중)', price: 40000 + (i % 3) * 10000,
@@ -282,7 +314,7 @@ const seedOne = async (kind, i) => {
     ]);
 
     if (dressSelf) {
-      await insert('dress_items', [0, 1].map(k => ({
+      await replaceChildren('dress_items', `stylist_id=eq.${s.id}`, [0, 1].map(k => ({
         stylist_id: s.id, vendor_id: null,
         name_ko: `헤메${n} 보유 ${['한복','드레스'][k]}`,
         category: k === 0 ? 'hanbok' : 'dress',
@@ -318,7 +350,7 @@ const seedOne = async (kind, i) => {
         default_slots: SLOTS, weekly_off: [],
       }], 'provider_type,provider_id');
 
-      await insert('dress_items', [0, 1, 2].map(k => ({
+      await replaceChildren('dress_items', `vendor_id=eq.${v.id}`, [0, 1, 2].map(k => ({
         vendor_id: v.id, stylist_id: null,
         name_ko: `${['전통 한복','웨딩 드레스','남성 정장'][k]} ${n}`,
         category: ['hanbok', 'dress', 'suit'][k],
@@ -347,7 +379,7 @@ const seedOne = async (kind, i) => {
         default_slots: SLOTS, weekly_off: [],
       }], 'provider_type,provider_id');
 
-      await insert('venue_items', [0, 1].map(k => ({
+      await replaceChildren('venue_items', `vendor_id=eq.${vv.id}`, [0, 1].map(k => ({
         vendor_id: vv.id,
         name: `${['한옥 스튜디오','화이트 스튜디오'][k]} ${n}호`,
         category: k === 0 ? 'traditional_space' : 'studio',
