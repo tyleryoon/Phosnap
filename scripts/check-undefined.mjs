@@ -21,10 +21,35 @@ const GLOBALS = new Set(['window','document','console','navigator','localStorage
 
 const HOOKS = /^use[A-Z]/;
 
+// ── 화면이 하드코딩 목록을 읽는 것을 막는다 ──────────────────────────
+//
+// 왜 필요한가
+//   /vendors 는 DB 를 한 번도 안 읽고 src/data/dressVendors.js 의
+//   195줄짜리 가짜 목록을 그렸다. 벤더를 15곳 등록해도 그 페이지에는
+//   "교토 한복 & 기모노 전문" 같은 존재하지 않는 업체만 나왔다.
+//   화면은 멀쩡해 보였고, 아무도 몇 달간 몰랐다. (규칙 5-18)
+//
+//   사람이 눈으로 봐서는 못 잡는다. 기계가 잡아야 한다.
+//
+// 무엇을 막나
+//   *데이터*만 막는다. fmt() 같은 서식 함수나 SNAP_FILTER_LABELS 같은
+//   라벨 레지스트리는 하드코딩이 맞으므로 건드리지 않는다.
+const MOCK_DATA_EXPORTS = new Set([
+  'PHOTOGRAPHERS', 'STYLISTS', 'DRESS_VENDORS', 'VENUE_VENDORS', 'DRESSES',
+  'getStylistsByLocation', 'getDressesByVendor', 'getDressesByCategory',
+  'getVendorsByLocation', 'getVendorById',
+  'getVenueVendorsByLocation', 'getVenueItemsByVendor', 'getVenueItemById',
+  'getPhotographerById', 'getCountriesFromPortfolio',
+]);
+// 이 파일들은 아직 갈아타는 중이다. 새로 늘리지 말 것 —
+// 하나씩 지워나가는 목록이지 추가하는 목록이 아니다.
+const MOCK_ALLOWED = new Set([]);
+
 let total = 0;
 let parseFails = 0;
 let dupes = 0;
 let hookOrder = 0;
+let mockUse = 0;
 
 for (const f of files) {
   const rel = f.replace(root, 'src');
@@ -117,6 +142,22 @@ for (const f of files) {
       }
     },
 
+    ImportDeclaration(path) {
+      const src = path.node.source.value;
+      if (!src.includes('/data/')) return;
+      // 화면(pages·components)만 본다. src/data 안끼리 참조하는 건 정상이다.
+      if (!/^src\/(pages|components)\//.test(rel)) return;
+      if (MOCK_ALLOWED.has(rel)) return;
+      for (const sp of path.node.specifiers) {
+        const name = sp.imported?.name || sp.local?.name;
+        if (!MOCK_DATA_EXPORTS.has(name)) continue;
+        mockUse++;
+        console.log(
+          `✗ ${rel}:${path.node.loc.start.line}  '${name}' — 화면이 하드코딩 목록을 읽음. DB 조회로 바꿀 것`,
+        );
+      }
+    },
+
     ReferencedIdentifier(path) {
       const n = path.node.name;
       if (GLOBALS.has(n)) return;
@@ -126,6 +167,6 @@ for (const f of files) {
     }
   });
 }
-const bad = total + parseFails + dupes + hookOrder;
-console.log(`\n미정의 참조 ${total}건 · 파싱 실패 ${parseFails}건 · 중복 선언 ${dupes}건 · 조건부 훅 ${hookOrder}건`);
+const bad = total + parseFails + dupes + hookOrder + mockUse;
+console.log(`\n미정의 참조 ${total}건 · 파싱 실패 ${parseFails}건 · 중복 선언 ${dupes}건 · 조건부 훅 ${hookOrder}건 · 하드코딩 목록 ${mockUse}건`);
 if (bad > 0) process.exitCode = 1;
