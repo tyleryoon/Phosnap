@@ -51,6 +51,27 @@ const TABS = [
   { key: 'venue',        label: '장소' },
 ];
 
+// 장바구니에 쓰기 전에 항상 여기를 지난다.
+//
+// 왜 필요한가
+//   자체 의상은 그 사람이 현장에 와야 입을 수 있다. 그런데 옷을 담아둔
+//   상태에서 주인(작가·헤메)을 빼거나 다른 사람으로 바꾸면, 의상 탭에서는
+//   그 옷이 사라지지만 **담은 목록에는 남는다.** 합계에도 계속 더해진다.
+//   아무도 안 가져오는 옷에 고객이 돈을 내게 된다. (규칙 5-18)
+//
+//   담기·빼기·패키지 선택·재조회 — 호출부마다 막으면 새 경로가 생길 때
+//   또 샌다. 쓰기를 한 곳으로 모아 여기서만 판단한다.
+//
+// 벤더 의상은 artistId·ownerStylistId 가 둘 다 null 이라 걸리지 않는다.
+// 누구를 담든 빼든 그대로 남는 게 맞다 — 벤더는 옷만 빌려주니까.
+export const normalizeCart = (c) => {
+  const d = c.dress;
+  if (!d) return c;
+  if (d.artistId && c.photographer?.id !== d.artistId) return { ...c, dress: null };
+  if (d.ownerStylistId && c.stylist?.stylistId !== d.ownerStylistId) return { ...c, dress: null };
+  return c;
+};
+
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
 
 const hhmm = (iso) => {
@@ -174,9 +195,23 @@ const BookCompose = () => {
   const [detail, setDetail] = useState(null);
 
   // 담은 것. 각 칸은 하나씩만 담는다.
-  const [cart, setCart] = useState({
+  const [cart, setCartRaw] = useState({
     photographer: null, stylist: null, dress: null, venue: null,
   });
+
+  // 자체 의상이 주인과 함께 빠졌을 때 그 사실을 알린다.
+  // 말없이 사라지면 고객은 자기가 뭘 잘못 눌렀는지 모른다.
+  const [dropNotice, setDropNotice] = useState(null);
+
+  const setCart = useCallback((next) => setCartRaw(c => {
+    const wanted = typeof next === 'function' ? next(c) : next;
+    const fixed  = normalizeCart(wanted);
+    if (wanted.dress && !fixed.dress) {
+      const owner = wanted.dress.__ownerName;
+      setDropNotice(`${owner ? `${owner} 님이 ` : ''}가져오기로 한 의상이라 함께 빠졌습니다 — ${wanted.dress.name}`);
+    }
+    return fixed;
+  }), []);
 
   // 작가를 담을 때 고를 패키지 후보
   const [pkgChoice, setPkgChoice] = useState(null);   // { artist, packages[] }
@@ -272,6 +307,7 @@ const BookCompose = () => {
     setError(null);
     // 조건이 바뀌면 담아둔 건 무효다. 남겨두면 "가능하지 않은 조합" 이 된다.
     setCart({ photographer: null, stylist: null, dress: null, venue: null });
+    setDropNotice(null);
     const { data, error: e } = await getAvailableProviders({
       locationId: locationId || null, date, time, hours,
     });
@@ -557,6 +593,10 @@ const BookCompose = () => {
                                 vendorId: d.vendor_id || null,
                                 // 작가 자체 의상이면 정산 대상이 작가 본인이다
                                 artistId: d.__fromArtist ? cart.photographer?.id : null,
+                                // 주인이 장바구니에서 빠지면 이 옷도 같이 빠져야 한다.
+                                // normalize() 가 이 두 칸을 본다.
+                                ownerStylistId: d.__fromStylist ? (d.stylist_id || cart.stylist?.stylistId) : null,
+                                __ownerName: d.__fromStylist || d.__fromArtist || null,
                               })
                         )}
                       />
@@ -596,6 +636,27 @@ const BookCompose = () => {
                 }}>
                   담은 구성
                 </div>
+
+                {dropNotice && (
+                  <div style={{
+                    border: '1px solid var(--gold-border)', background: 'var(--bg)',
+                    padding: '10px 12px', marginBottom: 14, fontSize: 11.5,
+                    lineHeight: 1.6, color: 'var(--muted)',
+                  }}>
+                    {dropNotice}
+                    <button
+                      type="button"
+                      onClick={() => setDropNotice(null)}
+                      style={{
+                        display: 'block', marginTop: 6, padding: 0, border: 'none',
+                        background: 'none', color: 'var(--gold)', fontSize: 11,
+                        cursor: 'pointer', textDecoration: 'underline',
+                      }}
+                    >
+                      확인
+                    </button>
+                  </div>
+                )}
 
                 {TABS.map(t => {
                   const v = cart[t.key];
