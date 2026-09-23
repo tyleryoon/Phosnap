@@ -539,7 +539,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleCreate}
-              style={{ fontSize: 11, color: '#fff', background: '#4caf50', border: 'none', padding: '8px 20px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+              style={{ fontSize: 11, color: '#fff', background: 'var(--success)', border: 'none', padding: '8px 20px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
               일정 오픈
             </button>
             <button onClick={() => setShowCreate(false)}
@@ -3668,7 +3668,7 @@ const ArtistSchedule = () => {
                       대표
                     </div>
                   )}
-                  <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: '#e85d5d', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: 'var(--danger)', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                 </div>
               ))}
             </div>

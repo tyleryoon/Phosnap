@@ -140,6 +140,9 @@ export const AuthProvider = ({ children }) => {
   const isArtist = userRole === 'artist';
   const isVendor = userRole === 'vendor' || userRole === 'dress_vendor';
   const isAdmin  = userRole === 'admin';
+  // 헤메만 빠져 있었다. 그래서 Nav 가 헤메를 '나머지' 로 분류해
+  // 고객용 마이페이지 링크를 보여줬고, 자기 대시보드로 가는 길이 없었다.
+  const isStylist = userRole === 'stylist';
   const isLoggedIn = !!user;
   const hasMultipleRoles = roles.length > 1;
 
@@ -149,7 +152,7 @@ export const AuthProvider = ({ children }) => {
       // 멀티롤
       roles, activeRole, switchRole, addRole, hasMultipleRoles, roleLoading, roleStatuses,
       // 편의 (기존 호환)
-      userRole, userName, isArtist, isVendor, isAdmin, isLoggedIn,
+      userRole, userName, isArtist, isVendor, isStylist, isAdmin, isLoggedIn,
     }}>
       {children}
     </AuthContext.Provider>

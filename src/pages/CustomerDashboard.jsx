@@ -1265,7 +1265,7 @@ const CustomerDashboard = () => {
                             await logout();
                             navigate('/');
                           }}
-                          style={{ ...goldBtn, background: '#ef4444', color: '#fff' }}
+                          style={{ ...goldBtn, background: 'var(--danger)', color: '#fff' }}
                         >
                           {lang === 'ko' ? '탈퇴 확정' : 'Confirm Delete'}
                         </button>

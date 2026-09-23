@@ -274,7 +274,7 @@ const RoleApprovals = ({ onChanged }) => {
                       onClick={() => handleApprove(row)}
                       disabled={busy}
                       style={{
-                        padding: '10px 20px', background: '#22c55e', color: '#fff',
+                        padding: '10px 20px', background: 'var(--success)', color: '#fff',
                         border: 'none', fontSize: 12, fontFamily: 'var(--font-serif)',
                         cursor: busy ? 'default' : 'pointer', letterSpacing: '0.1em',
                       }}

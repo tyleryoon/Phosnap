@@ -1892,7 +1892,7 @@ const ArtistDashboard = () => {
                 onClick={handleReject}
                 disabled={actionLoading}
                 style={{
-                  flex: 1, padding: '11px 0', background: '#e85d5d', border: 'none',
+                  flex: 1, padding: '11px 0', background: 'var(--danger)', border: 'none',
                   color: '#fff', fontFamily: 'var(--font-serif)', fontSize: 13,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}

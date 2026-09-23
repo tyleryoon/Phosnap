@@ -134,7 +134,7 @@ const NotificationBell = () => {
           <span style={{
             position: 'absolute', top: 2, right: 2,
             width: unreadCount > 9 ? 18 : 14, height: 14,
-            borderRadius: 7, background: '#e85d5d',
+            borderRadius: 7, background: 'var(--danger)',
             color: '#fff', fontSize: 9, fontWeight: 'bold',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             lineHeight: 1,

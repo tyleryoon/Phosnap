@@ -191,7 +191,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
     },
     badge: {
       display: 'inline-block',
-      background: '#22c55e',
+      background: 'var(--success)',
       color: 'white',
       padding: '4px 8px',
       borderRadius: '4px',

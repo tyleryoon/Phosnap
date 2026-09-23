@@ -216,7 +216,7 @@ const PendingItems = ({ onChanged }) => {
                     disabled={busyId === it.item_id}
                     onClick={() => act(it.item_id, false, declining.reason)}
                     style={{
-                      padding: '9px 18px', border: 'none', background: '#e85d5d',
+                      padding: '9px 18px', border: 'none', background: 'var(--danger)',
                       color: '#fff', fontFamily: 'var(--font-serif)', fontSize: 12.5,
                       cursor: busyId === it.item_id ? 'default' : 'pointer',
                       opacity: busyId === it.item_id ? 0.6 : 1,

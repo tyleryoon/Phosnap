@@ -1819,7 +1819,7 @@ function VendorDashboard() {
                       {deleteConfirm === dress.id ? (
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button onClick={() => handleDeleteDress(dress.id)}
-                            style={{ flex: 1, fontSize: '0.75rem', color: '#fff', background: '#e85d5d', border: 'none', padding: '0.4rem', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                            style={{ flex: 1, fontSize: '0.75rem', color: '#fff', background: 'var(--danger)', border: 'none', padding: '0.4rem', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                             확인 삭제
                           </button>
                           <button onClick={() => setDeleteConfirm(null)}

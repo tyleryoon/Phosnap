@@ -149,7 +149,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                         {other?.nameKo || other?.name || `작가 #${otherId}`}
                       </span>
                       {unread > 0 && (
-                        <span style={{ fontSize: 9, background: '#e85d5d', color: '#fff', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ fontSize: 9, background: 'var(--danger)', color: '#fff', borderRadius: '50%', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {unread}
                         </span>
                       )}

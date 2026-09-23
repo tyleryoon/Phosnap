@@ -386,7 +386,7 @@ const TourDetail = () => {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={handleConfirmAdjusted}
-                      style={{ flex: 1, padding: '8px', fontSize: 11, color: '#fff', background: '#4caf50', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                      style={{ flex: 1, padding: '8px', fontSize: 11, color: '#fff', background: 'var(--success)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                       {lang === 'ko' ? '✓ 수락' : '✓ Accept'}
                     </button>
                     <button onClick={handleDeclineAdjusted}

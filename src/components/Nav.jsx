@@ -14,7 +14,7 @@ import useAdminAttention from '../hooks/useAdminAttention';
 // ─── Navigation ────────────────────────────────────────────────────────
 
 const Nav = ({ onAuthOpen }) => {
-  const { isLoggedIn, userName, isArtist, isVendor, isAdmin, logout } = useAuth();
+  const { isLoggedIn, userName, isArtist, isVendor, isStylist, isAdmin, logout } = useAuth();
   // 관리자가 확인해야 할 것이 있으면 링크 옆에 표시한다.
   // 활성 역할이 작가여도 관리자 계정이면 알려준다.
   const { counts, total } = useAdminAttention();
@@ -211,7 +211,14 @@ const Nav = ({ onAuthOpen }) => {
                   벤더 대시보드
                 </Link>
               )}
-              {!isArtist && !isVendor && !isAdmin && (
+              {isStylist && (
+                <Link to="/stylist/dashboard"
+                  onClick={(e) => handleNavClick(e, '/stylist/dashboard')}
+                  style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
+                  {t('nav.dashboard')}
+                </Link>
+              )}
+              {!isArtist && !isVendor && !isStylist && !isAdmin && (
                 <Link to="/my"
                   onClick={(e) => handleNavClick(e, '/my')}
                   style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
@@ -289,7 +296,12 @@ const Nav = ({ onAuthOpen }) => {
                   벤더 대시보드
                 </Link>
               )}
-              {!isArtist && !isVendor && (
+              {isStylist && (
+                <Link to="/stylist/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/stylist/dashboard'); setMobileOpen(false); }}>
+                  {t('nav.dashboard')}
+                </Link>
+              )}
+              {!isArtist && !isVendor && !isStylist && (
                 <Link to="/my" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/my'); setMobileOpen(false); }}>
                   {t('nav.myPage') || '마이페이지'}
                 </Link>

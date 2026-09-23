@@ -359,13 +359,13 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
   const getStatusColor = status => {
     switch (status) {
       case 'confirmed':
-        return '#48bb78';
+        return 'var(--success)';
       case 'pending':
         return 'var(--gold)';
       case 'completed':
         return 'var(--muted)';
       case 'cancelled':
-        return '#f56565';
+        return 'var(--danger)';
       default:
         return 'var(--muted)';
     }
@@ -1645,7 +1645,7 @@ export default function StylistDashboard() {
 
   if (stylistLoading) {
     return (
-      <div style={{ paddingTop: 100, color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
+      <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '100px 40px 40px' }}>
         …
       </div>
     );
@@ -1653,7 +1653,7 @@ export default function StylistDashboard() {
 
   if (!stylistId) {
     return (
-      <div style={{ paddingTop: 100, color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
+      <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '100px 40px 40px' }}>
         {t.error}
       </div>
     );
