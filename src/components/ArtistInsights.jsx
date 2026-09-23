@@ -195,7 +195,7 @@ export default function ArtistInsights({ artistData = {} }) {
                     style={{
                       width: 16,
                       height: bookingHeight,
-                      background: '#3b82f6',
+                      background: 'var(--info)',
                       opacity: hoveredMonth === idx ? 1 : 0.6,
                       transition: 'opacity 0.2s',
                       borderRadius: '2px 2px 0 0',
@@ -245,7 +245,7 @@ export default function ArtistInsights({ artistData = {} }) {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 20, fontSize: 11, justifyContent: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 12, height: 12, background: '#3b82f6', borderRadius: 1 }} />
+            <div style={{ width: 12, height: 12, background: 'var(--info)', borderRadius: 1 }} />
             <span style={{ color: 'var(--muted)' }}>
               {lang === 'ko' ? '예약 건수' : lang === 'en' ? 'Bookings' : lang === 'ja' ? '予約数' : '预订数'}
             </span>

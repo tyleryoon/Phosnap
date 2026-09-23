@@ -349,10 +349,10 @@ export default function DemandForecast({ bookings = [], currentPrice = 150000 })
       fontSize: '14px',
     },
     demandBadgeMap: {
-      low: { bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6' },
+      low: { bg: 'rgba(59, 130, 246, 0.15)', text: 'var(--info)' },
       medium: { bg: 'rgba(251, 191, 36, 0.15)', text: '#fbbf24' },
       high: { bg: 'rgba(249, 115, 22, 0.15)', text: '#f97316' },
-      veryHigh: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444' },
+      veryHigh: { bg: 'rgba(239, 68, 68, 0.15)', text: 'var(--danger)' },
     },
   };
 

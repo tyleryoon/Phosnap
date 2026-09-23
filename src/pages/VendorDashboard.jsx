@@ -1162,9 +1162,9 @@ function VendorDashboard() {
             </div>
           )}
           {dataError && (
-            <div style={{ padding: '12px 20px', background: 'rgba(255,152,0,0.06)', border: '1px solid rgba(255,152,0,0.2)', marginBottom: 16, fontSize: 12, color: '#ff9800', fontFamily: 'var(--font-serif)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '12px 20px', background: 'rgba(255,152,0,0.06)', border: '1px solid rgba(255,152,0,0.2)', marginBottom: 16, fontSize: 12, color: 'var(--warning)', fontFamily: 'var(--font-serif)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>⚠️ {dataError}</span>
-              <button onClick={() => setDataError(null)} style={{ background: 'transparent', border: 'none', color: '#ff9800', cursor: 'pointer', fontSize: 12 }}>✕</button>
+              <button onClick={() => setDataError(null)} style={{ background: 'transparent', border: 'none', color: 'var(--warning)', cursor: 'pointer', fontSize: 12 }}>✕</button>
             </div>
           )}
           {saveStatus && (
@@ -1242,8 +1242,8 @@ function VendorDashboard() {
                     transition: 'all 0.2s',
                     whiteSpace: 'nowrap',
                   }}
-                  onMouseEnter={(e) => { e.target.style.background = '#e85d5d'; e.target.style.color = '#fff'; }}
-                  onMouseLeave={(e) => { e.target.style.background = 'rgba(232,93,93,0.15)'; e.target.style.color = '#e85d5d'; }}
+                  onMouseEnter={(e) => { e.target.style.background = 'var(--danger)'; e.target.style.color = '#fff'; }}
+                  onMouseLeave={(e) => { e.target.style.background = 'rgba(232,93,93,0.15)'; e.target.style.color = 'var(--danger)'; }}
                 >
                   업체 프로필 등록하기 →
                 </button>
@@ -1424,7 +1424,7 @@ function VendorDashboard() {
                   <span style={{
                     position: 'absolute', top: 8, right: -4,
                     width: 8, height: 8, borderRadius: '50%',
-                    background: '#e85d5d',
+                    background: 'var(--danger)',
                   }} />
                 )}
               </button>
@@ -1691,9 +1691,9 @@ function VendorDashboard() {
                           style={{
                             fontSize: '0.65rem',
                             padding: '0.15rem 0.5rem',
-                            border: `1px solid ${mode === 'instant' ? '#4caf50' : '#ff9800'}`,
+                            border: `1px solid ${mode === 'instant' ? 'var(--success)' : 'var(--warning)'}`,
                             background: `${mode === 'instant' ? 'rgba(76,175,80,0.1)' : 'rgba(255,152,0,0.1)'}`,
-                            color: mode === 'instant' ? 'var(--success)' : '#ff9800',
+                            color: mode === 'instant' ? 'var(--success)' : 'var(--warning)',
                             cursor: 'pointer',
                             fontFamily: 'var(--font-serif)',
                             transition: 'all 0.2s',
@@ -1741,7 +1741,7 @@ function VendorDashboard() {
                               <span key={size} style={{
                                 fontSize: '0.65rem',
                                 padding: '0.15rem 0.4rem',
-                                border: `1px solid ${soldOut ? '#e85d5d' : 'rgba(212,175,55,0.3)'}`,
+                                border: `1px solid ${soldOut ? 'var(--danger)' : 'rgba(212,175,55,0.3)'}`,
                                 color: soldOut ? 'var(--danger)' : 'var(--muted)',
                                 background: soldOut ? 'rgba(232,93,93,0.08)' : 'transparent',
                               }}>
@@ -1803,7 +1803,7 @@ function VendorDashboard() {
                           <div style={{
                             width: '44px', height: '24px',
                             borderRadius: '12px',
-                            background: availability[dress.id] ? '#22c55e' : '#e85d5d',
+                            background: availability[dress.id] ? 'var(--success)' : 'var(--danger)',
                             position: 'relative',
                             transition: 'background 0.3s',
                             flexShrink: 0,
@@ -1867,7 +1867,7 @@ function VendorDashboard() {
                       ) : (
                         <button onClick={() => setDeleteConfirm(dress.id)}
                           style={{ width: '100%', fontSize: '0.7rem', color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '0.3rem', cursor: 'pointer', fontFamily: 'var(--font-serif)', transition: 'all 0.2s' }}
-                          onMouseEnter={(e) => { e.target.style.color = '#e85d5d'; e.target.style.borderColor = '#e85d5d'; }}
+                          onMouseEnter={(e) => { e.target.style.color = 'var(--danger)'; e.target.style.borderColor = 'var(--danger)'; }}
                           onMouseLeave={(e) => { e.target.style.color = 'var(--muted)'; e.target.style.borderColor = 'var(--border)'; }}>
                           삭제
                         </button>
@@ -2422,8 +2422,8 @@ function VendorDashboard() {
                       confirmed: 'var(--gold)',
                       pending: '#4A9EFF',
                       completed: '#4AFF6A',
-                      cancelled: '#e85d5d',
-                      refunded: '#e85d5d',
+                      cancelled: 'var(--danger)',
+                      refunded: 'var(--danger)',
                     };
 
                     // 실제 상태값은 cancelled 다. rejected 는 존재하지 않아
@@ -2515,7 +2515,7 @@ function VendorDashboard() {
                                 style={{
                                   fontSize: '0.7rem', padding: '0.3rem 0.6rem',
                                   background: 'transparent', color: 'var(--danger)',
-                                  border: '1px solid #e85d5d', cursor: 'pointer',
+                                  border: '1px solid var(--danger)', cursor: 'pointer',
                                   fontFamily: 'var(--font-serif)',
                                 }}
                               >
@@ -2890,14 +2890,14 @@ function VendorDashboard() {
                     const statusColor = (status) => {
                       if (status === 'confirmed') return 'var(--gold)';
                       if (status === 'pending') return '#4A9EFF';
-                      if (status === 'completed') return '#4caf50';
+                      if (status === 'completed') return 'var(--success)';
                       return 'var(--muted)';
                     };
                     // 그룹의 우선 상태: pending > confirmed > completed
                     const groupStatusColor = (statuses) => {
                       if (statuses.includes('pending')) return '#4A9EFF';
                       if (statuses.includes('confirmed')) return 'var(--gold)';
-                      if (statuses.includes('completed')) return '#4caf50';
+                      if (statuses.includes('completed')) return 'var(--success)';
                       return 'var(--muted)';
                     };
 
@@ -2919,7 +2919,7 @@ function VendorDashboard() {
                           <>
                             <div style={{
                               fontSize: '0.85rem', fontFamily: 'var(--font-serif)',
-                              color: isHoliday ? 'var(--danger)' : isToday ? 'var(--gold)' : isSun ? '#e85d5d' : isSat ? '#4A9EFF' : 'var(--text)',
+                              color: isHoliday ? 'var(--danger)' : isToday ? 'var(--gold)' : isSun ? 'var(--danger)' : isSat ? '#4A9EFF' : 'var(--text)',
                               fontWeight: isToday ? '700' : 'normal',
                               marginBottom: '0.3rem',
                               textDecoration: isHoliday ? 'line-through' : 'none',
@@ -3632,7 +3632,7 @@ function VendorDashboard() {
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: addFormErrors.nameKo ? '1px solid #e85d5d' : '1px solid var(--gold-dim)',
+                    border: addFormErrors.nameKo ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
@@ -4078,7 +4078,7 @@ function VendorDashboard() {
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: editFormErrors.nameKo ? '1px solid #e85d5d' : '1px solid var(--gold-dim)',
+                    border: editFormErrors.nameKo ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
@@ -4560,7 +4560,7 @@ function VendorDashboard() {
                     fontFamily: 'var(--font-serif)', fontSize: 13,
                     cursor: bookingBusy ? 'default' : 'pointer',
                     opacity: bookingBusy ? 0.6 : 1,
-                    background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
+                    background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : 'var(--danger)',
                     color: bookingActionConfirm.action === 'confirm' ? 'var(--on-accent)' : '#fff',
                   }}
                 >

@@ -98,9 +98,9 @@ const RoleApprovals = ({ onChanged }) => {
     setBusyKey(null);
   };
 
-  const noticeColor = notice?.kind === 'error' ? '#e85d5d'
+  const noticeColor = notice?.kind === 'error' ? 'var(--danger)'
                     : notice?.kind === 'warn'  ? 'var(--gold)'
-                    : '#22c55e';
+                    : 'var(--success)';
 
   if (loading) {
     return (
@@ -290,7 +290,7 @@ const RoleApprovals = ({ onChanged }) => {
                       disabled={busy}
                       style={{
                         padding: '10px 20px', background: 'transparent', color: 'var(--danger)',
-                        border: '1px solid #e85d5d', fontSize: 12,
+                        border: '1px solid var(--danger)', fontSize: 12,
                         fontFamily: 'var(--font-serif)',
                         cursor: busy ? 'default' : 'pointer', letterSpacing: '0.1em',
                       }}
@@ -324,7 +324,7 @@ const RoleApprovals = ({ onChanged }) => {
                         disabled={busy || !reason.trim()}
                         style={{
                           padding: '9px 18px',
-                          background: reason.trim() ? '#e85d5d' : 'var(--border)',
+                          background: reason.trim() ? 'var(--danger)' : 'var(--border)',
                           color: '#fff', border: 'none', fontSize: 12,
                           fontFamily: 'var(--font-serif)',
                           cursor: (busy || !reason.trim()) ? 'default' : 'pointer',

@@ -406,7 +406,7 @@ const CustomerDashboard = () => {
                   {hasBadge && (
                     <span style={{
                       width: 8, height: 8, borderRadius: '50%',
-                      background: '#e85d5d', marginLeft: 'auto',
+                      background: 'var(--danger)', marginLeft: 'auto',
                     }} />
                   )}
                 </button>
@@ -507,7 +507,7 @@ const CustomerDashboard = () => {
                         const pl = b.pipeline;
                         const pipelineStatusColor = (s) => ({
                           confirmed: 'var(--success)', reserved: 'var(--gold)', pending: 'var(--warning)',
-                          completed: '#60a5fa', returned: '#a78bfa', cancelled: '#ef4444',
+                          completed: '#60a5fa', returned: '#a78bfa', cancelled: 'var(--danger)',
                         }[s] || 'var(--muted)');
 
                         const PipelineCard = ({ icon, title, data, type }) => {
@@ -893,7 +893,7 @@ const CustomerDashboard = () => {
                               </div>
                               <button
                                 onClick={() => removeFav(p.id)}
-                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}
+                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)40' }}
                               >
                                 {m.removeFav}
                               </button>
@@ -947,7 +947,7 @@ const CustomerDashboard = () => {
                         </p>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}>{m.editReview}</button>
-                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}>{m.deleteReview}</button>
+                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: 'var(--danger)40' }}>{m.deleteReview}</button>
                         </div>
                       </div>
                     ))}
@@ -1117,7 +1117,7 @@ const CustomerDashboard = () => {
                       const labels = lang === 'ko'
                         ? ['매우 약함', '약함', '보통', '강함', '매우 강함']
                         : ['Very Weak', 'Weak', 'Fair', 'Strong', 'Very Strong'];
-                      const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#10b981'];
+                      const colors = ['var(--danger)', '#f97316', 'var(--warning)', 'var(--success)', '#10b981'];
                       const idx = Math.max(0, strength - 1);
                       return (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1228,7 +1228,7 @@ const CustomerDashboard = () => {
                 {/* Delete account */}
                 <div style={{
                   ...sectionStyle,
-                  borderColor: '#ef444430',
+                  borderColor: 'var(--danger)30',
                   background: 'rgba(239,68,68,0.03)',
                 }}>
                   <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: 'var(--danger)', margin: '0 0 0.5rem' }}>
@@ -1240,12 +1240,12 @@ const CustomerDashboard = () => {
                   {!showDeleteConfirm ? (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      style={{ ...ghostBtn, color: 'var(--danger)', borderColor: '#ef444440' }}
+                      style={{ ...ghostBtn, color: 'var(--danger)', borderColor: 'var(--danger)40' }}
                     >
                       {m.deleteAccountBtn}
                     </button>
                   ) : (
-                    <div style={{ padding: '1.2rem', background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444440' }}>
+                    <div style={{ padding: '1.2rem', background: 'rgba(239,68,68,0.08)', border: '1px solid var(--danger)40' }}>
                       <div style={{ fontSize: '0.95rem', color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontWeight: 600, marginBottom: '0.6rem' }}>
                         {lang === 'ko' ? '정말 탈퇴하시겠습니까?' : lang === 'ja' ? '本当に退会しますか？' : 'Are you sure you want to delete your account?'}
                       </div>

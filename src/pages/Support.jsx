@@ -82,8 +82,8 @@ const Support = ({ onAuthOpen }) => {
   };
 
   const canSubmit = category && subject.trim() && body.trim() && !busy;
-  const noticeColor = notice?.kind === 'error' ? '#e85d5d'
-                    : notice?.kind === 'warn'  ? 'var(--gold)' : '#22c55e';
+  const noticeColor = notice?.kind === 'error' ? 'var(--danger)'
+                    : notice?.kind === 'warn'  ? 'var(--gold)' : 'var(--success)';
 
   if (authLoading) {
     return (
@@ -319,7 +319,7 @@ const Support = ({ onAuthOpen }) => {
                       {q.answer ? (
                         <div style={{
                           marginTop: 18, padding: '16px 18px',
-                          background: 'var(--bg)', borderLeft: '3px solid #22c55e',
+                          background: 'var(--bg)', borderLeft: '3px solid var(--success)',
                         }}>
                           <div style={{
                             fontSize: 10, color: 'var(--success)', fontFamily: 'var(--font-serif)',

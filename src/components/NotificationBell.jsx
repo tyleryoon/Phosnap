@@ -231,7 +231,7 @@ const NotificationBell = () => {
                 {!notif.read_at && (
                   <span style={{
                     width: 8, height: 8, borderRadius: '50%',
-                    background: '#e85d5d', flexShrink: 0, marginTop: 6,
+                    background: 'var(--danger)', flexShrink: 0, marginTop: 6,
                   }} />
                 )}
               </div>

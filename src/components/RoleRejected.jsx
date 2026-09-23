@@ -106,7 +106,7 @@ const RoleRejected = ({ role }) => {
 
       {info?.reject_reason && (
         <div style={{
-          border: '1px solid var(--border)', borderLeft: '3px solid #e85d5d',
+          border: '1px solid var(--border)', borderLeft: '3px solid var(--danger)',
           background: 'var(--bg2)', padding: '16px 20px', marginBottom: 24,
         }}>
           <div style={{
@@ -152,7 +152,7 @@ const RoleRejected = ({ role }) => {
 
       {error && (
         <div style={{
-          border: '1px solid #e85d5d', background: 'var(--bg2)',
+          border: '1px solid var(--danger)', background: 'var(--bg2)',
           padding: '12px 16px', marginTop: 16, fontSize: 13, color: 'var(--danger)',
         }}>
           {error}

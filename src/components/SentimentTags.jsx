@@ -130,7 +130,7 @@ const SentimentTags = ({ reviews = [], compact = false }) => {
             const sizeRatio = item.count / maxKeywordCount;
             const baseFontSize = 11;
             const fontSize = baseFontSize + sizeRatio * 8;
-            const color = item.sentiment === 'positive' ? 'var(--gold)' : '#E74C3C';
+            const color = item.sentiment === 'positive' ? 'var(--gold)' : 'var(--danger)';
             const opacity = 0.5 + sizeRatio * 0.5;
 
             return (
@@ -161,7 +161,7 @@ const SentimentTags = ({ reviews = [], compact = false }) => {
               style={{
                 ...styles.sentimentSegment,
                 flex: 1,
-                background: 'linear-gradient(to right, #E74C3C, #F39C12)',
+                background: 'linear-gradient(to right, var(--danger), var(--warning))',
               }}
             />
             {/* Yellow section */}
@@ -169,7 +169,7 @@ const SentimentTags = ({ reviews = [], compact = false }) => {
               style={{
                 ...styles.sentimentSegment,
                 flex: 1,
-                background: 'linear-gradient(to right, #F39C12, #F1C40F)',
+                background: 'linear-gradient(to right, var(--warning), var(--warning))',
               }}
             />
             {/* Green section */}
@@ -177,7 +177,7 @@ const SentimentTags = ({ reviews = [], compact = false }) => {
               style={{
                 ...styles.sentimentSegment,
                 flex: 1,
-                background: 'linear-gradient(to right, #F1C40F, #2ECC71)',
+                background: 'linear-gradient(to right, var(--warning), var(--success))',
               }}
             />
           </div>

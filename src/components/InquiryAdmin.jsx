@@ -82,8 +82,8 @@ const InquiryAdmin = ({ onChanged }) => {
     setBusyId(null);
   };
 
-  const noticeColor = notice?.kind === 'error' ? '#e85d5d'
-                    : notice?.kind === 'warn'  ? 'var(--gold)' : '#22c55e';
+  const noticeColor = notice?.kind === 'error' ? 'var(--danger)'
+                    : notice?.kind === 'warn'  ? 'var(--gold)' : 'var(--success)';
 
   return (
     <div>
@@ -210,7 +210,7 @@ const InquiryAdmin = ({ onChanged }) => {
                     {row.answer ? (
                       <div style={{
                         marginTop: 18, padding: '16px 18px',
-                        background: 'var(--bg)', borderLeft: '3px solid #22c55e',
+                        background: 'var(--bg)', borderLeft: '3px solid var(--success)',
                       }}>
                         <div style={{
                           fontSize: 10, color: 'var(--success)', fontFamily: 'var(--font-serif)',
@@ -249,7 +249,7 @@ const InquiryAdmin = ({ onChanged }) => {
                               padding: '10px 20px', border: 'none', color: '#fff',
                               fontSize: 12, fontFamily: 'var(--font-serif)',
                               letterSpacing: '0.1em',
-                              background: (draft[row.id] || '').trim() ? '#22c55e' : 'var(--border)',
+                              background: (draft[row.id] || '').trim() ? 'var(--success)' : 'var(--border)',
                               cursor: (busy || !(draft[row.id] || '').trim()) ? 'default' : 'pointer',
                             }}
                           >

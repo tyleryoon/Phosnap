@@ -253,7 +253,7 @@ const TourDetail = () => {
                   </div>
                 </div>
                 {instance.status === 'adjusting' && instance.currentPrice !== Math.ceil(instance.basePrice / instance.maxGuests) && (
-                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,152,0,0.08)', border: '1px solid rgba(255,152,0,0.2)', fontSize: 11, color: '#ff9800' }}>
+                  <div style={{ marginTop: 8, padding: '8px 12px', background: 'rgba(255,152,0,0.08)', border: '1px solid rgba(255,152,0,0.2)', fontSize: 11, color: 'var(--warning)' }}>
                     ⚠️ {lang === 'ko'
                       ? `인원 미달로 1인당 ₩${fmt(instance.currentPrice)}으로 조정되었습니다. 참여자 확인 대기 중...`
                       : `Price adjusted to ₩${fmt(instance.currentPrice)}/person due to fewer participants. Awaiting confirmation...`
@@ -283,7 +283,7 @@ const TourDetail = () => {
               <div style={{
                 height: '100%', borderRadius: 4, transition: 'width 0.5s ease',
                 width: `${fillPercent}%`,
-                background: count >= instance.maxGuests ? '#4caf50' : count >= instance.minGuests ? 'var(--gold)' : `linear-gradient(90deg, #e85d5d, var(--gold))`,
+                background: count >= instance.maxGuests ? 'var(--success)' : count >= instance.minGuests ? 'var(--gold)' : `linear-gradient(90deg, var(--danger), var(--gold))`,
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--muted)' }}>
@@ -307,7 +307,7 @@ const TourDetail = () => {
                     {b.guestName.charAt(0)}
                   </div>
                   {b.guestName} {b.headcount > 1 && `+${b.headcount - 1}`}
-                  {b.status === 'pendingConfirm' && <span style={{ fontSize: 9, color: '#ff9800' }}>⏳</span>}
+                  {b.status === 'pendingConfirm' && <span style={{ fontSize: 9, color: 'var(--warning)' }}>⏳</span>}
                 </div>
               ))}
               {/* 빈 자리 */}
@@ -378,7 +378,7 @@ const TourDetail = () => {
               {/* adjusting 상태에서 가격 확인 요청 */}
               {instance.status === 'adjusting' && myBooking.status === 'pendingConfirm' && (
                 <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(255,152,0,0.06)', border: '1px solid rgba(255,152,0,0.2)' }}>
-                  <div style={{ fontSize: 11, color: '#ff9800', marginBottom: 8, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--warning)', marginBottom: 8, lineHeight: 1.5 }}>
                     ⚠️ {lang === 'ko'
                       ? `인원이 ${count}명으로 확정되어 1인당 가격이 ₩${fmt(instance.currentPrice)}으로 변경되었습니다. 이 가격으로 참여하시겠습니까?`
                       : `With ${count} participants, the price per person is now ₩${fmt(instance.currentPrice)}. Would you like to continue?`

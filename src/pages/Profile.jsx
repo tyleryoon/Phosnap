@@ -871,7 +871,7 @@ const Profile = ({ onAuthOpen }) => {
                                   <div style={{
                                     height: '100%', borderRadius: 2,
                                     width: `${Math.min(100, (count / inst.maxGuests) * 100)}%`,
-                                    background: count >= inst.maxGuests ? '#4caf50' : 'var(--gold)',
+                                    background: count >= inst.maxGuests ? 'var(--success)' : 'var(--gold)',
                                   }} />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

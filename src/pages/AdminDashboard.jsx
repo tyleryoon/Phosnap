@@ -1050,7 +1050,7 @@ const AdminDashboard = () => {
         {/* 조회 실패 — 숨기지 않는다. 예전에는 여기서 mock 으로 대체됐다. */}
         {loadError && !['approvals','inquiries'].includes(activeTab) && (
           <div style={{
-            border: '1px solid #e85d5d', background: 'var(--bg2)',
+            border: '1px solid var(--danger)', background: 'var(--bg2)',
             padding: '14px 18px', marginBottom: 24, fontSize: 13, color: 'var(--danger)',
           }}>
             데이터를 불러오지 못했습니다 — {loadError}

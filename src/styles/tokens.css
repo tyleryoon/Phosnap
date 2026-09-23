@@ -86,15 +86,18 @@
   --border:       rgba(26, 25, 23, 0.10);
   --border-hover: rgba(26, 25, 23, 0.22);
 
-  /* 의미색 — 채도를 낮춰 팔레트에 섞이게 한다 */
-  --success:      #4F7A52;
-  --warning:      #9A7433;
-  --danger:       #A6453F;
-  --info:         #46688C;
+  /* 의미색 — 채도를 낮춰 팔레트에 섞이게 한다.
+     상태 문구는 11~12px 로 작게 쓰이므로 가장 밝은 바탕(--bg3)에서도
+     4.5:1 을 넘겨야 한다. success 4.39 / warning 3.78 이라 읽히지 않는
+     자리가 있었다 — 색조는 두고 명도만 최소한 낮췄다. */
+  --success:      #4D7850;   /* bg 4.89 · bg3 4.52 */
+  --warning:      #8B682E;   /* bg 4.89 · bg3 4.52 */
+  --danger:       #A6453F;   /* bg 5.68 · bg3 5.25 */
+  --info:         #46688C;   /* bg 5.56 · bg3 5.14 */
 
   /* 등급 배지 — 예전 값은 Tailwind 400 계열(밝은 화면용)이라
      종이 바탕에서 대비가 2.4:1 이었다. 글씨가 뭉개져 보였다. */
-  --grade-1:      #78736B;   /* Rising */
+  --grade-1:      #726D66;   /* Rising — bg3 에서 4.17 이던 것 */
   --grade-2:      #46688C;   /* Established */
   --grade-3:      var(--accent);  /* Premier */
   --grade-4:      #9A4A72;   /* Elite */

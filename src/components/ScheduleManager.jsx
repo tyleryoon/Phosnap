@@ -331,7 +331,7 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
             const style = {
               open:      { bg: 'rgba(72,187,120,0.14)', bd: 'rgba(72,187,120,0.55)', fg: '#48bb78' },
               default:   { bg: 'rgba(72,187,120,0.05)', bd: 'var(--border)',         fg: 'var(--muted)' },
-              closed:    { bg: 'rgba(232,93,93,0.12)',  bd: 'rgba(232,93,93,0.45)',  fg: '#e85d5d' },
+              closed:    { bg: 'rgba(232,93,93,0.12)',  bd: 'rgba(232,93,93,0.45)',  fg: 'var(--danger)' },
               weeklyOff: { bg: 'rgba(232,93,93,0.06)',  bd: 'rgba(232,93,93,0.28)',  fg: 'rgba(232,93,93,0.75)' },
             }[st];
 

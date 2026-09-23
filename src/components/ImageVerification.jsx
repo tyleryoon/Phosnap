@@ -299,7 +299,7 @@ const ImageVerification = ({ images, onVerified }) => {
           let badgeIcon = '○';
 
           if (isVerified) {
-            badgeColor = '#4CAF50';
+            badgeColor = 'var(--success)';
             badgeLabel = labels.verified[lang];
             badgeIcon = '✓';
           } else if (isDuplicate) {

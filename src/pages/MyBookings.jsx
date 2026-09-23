@@ -180,7 +180,7 @@ const STATUS_STYLE = {
   completed: { bg: 'rgba(160,174,192,0.1)',  color: 'var(--muted)', border: 'rgba(160,174,192,0.25)' },
   cancelled: { bg: 'rgba(245,101,101,0.1)',  color: 'var(--danger)',      border: 'rgba(245,101,101,0.3)' },
   refunded:  { bg: 'rgba(160,174,192,0.1)',  color: 'var(--muted)', border: 'rgba(160,174,192,0.25)' },
-  delivered: { bg: 'rgba(66,153,225,0.12)', color: '#4299e1', border: 'rgba(66,153,225,0.35)' },
+  delivered: { bg: 'rgba(66,153,225,0.12)', color: 'var(--info)', border: 'rgba(66,153,225,0.35)' },
 };
 
 const fmt = (n) => Number(n).toLocaleString();
@@ -239,7 +239,7 @@ const CancelModal = ({ booking, c, onConfirm, onClose, loading }) => (
     <div style={{ display: 'flex', gap: 12 }}>
       <button
         className="btn-primary"
-        style={{ flex: 1, background: '#c53030', borderColor: '#c53030' }}
+        style={{ flex: 1, background: 'var(--danger)', borderColor: 'var(--danger)' }}
         onClick={onConfirm}
         disabled={loading}
       >
@@ -622,7 +622,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
               border: '1px solid rgba(66,153,225,0.2)', marginBottom: 12,
               fontSize: 12, color: 'var(--muted)', lineHeight: 1.6,
             }}>
-              <div style={{ fontSize: 10, color: '#4299e1', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 4 }}>
+              <div style={{ fontSize: 10, color: 'var(--info)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 4 }}>
                 {c.deliveryMemo}
               </div>
               {booking.delivery_memo}
@@ -632,7 +632,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
             onClick={() => window.open(booking.delivery_url, '_blank')}
             style={{
               padding: '10px 16px', background: 'rgba(66,153,225,0.1)',
-              border: '1px solid rgba(66,153,225,0.35)', color: '#4299e1',
+              border: '1px solid rgba(66,153,225,0.35)', color: 'var(--info)',
               fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
               cursor: 'pointer', borderRadius: 2,
             }}

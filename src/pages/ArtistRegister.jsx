@@ -748,7 +748,7 @@ const ArtistRegister = () => {
               </label>
               <input style={{
                   ...INPUT,
-                  ...(realName && !isRealNameValid(realName) ? { borderColor: '#e85d5d', background: 'rgba(232,93,93,0.04)' } : {}),
+                  ...(realName && !isRealNameValid(realName) ? { borderColor: 'var(--danger)', background: 'rgba(232,93,93,0.04)' } : {}),
                 }}
                 type="text" placeholder={lang === 'ko' ? '홍길동' : lang === 'ja' ? '山田太郎' : 'John Doe'}
                 value={realName} onChange={e => setRealName(e.target.value)} required />
@@ -770,7 +770,7 @@ const ArtistRegister = () => {
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>{f.nativeName} *</label>
                 <input style={{
                   ...INPUT,
-                  borderColor: nativeNameError ? '#e85d5d' : 'var(--border)',
+                  borderColor: nativeNameError ? 'var(--danger)' : 'var(--border)',
                   background: nativeNameError ? 'rgba(232,93,93,0.04)' : 'var(--bg)',
                 }}
                   type="text" placeholder="홍길동"
@@ -811,7 +811,7 @@ const ArtistRegister = () => {
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>{f.englishName} *</label>
                 <input style={{
                   ...INPUT,
-                  borderColor: englishNameError ? '#e85d5d' : 'var(--border)',
+                  borderColor: englishNameError ? 'var(--danger)' : 'var(--border)',
                   background: englishNameError ? 'rgba(232,93,93,0.04)' : 'var(--bg)',
                 }}
                   type="text" placeholder="Gildong Hong"
@@ -868,7 +868,7 @@ const ArtistRegister = () => {
                 {otpVerified && <span style={{ color: 'var(--success)', marginLeft: 8, fontSize: 10 }}>✓ {lang === 'ko' ? '인증 완료' : lang === 'ja' ? '認証済み' : lang === 'zh' ? '已验证' : 'Verified'}</span>}
               </label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <input style={{ ...INPUT, flex: 1, ...(otpVerified ? { borderColor: '#22c55e', background: 'rgba(34,197,94,0.04)' } : {}) }}
+                <input style={{ ...INPUT, flex: 1, ...(otpVerified ? { borderColor: 'var(--success)', background: 'rgba(34,197,94,0.04)' } : {}) }}
                   type="tel" placeholder="010-0000-0000"
                   value={phone}
                   disabled={otpVerified}
@@ -956,7 +956,7 @@ const ArtistRegister = () => {
                       }}
                       style={{
                         padding: '11px 20px', whiteSpace: 'nowrap',
-                        background: otpCode.length === 6 ? '#22c55e' : 'var(--border)',
+                        background: otpCode.length === 6 ? 'var(--success)' : 'var(--border)',
                         border: 'none', color: otpCode.length === 6 ? '#fff' : 'var(--muted)',
                         fontFamily: 'var(--font-serif)', fontSize: 11, cursor: 'pointer',
                       }}>
@@ -1034,7 +1034,7 @@ const ArtistRegister = () => {
               <div>
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>{f.passwordConfirm} *</label>
                 <input
-                  style={{ ...INPUT, borderColor: pwConfirm && password !== pwConfirm ? '#e85d5d' : password && password === pwConfirm ? '#22c55e' : 'var(--border)' }}
+                  style={{ ...INPUT, borderColor: pwConfirm && password !== pwConfirm ? 'var(--danger)' : password && password === pwConfirm ? 'var(--success)' : 'var(--border)' }}
                   type="password" placeholder="••••••••" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} />
               </div>
             </div>
@@ -1052,7 +1052,7 @@ const ArtistRegister = () => {
                 <span style={{ color: /\d/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/\d/.test(password) ? '✓' : '✗'} 숫자
                 </span>{' · '}
-                <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) ? '✓' : '✗'} 특수문자
                 </span>
               </div>

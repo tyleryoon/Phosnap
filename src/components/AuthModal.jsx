@@ -706,7 +706,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <label className="form-label">실명 *</label>
               <input className="form-input" type="text" placeholder="홍길동"
                 value={name} onChange={e => setName(e.target.value)} required
-                style={realNameError ? { borderColor: '#e85d5d', background: 'rgba(232,93,93,0.04)' } : {}} />
+                style={realNameError ? { borderColor: 'var(--danger)', background: 'rgba(232,93,93,0.04)' } : {}} />
               {realNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>}
             </div>
             {/* 생년월일 */}

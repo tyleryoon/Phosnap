@@ -54,7 +54,7 @@ const STATUS = {
   confirmed: { label: '예약 확정', color: 'var(--success)', bg: 'rgba(34,197,94,0.1)'   },
   completed: { label: '촬영 완료', color: 'var(--info)', bg: 'rgba(96,165,250,0.1)'  },
   cancelled: { label: '취소됨',   color: 'var(--danger)', bg: 'rgba(232,93,93,0.1)'   },
-  delivered: { label: '전달 완료', color: '#4299e1', bg: 'rgba(66,153,225,0.12)', border: 'rgba(66,153,225,0.35)' },
+  delivered: { label: '전달 완료', color: 'var(--info)', bg: 'rgba(66,153,225,0.12)', border: 'rgba(66,153,225,0.35)' },
 };
 
 const fmt = (n) => n?.toLocaleString('ko-KR') || '0';
@@ -608,7 +608,7 @@ const ArtistDashboard = () => {
               onClick={() => onConfirm(deliveryUrl, deliveryMemo)}
               disabled={loading || !deliveryUrl.trim()}
               style={{
-                flex: 1, padding: '11px 0', background: '#4299e1', border: 'none',
+                flex: 1, padding: '11px 0', background: 'var(--info)', border: 'none',
                 color: '#fff', fontFamily: 'var(--font-serif)', fontSize: 13,
                 letterSpacing: '0.08em', cursor: 'pointer', opacity: loading || !deliveryUrl.trim() ? 0.6 : 1,
               }}
@@ -696,7 +696,7 @@ const ArtistDashboard = () => {
                 disabled={actionLoading}
                 style={{
                   padding: '8px 18px', background: 'transparent',
-                  border: '1px solid #e85d5d', color: 'var(--danger)',
+                  border: '1px solid var(--danger)', color: 'var(--danger)',
                   fontFamily: 'var(--font-serif)', fontSize: 12,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}
@@ -723,7 +723,7 @@ const ArtistDashboard = () => {
               {b.delivery_url ? (
                 <div style={{
                   padding: '8px 14px', background: 'rgba(66,153,225,0.1)', border: '1px solid rgba(66,153,225,0.3)',
-                  color: '#4299e1', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
+                  color: 'var(--info)', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
                 }}>
                   ✓ 전달 완료
                 </div>
@@ -732,7 +732,7 @@ const ArtistDashboard = () => {
                   onClick={() => setDeliverTarget(b)}
                   style={{
                     padding: '8px 18px', background: 'transparent',
-                    border: '1px solid #4299e1', color: '#4299e1',
+                    border: '1px solid var(--info)', color: 'var(--info)',
                     fontFamily: 'var(--font-serif)', fontSize: 12,
                     letterSpacing: '0.08em', cursor: 'pointer',
                   }}
@@ -810,7 +810,7 @@ const ArtistDashboard = () => {
                   <span style={{
                     position: 'absolute', top: -3, right: -3,
                     width: 10, height: 10, borderRadius: '50%',
-                    background: '#e85d5d', border: '2px solid var(--bg)',
+                    background: 'var(--danger)', border: '2px solid var(--bg)',
                   }} />
                 )}
               </Link>
@@ -850,7 +850,7 @@ const ArtistDashboard = () => {
                   <span style={{
                     position: 'absolute', top: 8, right: 8,
                     width: 8, height: 8, borderRadius: '50%',
-                    background: '#e85d5d',
+                    background: 'var(--danger)',
                   }} />
                 )}
               </button>

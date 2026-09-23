@@ -147,7 +147,7 @@ const PendingItems = ({ onChanged }) => {
                         {TYPE_LABEL[s.type] || s.type} {s.name || ''}
                         <span style={{
                           color: s.status === 'confirmed' ? 'var(--success)'
-                               : s.status === 'cancelled' ? '#e85d5d' : 'var(--muted)',
+                               : s.status === 'cancelled' ? 'var(--danger)' : 'var(--muted)',
                         }}>
                           {s.status === 'confirmed' ? ' 수락' : s.status === 'cancelled' ? ' 거절' : ' 대기'}
                         </span>

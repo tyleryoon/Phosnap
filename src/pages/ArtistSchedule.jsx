@@ -259,9 +259,9 @@ const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2
 const genId = () => Math.random().toString(36).substring(2, 8);
 
 const STATUS_COLORS = {
-  open:    '#22c55e',
+  open:    'var(--success)',
   partial: 'var(--accent-deep)',
-  full:    '#e85d5d',
+  full:    'var(--danger)',
   off:     'rgba(136,136,136,0.25)',
 };
 
@@ -434,7 +434,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   <div style={{
                     height: '100%', borderRadius: 2, transition: 'width 0.3s',
                     width: `${Math.min(100, (count / inst.maxGuests) * 100)}%`,
-                    background: count >= inst.maxGuests ? '#4caf50' : count >= inst.minGuests ? 'var(--gold)' : '#e85d5d',
+                    background: count >= inst.maxGuests ? 'var(--success)' : count >= inst.minGuests ? 'var(--gold)' : 'var(--danger)',
                   }} />
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 2 }}>
@@ -520,7 +520,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   setDateError('');
                   setNewForm({ ...newForm, scheduledDate: val });
                 }}
-                style={{ ...inputStyle, borderColor: dateError ? '#e85d5d' : undefined }} />
+                style={{ ...inputStyle, borderColor: dateError ? 'var(--danger)' : undefined }} />
               {dateError && <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 4 }}>{dateError}</div>}
             </label>
           </div>
@@ -1277,7 +1277,7 @@ const ArtistSchedule = () => {
   // ─────────────────────────────────────────────────────────────────
 
   // ── 지역별 색상 매핑 ──
-  const LOC_COLORS = ['var(--gold)', '#60a5fa', '#22c55e', '#f472b6', '#a78bfa', '#fb923c'];
+  const LOC_COLORS = ['var(--gold)', '#60a5fa', 'var(--success)', '#f472b6', '#a78bfa', '#fb923c'];
   const getLocColor = (idx) => LOC_COLORS[idx % LOC_COLORS.length];
 
   // 특정 날짜에 활동 중인 지역 목록 반환
@@ -1351,7 +1351,7 @@ const ArtistSchedule = () => {
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
             설정 기간 내 전체 오픈 →
           </button>
-          <button style={{ fontSize: 12, padding: '10px 20px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'transparent', border: '1px solid #e85d5d', color: 'var(--danger)', cursor: 'pointer' }}
+          <button style={{ fontSize: 12, padding: '10px 20px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', cursor: 'pointer' }}
             onClick={handleCloseRange}
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
             설정 기간 내 전체 클로즈 ×
@@ -2270,7 +2270,7 @@ const ArtistSchedule = () => {
                   <div style={{
                     width: 16, height: 16, borderRadius: 8, position: 'absolute', top: 2,
                     left: isActive ? 21 : 2,
-                    background: isActive ? '#50c850' : '#e85d5d',
+                    background: isActive ? '#50c850' : 'var(--danger)',
                     transition: 'all 0.2s',
                     boxShadow: `0 1px 3px ${isActive ? 'rgba(80,200,80,0.4)' : 'rgba(232,80,80,0.4)'}`,
                   }} />
@@ -2307,7 +2307,7 @@ const ArtistSchedule = () => {
     return (
       <div>
         <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 28, maxWidth: 620, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          {!mainLoc && <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0, marginTop: 6 }} />}
+          {!mainLoc && <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block', flexShrink: 0, marginTop: 6 }} />}
           <div>
             <strong style={{ color: 'var(--gold)' }}>메인 활동지</strong>를 반드시 1곳 지정해주세요 (항상 상주하며 촬영하는 곳).<br/>
             출장 지역은 날짜 범위를 설정하여 해당 기간에만 고객에게 노출됩니다.<br/>
@@ -2762,7 +2762,7 @@ const ArtistSchedule = () => {
                     style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', fontSize: 12, fontFamily: 'var(--font-body)', lineHeight: 1.6, marginBottom: 10 }}
                   />
                   <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="btn-primary" style={{ background: '#c53030', borderColor: '#c53030', fontSize: 12 }} onClick={handleReject}>
+                    <button className="btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)', fontSize: 12 }} onClick={handleReject}>
                       거절 확정
                     </button>
                     <button className="btn-outline" style={{ fontSize: 12 }} onClick={() => { setRejectTarget(null); setRejectReason(''); }}>
@@ -2946,7 +2946,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
               전체 포트폴리오 ({portfolio.length}개)
-              {!portfolio.some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 사진+지역 포함 1개 이상 등록" />}
+              {!portfolio.some(pf => (pf.images?.length > 0 || pf.url) && pf.regionId) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block', flexShrink: 0 }} title="필수: 사진+지역 포함 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ fontSize: 11, padding: '5px 12px' }}
@@ -3996,7 +3996,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
               📷 스냅 촬영 상품 <span style={{ color: 'var(--accent-a50)' }}>— {snapProducts.length}개</span>
-              {snapProducts.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
+              {snapProducts.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button className="btn-ghost" style={{ fontSize: 11, padding: '5px 12px' }}
@@ -4288,7 +4288,7 @@ const ArtistSchedule = () => {
                             const cy = h / 2;
                             const isFirst = i === 0;
                             const isLast = i === pts.length - 1;
-                            const color = isFirst ? '#48bb78' : isLast ? '#e85d5d' : '#4a9eff';
+                            const color = isFirst ? '#48bb78' : isLast ? 'var(--danger)' : '#4a9eff';
                             return (
                               <g key={i}>
                                 <circle cx={cx} cy={cy} r={isFirst || isLast ? 8 : 6} fill={color} />
@@ -4591,7 +4591,7 @@ const ArtistSchedule = () => {
           <Corners />
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
             정산 계좌 등록 <span style={{ color: 'rgba(136,136,136,0.4)' }}>— 고객에게 노출되지 않습니다</span>
-            {!(pi.bankName && pi.accountNumber && pi.accountHolder) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 정산 계좌 등록" />}
+            {!(pi.bankName && pi.accountNumber && pi.accountHolder) && <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)', display: 'inline-block', flexShrink: 0 }} title="필수: 정산 계좌 등록" />}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <label style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -5624,7 +5624,7 @@ const ArtistSchedule = () => {
                 rows={3}
                 style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '10px 12px', fontSize: 12, fontFamily: 'var(--font-serif)', lineHeight: 1.6, marginBottom: 16 }} />
               <div style={{ display: 'flex', gap: 12 }}>
-                <button className="btn-primary" style={{ flex: 1, background: '#c53030', borderColor: '#c53030' }} onClick={() => handleReject(collaboRejectPopup.proposalId)}>
+                <button className="btn-primary" style={{ flex: 1, background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => handleReject(collaboRejectPopup.proposalId)}>
                   거절 확정
                 </button>
                 <button className="btn-ghost" onClick={() => { setCollaboRejectPopup(null); setCollaboRejectReason(''); }}>
@@ -5830,7 +5830,7 @@ const ArtistSchedule = () => {
                       <span style={{
                         position: 'absolute', top: 6, right: 6,
                         width: 8, height: 8, borderRadius: '50%',
-                        background: tab.key === 'bookings' || tab.key === 'collabo' ? 'var(--accent-deep)' : '#e85d5d',
+                        background: tab.key === 'bookings' || tab.key === 'collabo' ? 'var(--accent-deep)' : 'var(--danger)',
                         display: 'inline-block',
                       }} />
                     )}

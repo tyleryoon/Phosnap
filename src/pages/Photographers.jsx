@@ -649,7 +649,9 @@ const Photographers = ({ onAuthOpen }) => {
                         background: isActive ? 'var(--accent-a15)' : 'transparent',
                         border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border)'}`,
                         borderLeft: 'none', borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
-                        color: isFav ? 'var(--gold)' : 'rgba(136,136,136,0.3)',
+                        // 0.3 알파 회색은 3.5:1 이라 켜져 있는지조차 안 보였다.
+                        // 꺼진 상태여도 누를 수 있는 버튼이면 보여야 한다.
+                        color: isFav ? 'var(--gold)' : 'var(--faint)',
                         transition: 'color 0.2s',
                       }}
                       title={isFav ? '즐겨찾기 해제' : '즐겨찾기'}

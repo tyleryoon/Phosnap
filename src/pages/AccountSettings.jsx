@@ -419,7 +419,7 @@ const AccountSettings = () => {
           <label style={LABEL}>{f.confirmPw}</label>
           <input style={{
             ...INPUT,
-            borderColor: confirmPw && newPw !== confirmPw ? '#e85d5d' : confirmPw && newPw === confirmPw ? '#22c55e' : 'var(--border)',
+            borderColor: confirmPw && newPw !== confirmPw ? 'var(--danger)' : confirmPw && newPw === confirmPw ? 'var(--success)' : 'var(--border)',
           }}
             type="password" value={confirmPw} onChange={e => setConfirmPw(e.target.value)}
             placeholder="••••••••" />
@@ -440,7 +440,7 @@ const AccountSettings = () => {
             <span style={{ color: /\d/.test(newPw) ? 'var(--success)' : 'var(--danger)' }}>
               {/\d/.test(newPw) ? '✓' : '✗'} {lang === 'ko' ? '숫자' : '0-9'}
             </span>{' · '}
-            <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPw) ? '#22c55e' : '#e85d5d' }}>
+            <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPw) ? 'var(--success)' : 'var(--danger)' }}>
               {/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPw) ? '✓' : '✗'} {lang === 'ko' ? '특수문자' : 'Special'}
             </span>
           </div>

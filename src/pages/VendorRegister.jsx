@@ -446,7 +446,7 @@ const VendorRegister = () => {
             <div style={{ marginBottom: 12 }}>
               <input style={{
                 ...INPUT,
-                borderColor: nameKoError ? '#e85d5d' : 'var(--border)',
+                borderColor: nameKoError ? 'var(--danger)' : 'var(--border)',
                 background: nameKoError ? 'rgba(232,93,93,0.04)' : 'var(--bg)',
               }}
                 type="text" placeholder="업체명 (한글)"
@@ -487,7 +487,7 @@ const VendorRegister = () => {
             <div style={{ marginBottom: 24 }}>
               <input style={{
                 ...INPUT,
-                borderColor: nameEnError ? '#e85d5d' : 'var(--border)',
+                borderColor: nameEnError ? 'var(--danger)' : 'var(--border)',
                 background: nameEnError ? 'rgba(232,93,93,0.04)' : 'var(--bg)',
               }}
                 type="text" placeholder="업체명 (영문)"
@@ -530,7 +530,7 @@ const VendorRegister = () => {
             <SectionDivider label="담당자 정보" />
             <input style={{
                 ...INPUT, marginBottom: realName && !isRealNameValid(realName) ? 4 : 12,
-                ...(realName && !isRealNameValid(realName) ? { borderColor: '#e85d5d', background: 'rgba(232,93,93,0.04)' } : {}),
+                ...(realName && !isRealNameValid(realName) ? { borderColor: 'var(--danger)', background: 'rgba(232,93,93,0.04)' } : {}),
               }}
               type="text" placeholder="담당자 실명"
               value={realName} onChange={e => setRealName(e.target.value)} />
