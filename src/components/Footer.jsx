@@ -30,7 +30,6 @@ const Footer = () => {
           <div>
             <div className="footer-col-title">{t('footer.svcTitle')}</div>
             <Link to="/photographers" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.svcFindArtist')}</Link>
-            <Link to="/explore"       className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.svcExplore')}</Link>
             <Link to="/for-artists"   className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.svcJoinArtist')}</Link>
             <Link to="/waitlist"      className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.svcEarlyAccess')}</Link>
           </div>

@@ -52,18 +52,16 @@ const Nav = ({ onAuthOpen }) => {
   const isActive = (to) => {
     if (to === '/photographers') return pathname.startsWith('/photographer');
     if (to === '/book')          return pathname.startsWith('/book');
-    if (to === '/explore')       return pathname === '/explore';
     if (to === '/for-artists')   return pathname === '/for-artists';
     return pathname === to;
   };
 
   const navLinks = [
-    // 지역탐색 + 작가 찾기는 누구에게나 보인다.
+    // 찾기 메뉴는 누구에게나 보인다.
     //
     // 예전에는 작가·벤더 로그인 시 숨겼다. 그래서 공급자가 자기 프로필이
     // 고객에게 어떻게 보이는지, 같은 지역에 누가 있는지 확인할 수 없었다.
     // 노출 상태를 아는 건 공급자에게 필요한 일이다.
-    { to: '/explore',       label: t('nav.explore') },
     { to: '/photographers', label: t('nav.photographers') },
     // 유형별 찾기. 헤메만·의상만·장소만 찾으러 오는 사람이 있다.
     // 주소는 넷으로 나뉘지만 화면은 FindShell 하나다 (인수인계 5-23).

@@ -306,7 +306,7 @@ const Home = ({ onAuthOpen }) => {
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 32 }}>
-          <button className="btn-outline" onClick={() => navigate('/explore')}>{t('home.seeAllLocations')}</button>
+          <button className="btn-outline" onClick={() => navigate('/photographers')}>{t('home.seeAllLocations')}</button>
         </div>
       </div>
 

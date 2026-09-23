@@ -54,7 +54,6 @@ const LoadingFallback = () => (
 
 // Lazy-loaded Pages
 const Home         = React.lazy(() => import('./pages/Home'));
-const Explore      = React.lazy(() => import('./pages/Explore'));
 const Photographers = React.lazy(() => import('./pages/Photographers'));
 const Profile      = React.lazy(() => import('./pages/Profile'));
 const Booking      = React.lazy(() => import('./pages/Booking'));
@@ -536,16 +535,6 @@ const RoleAwareHome = ({ onAuthOpen }) => {
   return <Home onAuthOpen={onAuthOpen} />;
 };
 
-// ─── Explore ──────────────────────────────────────────────────────────
-//
-// 예전에는 작가·헤메·벤더로 로그인하면 여기서 대시보드로 튕겼다.
-// 그래서 공급자는 자기가 고객에게 어떻게 보이는지 확인할 방법이 없었다.
-// (Nav 에서도 '지역 탐색'·'작가 찾기' 를 숨기고 있었다)
-//
-// 둘러보기는 누구나 할 수 있어야 한다. 자기 노출 상태를 보는 건
-// 공급자에게 필요한 일이지 막을 이유가 없다.
-// 다만 실제 결제는 Booking 화면에서 따로 막는다.
-const RoleAwareExplore = () => <Explore />;
 
 // ─── App Root ──────────────────────────────────────────────────────────
 
@@ -572,7 +561,12 @@ const AppContent = () => {
         <main id="main-content">
           <Routes>
           <Route path="/"                    element={<RoleAwareHome onAuthOpen={(m) => setAuthModal(m)} />} />
-          <Route path="/explore"             element={<RoleAwareExplore />} />
+          {/* 지역 탐색은 없앴다.
+              하던 일은 '지역을 골라 작가 목록으로 보내기' 하나뿐이었고,
+              그건 작가 찾기의 국가·도시 필터가 이미 한다. 메뉴에 둘을
+              나란히 두면 고객은 뭐가 다른지 알 수 없다.
+              주소는 남긴다 — 북마크와 검색 유입이 404 가 되면 안 된다. */}
+          <Route path="/explore"             element={<Navigate to="/photographers" replace />} />
           <Route path="/photographers"       element={<Photographers onAuthOpen={(m) => setAuthModal(m)} />} />
           <Route path="/photographer/:id"    element={<Profile      onAuthOpen={(m) => setAuthModal(m)} />} />
           <Route path="/book"                element={<ProtectedRoute onAuthOpen={(m) => setAuthModal(m)}><BookCompose /></ProtectedRoute>} />

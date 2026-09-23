@@ -24,7 +24,6 @@ const TODAY = new Date().toISOString().split('T')[0];
 // ─── Static URLs ────────────────────────────────────────────────────────
 const STATIC_URLS = [
   { loc: '/', changefreq: 'daily', priority: 1.0 },
-  { loc: '/explore', changefreq: 'weekly', priority: 0.9 },
   { loc: '/photographers', changefreq: 'weekly', priority: 0.9 },
   { loc: '/for-artists', changefreq: 'monthly', priority: 0.8 },
   // /for-vendors 라는 주소는 없다. 구글이 계속 404 를 받고 있었다.
