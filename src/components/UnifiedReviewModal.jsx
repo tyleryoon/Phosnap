@@ -343,7 +343,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
           style={{
             width: '100%', padding: '14px 0',
             background: canSave ? 'var(--gold)' : 'var(--bg2)',
-            color: canSave ? 'var(--text)' : 'var(--muted)',
+            color: canSave ? 'var(--on-accent)' : 'var(--muted)',
             border: canSave ? 'none' : '1px solid var(--border)',
             fontFamily: 'var(--font-serif)', fontSize: 14,
             letterSpacing: '0.1em', cursor: canSave ? 'pointer' : 'default',

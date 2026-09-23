@@ -4486,7 +4486,7 @@ function VendorDashboard() {
                     cursor: bookingBusy ? 'default' : 'pointer',
                     opacity: bookingBusy ? 0.6 : 1,
                     background: bookingActionConfirm.action === 'confirm' ? 'var(--gold)' : '#e85d5d',
-                    color: bookingActionConfirm.action === 'confirm' ? 'var(--text)' : '#fff',
+                    color: bookingActionConfirm.action === 'confirm' ? 'var(--on-accent)' : '#fff',
                   }}
                 >
                   {bookingActionConfirm.action === 'confirm'

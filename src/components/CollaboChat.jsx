@@ -212,7 +212,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                     <div style={{
                       maxWidth: '70%', padding: msg.type === 'image' || msg.type === 'video' ? '4px' : '10px 14px',
                       background: isMine ? 'var(--gold)' : 'var(--bg)',
-                      color: isMine ? 'var(--text)' : 'var(--text)',
+                      color: isMine ? 'var(--on-accent)' : 'var(--text)',
                       border: `1px solid ${isMine ? 'var(--gold)' : 'var(--border)'}`,
                       fontSize: 13, lineHeight: 1.6,
                     }}>
@@ -286,7 +286,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
               <button onClick={handleSend} disabled={!inputText.trim()}
                 style={{
                   background: inputText.trim() ? 'var(--gold)' : 'rgba(136,136,136,0.15)',
-                  color: inputText.trim() ? 'var(--text)' : 'var(--muted)',
+                  color: inputText.trim() ? 'var(--on-accent)' : 'var(--muted)',
                   border: 'none', padding: '10px 18px', fontFamily: 'var(--font-serif)', fontSize: 12,
                   cursor: inputText.trim() ? 'pointer' : 'not-allowed',
                 }}>

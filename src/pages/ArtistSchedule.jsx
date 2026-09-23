@@ -1475,7 +1475,7 @@ const ArtistSchedule = () => {
                     style={{
                       padding: '8px 14px', fontSize: 12, fontFamily: 'var(--font-serif)',
                       background: isOn ? (editingDefault ? 'var(--gold)' : 'var(--accent-a12)') : 'transparent',
-                      color: isOn ? (editingDefault ? 'var(--text)' : 'var(--gold)') : 'var(--muted)',
+                      color: isOn ? (editingDefault ? 'var(--on-accent)' : 'var(--gold)') : 'var(--muted)',
                       border: `1px solid ${isOn ? 'var(--gold-border)' : 'var(--border)'}`,
                       cursor: editingDefault ? 'pointer' : 'default', transition: 'all 0.15s',
                     }}>
@@ -1568,7 +1568,7 @@ const ArtistSchedule = () => {
                     style={{
                       width: '100%', marginTop: 16, padding: '13px 0',
                       background: slotsDirty ? 'var(--gold)' : 'rgba(136,136,136,0.15)',
-                      color: slotsDirty ? 'var(--text)' : 'var(--muted)',
+                      color: slotsDirty ? 'var(--on-accent)' : 'var(--muted)',
                       border: 'none', fontFamily: 'var(--font-serif)', fontSize: 13,
                       letterSpacing: '0.08em', cursor: slotsDirty ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s',
@@ -4036,7 +4036,7 @@ const ArtistSchedule = () => {
                                 style={{
                                   padding: '3px 8px', fontSize: 10, fontFamily: 'var(--font-serif)',
                                   background: selected ? 'var(--gold)' : 'transparent',
-                                  color: selected ? 'var(--text)' : 'var(--muted)',
+                                  color: selected ? 'var(--on-accent)' : 'var(--muted)',
                                   border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`, cursor: 'pointer',
                                 }}>{loc.isMain && '★ '}{loc.name}</button>
                             );

@@ -1285,7 +1285,7 @@ const AuthModal = ({ mode, onClose }) => {
               style={{
                 padding: '10px 0', fontSize: 11, border: 'none', cursor: 'pointer',
                 background: userType === id ? 'var(--gold)' : 'transparent',
-                color:      userType === id ? 'var(--text)'    : 'var(--muted)',
+                color:      userType === id ? 'var(--on-accent)'    : 'var(--muted)',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
                 transition: 'all 0.2s',
               }}>

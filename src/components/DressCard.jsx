@@ -268,7 +268,7 @@ const DressCard = ({
               marginTop: 14, width: '100%', padding: '11px 0',
               border: selected ? 'none' : '1px solid var(--gold)',
               background: selected ? 'var(--gold)' : 'transparent',
-              color: selected ? 'var(--text)' : 'var(--gold)',
+              color: selected ? 'var(--on-accent)' : 'var(--gold)',
               fontFamily: 'var(--font-serif)', fontSize: 12,
               letterSpacing: '0.08em', cursor: 'pointer',
               transition: 'all 0.2s',

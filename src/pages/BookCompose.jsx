@@ -154,7 +154,7 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
               fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
               border: picked ? 'none' : '1px solid var(--gold)',
               background: picked ? 'var(--gold)' : 'transparent',
-              color: picked ? 'var(--text)' : 'var(--gold)',
+              color: picked ? 'var(--on-accent)' : 'var(--gold)',
             }}
           >
             {picked ? '✓ 담음' : '담기'}
@@ -475,7 +475,7 @@ const BookCompose = () => {
             style={{
               marginTop: 22, padding: '13px 34px', border: 'none',
               background: canSearch ? 'var(--gold)' : 'var(--border)',
-              color: canSearch ? 'var(--text)' : 'var(--muted)',
+              color: canSearch ? 'var(--on-accent)' : 'var(--muted)',
               fontFamily: 'var(--font-serif)', fontSize: 13,
               letterSpacing: '0.1em', cursor: canSearch ? 'pointer' : 'default',
             }}
@@ -737,7 +737,7 @@ const BookCompose = () => {
                   style={{
                     width: '100%', padding: '13px 0', border: 'none',
                     background: hasAny ? 'var(--gold)' : 'var(--border)',
-                    color: hasAny ? 'var(--text)' : 'var(--muted)',
+                    color: hasAny ? 'var(--on-accent)' : 'var(--muted)',
                     fontFamily: 'var(--font-serif)', fontSize: 13,
                     letterSpacing: '0.1em',
                     cursor: hasAny ? 'pointer' : 'default',
