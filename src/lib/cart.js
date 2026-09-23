@@ -27,6 +27,43 @@ export const normalizeCart = (c) => {
   return c;
 };
 
+// ─── 의상 수령 방식 · 보증금 · 배송비 ──────────────────────────────────
+//
+// 옷이 주인 손을 떠나는지로 갈린다.
+//
+//   byOwner   주인이 현장에 들고 온다 → 보증금 없음
+//   pickup    고객이 매장에서 찾아간다 → 보증금
+//   delivery  배송 → 보증금 + 배송비
+//
+// 화면이 아니라 여기서 판단한다. 돈이 걸린 규칙이고, 조용히 틀리면
+// 고객이 안 내도 될 보증금을 내거나 업체가 배송비를 못 받는다.
+
+/** 이 의상이 받을 수 있는 수령 방식. 옛 데이터도 읽는다. */
+export const dressMethods = (dress) => {
+  if (!dress) return [];
+  if (dress.fulfillment?.length) return dress.fulfillment;
+  // fulfillment 칸이 생기기 전 데이터 — 주인이 들고 오는 옷인지로 가른다
+  return dress.ownerStylistId || dress.artistId ? ['byOwner'] : ['pickup'];
+};
+
+/**
+ * 고른 수령 방식과 그에 따른 금액.
+ *
+ * 고른 게 없거나 이 의상이 안 받는 방식이면 첫 번째 방식으로 본다 —
+ * 장바구니에 남아 있던 선택이 의상을 바꾼 뒤에도 살아남으면 안 된다.
+ */
+export const dressCharges = (dress, picked = null) => {
+  const methods = dressMethods(dress);
+  const method = picked && methods.includes(picked) ? picked : (methods[0] || null);
+  if (!dress || !method) return { methods, method: null, deposit: 0, deliveryFee: 0 };
+  return {
+    methods,
+    method,
+    deposit:     method === 'byOwner'  ? 0 : (dress.deposit || 0),
+    deliveryFee: method === 'delivery' ? (dress.deliveryFee || 0) : 0,
+  };
+};
+
 // ─── 지역이 서로 맞는가 ────────────────────────────────────────────────
 //
 // 한 촬영에 서울 헤메와 부산 장소를 함께 부를 수는 없다.

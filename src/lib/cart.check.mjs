@@ -7,7 +7,7 @@
 // 서울·부산 둘 다 뛰는 헤메가 부산 촬영에서 사라진다. 양쪽을 다 잡아둔다.
 
 import assert from 'node:assert/strict';
-import { commonLocations, locationConflict, normalizeCart } from './cart.js';
+import { commonLocations, dressCharges, locationConflict, normalizeCart } from './cart.js';
 
 const S = (ids) => ({ locationIds: ids });
 
@@ -82,6 +82,57 @@ assert.notEqual(
   normalizeCart({ stylist: { stylistId: 'x' }, dress: { ownerStylistId: 'x' } }).dress,
   null,
   '주인이 있으면 남는다',
+);
+
+// ── 의상 수령 방식 · 보증금 · 배송비 ────────────────────────────────
+// 조용히 틀리면 고객이 안 내도 될 보증금을 내거나, 업체가 배송비를
+// 못 받는다. 양쪽 다 나중에 사람이 전화로 푸는 일이 된다.
+
+const 한복 = { fulfillment: ['byOwner', 'pickup', 'delivery'], deposit: 50000, deliveryFee: 12000 };
+
+assert.deepEqual(
+  dressCharges(한복, 'byOwner'),
+  { methods: 한복.fulfillment, method: 'byOwner', deposit: 0, deliveryFee: 0 },
+  '주인이 들고 가면 보증금도 배송비도 없다',
+);
+assert.deepEqual(
+  dressCharges(한복, 'pickup'),
+  { methods: 한복.fulfillment, method: 'pickup', deposit: 50000, deliveryFee: 0 },
+  '픽업은 보증금만',
+);
+assert.deepEqual(
+  dressCharges(한복, 'delivery'),
+  { methods: 한복.fulfillment, method: 'delivery', deposit: 50000, deliveryFee: 12000 },
+  '배송은 보증금 + 배송비',
+);
+
+// 고르지 않았으면 첫 번째 방식
+assert.equal(dressCharges(한복).method, 'byOwner', '안 고르면 첫 번째');
+
+// 이 의상이 안 받는 방식을 들고 있으면 무시한다.
+// 장바구니에 남은 옛 선택이 의상을 바꾼 뒤에도 살아남으면,
+// 배송이 안 되는 옷에 배송비가 붙는다.
+const 픽업만 = { fulfillment: ['pickup'], deposit: 30000, deliveryFee: 9000 };
+assert.deepEqual(
+  dressCharges(픽업만, 'delivery'),
+  { methods: ['pickup'], method: 'pickup', deposit: 30000, deliveryFee: 0 },
+  '안 받는 방식은 무시하고 배송비도 안 붙는다',
+);
+
+// 옛 데이터 — fulfillment 칸이 없다
+assert.equal(
+  dressCharges({ ownerStylistId: 'x', deposit: 50000 }).deposit, 0,
+  '옛 자체 의상은 주인이 들고 오는 것으로 본다',
+);
+assert.equal(
+  dressCharges({ deposit: 50000 }).method, 'pickup',
+  '옛 벤더 의상은 픽업으로 본다',
+);
+
+assert.deepEqual(
+  dressCharges(null),
+  { methods: [], method: null, deposit: 0, deliveryFee: 0 },
+  '의상을 안 담았으면 받을 돈이 없다',
 );
 
 console.log('cart.check: 통과');

@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LocationPicker from '../components/LocationPicker';
 import ProviderLocations from '../components/ProviderLocations';
+import DressFulfillment from '../components/DressFulfillment';
 import ListingStatus from '../components/ListingStatus';
 import PendingItems from '../components/PendingItems';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
@@ -510,7 +511,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '' });
+  const [form, setForm] = useState({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '', fulfillment: ['byOwner'], deposit: 0, deliveryFee: 0 });
 
   // 자체 의상 보유 여부와 등록된 의상을 읽어온다.
   useEffect(() => {
@@ -576,11 +577,15 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
         size_stock: sizes.reduce((acc, sz) => ({ ...acc, [sz]: parseInt(form.stock, 10) || 0 }), {}),
         color:      form.color.trim() || null,
         description: form.description.trim() || null,
+        // 주인이 들고 가는 옷에는 보증금이 없다. 픽업·배송을 켜야 받는다.
+        fulfillment:  form.fulfillment?.length ? form.fulfillment : ['byOwner'],
+        deposit:      form.fulfillment?.some(m => m !== 'byOwner') ? (form.deposit ?? 0) : 0,
+        delivery_fee: form.fulfillment?.includes('delivery') ? (form.deliveryFee ?? 0) : 0,
       });
       if (error) throw error;
       setItems(prev => [...prev, data]);
       setModalOpen(false);
-      setForm({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '' });
+      setForm({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '', fulfillment: ['byOwner'], deposit: 0, deliveryFee: 0 });
     } catch (e) {
       console.error('[StylistDashboard] 의상 등록 실패:', e);
       setErrorMsg(e?.message || t.error);
@@ -724,6 +729,17 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             <div>
               <label style={label}>{t.description}</label>
               <textarea style={{ ...input, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            </div>
+
+            {/* 수령 방식 · 보증금. 현장에 들고 가면 옷이 손을 떠나지
+                않으므로 보증금이 없다 (FIX_43). */}
+            <div style={{ marginTop: 20 }}>
+              <DressFulfillment
+                value={{ fulfillment: form.fulfillment, deposit: form.deposit, deliveryFee: form.deliveryFee }}
+                onChange={next => setForm({ ...form, ...next })}
+                allowByOwner
+                lang={lang}
+              />
             </div>
           </div>
           {errorMsg && (

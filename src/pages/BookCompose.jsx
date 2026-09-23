@@ -68,7 +68,8 @@ const TABS = [
   { key: 'venue', label: '장소' },
 ];
 // 담은 구성 규칙은 lib/cart.js 로 옮겼다 — 전역 장바구니도 같은 규칙을 쓴다.
-import { normalizeCart, locationConflict } from '../lib/cart';
+import { normalizeCart, locationConflict, dressCharges } from '../lib/cart';
+import { FULFILLMENT_LABELS } from '../components/DressFulfillment';
 
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
 
@@ -486,7 +487,7 @@ const BookCompose = () => {
   // 무엇이든 하나는 담아야 진행할 수 있다.
   const hasAny = !!(cart.photographer || cart.stylist || cart.dress || cart.venue);
 
-  const total = useMemo(
+  const itemsTotal = useMemo(
     () =>
       (cart.photographer?.pkg?.price || 0) +
       (cart.stylist?.price || 0) +
@@ -495,17 +496,21 @@ const BookCompose = () => {
     [cart]
   );
 
-  // 보증금.
+  // ── 의상 수령 방식 · 보증금 · 배송비 ───────────────────────────────
   //
-  // 주인이 현장에 들고 오는 의상(byOwner)은 받지 않는다 — 옷이 주인
-  // 손을 떠나지 않기 때문이다. 헤메가 자기 옷을 입혀주는 경우가 그렇다.
-  // 같은 옷이라도 고객이 픽업하거나 배송받으면 받는다.
-  const deposit = useMemo(() => {
-    const d = cart.dress;
-    if (!d) return 0;
-    const byOwner = !!(d.ownerStylistId || d.artistId);
-    return byOwner ? 0 : d.deposit || 0;
-  }, [cart.dress]);
+  // 벤더·헤메가 열어둔 방식 중에서 고객이 고른다. 예전에는 고를 수 없어
+  // '주인이 들고 오는 옷인가' 만으로 보증금을 판정했다. 그래서 헤메가
+  // 가진 옷을 배송받아도 보증금이 0 이었고 배송비도 못 받았다.
+  //
+  // 판단은 lib/cart.js 에 있다 (cart.check.mjs 가 검사한다).
+  const charges = useMemo(
+    () => dressCharges(cart.dress, cart.dress?.pickedFulfillment),
+    [cart.dress]
+  );
+  const { methods: dressMethods, method: pickedMethod, deposit, deliveryFee } = charges;
+
+  // 배송비는 돌려받지 않는 돈이라 합계에 들어간다. 보증금은 따로 적는다.
+  const total = itemsTotal + deliveryFee;
 
   // 담은 것들의 활동 지역이 서로 맞는가 (전 지역으로 볼 때 실제로 일한다)
   const locMismatch = useMemo(() => locationConflict(cart), [cart]);
@@ -1172,6 +1177,64 @@ const BookCompose = () => {
                     </div>
                   );
                 })}
+
+                {/* 의상 수령 방식. 고를 게 하나뿐이면 묻지 않고 알려만 준다. */}
+                {cart.dress && pickedMethod && (
+                  <div style={{ padding: '14px 0 4px', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
+                      의상 수령
+                    </div>
+                    {dressMethods.length > 1 ? (
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {dressMethods.map((m) => {
+                          const on = m === pickedMethod;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() =>
+                                setCartRaw((c) => ({
+                                  ...c,
+                                  dress: { ...c.dress, pickedFulfillment: m },
+                                }))
+                              }
+                              aria-pressed={on}
+                              style={{
+                                padding: '6px 10px',
+                                fontSize: 11.5,
+                                cursor: 'pointer',
+                                background: on ? 'var(--accent-a10)' : 'transparent',
+                                border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
+                                color: on ? 'var(--text)' : 'var(--muted)',
+                              }}
+                            >
+                              {FULFILLMENT_LABELS[m]?.ko || m}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 12 }}>
+                        {FULFILLMENT_LABELS[pickedMethod]?.ko || pickedMethod}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {deliveryFee > 0 && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '12px 0 0',
+                      fontSize: 12,
+                      color: 'var(--muted)',
+                    }}
+                  >
+                    <span>배송비</span>
+                    <span>{fmt(deliveryFee)}</span>
+                  </div>
+                )}
 
                 <div
                   style={{

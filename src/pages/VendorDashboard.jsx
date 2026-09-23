@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationPicker from '../components/LocationPicker';
 import ProviderLocations from '../components/ProviderLocations';
+import DressFulfillment from '../components/DressFulfillment';
 import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../data/photographers';
@@ -418,6 +419,9 @@ function VendorDashboard() {
               // 재고가 전부 0 으로 계산되어 "예약 가능 0" 이 떴다.
               sizeStock: d.size_stock || {},
               description: d.description,
+              fulfillment: d.fulfillment || ['pickup'],
+              deposit: d.deposit ?? 0,
+              deliveryFee: d.delivery_fee ?? 0,
             }));
             setDresses(mapped);
             setAvailability(
@@ -672,6 +676,7 @@ function VendorDashboard() {
           images: d.images || [d.image_url || '/default-dress.jpg'],
           sizeStock: d.size_stock || {},
           color: d.color, sizes: d.sizes || [], description: d.description,
+          fulfillment: d.fulfillment || ['pickup'], deposit: d.deposit ?? 0, deliveryFee: d.delivery_fee ?? 0,
         }));
         setDresses(mapped);
         setAvailability(dressData.reduce((acc, d) => ({ ...acc, [d.id]: d.is_available }), {}));
@@ -704,6 +709,11 @@ function VendorDashboard() {
     imageUrl: '',
     color: '',
     description: '',
+    // 수령 방식·보증금 (FIX_43). 벤더 의상은 주인이 들고 갈 수 없으므로
+    // 기본은 매장 픽업이다.
+    fulfillment: ['pickup'],
+    deposit: 0,
+    deliveryFee: 0,
   });
 
   const [editTarget, setEditTarget] = useState(null);
@@ -798,6 +808,9 @@ function VendorDashboard() {
         sizes: formData.sizes.split(',').map(s => s.trim()).filter(Boolean),
         size_stock: formData.sizeStock || {},
         description: formData.description || null,
+        fulfillment:  formData.fulfillment?.length ? formData.fulfillment : ['pickup'],
+        deposit:      formData.deposit ?? 0,
+        delivery_fee: formData.fulfillment?.includes('delivery') ? (formData.deliveryFee ?? 0) : 0,
       });
 
       if (!error && savedDress) {
@@ -814,6 +827,9 @@ function VendorDashboard() {
           sizes: savedDress.sizes || [],
           sizeStock: savedDress.size_stock || {},
           description: savedDress.description,
+          fulfillment: savedDress.fulfillment || ['pickup'],
+          deposit: savedDress.deposit ?? 0,
+          deliveryFee: savedDress.delivery_fee ?? 0,
         };
         setDresses(prev => [...prev, mapped]);
         setAvailability(prev => ({ ...prev, [savedDress.id]: true }));
@@ -910,6 +926,9 @@ function VendorDashboard() {
         sizes: editForm.sizes.split(',').map(s => s.trim()).filter(Boolean),
         size_stock: editForm.sizeStock || {},
         description: editForm.description || null,
+        fulfillment:  editForm.fulfillment?.length ? editForm.fulfillment : ['pickup'],
+        deposit:      editForm.deposit ?? 0,
+        delivery_fee: editForm.fulfillment?.includes('delivery') ? (editForm.deliveryFee ?? 0) : 0,
       });
 
       if (error) {
@@ -927,6 +946,9 @@ function VendorDashboard() {
           sizes: editForm.sizes.split(',').map(s => s.trim()).filter(Boolean),
           sizeStock: editForm.sizeStock || {},
           description: editForm.description,
+          fulfillment: editForm.fulfillment?.length ? editForm.fulfillment : ["pickup"],
+          deposit: editForm.deposit ?? 0,
+          deliveryFee: editForm.fulfillment?.includes("delivery") ? (editForm.deliveryFee ?? 0) : 0,
         };
         setDresses(prev => prev.map(d => d.id === editTarget.id ? updated : d));
         setSaveStatus('saved');
@@ -1819,6 +1841,9 @@ function VendorDashboard() {
                             imageUrl: dress.image || '',
                             color: dress.color || '',
                             description: dress.description || '',
+                            fulfillment: dress.fulfillment?.length ? dress.fulfillment : ['pickup'],
+                            deposit: dress.deposit ?? 0,
+                            deliveryFee: dress.deliveryFee ?? 0,
                           });
                           setImageFile(null);
                           setImagePreview('');
@@ -3897,6 +3922,16 @@ function VendorDashboard() {
                   }}
                 />
               </div>
+
+              {/* 수령 방식 · 보증금 — 옷이 주인 손을 떠나는지로 갈린다 (FIX_43) */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <DressFulfillment
+                  value={{ fulfillment: formData.fulfillment, deposit: formData.deposit, deliveryFee: formData.deliveryFee }}
+                  onChange={(next) => setFormData({ ...formData, ...next })}
+                  allowByOwner={false}
+                  lang={lang}
+                />
+              </div>
             </div>
 
             <div
@@ -4327,6 +4362,16 @@ function VendorDashboard() {
                     minHeight: '100px',
                     fontFamily: 'var(--font-sans)',
                   }}
+                />
+              </div>
+
+              {/* 수령 방식 · 보증금 — 옷이 주인 손을 떠나는지로 갈린다 (FIX_43) */}
+              <div style={{ marginTop: '1.5rem' }}>
+                <DressFulfillment
+                  value={{ fulfillment: editForm.fulfillment, deposit: editForm.deposit, deliveryFee: editForm.deliveryFee }}
+                  onChange={(next) => setEditForm({ ...editForm, ...next })}
+                  allowByOwner={false}
+                  lang={lang}
                 />
               </div>
             </div>
