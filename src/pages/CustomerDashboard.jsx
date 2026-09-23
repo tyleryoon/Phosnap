@@ -221,9 +221,11 @@ const ghostBtn = {
   fontFamily: 'var(--font-serif)', fontSize: '0.8rem', cursor: 'pointer',
   transition: 'all 0.2s',
 };
+// 상태 색. 예전 값은 Tailwind 400 계열(어두운 화면용)이라 종이 바탕에서
+// '확정' 이 1.7:1 이었다 — 글자가 거의 안 보였다.
 const statusColors = {
-  confirmed: '#4ade80', pending: 'var(--gold)', completed: '#60a5fa',
-  cancelled: '#ef4444', refunded: '#f97316', delivered: '#a78bfa',
+  confirmed: 'var(--success)', pending: 'var(--gold)', completed: 'var(--info)',
+  cancelled: 'var(--danger)', refunded: 'var(--warning)', delivered: 'var(--grade-4)',
 };
 
 // ─── Component ────────────────────────────────────────────────────────
@@ -504,7 +506,7 @@ const CustomerDashboard = () => {
                       .map(b => {
                         const pl = b.pipeline;
                         const pipelineStatusColor = (s) => ({
-                          confirmed: '#4ade80', reserved: 'var(--gold)', pending: '#f59e0b',
+                          confirmed: 'var(--success)', reserved: 'var(--gold)', pending: 'var(--warning)',
                           completed: '#60a5fa', returned: '#a78bfa', cancelled: '#ef4444',
                         }[s] || 'var(--muted)');
 
@@ -607,7 +609,7 @@ const CustomerDashboard = () => {
                                     <div key={idx} style={{
                                       width: 20, height: 4, borderRadius: 2,
                                       background: !item ? 'var(--border)' :
-                                        (item.status === 'confirmed' || item.status === 'reserved') ? '#4ade80' :
+                                        (item.status === 'confirmed' || item.status === 'reserved') ? 'var(--success)' :
                                         item.status === 'pending' ? 'var(--gold)' : 'var(--border)',
                                     }} />
                                   ))}

@@ -272,10 +272,12 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
     const ecoScore = Math.min(100, rentalCount * 15 + totalCO2 * 2);
 
     const getLevelBadge = () => {
-      if (ecoScore < 25) return { icon: '🌱', label: t.seed, color: '#84cc16' };
+      // 등급이 오를수록 진해진다. 예전 첫 단계(#84cc16)는 종이 바탕에서
+      // 2:1 이라 '새싹' 글자가 읽히지 않았다.
+      if (ecoScore < 25) return { icon: '🌱', label: t.seed, color: '#5C7331' };
       if (ecoScore < 50) return { icon: '🌿', label: t.sprout, color: 'var(--success)' };
-      if (ecoScore < 75) return { icon: '🌳', label: t.tree, color: '#16a34a' };
-      return { icon: '🌲', label: t.forest, color: '#15803d' };
+      if (ecoScore < 75) return { icon: '🌳', label: t.tree, color: '#3A7D44' };
+      return { icon: '🌲', label: t.forest, color: '#2A5F35' };
     };
 
     const level = getLevelBadge();
