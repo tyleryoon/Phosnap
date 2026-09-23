@@ -355,7 +355,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
     display: 'block', marginTop: 6, width: '100%',
     background: 'var(--bg)', border: '1px solid var(--border)',
     color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
-    colorScheme: 'dark',
+    colorScheme: 'light',
   };
 
   // photographerId를 Number로 정규화하여 타입 일관성 보장
@@ -3869,7 +3869,7 @@ const ArtistSchedule = () => {
       display: 'block', marginTop: 6, width: '100%',
       background: 'var(--bg)', border: '1px solid var(--border)',
       color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
-      colorScheme: 'dark',
+      colorScheme: 'light',
     };
 
     return (
@@ -4636,12 +4636,12 @@ const ArtistSchedule = () => {
             <div>
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>시작일</div>
               <input type="date" value={perfDateStart} onChange={e => setPerfDateStart(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} />
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>종료일</div>
               <input type="date" value={perfDateEnd} onChange={e => setPerfDateEnd(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} />
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} />
             </div>
             <button className="btn-primary" style={{ padding: '8px 20px', fontSize: 12 }} onClick={handleRangeSearch}
               disabled={!perfDateStart || !perfDateEnd}>
@@ -5405,7 +5405,7 @@ const ArtistSchedule = () => {
                   <label style={{ fontSize: 11, color: 'var(--muted)' }}>
                     콜라보 희망 날짜 (연속일은 시작~종료일)
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
-                      <input type="date" id="collabo-start" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="date" id="collabo-start" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5419,7 +5419,7 @@ const ArtistSchedule = () => {
                           if (dailyH > 0) sumEl.textContent = `일 ${dailyH.toFixed(1)}시간 × ${days}일 = 총 ${(dailyH * days).toFixed(1)}시간`;
                         }
                       }} />
-                      <input type="date" id="collabo-end" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="date" id="collabo-end" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5440,7 +5440,7 @@ const ArtistSchedule = () => {
                   <label style={{ fontSize: 11, color: 'var(--muted)' }}>
                     희망 시간대
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, marginTop: 6, alignItems: 'center' }}>
-                      <input type="time" id="collabo-time-start" defaultValue="10:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="time" id="collabo-time-start" defaultValue="10:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5459,7 +5459,7 @@ const ArtistSchedule = () => {
                           }
                         }
                       }} />
-                      <input type="time" id="collabo-time-end" defaultValue="14:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="time" id="collabo-time-end" defaultValue="14:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         // 동일 로직 (시작 시간 onChange와 같음)
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;

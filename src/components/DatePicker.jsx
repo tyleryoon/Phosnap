@@ -125,9 +125,13 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
             position: 'absolute', top: '100%', left: 0, zIndex: 1050,
             marginTop: 4,
             width: 280,
-            background: '#1a1a1a',
-            border: '1px solid var(--gold-border, var(--accent-a30))',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            /* 달력만 다크로 남아 있었다. 글자색은 토큰을 따라 어두워졌는데
+               배경은 #1a1a1a 로 박혀 있어서 날짜가 아예 안 보였다.
+               띄우는 면이므로 카드색 + 그림자로 띄운다. */
+            background: 'var(--bg2)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: 'var(--shadow-lg)',
             padding: '16px',
             userSelect: 'none',
           }}
@@ -223,7 +227,7 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
             {WEEKDAYS.map((d, i) => (
               <div key={d} style={{
                 textAlign: 'center', fontSize: 10, fontFamily: 'var(--font-sans)',
-                color: i === 0 ? 'rgba(232,80,80,0.7)' : i === 6 ? 'rgba(100,149,237,0.7)' : 'var(--muted)',
+                color: i === 0 ? 'var(--danger)' : i === 6 ? 'var(--info)' : 'var(--muted)',
                 padding: '4px 0', letterSpacing: '0.05em',
               }}>
                 {d}
@@ -255,9 +259,9 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
                   onClick={(e) => { e.stopPropagation(); selectDate(day); }}
                   onMouseDown={e => e.stopPropagation()}
                   style={{
-                    background: isSelected ? 'var(--gold, var(--gold))' : 'transparent',
-                    border: isToday && !isSelected ? '1px solid var(--gold-border, var(--accent-a30))' : '1px solid transparent',
-                    color: isSelected ? '#000' : isSun ? 'rgba(232,80,80,0.8)' : isSat ? 'rgba(100,149,237,0.8)' : 'var(--text)',
+                    background: isSelected ? 'var(--accent)' : 'transparent',
+                    border: isToday && !isSelected ? '1px solid var(--accent-a30)' : '1px solid transparent',
+                    color: isSelected ? 'var(--on-accent)' : isSun ? 'var(--danger)' : isSat ? 'var(--info)' : 'var(--text)',
                     fontFamily: 'var(--font-serif)', fontSize: 12,
                     padding: '6px 0', textAlign: 'center',
                     cursor: 'pointer',

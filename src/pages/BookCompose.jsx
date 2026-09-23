@@ -440,7 +440,7 @@ const BookCompose = () => {
                 style={{
                   background: 'var(--bg)', border: '1px solid var(--border)',
                   color: 'var(--text)', padding: '10px 14px', fontSize: 13,
-                  fontFamily: 'var(--font-serif)', colorScheme: 'dark',
+                  fontFamily: 'var(--font-serif)', colorScheme: 'light',
                 }}
               />
             </div>

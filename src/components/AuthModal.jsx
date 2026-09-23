@@ -711,7 +711,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="date" value={birthdate}
                 onChange={e => setBirthdate(e.target.value)} required
                 max={new Date().toISOString().split('T')[0]}
-                style={{ colorScheme: 'dark' }} />
+                style={{ colorScheme: 'light' }} />
             </div>
           </>
         )}
