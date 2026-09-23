@@ -467,7 +467,11 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             const sb = await getSupabase();
             if (sb) await sb.auth.signOut();
             sessionStorage.removeItem('phosnap_active_role');
-            const roleLabel = userRoles.includes('artist') ? '작가' : userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '전문가';
+            // stylist 분기가 없어서 헤메 계정이 '전문가' 로 뭉뚱그려졌다.
+            const roleLabel = userRoles.includes('artist') ? '작가'
+              : userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더'
+              : userRoles.includes('stylist') ? '헤어메이크업'
+              : '전문가';
             setError(`이 계정은 ${roleLabel} 전용 계정입니다. 고객으로도 이용하시려면 상단의 '고객 회원가입' 버튼으로 고객 역할을 추가해주세요.`);
           } else {
             sessionStorage.setItem('phosnap_active_role', 'customer');
@@ -851,21 +855,34 @@ const ArtistAuth = ({ onClose }) => {
           ? t('auth.loginInvalid')
           : err.message);
       } else {
-        // ── 역할 검증: 작가 역할 확인 ──
+        // ── 역할 검증 ──
+        //
+        // 이 탭은 '📷 작가 · 💄 H&M' 이다. 그런데 artist 만 통과시키고
+        // 있었다. 헤메(stylist) 계정은 자기 탭에서 로그인이 막혔고,
+        // 라벨 계산에도 stylist 분기가 없어서 '고객' 으로 떨어져
+        // "이 계정은 고객 전용 계정입니다" 라는 엉뚱한 말을 들었다.
+        // 헤메는 서비스에 들어올 방법이 아예 없었다.
         const userRoles = await getUserRolesWithFallback(data.user.id);
-        const hasArtist = userRoles.includes('artist');
-        if (!hasArtist) {
+        const hasArtist  = userRoles.includes('artist');
+        const hasStylist = userRoles.includes('stylist');
+        if (!hasArtist && !hasStylist) {
           const { getSupabase } = await import('../lib/supabase');
           const sb = await getSupabase();
           if (sb) await sb.auth.signOut();
           sessionStorage.removeItem('phosnap_active_role');
-          const roleLabel = userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '고객';
-          setError(`이 계정은 ${roleLabel} 전용 계정입니다. 작가로도 활동하시려면 '작가 회원가입' 페이지에서 작가 역할을 추가해주세요.`);
+          const roleLabel = userRoles.includes('vendor') || userRoles.includes('dress_vendor')
+            ? '벤더'
+            : userRoles.includes('customer') ? '고객' : '';
+          setError(roleLabel
+            ? `이 계정은 ${roleLabel} 전용 계정입니다. 작가·헤어메이크업으로도 활동하시려면 '작가 회원가입' 페이지에서 역할을 추가해주세요.`
+            : `이 계정에는 작가·헤어메이크업 역할이 없습니다. '작가 회원가입' 페이지에서 역할을 추가해주세요.`);
         } else {
-          sessionStorage.setItem('phosnap_active_role', 'artist');
-          try { await switchUserRole('artist'); } catch (e) { /* Silently ignore role switch errors */ }
+          // 둘 다 있으면 작가를 우선한다 (대시보드가 더 넓다).
+          const role = hasArtist ? 'artist' : 'stylist';
+          sessionStorage.setItem('phosnap_active_role', role);
+          try { await switchUserRole(role); } catch (e) { /* Silently ignore role switch errors */ }
           onClose();
-          navigate('/artist/dashboard');
+          navigate(role === 'artist' ? '/artist/dashboard' : '/stylist/dashboard');
         }
       }
     } catch (e) {

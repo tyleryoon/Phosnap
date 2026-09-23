@@ -1068,8 +1068,11 @@ function VendorDashboard() {
               벤더 대시보드
             </h1>
             {/* 고객에게 어떻게 보이는지 확인.
-                벤더는 개별 상세 페이지가 없어 목록으로 보낸다. */}
-            <Link to="/vendors" style={{
+                예전 주석은 '벤더는 개별 상세 페이지가 없어 목록으로 보낸다' 였는데
+                /vendor/:id 라우트가 생긴 뒤로도 그대로였다. 벤더가 자기 노출
+                화면을 보려고 눌렀는데 남의 의상까지 섞인 전체 목록이 떴다.
+                프로필을 아직 못 불러왔을 때만 목록으로 떨어진다. */}
+            <Link to={vendorProfile?.id ? `/vendor/${vendorProfile.id}` : '/vendors'} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
               padding: '9px 18px', border: '1px solid var(--border)',
               color: 'var(--muted)', fontFamily: 'var(--font-serif)',
@@ -1369,7 +1372,9 @@ function VendorDashboard() {
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: activeTab === tab.key ? 'var(--gold)' : 'rgba(212,175,55,0.5)',
+                  /* 비활성 탭이 반투명 금색이라 대비 2.0:1 이었다.
+                     선택 안 된 탭도 읽혀야 누를 마음이 생긴다. */
+                  color: activeTab === tab.key ? 'var(--accent)' : 'var(--muted)',
                   fontSize: '1rem',
                   fontFamily: 'var(--font-serif)',
                   padding: '1rem 0',
