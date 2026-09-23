@@ -4,6 +4,8 @@ import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import ProviderDetailModal from '../components/ProviderDetailModal';
 import { getAvailableProviders, getActiveLocations, getPackages, getStylistDresses } from '../lib/supabase';
+import { locationLabel } from '../data/locationUtils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ─── 예약 구성 (새 흐름) ────────────────────────────────────────────────
 //
@@ -98,7 +100,7 @@ const Pill = ({ active, onClick, children, disabled }) => (
       padding: '9px 16px', fontSize: 12.5, cursor: disabled ? 'default' : 'pointer',
       fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
       border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
-      background: active ? 'rgba(232,160,32,0.1)' : 'transparent',
+      background: active ? 'var(--accent-a10)' : 'transparent',
       color: active ? 'var(--gold)' : disabled ? 'var(--muted)' : 'var(--text)',
       opacity: disabled ? 0.5 : 1,
       transition: 'all 0.15s', whiteSpace: 'nowrap',
@@ -111,7 +113,7 @@ const Pill = ({ active, onClick, children, disabled }) => (
 const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle }) => (
   <div style={{
     border: `1px solid ${picked ? 'var(--gold)' : 'var(--border)'}`,
-    background: picked ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
+    background: picked ? 'var(--accent-a06)' : 'var(--bg2)',
     display: 'flex', flexDirection: 'column', overflow: 'hidden',
   }}>
     {image ? (
@@ -152,7 +154,7 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
               fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
               border: picked ? 'none' : '1px solid var(--gold)',
               background: picked ? 'var(--gold)' : 'transparent',
-              color: picked ? '#0B0B0B' : 'var(--gold)',
+              color: picked ? 'var(--text)' : 'var(--gold)',
             }}
           >
             {picked ? '✓ 담음' : '담기'}
@@ -179,6 +181,7 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
 // ─── 본체 ───────────────────────────────────────────────────────────────
 
 const BookCompose = () => {
+  const { lang } = useLanguage();
 
   // 찾기 페이지에서 조건을 들고 넘어올 수 있다.
   //   /book?loc=seoul&date=2026-09-25&time=14:00&hours=3&tab=stylist
@@ -416,7 +419,7 @@ const BookCompose = () => {
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <Pill active={locationId === ''} onClick={() => setLocationId('')}>전체</Pill>
                 {locations.map(id => (
-                  <Pill key={id} active={locationId === id} onClick={() => setLocationId(id)}>{id}</Pill>
+                  <Pill key={id} active={locationId === id} onClick={() => setLocationId(id)}>{locationLabel(id, lang)}</Pill>
                 ))}
                 {locations.length === 0 && (
                   <span style={{ fontSize: 12, color: 'var(--muted)' }}>
@@ -472,7 +475,7 @@ const BookCompose = () => {
             style={{
               marginTop: 22, padding: '13px 34px', border: 'none',
               background: canSearch ? 'var(--gold)' : 'var(--border)',
-              color: canSearch ? '#0B0B0B' : 'var(--muted)',
+              color: canSearch ? 'var(--text)' : 'var(--muted)',
               fontFamily: 'var(--font-serif)', fontSize: 13,
               letterSpacing: '0.1em', cursor: canSearch ? 'pointer' : 'default',
             }}
@@ -734,7 +737,7 @@ const BookCompose = () => {
                   style={{
                     width: '100%', padding: '13px 0', border: 'none',
                     background: hasAny ? 'var(--gold)' : 'var(--border)',
-                    color: hasAny ? '#0B0B0B' : 'var(--muted)',
+                    color: hasAny ? 'var(--text)' : 'var(--muted)',
                     fontFamily: 'var(--font-serif)', fontSize: 13,
                     letterSpacing: '0.1em',
                     cursor: hasAny ? 'pointer' : 'default',
@@ -756,7 +759,7 @@ const BookCompose = () => {
                 {notReady && (
                   <div style={{
                     marginTop: 10, padding: '10px 12px', fontSize: 11.5, lineHeight: 1.7,
-                    border: '1px solid rgba(232,160,32,0.4)', background: 'rgba(232,160,32,0.07)',
+                    border: '1px solid var(--accent-a30)', background: 'var(--accent-a06)',
                     color: 'var(--text)',
                   }}>
                     확인·결제 화면은 아직 준비 중입니다.

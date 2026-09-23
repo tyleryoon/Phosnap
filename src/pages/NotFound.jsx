@@ -22,7 +22,7 @@ const NotFound = () => {
       <div style={{
         fontFamily: 'var(--font-serif)', fontSize: 'clamp(72px, 14vw, 140px)',
         letterSpacing: '0.15em', lineHeight: 1, marginBottom: 16,
-        background: 'linear-gradient(180deg, var(--gold) 0%, rgba(232,160,32,0.3) 100%)',
+        background: 'linear-gradient(180deg, var(--gold) 0%, var(--accent-a30) 100%)',
         WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
       }}>
         {m.code}

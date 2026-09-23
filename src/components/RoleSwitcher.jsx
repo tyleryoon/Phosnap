@@ -112,7 +112,7 @@ const RoleSwitcher = ({ onNavigate }) => {
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   width: '100%', gap: 10, padding: '10px 12px',
-                  background: isCurrent ? 'rgba(232,160,32,0.07)' : 'transparent',
+                  background: isCurrent ? 'var(--accent-a06)' : 'transparent',
                   border: 'none', borderBottom: '1px solid var(--border)',
                   color: meta.color, fontSize: 12, fontFamily: 'var(--font-serif)',
                   letterSpacing: '0.06em', cursor: 'pointer', textAlign: 'left',

@@ -207,7 +207,7 @@ const MatchingRecommendation = ({ photographers = [], onAuthOpen = () => {} }) =
                     backgroundColor: preferences.styleTags.includes(tag)
                       ? 'var(--gold)'
                       : 'transparent',
-                    color: preferences.styleTags.includes(tag) ? '#0B0B0B' : 'var(--text)',
+                    color: preferences.styleTags.includes(tag) ? 'var(--text)' : 'var(--text)',
                     borderColor: preferences.styleTags.includes(tag) ? 'var(--gold)' : 'var(--border)',
                   }}
                 >
@@ -513,7 +513,7 @@ const styles = {
     width: '100%',
     padding: '12px 16px',
     backgroundColor: 'var(--gold)',
-    color: '#0B0B0B',
+    color: 'var(--on-accent)',
     border: 'none',
     fontSize: 13,
     fontFamily: 'var(--font-serif)',
@@ -540,7 +540,7 @@ const styles = {
     top: 12,
     right: 12,
     backgroundColor: 'var(--gold)',
-    color: '#0B0B0B',
+    color: 'var(--on-accent)',
     fontSize: 9,
     fontFamily: 'var(--font-serif)',
     padding: '4px 8px',
@@ -623,7 +623,7 @@ const styles = {
   reasonChip: {
     display: 'inline-block',
     padding: '4px 8px',
-    backgroundColor: 'rgba(232, 160, 32, 0.08)',
+    backgroundColor: 'var(--accent-a08)',
     color: 'var(--gold)',
     fontSize: 10,
     fontFamily: 'var(--font-sans)',
@@ -642,8 +642,8 @@ const styles = {
     alignItems: 'center',
     gap: 12,
     padding: '16px',
-    backgroundColor: 'rgba(232, 160, 32, 0.05)',
-    border: '1px solid rgba(232, 160, 32, 0.15)',
+    backgroundColor: 'var(--accent-a05)',
+    border: '1px solid var(--accent-a15)',
     marginTop: '16px',
   },
   loginCTAText: {
@@ -656,7 +656,7 @@ const styles = {
   loginBtn: {
     padding: '8px 16px',
     backgroundColor: 'var(--gold)',
-    color: '#0B0B0B',
+    color: 'var(--on-accent)',
     border: 'none',
     fontSize: 11,
     fontFamily: 'var(--font-serif)',

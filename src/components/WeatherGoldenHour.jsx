@@ -302,8 +302,8 @@ export default function WeatherGoldenHour({ date, latitude, longitude, locationN
       <div style={styles.card}>
         <div style={styles.header}>📍 {locationName || t.weather}</div>
         <div style={styles.skeleton} />
-        <div style={styles.skeleton} style={{ marginBottom: '8px' }} />
-        <div style={styles.skeleton} style={{ marginBottom: '0px' }} />
+        <div style={{ ...styles.skeleton, marginBottom: '8px' }} />
+        <div style={{ ...styles.skeleton, marginBottom: '0px' }} />
       </div>
     );
   }

@@ -79,18 +79,13 @@ const Nav = ({ onAuthOpen }) => {
 
   return (
     <>
+      {/* 배경·테두리는 global.css 의 .nav / .nav.scrolled 가 정한다.
+          여기서 인라인으로 칠하면 인라인이 이겨서, 팔레트를 바꿔도
+          내비만 옛날 색으로 남는다. 실제로 그렇게 됐었다. */}
       <nav
-        className="nav"
+        className={`nav${scrolled ? ' scrolled' : ''}`}
         aria-label="Main navigation"
         role="navigation"
-        style={{
-          background: scrolled
-            ? 'rgba(11,11,11,0.97)'
-            : 'linear-gradient(180deg, rgba(11,11,11,0.92) 0%, transparent 100%)',
-          borderBottom: scrolled ? '1px solid var(--border-hover)' : '1px solid var(--border)',
-          boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.4)' : 'none',
-          transition: 'background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease',
-        }}
       >
         {/* Logo */}
         <Link to="/" className="nav-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }} onClick={(e) => handleNavClick(e, '/')}>
@@ -164,7 +159,7 @@ const Nav = ({ onAuthOpen }) => {
                     style={{
                       width: '100%',
                       padding: '10px 16px',
-                      background: lang === code ? 'rgba(232,160,32,0.1)' : 'transparent',
+                      background: lang === code ? 'var(--accent-a10)' : 'transparent',
                       border: 'none',
                       borderBottom: code !== LANG_LABELS[LANG_LABELS.length - 1].code ? '1px solid var(--border)' : 'none',
                       fontFamily: 'var(--font-serif)',
@@ -176,7 +171,7 @@ const Nav = ({ onAuthOpen }) => {
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={e => {
-                      if (lang !== code) e.currentTarget.style.background = 'rgba(232,160,32,0.05)';
+                      if (lang !== code) e.currentTarget.style.background = 'var(--accent-a05)';
                     }}
                     onMouseLeave={e => {
                       if (lang !== code) e.currentTarget.style.background = 'transparent';
@@ -347,7 +342,7 @@ const Nav = ({ onAuthOpen }) => {
                 padding: '8px 16px',
                 appearance: 'none',
                 WebkitAppearance: 'none',
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23e8a020%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")',
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238C6D46%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'right 10px center',
                 paddingRight: 32,

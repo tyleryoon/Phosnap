@@ -190,7 +190,7 @@ const ProfileAvatar = ({ avatarUrl, onAvatarChange, size = 64, editable = true }
               disabled={uploading}
               style={{
                 padding: '10px 28px', background: 'var(--gold)',
-                border: 'none', color: '#0B0B0B',
+                border: 'none', color: 'var(--on-accent)',
                 fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.08em',
                 cursor: 'pointer', opacity: uploading ? 0.6 : 1,
               }}

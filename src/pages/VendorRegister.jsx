@@ -242,7 +242,7 @@ const VendorRegister = () => {
           ✦ 다음 항목을 확인해주세요
         </div>
         {issues.map((issue, i) => (
-          <div key={i} style={{ color: 'rgba(242,242,242,0.7)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+          <div key={i} style={{ color: 'var(--ink-a50)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
             <span style={{ color: '#e85d5d', flexShrink: 0 }}>•</span>
             <span><strong style={{ color: '#f0a0a0' }}>{issue.field}</strong> — {issue.msg}</span>
           </div>
@@ -391,7 +391,7 @@ const VendorRegister = () => {
         <div key={i} style={{
           flex: 1, padding: '12px 8px', textAlign: 'center',
           fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.1em',
-          color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'rgba(232,160,32,0.5)' : 'var(--muted)',
+          color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'var(--accent-a50)' : 'var(--muted)',
           borderBottom: step === i + 1 ? '2px solid var(--gold)' : '2px solid transparent',
           transition: 'all 0.2s',
         }}>
@@ -603,7 +603,7 @@ const VendorRegister = () => {
                 <button type="button" onClick={openDaumPostcode}
                   style={{
                     padding: '11px 16px', background: 'var(--gold)', border: 'none',
-                    color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                    color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                     letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap',
                   }}>
                   주소 검색
@@ -664,13 +664,13 @@ const VendorRegister = () => {
                     style={{
                       border: `2px solid ${isSelected ? 'var(--gold)' : 'var(--border)'}`,
                       padding: '20px 18px', cursor: 'pointer',
-                      background: isSelected ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
+                      background: isSelected ? 'var(--accent-a06)' : 'var(--bg2)',
                       transition: 'all 0.2s', position: 'relative', textAlign: 'center',
                     }}
                   >
                     {isSelected && (
                       <div style={{ position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ color: '#0B0B0B', fontSize: 10, fontWeight: 700 }}>✓</span>
+                        <span style={{ color: 'var(--on-accent)', fontSize: 10, fontWeight: 700 }}>✓</span>
                       </div>
                     )}
                     <div style={{ fontSize: 28, marginBottom: 10 }}>{vt.icon}</div>
@@ -682,7 +682,7 @@ const VendorRegister = () => {
             </div>
 
             {/* 안내 */}
-            <div style={{ marginBottom: 28, padding: '12px 16px', background: 'rgba(232,160,32,0.05)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+            <div style={{ marginBottom: 28, padding: '12px 16px', background: 'var(--accent-a05)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
               <span style={{ color: 'var(--gold)' }}>안내</span> · 활동 지역, 세부 카테고리, 대표 이미지, 상세 소개 등은 가입 완료 후 벤더 대시보드에서 설정하실 수 있습니다.
             </div>
 
@@ -710,7 +710,7 @@ const VendorRegister = () => {
             </div>
             <div style={{
               padding: '20px 24px', marginBottom: 24,
-              border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+              border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
             }}>
               <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)', marginBottom: 10 }}>
                 이미 가입된 이메일입니다
@@ -750,7 +750,7 @@ const VendorRegister = () => {
                 disabled={loading || !existingPassword}
                 style={{
                   flex: 2, padding: '12px', background: 'var(--gold)',
-                  border: 'none', color: '#0B0B0B', fontSize: 12, fontWeight: 600,
+                  border: 'none', color: 'var(--on-accent)', fontSize: 12, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.7 : 1,
                 }}

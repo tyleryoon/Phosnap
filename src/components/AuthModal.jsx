@@ -93,7 +93,7 @@ const RoleSelectModal = ({ user, onRoleSelected }) => {
                 textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
                 background: selectedRole === id ? 'var(--gold)' : 'transparent',
                 border: '1px solid ' + (selectedRole === id ? 'var(--gold)' : 'var(--border)'),
-                color: selectedRole === id ? '#0B0B0B' : 'var(--text)',
+                color: selectedRole === id ? 'var(--text)' : 'var(--text)',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 borderRadius: 4, transition: 'all 0.2s',
                 opacity: loading && selectedRole !== id ? 0.5 : 1,
@@ -201,7 +201,7 @@ export const PhoneVerify = ({ onVerified, setError }) => {
             <button type="button" onClick={handleManualConfirm}
               style={{
                 padding: '0 14px', fontSize: 11, whiteSpace: 'nowrap',
-                background: 'var(--gold)', border: 'none', color: '#0B0B0B',
+                background: 'var(--gold)', border: 'none', color: 'var(--on-accent)',
                 cursor: 'pointer',
               }}>
               확인
@@ -223,7 +223,7 @@ export const PhoneVerify = ({ onVerified, setError }) => {
               style={{ flex: 1, letterSpacing: '0.2em', textAlign: 'center', fontSize: 16 }} />
             <button type="button" onClick={handleVerify} disabled={loading}
               style={{ padding: '0 14px', fontSize: 11, whiteSpace: 'nowrap',
-                background: 'var(--gold)', border: 'none', color: '#0B0B0B',
+                background: 'var(--gold)', border: 'none', color: 'var(--on-accent)',
                 cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
               {loading ? t('auth.checking') : t('auth.verify')}
             </button>
@@ -267,7 +267,7 @@ const LoginRolePicker = ({ roles, onSelect, onClose }) => {
                 color: 'var(--text)',
                 cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(232,160,32,0.05)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'var(--accent-a05)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <span style={{ fontSize: 20 }}>{info.emoji}</span>
@@ -643,7 +643,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
         <form onSubmit={handleExistingLogin}>
           <div style={{
             padding: '20px 24px', marginBottom: 20,
-            border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+            border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
             borderRadius: 4,
           }}>
             <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)', marginBottom: 10 }}>
@@ -802,7 +802,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
                 color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
                 letterSpacing: '0.06em', transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
             >
               {t('auth.customerSignup') || '고객 회원가입 →'}
@@ -1016,7 +1016,7 @@ const ArtistAuth = ({ onClose }) => {
             color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.06em', transition: 'all 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
         >
           {t('auth.artistSignupLink') || '작가 회원가입 →'}
@@ -1219,7 +1219,7 @@ const VendorAuth = ({ onClose }) => {
             color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.06em', transition: 'all 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
         >
           벤더 회원가입 →
@@ -1285,7 +1285,7 @@ const AuthModal = ({ mode, onClose }) => {
               style={{
                 padding: '10px 0', fontSize: 11, border: 'none', cursor: 'pointer',
                 background: userType === id ? 'var(--gold)' : 'transparent',
-                color:      userType === id ? '#0B0B0B'    : 'var(--muted)',
+                color:      userType === id ? 'var(--text)'    : 'var(--muted)',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
                 transition: 'all 0.2s',
               }}>

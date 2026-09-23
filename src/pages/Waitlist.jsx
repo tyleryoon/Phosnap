@@ -354,7 +354,7 @@ const Waitlist = () => {
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {t('waitlist.instagramLabel')}
-                  <span style={{ fontSize: 10, color: 'var(--gold)', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', padding: '2px 8px', borderRadius: 0, letterSpacing: '0.08em' }}>
+                  <span style={{ fontSize: 10, color: 'var(--gold)', background: 'var(--accent-a10)', border: '1px solid var(--gold-border)', padding: '2px 8px', borderRadius: 0, letterSpacing: '0.08em' }}>
                     DM
                   </span>
                 </label>

@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import { SearchIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { submitWaitlist } from '../lib/waitlist';
+import { getPlatformStats } from '../lib/supabase';
 
 import { getMergedProfile } from '../data/artistProfile';
 import { getAllLocationsSorted } from '../data/locationUtils';
@@ -121,7 +122,7 @@ const WaitlistSection = () => {
 
   return (
     <div className="waitlist-section">
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 80% at 50% 50%, rgba(232,160,32,0.05) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse 60% 80% at 50% 50%, var(--accent-a05) 0%, transparent 70%)', pointerEvents: 'none' }} />
       <div className="waitlist-inner">
         <div className="section-label">{t('section.earlyAccess')}</div>
         <h2 className="section-title" style={{ fontFamily: 'var(--font-serif)', fontSize: 'clamp(24px,4vw,40px)', letterSpacing: '0.05em' }}>
@@ -160,6 +161,21 @@ const Home = ({ onAuthOpen }) => {
   const [query, setQuery] = useState('');
   const { t, lang } = useLanguage();
   const featuredLocations = getAllLocationsSorted().slice(0, 8);
+
+  // 홈 통계 — 실제 수치만. 못 센 항목은 아예 안 보여준다.
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    let dead = false;
+    getPlatformStats().then(({ data }) => { if (!dead) setStats(data); });
+    return () => { dead = true; };
+  }, []);
+
+  const statItems = stats ? [
+    { num: stats.artists,  labelKey: 'stats.photographers' },
+    { num: stats.cities,   labelKey: 'stats.cities' },
+    { num: stats.sessions, labelKey: 'stats.sessions' },
+    { num: stats.rating,   labelKey: 'stats.rating' },
+  ].filter(s => s.num !== null && s.num !== undefined && s.num !== 0) : [];
 
   // Fetch featured photographers from DB with fallback to mock
   const [featuredPhotographers, setFeaturedPhotographers] = useState(null);
@@ -210,13 +226,18 @@ const Home = ({ onAuthOpen }) => {
           <button className="search-btn" onClick={() => query.trim() && navigate('/photographers', { state: { searchQuery: query.trim() } })}>
             <SearchIcon />
           </button>
-          <div className="search-tags">
-            {(t('hero.searchTags') || ['Seoul','Kyoto','Paris','Jeju','Bali','Tokyo']).map(loc => (
-              <span key={loc} className="search-tag" onClick={() => navigate('/photographers', { state: { searchQuery: loc } })}>
-                {loc}
-              </span>
-            ))}
-          </div>
+        </div>
+
+        {/* 태그는 검색창 **밖**에 둔다.
+            안에 있으면 .search-box 가 태그 높이까지 늘어나고,
+            top:0/bottom:0 인 검색 버튼이 그 전체를 덮어 모바일에서
+            태그 하나를 가려버린다. */}
+        <div className="search-tags">
+          {(Array.isArray(t('hero.searchTags')) ? t('hero.searchTags') : ['Seoul','Kyoto','Paris','Jeju','Bali','Tokyo']).map(loc => (
+            <span key={loc} className="search-tag" onClick={() => navigate('/photographers', { state: { searchQuery: loc } })}>
+              {loc}
+            </span>
+          ))}
         </div>
 
         <div className="hero-ctas">
@@ -229,20 +250,20 @@ const Home = ({ onAuthOpen }) => {
         </div>
       </div>
 
-      {/* ── Stats bar ── */}
-      <div className="stats-bar" style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {[
-          { num: '2,400+', labelKey: 'stats.photographers' },
-          { num: '48',     labelKey: 'stats.cities' },
-          { num: '18,000+', labelKey: 'stats.sessions' },
-          { num: '4.93',   labelKey: 'stats.rating' },
-        ].map(s => (
-          <div key={s.labelKey} className="stat-item">
-            <span className="stat-num">{s.num}</span>
-            <span className="stat-label">{t(s.labelKey)}</span>
-          </div>
-        ))}
-      </div>
+      {/* ── Stats bar ──
+          숫자는 DB 에서 온다. 예전엔 여기에 2,400+ / 48 / 18,000+ / 4.93 이
+          박혀 있었고 전부 지어낸 값이었다. 셀 수 없는 항목은 빼고,
+          하나도 못 세면 통계바 자체를 안 그린다. */}
+      {statItems.length > 0 && (
+        <div className="stats-bar" style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {statItems.map(s => (
+            <div key={s.labelKey} className="stat-item">
+              <span className="stat-num">{s.num}</span>
+              <span className="stat-label">{t(s.labelKey)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── World Map ── */}
       <div className="section">

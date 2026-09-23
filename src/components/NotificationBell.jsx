@@ -196,11 +196,11 @@ const NotificationBell = () => {
                   display: 'flex', gap: 12, padding: '12px 16px',
                   borderBottom: '1px solid var(--border)',
                   cursor: notif.link ? 'pointer' : 'default',
-                  background: notif.read_at ? 'transparent' : 'rgba(232,160,32,0.04)',
+                  background: notif.read_at ? 'transparent' : 'var(--accent-a04)',
                   transition: 'background 0.2s',
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = notif.read_at ? 'transparent' : 'rgba(232,160,32,0.04)'}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--ink-a03)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = notif.read_at ? 'transparent' : 'var(--accent-a04)'}
               >
                 <span style={{ fontSize: 18, flexShrink: 0 }}>
                   {NOTIF_ICONS[notif.type] || '🔔'}

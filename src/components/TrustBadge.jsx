@@ -257,7 +257,7 @@ const TrustBadge = ({ photographer, size = 'small', showDetails = false }) => {
         <style>{`
           @keyframes platinum-shimmer {
             0%, 100% { text-shadow: 0 0 0 transparent; }
-            50% { text-shadow: 0 0 8px rgba(232, 160, 32, 0.6); }
+            50% { text-shadow: 0 0 8px var(--accent-a50); }
           }
           .platinum-shimmer {
             animation: platinum-shimmer 2s ease-in-out infinite;
@@ -305,7 +305,7 @@ const styles = {
     alignItems: 'center',
     gap: 4,
     backgroundColor: 'var(--gold)',
-    color: '#0B0B0B',
+    color: 'var(--on-accent)',
     padding: '4px 8px',
     borderRadius: 2,
   },

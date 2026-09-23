@@ -108,6 +108,12 @@ export const getCleanupPreview = async (userId) => {
         .select('*', { count: 'exact', head: true }).eq('customer_id', userId);
       if (chatCount > 0) preview.chats = chatCount;
     }
-  } catch {}
+  } catch (err) {
+    // 계정 삭제 미리보기다. 조회가 실패했는데 조용히 넘어가면
+    // 화면은 '지워질 게 없습니다' 처럼 보이고, 사용자는 예약·리뷰가
+    // 남아 있는 줄 모른 채 삭제를 누른다. 최소한 흔적은 남긴다.
+    console.error('[accountCleanup] 삭제 미리보기 조회 실패:', err);
+    preview.incomplete = true;
+  }
   return preview;
 };

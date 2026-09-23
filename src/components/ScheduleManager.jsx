@@ -238,8 +238,8 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
                 onClick={() => setDraftSlots(p => on ? p.filter(x => x !== s) : [...p, s].sort())}
                 style={{
                   padding: '6px 12px', fontSize: 13, cursor: 'pointer',
-                  background: on ? 'rgba(232,160,32,0.14)' : 'transparent',
-                  border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                  background: on ? 'var(--accent-a15)' : 'transparent',
+                  border: `1px solid ${on ? 'var(--accent-a50)' : 'var(--border)'}`,
                   color: on ? 'var(--gold)' : 'var(--muted)',
                 }}>{s}</button>
             );
@@ -299,8 +299,8 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
           ref={el => { if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }}
           style={{
             padding: 14, fontSize: 13, lineHeight: 1.7,
-            background: err ? 'rgba(232,93,93,0.08)' : 'rgba(232,160,32,0.08)',
-            border: `1px solid ${err ? 'rgba(232,93,93,0.5)' : 'rgba(232,160,32,0.5)'}`,
+            background: err ? 'rgba(232,93,93,0.08)' : 'var(--accent-a08)',
+            border: `1px solid ${err ? 'rgba(232,93,93,0.5)' : 'var(--accent-a50)'}`,
             color: err ? '#e85d5d' : 'var(--gold)',
           }}>{err || msg}</div>
       )}

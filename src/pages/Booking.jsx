@@ -174,7 +174,7 @@ const HmkGuideCard = ({ lang }) => {
       <div style={{
         display: 'inline-block', alignSelf: 'flex-start',
         padding: '3px 10px', marginBottom: 16,
-        background: 'rgba(232,160,32,0.15)', border: '1px solid rgba(232,160,32,0.4)',
+        background: 'var(--accent-a15)', border: '1px solid var(--accent-a30)',
         fontSize: 9, color: 'var(--gold)', fontFamily: 'var(--font-serif)',
         letterSpacing: '0.2em', textTransform: 'uppercase',
       }}>
@@ -208,7 +208,7 @@ const HmkGuideCard = ({ lang }) => {
       </div>
 
       {/* 구분선 + 노트 */}
-      <div style={{ paddingTop: 14, borderTop: '1px solid rgba(232,160,32,0.2)' }}>
+      <div style={{ paddingTop: 14, borderTop: '1px solid var(--accent-a20)' }}>
         <p style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6, fontStyle: 'italic', fontFamily: 'var(--font-elegant)' }}>
           {g.note}
         </p>
@@ -268,7 +268,7 @@ const PrePaymentModal = ({ lang, onConfirm, onClose }) => {
                   transition: 'all 0.2s', cursor: 'pointer',
                 }}
               >
-                {checked[i] && <span style={{ color: '#0B0B0B', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>}
+                {checked[i] && <span style={{ color: 'var(--on-accent)', fontSize: 12, fontWeight: 700, lineHeight: 1 }}>✓</span>}
               </div>
               <span
                 onClick={() => toggle(i)}
@@ -283,7 +283,7 @@ const PrePaymentModal = ({ lang, onConfirm, onClose }) => {
         {/* 작가 확정 안내 */}
         <div style={{
           padding: '14px 16px', marginBottom: 24,
-          background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.25)',
+          background: 'var(--accent-a08)', border: '1px solid var(--accent-a20)',
           fontSize: 12, color: 'var(--gold)', lineHeight: 1.7,
           fontFamily: 'var(--font-serif)',
         }}>
@@ -1220,7 +1220,7 @@ const Booking = () => {
           시간만 버린다. 처음부터 알려준다. */}
       {isSupplierViewing && (
         <div style={{
-          background: 'rgba(232,160,32,0.08)', borderTop: '1px solid var(--gold-border)',
+          background: 'var(--accent-a08)', borderTop: '1px solid var(--gold-border)',
           borderBottom: '1px solid var(--gold-border)', padding: '12px 24px',
           fontSize: 12, color: 'var(--gold)', textAlign: 'center',
           fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
@@ -1240,7 +1240,7 @@ const Booking = () => {
               key={i}
               className="booking-progress-step"
               style={{
-                color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'rgba(232,160,32,0.5)' : 'var(--muted)',
+                color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'var(--accent-a50)' : 'var(--muted)',
                 borderBottom: step === i + 1 ? '2px solid var(--gold)' : '2px solid transparent',
                 cursor: step > i + 1 ? 'pointer' : 'default',
               }}
@@ -1332,7 +1332,7 @@ const Booking = () => {
                           position: 'relative',
                           padding: '10px 0 14px', textAlign: 'center', fontSize: 13,
                           background: selected ? 'var(--gold)' : 'transparent',
-                          color: (past || isOff || isFull) ? 'rgba(136,136,136,0.3)' : selected ? '#0B0B0B' : 'var(--text)',
+                          color: (past || isOff || isFull) ? 'rgba(136,136,136,0.3)' : selected ? 'var(--text)' : 'var(--text)',
                           border: '1px solid', borderColor: selected ? 'var(--gold)' : 'transparent',
                           cursor: (past || isOff || isFull) ? 'not-allowed' : 'pointer',
                           transition: 'all 0.2s', fontFamily: 'var(--font-serif)',
@@ -1346,9 +1346,9 @@ const Booking = () => {
                             position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)',
                             width: 4, height: 4, borderRadius: '50%',
                             background: selected
-                              ? '#0B0B0B'
+                              ? 'var(--text)'
                               : status === 'open'    ? '#22c55e'
-                              : status === 'partial' ? '#f0ac2a'
+                              : status === 'partial' ? 'var(--accent-deep)'
                               : status === 'full'    ? '#e85d5d'
                               : 'transparent',
                           }} />
@@ -1362,7 +1362,7 @@ const Booking = () => {
                 <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
                   {[
                     { color: '#22c55e',  label: t('booking.slotOpen')    },
-                    { color: '#f0ac2a',  label: t('booking.slotPartial') },
+                    { color: 'var(--accent-deep)',  label: t('booking.slotPartial') },
                     { color: '#e85d5d',  label: t('booking.slotFull')   },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--muted)' }}>
@@ -1457,7 +1457,7 @@ const Booking = () => {
                   const unavailSlots = slotData.filter(s => !s.available);
 
                   return (
-                    <div style={{ marginTop: 32, border: '1px solid var(--gold-border)', padding: 24, background: 'rgba(232,160,32,0.03)', position: 'relative' }}>
+                    <div style={{ marginTop: 32, border: '1px solid var(--gold-border)', padding: 24, background: 'var(--accent-a03)', position: 'relative' }}>
                       <Corners />
                       <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 8 }}>
                         {selectedDate} — {t('booking.selectTime') || '시간 선택'}
@@ -1488,7 +1488,7 @@ const Booking = () => {
                                   padding: '10px 6px', textAlign: 'center',
                                   fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.03em',
                                   background: isSelected ? 'var(--gold)' : !available ? 'rgba(136,136,136,0.08)' : 'var(--bg2)',
-                                  color: isSelected ? '#0B0B0B' : !available ? 'rgba(136,136,136,0.35)' : 'var(--text)',
+                                  color: isSelected ? 'var(--text)' : !available ? 'rgba(136,136,136,0.35)' : 'var(--text)',
                                   border: `1px solid ${isSelected ? 'var(--gold)' : !available ? 'rgba(136,136,136,0.15)' : 'var(--border)'}`,
                                   cursor: !available ? 'not-allowed' : 'pointer',
                                   transition: 'all 0.2s',
@@ -1498,7 +1498,7 @@ const Booking = () => {
                               >
                                 <div>{time}</div>
                                 {pkgHours > 1 && (
-                                  <div style={{ fontSize: 9, color: isSelected ? 'rgba(11,11,11,0.6)' : 'var(--muted)', marginTop: 2 }}>
+                                  <div style={{ fontSize: 9, color: isSelected ? 'var(--ink-a60)' : 'var(--muted)', marginTop: 2 }}>
                                     ~{endTime}
                                   </div>
                                 )}
@@ -1559,7 +1559,7 @@ const Booking = () => {
                     {p.hmkAvailable && (
                       <div style={{
                         padding: '12px 16px', marginBottom: 20,
-                        background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)',
+                        background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)',
                         fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
                       }}>
                         <span style={{ color: 'var(--gold)' }}>💄</span>{' '}
@@ -1618,7 +1618,7 @@ const Booking = () => {
                                 style={{
                                   border: `2px solid ${isSvcSelected ? 'var(--gold)' : 'var(--border)'}`,
                                   padding: '16px 20px',
-                                  background: isSvcSelected ? 'rgba(232,160,32,0.08)' : 'var(--bg2)',
+                                  background: isSvcSelected ? 'var(--accent-a08)' : 'var(--bg2)',
                                   cursor: blocked ? 'not-allowed' : 'pointer',
                                   opacity: blocked ? 0.42 : 1,
                                   position: 'relative',
@@ -1626,13 +1626,13 @@ const Booking = () => {
                                 }}
                               >
                                 {svc.popular && (
-                                  <div style={{ position: 'absolute', top: -1, right: 12, background: 'var(--gold)', color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 8, fontWeight: 600, letterSpacing: '0.1em', padding: '2px 8px' }}>
+                                  <div style={{ position: 'absolute', top: -1, right: 12, background: 'var(--gold)', color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 8, fontWeight: 600, letterSpacing: '0.1em', padding: '2px 8px' }}>
                                     POPULAR
                                   </div>
                                 )}
                                 {isSvcSelected && (
                                   <div style={{ position: 'absolute', top: 10, left: 10, width: 16, height: 16, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <span style={{ color: '#0B0B0B', fontSize: 9, fontWeight: 700 }}>✓</span>
+                                    <span style={{ color: 'var(--on-accent)', fontSize: 9, fontWeight: 700 }}>✓</span>
                                   </div>
                                 )}
                                 <div style={{ fontFamily: 'var(--font-serif)', fontSize: 13, letterSpacing: '0.08em', marginBottom: 6, paddingLeft: isSvcSelected ? 20 : 0, transition: 'padding 0.2s' }}>{svc.name}</div>
@@ -1654,7 +1654,7 @@ const Booking = () => {
                                   const label = stylistTimingLabel(svc);
                                   if (!label) return null;
                                   return (
-                                    <div style={{ fontSize: 11, color: 'rgba(232,160,32,0.9)', marginBottom: 4 }}>
+                                    <div style={{ fontSize: 11, color: 'var(--accent-a50)', marginBottom: 4 }}>
                                       {label}
                                     </div>
                                   );
@@ -1701,7 +1701,7 @@ const Booking = () => {
                     {dressVendor && (
                       <div style={{
                         border: '1px solid var(--gold-border)', padding: '16px 20px',
-                        background: 'rgba(232,160,32,0.03)', marginBottom: 24,
+                        background: 'var(--accent-a03)', marginBottom: 24,
                         display: 'flex', gap: 16, alignItems: 'center',
                       }}>
                         {dressVendor.img && (
@@ -1739,7 +1739,7 @@ const Booking = () => {
                     {p.dressSelf && (
                       <div style={{
                         padding: '12px 16px', marginBottom: 24,
-                        background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)',
+                        background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)',
                         fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
                       }}>
                         <span style={{ color: 'var(--gold)' }}>✦</span> {t('booking.dressArtistOwned') || '이 작가님은 자체 의상을 보유하고 있습니다.'}
@@ -1749,7 +1749,7 @@ const Booking = () => {
                     {stylistDresses.length > 0 && (
                       <div style={{
                         padding: '12px 16px', marginBottom: 24,
-                        background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)',
+                        background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)',
                         fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
                       }}>
                         <span style={{ color: 'var(--gold)' }}>✦</span>{' '}
@@ -1868,7 +1868,7 @@ const Booking = () => {
                           {/* Vendor banner */}
                           <div style={{
                             border: '1px solid var(--gold-border)', padding: '16px 20px',
-                            background: 'rgba(232,160,32,0.03)', marginBottom: 16,
+                            background: 'var(--accent-a03)', marginBottom: 16,
                             display: 'flex', gap: 16, alignItems: 'center',
                           }}>
                             {vendor.img && (
@@ -2068,7 +2068,7 @@ const Booking = () => {
                       { label: t('booking.hmkService') || 'Service', value: stylistSvcData ? `${stylistSvcData.name}` : '—' },
                       { label: t('booking.labelFee'),      value: stylistSvcData ? `₩${fmtStylist(stylistSvcData.price)}` : `₩${fmtStylist(stylistData.price)}~` },
                     ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid rgba(232,160,32,0.2)' }}>
+                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid var(--accent-a20)' }}>
                         <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{item.label}</span>
                         <span style={{ fontSize: 13, fontFamily: 'var(--font-serif)' }}>{item.value}</span>
                       </div>
@@ -2090,7 +2090,7 @@ const Booking = () => {
                 )}
 
                 {selectedDressData ? (
-                  <div style={{ border: '1px solid var(--gold-border)', padding: 32, background: 'rgba(232,160,32,0.03)', position: 'relative', marginBottom: 24 }}>
+                  <div style={{ border: '1px solid var(--gold-border)', padding: 32, background: 'var(--accent-a03)', position: 'relative', marginBottom: 24 }}>
                     <Corners />
                     <div style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }}>
                       {t('booking.dressLabel') || 'Dress Rental'}
@@ -2100,7 +2100,7 @@ const Booking = () => {
                       { label: 'Size', value: selectedDressSize || '—' },
                       { label: t('booking.labelFee'), value: `₩${fmt(dressPrice)}` },
                     ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid rgba(232,160,32,0.2)' }}>
+                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid var(--accent-a20)' }}>
                         <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{item.label}</span>
                         <span style={{ fontSize: 13, fontFamily: 'var(--font-serif)' }}>{item.value}</span>
                       </div>
@@ -2122,7 +2122,7 @@ const Booking = () => {
                 )}
 
                 {selectedVenueData ? (
-                  <div style={{ border: '1px solid var(--gold-border)', padding: 32, background: 'rgba(232,160,32,0.03)', position: 'relative', marginBottom: 24 }}>
+                  <div style={{ border: '1px solid var(--gold-border)', padding: 32, background: 'var(--accent-a03)', position: 'relative', marginBottom: 24 }}>
                     <Corners />
                     <div style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: 20 }}>
                       {t('booking.venueLabel') || 'Venue'}
@@ -2132,7 +2132,7 @@ const Booking = () => {
                       { label: t('booking.venueCapacity') || '수용인원', value: `${selectedVenueData.capacity || '—'}명` },
                       { label: t('booking.labelFee'), value: `₩${fmt(venuePrice)}` },
                     ].map(item => (
-                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid rgba(232,160,32,0.2)' }}>
+                      <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 14, marginBottom: 14, borderBottom: '1px solid var(--accent-a20)' }}>
                         <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{item.label}</span>
                         <span style={{ fontSize: 13, fontFamily: 'var(--font-serif)' }}>{item.value}</span>
                       </div>
@@ -2169,7 +2169,7 @@ const Booking = () => {
                   {/* 비주얼 타임라인 */}
                   <div style={{ position: 'relative', paddingLeft: 24 }}>
                     {/* 세로 라인 */}
-                    <div style={{ position: 'absolute', left: 7, top: 4, bottom: 4, width: 2, background: 'linear-gradient(to bottom, #4caf50, #e8a020, #e85d5d)' }} />
+                    <div style={{ position: 'absolute', left: 7, top: 4, bottom: 4, width: 2, background: 'linear-gradient(to bottom, #4caf50, var(--gold), #e85d5d)' }} />
 
                     {[
                       {
@@ -2179,7 +2179,7 @@ const Booking = () => {
                         desc: { ko: '전액 환불됩니다', en: 'Full refund', ja: '全額返金されます', zh: '全额退款' },
                       },
                       {
-                        color: '#e8a020',
+                        color: 'var(--gold)',
                         label: { ko: '3~6일 전', en: '3-6 days before', ja: '3〜6日前', zh: '3-6天前' },
                         value: { ko: '50% 환불', en: '50% Refund', ja: '50%返金', zh: '50%退款' },
                         desc: { ko: '촬영 비용의 50%가 환불됩니다', en: '50% of the session fee is refunded', ja: '撮影料金の50%が返金されます', zh: '退还50%的拍摄费用' },
@@ -2335,7 +2335,7 @@ const Booking = () => {
             onClick={detail.onPick}
             style={{
               flex: 1, padding: '12px 0', border: 'none', background: 'var(--gold)',
-              color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 13,
+              color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 13,
               letterSpacing: '0.08em', cursor: 'pointer',
             }}
           >

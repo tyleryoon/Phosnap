@@ -448,7 +448,7 @@ const Profile = ({ onAuthOpen }) => {
               ))}
               {p.hmk && <span className="tag gold">{t('tags.hmk')}</span>}
               {p.instantBooking && (
-                <span className="tag" style={{ background: 'rgba(232,160,32,0.12)', color: 'var(--gold)', border: '1px solid rgba(232,160,32,0.25)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <span className="tag" style={{ background: 'var(--accent-a12)', color: 'var(--gold)', border: '1px solid var(--accent-a20)', fontWeight: 500, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                   ⚡ {lang === 'ko' ? '즉시 예약' : lang === 'ja' ? '即時予約' : lang === 'zh' ? '即时预订' : 'Instant Booking'}
                 </span>
               )}
@@ -508,7 +508,7 @@ const Profile = ({ onAuthOpen }) => {
                   cursor: 'pointer', transition: 'all 0.2s', borderRadius: '2px',
                   fontFamily: 'var(--font-serif)',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,160,32,0.1)'; }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-a10)'; }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
               >
                 <span>↗</span> {lang === 'ko' ? '공유' : lang === 'ja' ? '共有' : lang === 'zh' ? '分享' : 'Share'}
@@ -615,7 +615,7 @@ const Profile = ({ onAuthOpen }) => {
                   style={{
                     padding: '5px 12px', fontSize: 11, border: '1px solid',
                     borderColor: portfolioLocation === 'all' ? 'var(--gold)' : 'var(--border)',
-                    background: portfolioLocation === 'all' ? 'rgba(232,160,32,0.1)' : 'transparent',
+                    background: portfolioLocation === 'all' ? 'var(--accent-a10)' : 'transparent',
                     color: portfolioLocation === 'all' ? 'var(--gold)' : 'var(--muted)',
                     cursor: 'pointer', transition: 'all 0.2s',
                   }}>
@@ -628,7 +628,7 @@ const Profile = ({ onAuthOpen }) => {
                     style={{
                       padding: '5px 12px', fontSize: 11, border: '1px solid',
                       borderColor: portfolioLocation === loc.id ? 'var(--gold)' : 'var(--border)',
-                      background: portfolioLocation === loc.id ? 'rgba(232,160,32,0.1)' : 'transparent',
+                      background: portfolioLocation === loc.id ? 'var(--accent-a10)' : 'transparent',
                       color: portfolioLocation === loc.id ? 'var(--gold)' : 'var(--muted)',
                       cursor: 'pointer', transition: 'all 0.2s',
                     }}>
@@ -660,11 +660,11 @@ const Profile = ({ onAuthOpen }) => {
                         background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
                         padding: '3px 8px', borderRadius: 2,
                       }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-a50)" strokeWidth="2">
                           <rect x="3" y="3" width="14" height="14" rx="1" />
                           <path d="M7 21h14a2 2 0 002-2V7" />
                         </svg>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
+                        <span style={{ fontSize: 10, color: 'var(--ink-a50)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
                       </div>
                     )}
                     {/* 위치 태그 배지 */}
@@ -717,7 +717,7 @@ const Profile = ({ onAuthOpen }) => {
             {p.hourlyRate && p.hourlyRateEnabled !== false && (
               <div
                 className="package"
-                style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.03)', position: 'relative' }}
+                style={{ border: '1px solid var(--gold-border)', background: 'var(--accent-a03)', position: 'relative' }}
               >
                 <Corners />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -796,7 +796,7 @@ const Profile = ({ onAuthOpen }) => {
 
                   return (
                     <div key={i} className="package"
-                      style={{ border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.02)', position: 'relative' }}
+                      style={{ border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', position: 'relative' }}
                     >
                       <Corners />
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
@@ -809,7 +809,7 @@ const Profile = ({ onAuthOpen }) => {
                         <div>
                           <div className="package-price">₩{fmt(tour.price)}<span style={{ fontSize: 11, color: 'var(--muted)' }}> / {lang === 'ko' ? '총액' : lang === 'ja' ? '合計' : 'total'}</span></div>
                           <div style={{ fontSize: 11, color: 'var(--gold)', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ background: 'rgba(232,160,32,0.1)', padding: '1px 6px', fontSize: 9, letterSpacing: '0.05em', fontFamily: 'var(--font-serif)' }}>
+                            <span style={{ background: 'var(--accent-a10)', padding: '1px 6px', fontSize: 9, letterSpacing: '0.05em', fontFamily: 'var(--font-serif)' }}>
                               {lang === 'ko' ? '더치페이 가능' : lang === 'ja' ? '割り勘OK' : 'Split OK'}
                             </span>
                             {lang === 'ko' ? `최대 ${tour.maxGuests}인 → 1인 ₩${fmt(perPersonPrice)}` :
@@ -839,8 +839,8 @@ const Profile = ({ onAuthOpen }) => {
                           {tour.spots.map((spot, si) => (
                             <span key={si} style={{
                               fontSize: 10, padding: '2px 8px',
-                              background: 'rgba(232,160,32,0.08)',
-                              border: '1px solid rgba(232,160,32,0.15)',
+                              background: 'var(--accent-a08)',
+                              border: '1px solid var(--accent-a15)',
                               color: 'var(--gold)', fontFamily: 'var(--font-serif)',
                             }}>
                               {spot}
@@ -871,7 +871,7 @@ const Profile = ({ onAuthOpen }) => {
                                   <div style={{
                                     height: '100%', borderRadius: 2,
                                     width: `${Math.min(100, (count / inst.maxGuests) * 100)}%`,
-                                    background: count >= inst.maxGuests ? '#4caf50' : '#e8a020',
+                                    background: count >= inst.maxGuests ? '#4caf50' : 'var(--gold)',
                                   }} />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -970,7 +970,7 @@ const Profile = ({ onAuthOpen }) => {
                           <span key={h.id} style={{
                             display: 'inline-flex', alignItems: 'center', gap: 5,
                             padding: '5px 12px', fontSize: 11, fontFamily: 'var(--font-serif)',
-                            background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)',
+                            background: 'var(--accent-a06)', border: '1px solid var(--accent-a15)',
                             color: 'var(--text)',
                           }}>
                             <span style={{ fontSize: 13 }}>{h.icon}</span>
@@ -1029,7 +1029,7 @@ const Profile = ({ onAuthOpen }) => {
                         style={{
                           padding: '4px 10px', fontSize: 10, fontFamily: 'var(--font-serif)',
                           border: `1px solid ${reviewSort === opt.val ? 'var(--gold)' : 'var(--border)'}`,
-                          background: reviewSort === opt.val ? 'rgba(232,160,32,0.1)' : 'transparent',
+                          background: reviewSort === opt.val ? 'var(--accent-a10)' : 'transparent',
                           color: reviewSort === opt.val ? 'var(--gold)' : 'var(--muted)',
                           cursor: 'pointer', transition: 'all 0.2s',
                         }}
@@ -1088,7 +1088,7 @@ const Profile = ({ onAuthOpen }) => {
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8, paddingLeft: 40 }}>
                             {r.tags.map((tag, ti) => (
                               <span key={ti} style={{
-                                padding: '2px 8px', background: 'rgba(232,160,32,0.06)',
+                                padding: '2px 8px', background: 'var(--accent-a06)',
                                 color: 'var(--muted)', fontSize: 10, border: '1px solid var(--border)',
                               }}>
                                 {tag}
@@ -1105,7 +1105,7 @@ const Profile = ({ onAuthOpen }) => {
                           return (
                             <div style={{
                               marginTop: 12, marginLeft: 40, padding: '14px 18px',
-                              background: 'rgba(232,160,32,0.04)', borderLeft: '3px solid var(--gold)',
+                              background: 'var(--accent-a04)', borderLeft: '3px solid var(--gold)',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                                 <span style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.06em' }}>

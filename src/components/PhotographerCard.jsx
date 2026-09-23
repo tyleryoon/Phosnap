@@ -107,7 +107,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
         <div style={{
           position: 'absolute', inset: 0, zIndex: 10,
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-          background: 'rgba(11,11,11,0.3)',
+          background: 'var(--ink-a30)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 8, cursor: 'pointer',
         }}>
@@ -180,7 +180,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                border: '2px solid rgba(255,255,255,0.85)',
+                border: '2px solid var(--ink-a50)',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
                 display: 'block'
               }}
@@ -212,7 +212,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
             if (!at || p.artistType === 'hmk') return null;
             return (
               <span className="tag" style={{
-                borderColor: 'rgba(232,160,32,0.5)', color: 'var(--gold)',
+                borderColor: 'var(--accent-a50)', color: 'var(--gold)',
               }}>
                 {at.icon} {lang === 'ko' ? at.ko : at.en}
               </span>
@@ -220,7 +220,7 @@ const PhotographerCard = ({ p, onClick, blurred = false }) => {
           })()}
           {p.hmkAvailable && (
             <span className="tag" style={{
-              borderColor: 'rgba(232,160,32,0.5)', color: 'var(--gold)',
+              borderColor: 'var(--accent-a50)', color: 'var(--gold)',
             }}>
               💄 {lang === 'ko' ? '헤메 가능' : 'H&M'}
             </span>

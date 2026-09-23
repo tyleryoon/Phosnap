@@ -433,7 +433,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
                       {item.item_name}
                       {item.item_option ? ` · ${item.item_option}` : ''}
                     </div>
-                    <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginTop: 2 }}>
                       {/* 의상은 하루 단위 점유라 시각 대신 대여 표시 */}
                       {item.timing === 'day' ? t.dressRentalDay : fmtSlot(item)}
                     </div>
@@ -956,8 +956,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                   display: 'inline-block',
                   padding: '4px 10px',
                   fontSize: 12,
-                  color: 'rgba(232,160,32,0.9)',
-                  border: '1px solid rgba(232,160,32,0.35)',
+                  color: 'var(--accent-a50)',
+                  border: '1px solid var(--accent-a30)',
                 }}>
                   {service.timing === 'during' ? t.timingDuring
                     : service.timing === 'full' ? t.timingFull
@@ -1090,8 +1090,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                         textAlign: 'left',
                         padding: 12,
                         cursor: 'pointer',
-                        background: on ? 'rgba(232,160,32,0.10)' : 'var(--bg)',
-                        border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                        background: on ? 'var(--accent-a10)' : 'var(--bg)',
+                        border: `1px solid ${on ? 'var(--accent-a50)' : 'var(--border)'}`,
                         color: 'var(--text)',
                         fontFamily: 'var(--font-body)',
                       }}
@@ -1194,7 +1194,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                       {lang === 'ko' ? '시술' : 'Service'} {hm(slot.start)} ~ {hm(slot.end)}
                     </div>
                     {!same && (
-                      <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginTop: 4 }}>
                         {lang === 'ko' ? '일정 점유' : 'Blocked'} {hm(slot.busyStart)} ~ {hm(slot.busyEnd)}
                       </div>
                     )}
@@ -1900,7 +1900,7 @@ export default function StylistDashboard() {
                                       key={tag}
                                       style={{
                                         fontSize: 10,
-                                        backgroundColor: 'rgba(232,160,32,0.1)',
+                                        backgroundColor: 'var(--accent-a10)',
                                         color: 'var(--gold)',
                                         padding: '2px 8px',
                                         borderRadius: '2px',

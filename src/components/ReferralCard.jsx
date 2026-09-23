@@ -136,7 +136,7 @@ const ReferralCard = ({ userId, role = 'customer' }) => {
                     padding: '8px 12px',
                     fontSize: '0.8rem',
                     background: 'var(--gold)',
-                    color: '#0B0B0B',
+                    color: 'var(--on-accent)',
                     border: 'none',
                     borderRadius: 4,
                     cursor: 'pointer',
@@ -241,7 +241,7 @@ const ReferralCard = ({ userId, role = 'customer' }) => {
                     key={referral.id}
                     style={{
                       padding: '8px 0',
-                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      borderBottom: '1px solid var(--ink-a05)',
                       fontSize: '0.8rem',
                       color: 'var(--muted)',
                       display: 'flex',

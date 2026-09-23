@@ -84,7 +84,7 @@ const ImageUploader = ({
             <button
               onClick={() => inputRef.current?.click()}
               style={{
-                background: 'rgba(11,11,11,0.8)', border: '1px solid var(--border)',
+                background: 'var(--ink-a80)', border: '1px solid var(--border)',
                 color: 'var(--text)', fontSize: 10, padding: '4px 12px', cursor: 'pointer',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
               }}

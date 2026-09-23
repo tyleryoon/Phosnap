@@ -48,15 +48,15 @@ class ErrorBoundary extends Component {
       <div style={{
         minHeight: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        background: '#0B0B0B', color: '#F2F2F2', padding: 24,
+        background: 'var(--bg)', color: 'var(--text)', padding: 24,
       }}>
         {/* Icon */}
         <div style={{
           width: 64, height: 64, borderRadius: '50%',
-          border: '2px solid rgba(232,160,32,0.3)', display: 'flex',
+          border: '2px solid var(--accent-a30)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', marginBottom: 24,
         }}>
-          <span style={{ fontSize: 28, color: '#E8A020' }}>!</span>
+          <span style={{ fontSize: 28, color: 'var(--gold)' }}>!</span>
         </div>
 
         <h1 style={{
@@ -74,7 +74,7 @@ class ErrorBoundary extends Component {
           <button
             onClick={this.handleReload}
             style={{
-              background: '#E8A020', color: '#0B0B0B', border: 'none',
+              background: 'var(--gold)', color: 'var(--on-accent)', border: 'none',
               padding: '12px 32px', fontSize: 13, fontFamily: "'Cinzel', serif",
               letterSpacing: '0.1em', cursor: 'pointer',
             }}
@@ -84,8 +84,8 @@ class ErrorBoundary extends Component {
           <button
             onClick={this.handleHome}
             style={{
-              background: 'transparent', color: '#F2F2F2',
-              border: '1px solid rgba(242,242,242,0.18)',
+              background: 'transparent', color: 'var(--text)',
+              border: '1px solid var(--ink-a20)',
               padding: '12px 32px', fontSize: 13, fontFamily: "'Cinzel', serif",
               letterSpacing: '0.1em', cursor: 'pointer',
             }}
@@ -99,7 +99,7 @@ class ErrorBoundary extends Component {
           <details style={{ marginTop: 40, textAlign: 'left', maxWidth: 600, width: '100%', color: '#888' }}>
             <summary style={{ cursor: 'pointer', fontSize: 11, letterSpacing: '0.05em' }}>Error Details</summary>
             <pre style={{
-              marginTop: 8, padding: 16, background: '#111', border: '1px solid rgba(242,242,242,0.08)',
+              marginTop: 8, padding: 16, background: '#111', border: '1px solid var(--ink-a08)',
               fontSize: 11, whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflow: 'auto', maxHeight: 200,
             }}>
               {this.state.error?.toString()}

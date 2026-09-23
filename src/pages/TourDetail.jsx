@@ -236,7 +236,7 @@ const TourDetail = () => {
           </div>
 
           {/* 가격 정보 */}
-          <div style={{ padding: '14px 18px', border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.03)', marginBottom: 16 }}>
+          <div style={{ padding: '14px 18px', border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', marginBottom: 16 }}>
             {isTotal ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -244,7 +244,7 @@ const TourDetail = () => {
                   <div style={{ fontSize: 20, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>₩{fmt(instance.basePrice)}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                  <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(232,160,32,0.1)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+                  <span style={{ fontSize: 10, padding: '2px 8px', background: 'var(--accent-a10)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
                     {lang === 'ko' ? '더치페이' : 'Split'}
                   </span>
                   <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)' }}>
@@ -283,7 +283,7 @@ const TourDetail = () => {
               <div style={{
                 height: '100%', borderRadius: 4, transition: 'width 0.5s ease',
                 width: `${fillPercent}%`,
-                background: count >= instance.maxGuests ? '#4caf50' : count >= instance.minGuests ? '#e8a020' : `linear-gradient(90deg, #e85d5d, #e8a020)`,
+                background: count >= instance.maxGuests ? '#4caf50' : count >= instance.minGuests ? 'var(--gold)' : `linear-gradient(90deg, #e85d5d, var(--gold))`,
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--muted)' }}>
@@ -337,8 +337,8 @@ const TourDetail = () => {
                   {tour.spots.map((spot, i) => (
                     <span key={i} style={{
                       fontSize: 10, padding: '3px 10px',
-                      background: 'rgba(232,160,32,0.08)',
-                      border: '1px solid rgba(232,160,32,0.15)',
+                      background: 'var(--accent-a08)',
+                      border: '1px solid var(--accent-a15)',
                       color: 'var(--gold)', fontFamily: 'var(--font-serif)',
                     }}>
                       📍 {spot}
@@ -455,7 +455,7 @@ const TourDetail = () => {
                 </label>
 
                 {/* 가격 요약 */}
-                <div style={{ padding: '12px 16px', border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.03)', marginBottom: 16 }}>
+                <div style={{ padding: '12px 16px', border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                     <span style={{ color: 'var(--muted)' }}>
                       {isTotal

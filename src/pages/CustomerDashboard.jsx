@@ -200,18 +200,18 @@ const MOCK_COUPONS = [
 
 // ─── Style Constants ──────────────────────────────────────────────────
 const sectionStyle = {
-  background: 'rgba(255,255,255,0.02)',
+  background: 'var(--ink-a03)',
   border: '1px solid var(--border)',
   padding: '1.5rem',
   marginBottom: '1.5rem',
 };
 const inputStyle = {
   width: '100%', padding: '0.65rem 0.85rem',
-  border: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)',
+  border: '1px solid var(--border)', background: 'var(--ink-a03)',
   color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '0.9rem',
 };
 const goldBtn = {
-  padding: '0.6rem 1.5rem', background: 'var(--gold)', color: '#0B0B0B',
+  padding: '0.6rem 1.5rem', background: 'var(--gold)', color: 'var(--on-accent)',
   border: 'none', fontFamily: 'var(--font-serif)', fontSize: '0.85rem',
   cursor: 'pointer', letterSpacing: '0.06em', transition: 'opacity 0.3s',
 };
@@ -377,7 +377,7 @@ const CustomerDashboard = () => {
           {/* Sidebar tabs */}
           <div style={{
             width: 200, flexShrink: 0,
-            border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)',
+            border: '1px solid var(--border)', background: 'var(--ink-a03)',
             position: 'sticky', top: 80,
           }}>
             {tabs.map(tab => {
@@ -511,7 +511,7 @@ const CustomerDashboard = () => {
                         const PipelineCard = ({ icon, title, data, type }) => {
                           if (!data) return (
                             <div style={{
-                              padding: '1rem', background: 'rgba(255,255,255,0.02)',
+                              padding: '1rem', background: 'var(--ink-a03)',
                               border: '1px dashed var(--border)', display: 'flex',
                               alignItems: 'center', justifyContent: 'center', minHeight: 80,
                             }}>
@@ -522,7 +522,7 @@ const CustomerDashboard = () => {
                           );
                           return (
                             <div style={{
-                              padding: '1rem', background: 'rgba(255,255,255,0.02)',
+                              padding: '1rem', background: 'var(--ink-a03)',
                               border: '1px solid var(--border)',
                               borderLeft: `3px solid ${pipelineStatusColor(data.status)}`,
                             }}>
@@ -689,7 +689,7 @@ const CustomerDashboard = () => {
                               fontSize: '0.78rem', padding: '0.4rem 0.8rem',
                               borderColor: isActive ? 'var(--gold)' : 'var(--border)',
                               color: isActive ? 'var(--gold)' : 'var(--muted)',
-                              background: isActive ? 'rgba(232,160,32,0.08)' : 'transparent',
+                              background: isActive ? 'var(--accent-a08)' : 'transparent',
                             }}
                           >
                             {f === 'all' ? (lang === 'ko' ? '전체' : 'All') : m.statuses[f]}
@@ -789,7 +789,7 @@ const CustomerDashboard = () => {
                                       return (
                                         <div key={item.key} style={{
                                           padding: '0.85rem', border: '1px solid var(--border)',
-                                          background: 'rgba(255,255,255,0.02)', display: 'flex', gap: '0.7rem', alignItems: 'center',
+                                          background: 'var(--ink-a03)', display: 'flex', gap: '0.7rem', alignItems: 'center',
                                         }}>
                                           {item.data.img ? (
                                             <img src={item.data.img} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }} />

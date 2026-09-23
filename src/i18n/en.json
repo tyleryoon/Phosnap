@@ -74,7 +74,8 @@
     "tabPortfolio": "Portfolio",
     "tabPackages": "Packages",
     "tabReviews": "Reviews",
-    "tabSchedule": "Schedule"
+    "tabSchedule": "Schedule",
+    "anonymous": "Anonymous"
   },
   "photographers": {
     "sub": "Find the right artist by genre, language, and location.",
@@ -88,7 +89,8 @@
     "sub": "Find a Phosnap artist wherever you are — locally or globally.",
     "domestic": "Domestic",
     "overseas": "Overseas",
-    "artistCount": " artists"
+    "artistCount": " artists",
+    "noLocations": "No locations yet"
   },
   "home": {
     "discoverTitle": "Anywhere in the World",
@@ -326,7 +328,8 @@
     "supportTerms": "Terms of Service",
     "supportPrivacy": "Privacy Policy",
     "supportInstagram": "Instagram · @phosnap.kr",
-    "copyright": "© 2026 Phosnap. All rights reserved."
+    "copyright": "© 2026 Phosnap. All rights reserved.",
+    "supportInquiry": "Contact us"
   },
   "auth": {
     "titleLogin": "Welcome back",
@@ -492,5 +495,63 @@
       "line5": "Stay professional to the end — treat your clients with good manners and a positive attitude.",
       "confirm": "Confirmed. I will add overseas locations."
     }
+  },
+  "find": {
+    "region": "Region",
+    "allRegions": "All regions",
+    "dateOpt": "Date (optional)",
+    "timeOpt": "Start time (optional)",
+    "duration": "Shoot length",
+    "hourSuffix": "h",
+    "clearDate": "Clear date",
+    "dateOnlyWarn": "Add a start time to filter by availability. Right now you are seeing everything.",
+    "loading": "Loading…",
+    "total": "All",
+    "goBook": "Build a booking",
+    "bookThis": "Build a booking with these details",
+    "loadFail": "Could not load the list",
+    "retry": "Try again",
+    "noPhoto": "No photo",
+    "noName": "No name",
+    "from": "from",
+    "anchorFrom": "from",
+    "emptyAnchored": "Nothing is available at that time. Try another date or time.",
+    "empty": "Nothing is listed yet."
+  },
+  "dressCat": {
+    "hanbok": "Hanbok",
+    "dress": "Dress",
+    "tuxedo": "Tuxedo",
+    "casual": "Casual",
+    "traditional_jp": "Kimono",
+    "qipao": "Qipao",
+    "accessory": "Accessory",
+    "other": "Other",
+    "suit": "Suit"
+  },
+  "venueCat": {
+    "studio": "Studio",
+    "traditional_space": "Traditional space",
+    "outdoor": "Outdoor",
+    "urban": "Urban",
+    "event_hall": "Event hall",
+    "other": "Other"
+  },
+  "priceUnit": {
+    "per_hour": "per hour",
+    "per_session": "per session",
+    "per_day": "per day"
+  },
+  "artistType": {
+    "photographer": "Photo",
+    "videographer": "Video",
+    "both": "Photo + video"
+  },
+  "findSub": {
+    "hmkSelf": "In-house hair & makeup",
+    "dressSelf": "Own wardrobe",
+    "dressOwned": "Wardrobe available",
+    "serviceCount": "{n} services",
+    "capacity": "Up to {n}"
   }
 }

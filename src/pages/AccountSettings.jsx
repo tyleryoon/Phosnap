@@ -294,7 +294,7 @@ const AccountSettings = () => {
             return (
               <span key={r} style={{
                 padding: '5px 14px', fontSize: 11, fontFamily: 'var(--font-serif)',
-                background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)',
+                background: 'var(--accent-a10)', border: '1px solid var(--gold-border)',
                 color: 'var(--gold)', letterSpacing: '0.06em',
               }}>
                 {label}
@@ -376,7 +376,7 @@ const AccountSettings = () => {
             <button type="button" onClick={openDaumPostcode}
               style={{
                 padding: '11px 16px', background: 'var(--gold)', border: 'none',
-                color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                 letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap',
               }}>
               {f.searchAddr}

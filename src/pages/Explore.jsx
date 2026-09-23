@@ -72,7 +72,7 @@ const Explore = () => {
                 <div className="location-overlay">
                   <div className="location-name">{displayName}</div>
                   {subName && (
-                    <div style={{ fontSize: 11, color: 'rgba(242,242,242,0.55)', marginBottom: 2, letterSpacing: '0.05em' }}>
+                    <div style={{ fontSize: 11, color: 'var(--ink-a50)', marginBottom: 2, letterSpacing: '0.05em' }}>
                       {subName}
                     </div>
                   )}

@@ -3334,3 +3334,48 @@ export const getProvidersClosedOn = async (providerType, providerIds, date) => {
     return { data: closed, error: { message: e.message } };
   }
 };
+
+/**
+ * 홈 통계바용 실제 수치.
+ *
+ * 예전엔 홈에 '작가 2,400+ / 48개 도시 / 촬영 18,000+ / 평점 4.93' 이
+ * 코드에 박혀 있었다. 전부 지어낸 숫자였고 실제 등록 작가는 수십 명이었다.
+ * 표시광고 문제이기도 하고, 첫 화면에서 거짓말을 하면 나머지도 못 믿는다.
+ *
+ * 규칙
+ *   - 못 세면 null 을 준다. 0 으로 때우지 않는다 (없는 것과 못 센 것은 다르다).
+ *   - 평점은 리뷰가 하나도 없으면 null. '5.00' 같은 숫자를 지어내지 않는다.
+ *   - 화면은 null 인 항목을 그냥 빼고, 전부 null 이면 통계바를 안 그린다.
+ */
+export const getPlatformStats = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: null };
+
+  try {
+    const [artistsRes, bookingsRes, pkgRevRes, phRevRes] = await Promise.all([
+      sb.from('photographers').select('location_id').eq('is_active', true),
+      sb.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['completed', 'delivered']),
+      sb.from('package_reviews').select('rating'),
+      sb.from('photographer_reviews').select('rating'),
+    ]);
+
+    const rows = artistsRes.data || [];
+    const artists = artistsRes.error ? null : rows.length;
+    const cities  = artistsRes.error ? null
+      : new Set(rows.map(r => r.location_id).filter(Boolean)).size;
+    const sessions = bookingsRes.error ? null : (bookingsRes.count ?? null);
+
+    const ratings = [
+      ...((pkgRevRes.data || []).map(r => r.rating)),
+      ...((phRevRes.data || []).map(r => r.rating)),
+    ].filter(n => typeof n === 'number' && n > 0);
+    const rating = ratings.length
+      ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)
+      : null;
+
+    return { data: { artists, cities, sessions, rating }, error: null };
+  } catch (err) {
+    console.error('[getPlatformStats] 조회 실패:', err);
+    return { data: null, error: err };
+  }
+};

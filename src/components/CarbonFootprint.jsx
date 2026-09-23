@@ -28,7 +28,6 @@ const translations = {
     totalContribution: '총 절약',
     trees: '나무',
     cars: '자동차',
-    km: 'km',
     noData: '아직 데이터가 없습니다',
   },
   en: {
@@ -54,7 +53,6 @@ const translations = {
     totalContribution: 'Total Saved',
     trees: 'trees',
     cars: 'cars',
-    km: 'km',
     noData: 'No data yet',
   },
   ja: {
@@ -79,7 +77,6 @@ const translations = {
     totalContribution: '合計節約',
     trees: '本',
     cars: '台',
-    km: 'km',
     noData: 'データがまだありません',
   },
   zh: {
@@ -104,7 +101,6 @@ const translations = {
     totalContribution: '总计节省',
     trees: '棵',
     cars: '辆',
-    km: 'km',
     noData: '还没有数据',
   },
 };

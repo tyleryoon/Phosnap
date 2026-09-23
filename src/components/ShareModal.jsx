@@ -245,8 +245,8 @@ const ShareModal = ({ isOpen, onClose, shareData }) => {
               gap: '16px',
               marginBottom: '32px',
               padding: '16px',
-              background: 'rgba(232,160,32,0.05)',
-              border: '1px solid rgba(232,160,32,0.15)',
+              background: 'var(--accent-a05)',
+              border: '1px solid var(--accent-a15)',
               borderRadius: '2px',
             }}
           >

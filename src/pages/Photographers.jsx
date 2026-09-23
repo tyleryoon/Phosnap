@@ -609,7 +609,7 @@ const Photographers = ({ onAuthOpen }) => {
             {favToast && (
               <div style={{
                 marginBottom: 10, padding: '8px 14px', fontSize: 11,
-                background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)',
+                background: 'var(--accent-a10)', border: '1px solid var(--gold-border)',
                 color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center',
                 animation: 'fadeIn 0.2s',
               }}>
@@ -646,7 +646,7 @@ const Photographers = ({ onAuthOpen }) => {
                       onClick={(e) => { e.stopPropagation(); toggleFavCountry(c.code); }}
                       style={{
                         padding: '6px 6px', fontSize: 12, cursor: 'pointer',
-                        background: isActive ? 'rgba(232,160,32,0.15)' : 'transparent',
+                        background: isActive ? 'var(--accent-a15)' : 'transparent',
                         border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border)'}`,
                         borderLeft: 'none', borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
                         color: isFav ? 'var(--gold)' : 'rgba(136,136,136,0.3)',
@@ -833,7 +833,7 @@ const Photographers = ({ onAuthOpen }) => {
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '5px 12px', fontSize: 11, cursor: 'pointer',
                   fontFamily: 'var(--font-serif)', letterSpacing: '0.03em',
-                  background: active ? 'rgba(232,160,32,0.1)' : 'transparent',
+                  background: active ? 'var(--accent-a10)' : 'transparent',
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
                   color: active ? 'var(--gold)' : 'var(--muted)',
                   transition: 'all 0.2s ease',
@@ -887,7 +887,7 @@ const Photographers = ({ onAuthOpen }) => {
                 background: 'transparent', border: '1px solid var(--gold)', color: 'var(--gold)',
                 cursor: 'pointer', transition: 'all 0.2s ease',
               }}
-              onMouseEnter={e => { e.target.style.background = 'rgba(232,160,32,0.1)'; }}
+              onMouseEnter={e => { e.target.style.background = 'var(--accent-a10)'; }}
               onMouseLeave={e => { e.target.style.background = 'transparent'; }}
             >
               {filterLabelsForLang.resetFilters}
@@ -896,17 +896,17 @@ const Photographers = ({ onAuthOpen }) => {
             {/* Active Filters Display */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {selectedCountry !== 'all' && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'rgba(232,160,32,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
+                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
                   {countriesList.find(c => c.code === selectedCountry)?.flag} {countriesList.find(c => c.code === selectedCountry)?.name}
                 </span>
               )}
               {selectedCity !== 'all' && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'rgba(232,160,32,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
+                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
                   {citiesForCountry.find(c => c.id === selectedCity)?.nameI18n?.[lang] ?? citiesForCountry.find(c => c.id === selectedCity)?.ko}
                 </span>
               )}
               {(minPrice || maxPrice) && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'rgba(232,160,32,0.15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
+                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
                   ₩ {minPrice || '0'} ~ {maxPrice || '2M'}
                 </span>
               )}
@@ -1010,7 +1010,7 @@ const Photographers = ({ onAuthOpen }) => {
                 }}>
                   <div style={{
                     width: '32px', height: '32px', borderRadius: '50%',
-                    border: '2px solid rgba(232,160,32,0.2)', borderTopColor: 'var(--gold)',
+                    border: '2px solid var(--accent-a20)', borderTopColor: 'var(--gold)',
                     animation: 'spin 0.8s linear infinite',
                   }} />
                   <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
@@ -1032,15 +1032,15 @@ const Photographers = ({ onAuthOpen }) => {
               {/* 비로그인 시 로그인 유도 배너 */}
               {hasLoginPrompt && (
                 <div
-                  onClick={() => onAuthOpen ? onAuthOpen('login') : navigate('/login')}
+                  onClick={() => onAuthOpen?.('login')}
                   style={{
                     marginTop: 40, padding: '36px 24px', textAlign: 'center', cursor: 'pointer',
-                    background: 'linear-gradient(180deg, transparent 0%, rgba(232,160,32,0.04) 50%, rgba(232,160,32,0.08) 100%)',
+                    background: 'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)',
                     border: '1px solid var(--gold-border)',
                     transition: 'all 0.3s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(232,160,32,0.06)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gold-border)'; e.currentTarget.style.background = 'linear-gradient(180deg, transparent 0%, rgba(232,160,32,0.04) 50%, rgba(232,160,32,0.08) 100%)'; }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'var(--accent-a06)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gold-border)'; e.currentTarget.style.background = 'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)'; }}
                 >
                   <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 10 }}>
                     {filterLabelsForLang.loginRequired}
@@ -1052,7 +1052,7 @@ const Photographers = ({ onAuthOpen }) => {
                     +{sorted.length - MAX_PREVIEW}{lang === 'ko' ? '명의 작가가 더 있습니다' : lang === 'ja' ? '名の作家がいます' : lang === 'zh' ? '位摄影师' : ' more artists available'}
                   </div>
                   <button style={{
-                    marginTop: 16, padding: '12px 32px', background: 'var(--gold)', color: '#0B0B0B',
+                    marginTop: 16, padding: '12px 32px', background: 'var(--gold)', color: 'var(--on-accent)',
                     border: 'none', fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.1em', cursor: 'pointer',
                   }}>
                     {lang === 'ko' ? '로그인하기' : lang === 'ja' ? 'ログイン' : lang === 'zh' ? '登录' : 'Log In'}

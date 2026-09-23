@@ -135,7 +135,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                 onClick={() => openRoom(room.id)}
                 style={{
                   padding: '12px 14px', cursor: 'pointer',
-                  background: isActive ? 'rgba(232,160,32,0.06)' : 'transparent',
+                  background: isActive ? 'var(--accent-a06)' : 'transparent',
                   borderBottom: '1px solid var(--border)',
                   borderLeft: isActive ? '2px solid var(--gold)' : '2px solid transparent',
                   transition: 'all 0.15s',
@@ -212,7 +212,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                     <div style={{
                       maxWidth: '70%', padding: msg.type === 'image' || msg.type === 'video' ? '4px' : '10px 14px',
                       background: isMine ? 'var(--gold)' : 'var(--bg)',
-                      color: isMine ? '#0B0B0B' : 'var(--text)',
+                      color: isMine ? 'var(--text)' : 'var(--text)',
                       border: `1px solid ${isMine ? 'var(--gold)' : 'var(--border)'}`,
                       fontSize: 13, lineHeight: 1.6,
                     }}>
@@ -230,7 +230,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                           {msg.meta?.address && (
                             <a href={`https://maps.google.com/maps?q=${encodeURIComponent(msg.meta.address)}`}
                               target="_blank" rel="noreferrer"
-                              style={{ fontSize: 10, color: isMine ? '#0B0B0B' : 'var(--gold)', textDecoration: 'underline', marginTop: 4, display: 'inline-block' }}>
+                              style={{ fontSize: 10, color: isMine ? 'var(--text)' : 'var(--gold)', textDecoration: 'underline', marginTop: 4, display: 'inline-block' }}>
                               지도에서 보기 →
                             </a>
                           )}
@@ -253,7 +253,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                   placeholder="주소 또는 장소명 입력 (예: 교토 기온 거리)"
                   onKeyDown={e => e.key === 'Enter' && handleSendLocation()}
                   style={{ flex: 1, background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontSize: 12, fontFamily: 'var(--font-serif)' }} />
-                <button onClick={handleSendLocation} style={{ fontSize: 11, background: 'var(--gold)', color: '#0B0B0B', border: 'none', padding: '0 14px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                <button onClick={handleSendLocation} style={{ fontSize: 11, background: 'var(--gold)', color: 'var(--on-accent)', border: 'none', padding: '0 14px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                   전송
                 </button>
                 <button onClick={() => setShowLocationPicker(false)} style={{ fontSize: 11, color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '0 10px', cursor: 'pointer' }}>
@@ -286,7 +286,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
               <button onClick={handleSend} disabled={!inputText.trim()}
                 style={{
                   background: inputText.trim() ? 'var(--gold)' : 'rgba(136,136,136,0.15)',
-                  color: inputText.trim() ? '#0B0B0B' : 'var(--muted)',
+                  color: inputText.trim() ? 'var(--text)' : 'var(--muted)',
                   border: 'none', padding: '10px 18px', fontFamily: 'var(--font-serif)', fontSize: 12,
                   cursor: inputText.trim() ? 'pointer' : 'not-allowed',
                 }}>

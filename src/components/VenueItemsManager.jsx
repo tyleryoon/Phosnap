@@ -258,8 +258,8 @@ export default function VenueItemsManager({ vendorProfile, lang = 'ko' }) {
                     <button key={c.id} type="button" onClick={() => setForm({ ...form, category: c.id })}
                       style={{
                         padding: '7px 13px', fontSize: 13, cursor: 'pointer',
-                        background: on ? 'rgba(232,160,32,0.14)' : 'transparent',
-                        border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                        background: on ? 'var(--accent-a15)' : 'transparent',
+                        border: `1px solid ${on ? 'var(--accent-a50)' : 'var(--border)'}`,
                         color: on ? 'var(--gold)' : 'var(--muted)',
                       }}>{c[ko ? 'ko' : 'en']}</button>
                   );
@@ -293,8 +293,8 @@ export default function VenueItemsManager({ vendorProfile, lang = 'ko' }) {
                       }))}
                       style={{
                         padding: '6px 12px', fontSize: 12, cursor: 'pointer',
-                        background: on ? 'rgba(232,160,32,0.14)' : 'transparent',
-                        border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                        background: on ? 'var(--accent-a15)' : 'transparent',
+                        border: `1px solid ${on ? 'var(--accent-a50)' : 'var(--border)'}`,
                         color: on ? 'var(--gold)' : 'var(--muted)',
                       }}>{a[ko ? 'ko' : 'en']}</button>
                   );

@@ -126,7 +126,7 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
             marginTop: 4,
             width: 280,
             background: '#1a1a1a',
-            border: '1px solid var(--gold-border, rgba(232,160,32,0.3))',
+            border: '1px solid var(--gold-border, var(--accent-a30))',
             boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
             padding: '16px',
             userSelect: 'none',
@@ -255,8 +255,8 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
                   onClick={(e) => { e.stopPropagation(); selectDate(day); }}
                   onMouseDown={e => e.stopPropagation()}
                   style={{
-                    background: isSelected ? 'var(--gold, #e8a020)' : 'transparent',
-                    border: isToday && !isSelected ? '1px solid var(--gold-border, rgba(232,160,32,0.4))' : '1px solid transparent',
+                    background: isSelected ? 'var(--gold, var(--gold))' : 'transparent',
+                    border: isToday && !isSelected ? '1px solid var(--gold-border, var(--accent-a30))' : '1px solid transparent',
                     color: isSelected ? '#000' : isSun ? 'rgba(232,80,80,0.8)' : isSat ? 'rgba(100,149,237,0.8)' : 'var(--text)',
                     fontFamily: 'var(--font-serif)', fontSize: 12,
                     padding: '6px 0', textAlign: 'center',
@@ -266,14 +266,14 @@ const DatePicker = ({ value, onChange, disabled, style, placeholder = '연도-�
                   }}
                   onMouseEnter={e => {
                     if (!isSelected) {
-                      e.currentTarget.style.background = 'rgba(232,160,32,0.12)';
-                      e.currentTarget.style.borderColor = 'rgba(232,160,32,0.3)';
+                      e.currentTarget.style.background = 'var(--accent-a12)';
+                      e.currentTarget.style.borderColor = 'var(--accent-a30)';
                     }
                   }}
                   onMouseLeave={e => {
                     if (!isSelected) {
                       e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.borderColor = isToday ? 'rgba(232,160,32,0.4)' : 'transparent';
+                      e.currentTarget.style.borderColor = isToday ? 'var(--accent-a30)' : 'transparent';
                     }
                   }}
                 >

@@ -74,7 +74,8 @@
     "tabPortfolio": "ポートフォリオ",
     "tabPackages": "プラン",
     "tabReviews": "レビュー",
-    "tabSchedule": "スケジュール"
+    "tabSchedule": "スケジュール",
+    "anonymous": "匿名"
   },
   "photographers": {
     "sub": "ジャンル、言語、エリアで最適な作家を見つけましょう。",
@@ -88,7 +89,8 @@
     "sub": "国内・海外どこでもPhosnapの作家と一緒に撮影できます。",
     "domestic": "国内",
     "overseas": "海外",
-    "artistCount": "名の作家"
+    "artistCount": "名の作家",
+    "noLocations": "登録された地域がまだありません"
   },
   "home": {
     "discoverTitle": "世界中どこでも",
@@ -326,7 +328,8 @@
     "supportTerms": "利用規約",
     "supportPrivacy": "プライバシーポリシー",
     "supportInstagram": "Instagram · @phosnap.kr",
-    "copyright": "© 2026 Phosnap. All rights reserved."
+    "copyright": "© 2026 Phosnap. All rights reserved.",
+    "supportInquiry": "お問い合わせ"
   },
   "auth": {
     "titleLogin": "Welcome back",
@@ -492,5 +495,63 @@
       "line5": "最後まで専門家らしく — 良いマナーとポジティブな姿勢でクライアントに接してください。",
       "confirm": "確認しました。海外地域を追加します。"
     }
+  },
+  "find": {
+    "region": "地域",
+    "allRegions": "全地域",
+    "dateOpt": "日付（任意）",
+    "timeOpt": "開始時刻（任意）",
+    "duration": "撮影時間",
+    "hourSuffix": "時間",
+    "clearDate": "日付をクリア",
+    "dateOnlyWarn": "開始時刻まで入力すると、その時間に可能な場所だけに絞り込まれます。今は全件を表示しています。",
+    "loading": "読み込み中…",
+    "total": "全件",
+    "goBook": "予約を組み立てる",
+    "bookThis": "この条件で予約を組み立てる",
+    "loadFail": "一覧を読み込めませんでした",
+    "retry": "再試行",
+    "noPhoto": "写真なし",
+    "noName": "名称なし",
+    "from": "から",
+    "anchorFrom": "から",
+    "emptyAnchored": "その時間に可能な場所がありません。日付か時刻を変えてみてください。",
+    "empty": "まだ登録がありません。"
+  },
+  "dressCat": {
+    "hanbok": "韓服",
+    "dress": "ドレス",
+    "tuxedo": "タキシード",
+    "casual": "カジュアル",
+    "traditional_jp": "着物",
+    "qipao": "チャイナドレス",
+    "accessory": "小物",
+    "other": "その他",
+    "suit": "スーツ"
+  },
+  "venueCat": {
+    "studio": "スタジオ",
+    "traditional_space": "伝統空間",
+    "outdoor": "屋外",
+    "urban": "市街地",
+    "event_hall": "イベントホール",
+    "other": "その他"
+  },
+  "priceUnit": {
+    "per_hour": "1時間あたり",
+    "per_session": "1回あたり",
+    "per_day": "1日あたり"
+  },
+  "artistType": {
+    "photographer": "写真",
+    "videographer": "動画",
+    "both": "写真＋動画"
+  },
+  "findSub": {
+    "hmkSelf": "自社ヘアメイク",
+    "dressSelf": "自社衣装",
+    "dressOwned": "衣装あり",
+    "serviceCount": "施術{n}種",
+    "capacity": "{n}名"
   }
 }

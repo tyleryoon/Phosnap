@@ -46,12 +46,12 @@ const PointRewardToast = ({ amount, details, onDismiss }) => {
       `}</style>
 
       <div style={{
-        background: 'linear-gradient(135deg, var(--gold), rgba(232,160,32,0.8))',
+        background: 'linear-gradient(135deg, var(--gold), var(--accent-a50))',
         border: '2px solid var(--gold)',
         borderRadius: 12,
         padding: '16px 20px',
         minWidth: 280,
-        boxShadow: '0 8px 32px rgba(232,160,32,0.25), 0 0 20px rgba(232,160,32,0.15)',
+        boxShadow: '0 8px 32px var(--accent-a20), 0 0 20px var(--accent-a15)',
         backdropFilter: 'blur(8px)',
       }}>
         <div style={{
@@ -66,14 +66,14 @@ const PointRewardToast = ({ amount, details, onDismiss }) => {
               fontSize: 20,
               fontFamily: 'var(--font-serif)',
               fontWeight: 'bold',
-              color: '#0B0B0B',
+              color: 'var(--on-accent)',
               letterSpacing: '0.05em',
             }}>
               +{amount}P
             </div>
             <div style={{
               fontSize: 12,
-              color: 'rgba(11,11,11,0.7)',
+              color: 'var(--ink-a70)',
               fontFamily: 'var(--font-serif)',
               letterSpacing: '0.02em',
             }}>
@@ -86,14 +86,14 @@ const PointRewardToast = ({ amount, details, onDismiss }) => {
         {details && details.length > 0 && (
           <div style={{
             fontSize: 11,
-            color: 'rgba(11,11,11,0.6)',
+            color: 'var(--ink-a60)',
             paddingTop: 8,
-            borderTop: '1px solid rgba(11,11,11,0.1)',
+            borderTop: '1px solid var(--ink-a10)',
             marginTop: 8,
           }}>
             {details.map((detail, idx) => (
               <div key={idx} style={{ padding: '4px 0' }}>
-                • {detail.label || detail.key}: <strong style={{ color: '#0B0B0B' }}>+{detail.amount}P</strong>
+                • {detail.label || detail.key}: <strong style={{ color: 'var(--on-accent)' }}>+{detail.amount}P</strong>
               </div>
             ))}
           </div>

@@ -35,14 +35,10 @@ const Footer = () => {
             <Link to="/waitlist"      className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.svcEarlyAccess')}</Link>
           </div>
 
-          {/* Company */}
-          <div>
-            <div className="footer-col-title">{t('footer.companyTitle')}</div>
-            <span className="footer-link">{t('footer.companyAbout')}</span>
-            <span className="footer-link">{t('footer.companyBlog')}</span>
-            <span className="footer-link">{t('footer.companyJobs')}</span>
-            <span className="footer-link">{t('footer.companyPartnership')}</span>
-          </div>
+          {/* Company 열은 없앴다.
+              소개·블로그·채용·파트너십 네 항목이 전부 <span> 이었다 —
+              cursor:pointer 라 눌리는 것처럼 보이는데 아무 데도 안 갔다.
+              없는 페이지를 링크인 척 두느니 없는 걸 없다고 두는 게 낫다. */}
 
           {/* Support */}
           <div>
@@ -50,7 +46,7 @@ const Footer = () => {
             <Link to="/contact" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportCenter')}</Link>
             {/* 로그인한 사용자를 위한 문의 창구.
                 /contact 는 일반 안내, /support 는 계정에 묶인 1:1 문의다. */}
-            <Link to="/support" className="footer-link" style={{ textDecoration: 'none' }}>1:1 문의</Link>
+            <Link to="/support" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportInquiry')}</Link>
             <Link to="/terms"   className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportTerms')}</Link>
             <Link to="/privacy" className="footer-link" style={{ textDecoration: 'none' }}>{t('footer.supportPrivacy')}</Link>
             <a

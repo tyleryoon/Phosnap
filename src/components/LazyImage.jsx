@@ -38,7 +38,7 @@ const LazyImage = ({ src, alt, style, className, blurHash, width, height }) => {
   const shimmerStyle = {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%)',
+    background: 'linear-gradient(90deg, var(--ink-a03) 0%, var(--ink-a08) 50%, var(--ink-a03) 100%)',
     animation: 'shimmer 2s infinite',
     pointerEvents: 'none',
     zIndex: 1,
@@ -57,7 +57,7 @@ const LazyImage = ({ src, alt, style, className, blurHash, width, height }) => {
   const placeholderStyle = {
     position: 'absolute',
     inset: 0,
-    background: 'rgba(255,255,255,0.04)',
+    background: 'var(--ink-a04)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

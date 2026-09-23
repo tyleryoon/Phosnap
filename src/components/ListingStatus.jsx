@@ -67,7 +67,7 @@ const ListingStatus = ({ kind, id }) => {
 
   return (
     <div style={{
-      border: '1px solid rgba(232,160,32,0.45)', background: 'rgba(232,160,32,0.07)',
+      border: '1px solid var(--accent-a50)', background: 'var(--accent-a06)',
       padding: '16px 18px', marginBottom: 20, fontSize: 12.5, lineHeight: 1.8,
       color: 'var(--text)',
     }}>

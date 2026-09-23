@@ -29,8 +29,8 @@ const VerifiedBadge = ({ tier = 'verified', size = 'md' }) => {
     elite: {
       label: t('badge.elite'),
       description: t('badge.eliteDesc'),
-      bgColor: 'rgba(232, 160, 32, 0.15)',
-      textColor: '#E8A020',
+      bgColor: 'var(--accent-a15)',
+      textColor: 'var(--gold)',
       borderColor: '#DAA520',
     },
   };

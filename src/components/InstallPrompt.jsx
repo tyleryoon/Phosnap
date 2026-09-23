@@ -257,7 +257,7 @@ export const installPromptCSS = `
     margin: 0 auto 20px;
     width: 60px;
     height: 60px;
-    background: rgba(232, 160, 32, 0.1);
+    background: var(--accent-a10);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -313,13 +313,13 @@ export const installPromptCSS = `
 
   .install-btn-primary {
     background: var(--gold);
-    color: #0B0B0B;
+    color: 'var(--on-accent)';
     border-color: var(--gold);
   }
 
   .install-btn-primary:hover:not(:disabled) {
-    background: #F0AC2A;
-    border-color: #F0AC2A;
+    background: var(--accent-deep);
+    border-color: var(--accent-deep);
     transform: translateY(-1px);
   }
 

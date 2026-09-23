@@ -194,20 +194,20 @@ const WorldMap = () => {
         )}
         {/* 은은한 글로우 배경 */}
         <circle cx={city.x} cy={city.y} r={r * 2.5}
-          fill="rgba(232,160,32,0.08)"
+          fill="var(--accent-a08)"
           filter={isHov ? 'url(#gH)' : 'url(#gN)'}
         />
         {/* 메인 도트 — 작고 균일한 크기 */}
         <circle cx={city.x} cy={city.y} r={isHov ? r + 0.8 : r}
-          fill={isHov ? 'rgba(232,160,32,1)' : 'rgba(232,160,32,0.75)'}
-          stroke={isHov ? 'rgba(232,160,32,1)' : 'rgba(232,160,32,0.5)'}
+          fill={isHov ? 'var(--accent-a50)' : 'var(--accent-a50)'}
+          stroke={isHov ? 'var(--accent-a50)' : 'var(--accent-a50)'}
           strokeWidth={isHov ? 0.6 : 0.3}
           style={{ transition: 'all 0.2s ease' }}
         />
         {/* 인셋에서 도시명 (호버 아닐 때만) */}
         {isInset && !isHov && (
           <text x={city.x + r + 2.5} y={city.y + 1.5}
-            fill="rgba(242,242,242,0.45)" fontSize={4.8}
+            fill="var(--ink-a50)" fontSize={4.8}
             fontFamily="var(--font-serif)" letterSpacing="0.02em"
             style={{ pointerEvents: 'none' }}
           >
@@ -232,7 +232,7 @@ const WorldMap = () => {
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
         <defs>
           <radialGradient id="mG" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="rgba(232,160,32,0.03)" />
+            <stop offset="0%" stopColor="var(--accent-a03)" />
             <stop offset="100%" stopColor="transparent" />
           </radialGradient>
           <filter id="gN"><feGaussianBlur stdDeviation="1.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
@@ -248,7 +248,7 @@ const WorldMap = () => {
 
         {/* 대륙 윤곽 */}
         {CONTINENT_PATHS.map((d, i) => (
-          <path key={i} d={d} fill="rgba(242,242,242,0.03)" stroke="rgba(242,242,242,0.08)" strokeWidth={0.4} strokeLinejoin="round" />
+          <path key={i} d={d} fill="var(--ink-a03)" stroke="var(--ink-a08)" strokeWidth={0.4} strokeLinejoin="round" />
         ))}
 
         {/* 세계 도시 도트 */}
@@ -256,7 +256,7 @@ const WorldMap = () => {
 
         {/* ═══ 한국·일본 인셋 ═══ */}
         <rect x={IB.x - 4} y={IB.y - 14} width={IB.w + 8} height={IB.h + 18}
-          fill="rgba(11,11,11,0.88)" stroke="var(--gold-border)" strokeWidth={0.5} rx={1} />
+          fill="var(--ink-a88)" stroke="var(--gold-border)" strokeWidth={0.5} rx={1} />
         <text x={IB.x + IB.w / 2} y={IB.y - 5} textAnchor="middle"
           fill="var(--gold)" fontSize={5} fontFamily="var(--font-serif)" letterSpacing="0.15em" opacity={0.8}
         >
@@ -264,11 +264,11 @@ const WorldMap = () => {
         </text>
 
         {/* 연결선 */}
-        <line x1={396} y1={52} x2={IB.x} y2={IB.y + 20} stroke="rgba(232,160,32,0.12)" strokeWidth={0.4} strokeDasharray="2,3" />
+        <line x1={396} y1={52} x2={IB.x} y2={IB.y + 20} stroke="var(--accent-a12)" strokeWidth={0.4} strokeDasharray="2,3" />
 
         {/* 인셋 윤곽 */}
         {INSET_PATHS.map((d, i) => (
-          <path key={`ip${i}`} d={d} fill="rgba(242,242,242,0.05)" stroke="rgba(242,242,242,0.12)" strokeWidth={0.4} strokeLinejoin="round" />
+          <path key={`ip${i}`} d={d} fill="var(--ink-a05)" stroke="var(--ink-a12)" strokeWidth={0.4} strokeLinejoin="round" />
         ))}
 
         {/* 인셋 도시 도트 */}
@@ -276,7 +276,7 @@ const WorldMap = () => {
 
         {/* 범례 — 간소화: 작가 활동 지역 표시 */}
         <g transform={`translate(8, ${H - 16})`}>
-          <circle cx={4} cy={4} r={1.4} fill="rgba(232,160,32,0.75)" stroke="rgba(232,160,32,0.5)" strokeWidth={0.3} />
+          <circle cx={4} cy={4} r={1.4} fill="var(--accent-a50)" stroke="var(--accent-a50)" strokeWidth={0.3} />
           <text x={10} y={5.5} fill="var(--muted)" fontSize={4} fontFamily="var(--font-serif)" letterSpacing="0.08em" opacity={0.6}>
             {lang === 'ko' ? '작가 활동 지역' : lang === 'ja' ? 'フォトグラファー活動地域' : 'photographer locations'}
           </text>

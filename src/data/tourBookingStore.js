@@ -306,7 +306,7 @@ export const getStatusLabel = (status, lang = 'ko') => {
 /** 상태별 색상 */
 export const getStatusColor = (status) => {
   const map = {
-    recruiting: '#e8a020',
+    recruiting: 'var(--gold)',
     confirmed:  '#4caf50',
     adjusting:  '#ff9800',
     cancelled:  '#e85d5d',

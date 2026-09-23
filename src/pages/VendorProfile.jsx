@@ -109,7 +109,7 @@ const VendorProfile = () => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
-      <SEO title={`${name} | Phosnap`} description={vendor.description || `${name} — Phosnap 제휴 업체`} />
+      <SEO title={name} description={vendor.description || `${name} — Phosnap 제휴 업체`} />
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '130px 24px 60px' }}>
         <div style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--gold)' }}>
@@ -195,7 +195,7 @@ const VendorProfile = () => {
           <button type="button" onClick={() => navigate(isVenue ? '/venues' : '/dresses')}
             style={{
               padding: '11px 20px', border: 'none', background: 'var(--gold)',
-              color: '#0B0B0B', fontSize: 12, letterSpacing: '0.1em',
+              color: 'var(--on-accent)', fontSize: 12, letterSpacing: '0.1em',
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
             예약 구성하러 가기

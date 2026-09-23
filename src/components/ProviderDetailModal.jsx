@@ -275,7 +275,7 @@ const ProviderDetailModal = ({ kind, data, onClose, children, ownerNote }) => {
             {ownerNote && (
               <div style={{
                 fontSize: 12, color: 'var(--muted)', lineHeight: 1.7,
-                background: 'rgba(232,160,32,0.07)', borderLeft: '2px solid var(--gold)',
+                background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)',
                 padding: '10px 14px', marginBottom: 16,
               }}>
                 {ownerNote}

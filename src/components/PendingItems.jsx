@@ -168,7 +168,7 @@ const PendingItems = ({ onChanged }) => {
                     onClick={() => act(it.item_id, true)}
                     style={{
                       padding: '9px 18px', border: 'none', background: 'var(--gold)',
-                      color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12.5,
+                      color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12.5,
                       cursor: busyId === it.item_id ? 'default' : 'pointer',
                       opacity: busyId === it.item_id ? 0.6 : 1,
                     }}

@@ -303,7 +303,7 @@ export default function ArtistInsights({ artistData = {} }) {
                   <div style={{
                     height: '100%',
                     width: `${kw.pct}%`,
-                    background: `linear-gradient(90deg, var(--gold), rgba(232,160,32,0.5))`,
+                    background: `linear-gradient(90deg, var(--gold), var(--accent-a50))`,
                     borderRadius: 2,
                   }} />
                 </div>
@@ -331,8 +331,8 @@ export default function ArtistInsights({ artistData = {} }) {
 
         {/* Main ranking */}
         <div style={{
-          background: 'rgba(232,160,32,0.08)',
-          border: '1px solid rgba(232,160,32,0.2)',
+          background: 'var(--accent-a08)',
+          border: '1px solid var(--accent-a20)',
           padding: '20px',
           marginBottom: 24,
           borderRadius: 2,
@@ -405,8 +405,8 @@ export default function ArtistInsights({ artistData = {} }) {
             const content = getTipContent(tip);
             return (
               <div key={idx} style={{
-                border: '1px solid rgba(232,160,32,0.3)',
-                background: 'rgba(232,160,32,0.05)',
+                border: '1px solid var(--accent-a30)',
+                background: 'var(--accent-a05)',
                 padding: '20px',
                 borderRadius: 2,
                 display: 'flex',
@@ -438,7 +438,7 @@ export default function ArtistInsights({ artistData = {} }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   paddingTop: 12,
-                  borderTop: '1px solid rgba(232,160,32,0.2)',
+                  borderTop: '1px solid var(--accent-a20)',
                 }}>
                   <span style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>
                     {lang === 'en' ? 'Expected Impact' : lang === 'ja' ? '期待される効果' : lang === 'zh' ? '预期影响' : '기대 효과'}

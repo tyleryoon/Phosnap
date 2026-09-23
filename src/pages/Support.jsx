@@ -172,7 +172,7 @@ const Support = ({ onAuthOpen }) => {
                 style={{
                   textAlign: 'left', padding: '12px 14px', cursor: 'pointer',
                   border: `1px solid ${category === c.value ? 'var(--gold)' : 'var(--border)'}`,
-                  background: category === c.value ? 'rgba(232,160,32,0.06)' : 'transparent',
+                  background: category === c.value ? 'var(--accent-a06)' : 'transparent',
                   transition: 'border-color 0.2s',
                 }}
               >
