@@ -385,7 +385,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'rgba(232,160,32,0.04)',
+          background: 'var(--accent-a04)',
         }}
       >
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', color: 'var(--gold)' }}>
@@ -575,7 +575,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
                         style={{
                           padding: '10px 14px',
                           borderRadius: '4px',
-                          background: isOwn ? accentColor : 'rgba(232,160,32,0.12)',
+                          background: isOwn ? accentColor : 'var(--accent-a12)',
                           color: isOwn ? 'var(--bg)' : 'var(--text)',
                           fontSize: 13,
                           lineHeight: 1.5,
@@ -613,7 +613,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
             padding: '8px 16px',
             background: 'rgba(232,93,93,0.1)',
             border: '1px solid rgba(232,93,93,0.3)',
-            color: '#e85d5d',
+            color: 'var(--danger)',
             fontSize: 11,
             fontFamily: 'var(--font-serif)',
           }}
@@ -629,7 +629,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           borderTop: '1px solid var(--gold-border)',
           display: 'flex',
           gap: '8px',
-          background: 'rgba(232,160,32,0.04)',
+          background: 'var(--accent-a04)',
         }}
       >
         <textarea
@@ -658,7 +658,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
           disabled={!newMsg.trim() || (!roomId && !currentChannelId) || sending}
           style={{
             padding: '10px 16px',
-            background: newMsg.trim() && (roomId || currentChannelId) && !sending ? 'var(--gold)' : 'rgba(232,160,32,0.3)',
+            background: newMsg.trim() && (roomId || currentChannelId) && !sending ? 'var(--gold)' : 'var(--accent-a30)',
             border: 'none',
             color: newMsg.trim() && (roomId || currentChannelId) && !sending ? 'var(--bg)' : 'var(--muted)',
             fontFamily: 'var(--font-serif)',

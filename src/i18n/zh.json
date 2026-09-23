@@ -74,7 +74,8 @@
     "tabPortfolio": "作品集",
     "tabPackages": "套餐",
     "tabReviews": "评价",
-    "tabSchedule": "日程"
+    "tabSchedule": "日程",
+    "anonymous": "匿名"
   },
   "photographers": {
     "sub": "按风格、语言和地区，找到最适合您的艺术家。",
@@ -88,7 +89,8 @@
     "sub": "无论国内还是海外，Phosnap艺术家随时在您身边。",
     "domestic": "国内",
     "overseas": "海外",
-    "artistCount": "位艺术家"
+    "artistCount": "位艺术家",
+    "noLocations": "暂无已登记的地区"
   },
   "home": {
     "discoverTitle": "遍布全球各地",
@@ -326,7 +328,8 @@
     "supportTerms": "服务条款",
     "supportPrivacy": "隐私政策",
     "supportInstagram": "Instagram · @phosnap.kr",
-    "copyright": "© 2026 Phosnap. All rights reserved."
+    "copyright": "© 2026 Phosnap. All rights reserved.",
+    "supportInquiry": "联系我们"
   },
   "auth": {
     "titleLogin": "Welcome back",
@@ -492,5 +495,63 @@
       "line5": "始终保持职业素养 — 以良好的态度和积极的心态对待客户。",
       "confirm": "我已确认。我将添加海外拍摄地点。"
     }
+  },
+  "find": {
+    "region": "地区",
+    "allRegions": "全部地区",
+    "dateOpt": "日期（选填）",
+    "timeOpt": "开始时间（选填）",
+    "duration": "拍摄时长",
+    "hourSuffix": "小时",
+    "clearDate": "清除日期",
+    "dateOnlyWarn": "填写开始时间后才会筛选出该时段可预约的选项。目前显示的是全部。",
+    "loading": "加载中…",
+    "total": "全部",
+    "goBook": "开始预约",
+    "bookThis": "按此条件开始预约",
+    "loadFail": "无法加载列表",
+    "retry": "重试",
+    "noPhoto": "暂无照片",
+    "noName": "暂无名称",
+    "from": "起",
+    "anchorFrom": "起",
+    "emptyAnchored": "该时段没有可预约的选项。请更换日期或时间。",
+    "empty": "暂无登记。"
+  },
+  "dressCat": {
+    "hanbok": "韩服",
+    "dress": "礼服",
+    "tuxedo": "西装礼服",
+    "casual": "休闲",
+    "traditional_jp": "和服",
+    "qipao": "旗袍",
+    "accessory": "配饰",
+    "other": "其他",
+    "suit": "西装"
+  },
+  "venueCat": {
+    "studio": "摄影棚",
+    "traditional_space": "传统空间",
+    "outdoor": "户外",
+    "urban": "城市",
+    "event_hall": "宴会厅",
+    "other": "其他"
+  },
+  "priceUnit": {
+    "per_hour": "每小时",
+    "per_session": "每场",
+    "per_day": "每天"
+  },
+  "artistType": {
+    "photographer": "摄影",
+    "videographer": "视频",
+    "both": "摄影+视频"
+  },
+  "findSub": {
+    "hmkSelf": "自有化妆造型",
+    "dressSelf": "自有服装",
+    "dressOwned": "提供服装",
+    "serviceCount": "{n}项服务",
+    "capacity": "{n}人"
   }
 }

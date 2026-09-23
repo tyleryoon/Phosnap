@@ -226,17 +226,17 @@ const TourDetail = () => {
               <div style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.1em', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
                 ⏰ {lang === 'ko' ? '모집 마감' : 'Deadline'}
               </div>
-              <div style={{ fontSize: 14, color: daysUntilDeadline() <= 3 ? '#e85d5d' : 'var(--text)', fontFamily: 'var(--font-serif)' }}>
+              <div style={{ fontSize: 14, color: daysUntilDeadline() <= 3 ? 'var(--danger)' : 'var(--text)', fontFamily: 'var(--font-serif)' }}>
                 {fmtDate(instance.deadline)}
               </div>
-              <div style={{ fontSize: 11, color: daysUntilDeadline() <= 3 ? '#e85d5d' : 'var(--muted)', marginTop: 2 }}>
+              <div style={{ fontSize: 11, color: daysUntilDeadline() <= 3 ? 'var(--danger)' : 'var(--muted)', marginTop: 2 }}>
                 {daysUntilDeadline() > 0 ? `D-${daysUntilDeadline()}` : lang === 'ko' ? '마감됨' : 'Closed'}
               </div>
             </div>
           </div>
 
           {/* 가격 정보 */}
-          <div style={{ padding: '14px 18px', border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.03)', marginBottom: 16 }}>
+          <div style={{ padding: '14px 18px', border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', marginBottom: 16 }}>
             {isTotal ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -244,7 +244,7 @@ const TourDetail = () => {
                   <div style={{ fontSize: 20, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>₩{fmt(instance.basePrice)}</div>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                  <span style={{ fontSize: 10, padding: '2px 8px', background: 'rgba(232,160,32,0.1)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+                  <span style={{ fontSize: 10, padding: '2px 8px', background: 'var(--accent-a10)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
                     {lang === 'ko' ? '더치페이' : 'Split'}
                   </span>
                   <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)' }}>
@@ -275,7 +275,7 @@ const TourDetail = () => {
               <span style={{ fontSize: 12, color: 'var(--text)', fontFamily: 'var(--font-serif)' }}>
                 👥 {lang === 'ko' ? '참여 현황' : 'Participants'}
               </span>
-              <span style={{ fontSize: 12, color: remaining > 0 ? 'var(--text)' : '#4caf50', fontFamily: 'var(--font-serif)' }}>
+              <span style={{ fontSize: 12, color: remaining > 0 ? 'var(--text)' : 'var(--success)', fontFamily: 'var(--font-serif)' }}>
                 {count} / {instance.maxGuests}
               </span>
             </div>
@@ -283,7 +283,7 @@ const TourDetail = () => {
               <div style={{
                 height: '100%', borderRadius: 4, transition: 'width 0.5s ease',
                 width: `${fillPercent}%`,
-                background: count >= instance.maxGuests ? '#4caf50' : count >= instance.minGuests ? '#e8a020' : `linear-gradient(90deg, #e85d5d, #e8a020)`,
+                background: count >= instance.maxGuests ? '#4caf50' : count >= instance.minGuests ? 'var(--gold)' : `linear-gradient(90deg, #e85d5d, var(--gold))`,
               }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: 'var(--muted)' }}>
@@ -337,8 +337,8 @@ const TourDetail = () => {
                   {tour.spots.map((spot, i) => (
                     <span key={i} style={{
                       fontSize: 10, padding: '3px 10px',
-                      background: 'rgba(232,160,32,0.08)',
-                      border: '1px solid rgba(232,160,32,0.15)',
+                      background: 'var(--accent-a08)',
+                      border: '1px solid var(--accent-a15)',
                       color: 'var(--gold)', fontFamily: 'var(--font-serif)',
                     }}>
                       📍 {spot}
@@ -368,7 +368,7 @@ const TourDetail = () => {
 
           {myBooking && (
             <div style={{ marginTop: 12, padding: '12px 16px', border: '1px solid rgba(76,175,80,0.2)', background: 'rgba(76,175,80,0.03)' }}>
-              <div style={{ fontSize: 12, color: '#4caf50', fontFamily: 'var(--font-serif)', marginBottom: 6 }}>
+              <div style={{ fontSize: 12, color: 'var(--success)', fontFamily: 'var(--font-serif)', marginBottom: 6 }}>
                 ✅ {lang === 'ko' ? '예약 확인됨' : 'Booking Found'}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text)' }}>
@@ -386,11 +386,11 @@ const TourDetail = () => {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={handleConfirmAdjusted}
-                      style={{ flex: 1, padding: '8px', fontSize: 11, color: '#fff', background: '#4caf50', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                      style={{ flex: 1, padding: '8px', fontSize: 11, color: '#fff', background: 'var(--success)', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                       {lang === 'ko' ? '✓ 수락' : '✓ Accept'}
                     </button>
                     <button onClick={handleDeclineAdjusted}
-                      style={{ flex: 1, padding: '8px', fontSize: 11, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                      style={{ flex: 1, padding: '8px', fontSize: 11, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                       {lang === 'ko' ? '✗ 거절 (참가 취소)' : '✗ Decline (Cancel)'}
                     </button>
                   </div>
@@ -400,7 +400,7 @@ const TourDetail = () => {
               {/* 일반 취소 버튼 */}
               {myBooking.status === 'active' && instance.status !== 'adjusting' && (
                 <button onClick={handleCancelMyBooking}
-                  style={{ marginTop: 8, fontSize: 10, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                  style={{ marginTop: 8, fontSize: 10, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', padding: '6px 14px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                   {lang === 'ko' ? '참가 취소' : 'Cancel Booking'}
                 </button>
               )}
@@ -455,7 +455,7 @@ const TourDetail = () => {
                 </label>
 
                 {/* 가격 요약 */}
-                <div style={{ padding: '12px 16px', border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.03)', marginBottom: 16 }}>
+                <div style={{ padding: '12px 16px', border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                     <span style={{ color: 'var(--muted)' }}>
                       {isTotal
@@ -499,7 +499,7 @@ const TourDetail = () => {
                 marginTop: 12, padding: '10px 14px', fontSize: 12,
                 border: `1px solid ${submitResult.type === 'success' ? 'rgba(76,175,80,0.3)' : 'rgba(232,93,93,0.3)'}`,
                 background: submitResult.type === 'success' ? 'rgba(76,175,80,0.05)' : 'rgba(232,93,93,0.05)',
-                color: submitResult.type === 'success' ? '#4caf50' : '#e85d5d',
+                color: submitResult.type === 'success' ? 'var(--success)' : 'var(--danger)',
               }}>
                 {submitResult.type === 'success'
                   ? (lang === 'ko' ? '🎉 참가 신청이 완료되었습니다! 마감일에 확정 여부를 안내해 드립니다.' : '🎉 Booking confirmed! You will be notified when the tour is finalized.')
@@ -514,7 +514,7 @@ const TourDetail = () => {
         {instance.status === 'confirmed' && (
           <div style={{ border: '1px solid rgba(76,175,80,0.3)', background: 'rgba(76,175,80,0.05)', padding: '20px 24px', textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
-            <div style={{ fontSize: 14, color: '#4caf50', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: 'var(--success)', fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
               {lang === 'ko' ? '투어가 확정되었습니다!' : 'Tour Confirmed!'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>
@@ -526,7 +526,7 @@ const TourDetail = () => {
         {instance.status === 'cancelled' && (
           <div style={{ border: '1px solid rgba(232,93,93,0.3)', background: 'rgba(232,93,93,0.05)', padding: '20px 24px', textAlign: 'center', marginBottom: 24 }}>
             <div style={{ fontSize: 28, marginBottom: 8 }}>😢</div>
-            <div style={{ fontSize: 14, color: '#e85d5d', fontFamily: 'var(--font-serif)' }}>
+            <div style={{ fontSize: 14, color: 'var(--danger)', fontFamily: 'var(--font-serif)' }}>
               {lang === 'ko' ? '이 투어는 취소되었습니다' : 'This tour has been cancelled'}
             </div>
           </div>

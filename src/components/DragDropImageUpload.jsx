@@ -136,7 +136,7 @@ const DragDropImageUpload = ({
         style={{ display: 'none' }}
       />
       {error && (
-        <p style={{ fontSize: '0.75rem', color: '#e85d5d', margin: '0.3rem 0 0' }}>
+        <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: '0.3rem 0 0' }}>
           {error}
         </p>
       )}

@@ -312,7 +312,7 @@ const onboardingCSS = `
   .onboarding-backdrop {
     position: absolute;
     inset: 0;
-    background: rgba(11, 11, 11, 0.75);
+    background: var(--ink-a75);
     backdrop-filter: blur(4px);
     cursor: pointer;
   }
@@ -432,7 +432,7 @@ const onboardingCSS = `
 
   .onboarding-btn-prev:hover:not(:disabled),
   .onboarding-btn-next:hover:not(:disabled) {
-    color: #f0ac2a;
+    color: var(--accent-deep);
   }
 
   .onboarding-btn-prev:disabled {
@@ -452,7 +452,7 @@ const onboardingCSS = `
     height: 8px;
     border-radius: 50%;
     border: none;
-    background: rgba(242, 242, 242, 0.3);
+    background: var(--ink-a30);
     cursor: pointer;
     transition: all 0.3s;
     padding: 0;
@@ -464,7 +464,7 @@ const onboardingCSS = `
   }
 
   .onboarding-dot:hover {
-    background: rgba(242, 242, 242, 0.5);
+    background: var(--ink-a50);
   }
 
   /* CTA Button */
@@ -472,7 +472,7 @@ const onboardingCSS = `
     display: block;
     width: 100%;
     background: var(--gold);
-    color: #0B0B0B;
+    color: 'var(--on-accent)';
     font-family: var(--font-serif);
     font-size: 11px;
     letter-spacing: 0.15em;
@@ -486,8 +486,8 @@ const onboardingCSS = `
   }
 
   .onboarding-cta:hover {
-    background: #f0ac2a;
-    box-shadow: 0 0 20px rgba(232, 160, 32, 0.3);
+    background: var(--accent-deep);
+    box-shadow: 0 0 20px var(--accent-a30);
   }
 
   @media (max-width: 600px) {

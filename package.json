@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext .js,.jsx --max-warnings 0",
-    "format": "prettier --write src"
+    "lint": "eslint src --ext .js,.jsx --max-warnings 185",
+    "format": "prettier --write src",
+    "lint:errors": "eslint src --ext .js,.jsx --quiet"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.0",

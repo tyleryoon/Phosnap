@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import RoleRejected from './RoleRejected';
@@ -70,10 +71,31 @@ const ROLE_LABELS = {
   zh: { artist: '摄影师', stylist: '造型师', dress_vendor: '服装供应商', vendor: '服装供应商', admin: '管理员', customer: '会员' },
 };
 
+// vendor / dress_vendor 는 같은 것을 가리키는 두 이름이다.
+const roleAliases = { vendor: 'dress_vendor', dress_vendor: 'vendor' };
+const roleMatches = (role, required) => role === required || role === roleAliases[required];
+
 const ProtectedRoute = ({ children, onAuthOpen, requiredRole }) => {
   const { isLoggedIn, userRole, loading, roles, switchRole, roleStatuses, activeRole } = useAuth();
   const { lang } = useLanguage();
   const m = MSG[lang] || MSG.en;
+
+  // 요청한 역할을 가지고는 있는데 활성 역할이 다르면 자동으로 전환한다.
+  //
+  // 예전엔 이 switchRole 을 렌더 도중에 불렀다. 렌더 중에 부모(AuthProvider)의
+  // 상태를 바꾸는 것이라 React 가 경고를 띄웠고,
+  //   "Cannot update a component (AuthProvider) while rendering a different
+  //    component (ProtectedRoute)"
+  // 조건이 맞물리면 렌더 → setState → 렌더 로 도는 위험이 있다.
+  // 훅은 조기 return 보다 위에 있어야 하므로 판정도 여기서 한다.
+  const pendingSwitch =
+    requiredRole && !roleMatches(userRole, requiredRole) && userRole !== 'admin'
+      ? roles?.find(r => roleMatches(r, requiredRole)) || null
+      : null;
+
+  useEffect(() => {
+    if (pendingSwitch) switchRole(pendingSwitch);
+  }, [pendingSwitch, switchRole]);
 
   // 세션 확인 중 — 또는 로그인은 됐는데 역할을 아직 못 읽어온 동안.
   //
@@ -109,15 +131,9 @@ const ProtectedRoute = ({ children, onAuthOpen, requiredRole }) => {
     );
   }
 
-  // Role 체크 — activeRole이 다르더라도 roles 배열에 해당 역할이 있으면 자동 전환
-  // vendor / dress_vendor 동의어 처리
-  const roleAliases = { vendor: 'dress_vendor', dress_vendor: 'vendor' };
-  const roleMatches = (role, required) => role === required || role === roleAliases[required];
+  // Role 체크 — 전환은 위 useEffect 가 맡는다. 여기서는 기다리는 화면만.
   if (requiredRole && !roleMatches(userRole, requiredRole) && userRole !== 'admin') {
-    // 유저가 해당 역할(또는 alias)을 가지고 있으면 자동 전환
-    const matchedRole = roles?.find(r => roleMatches(r, requiredRole));
-    if (matchedRole) {
-      switchRole(matchedRole);
+    if (pendingSwitch) {
       return (
         <div style={{ paddingTop: 160, textAlign: 'center', minHeight: '60vh' }}>
           <div style={{ width: 24, height: 24, border: '2px solid var(--gold)', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto' }} />

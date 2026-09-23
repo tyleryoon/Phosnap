@@ -107,11 +107,11 @@ const BookingFail = () => {
             width: 64, height: 64, borderRadius: '50%',
             background: 'rgba(232,80,80,0.08)', border: '1px solid rgba(232,80,80,0.3)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 24px', fontSize: 28, color: '#e85d5d',
+            margin: '0 auto 24px', fontSize: 28, color: 'var(--danger)',
           }}>
             ✕
           </div>
-          <div className="section-label" style={{ color: '#e85d5d' }}>{c.label}</div>
+          <div className="section-label" style={{ color: 'var(--danger)' }}>{c.label}</div>
           <h1 className="section-title" style={{ fontSize: 'clamp(20px, 4vw, 32px)', marginBottom: 16 }}>
             {c.title}
           </h1>
@@ -127,7 +127,7 @@ const BookingFail = () => {
             {code && (
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: 12, marginBottom: 12, borderBottom: '1px solid var(--border)' }}>
                 <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>{c.errorCode}</span>
-                <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#e85d5d' }}>{code}</span>
+                <span style={{ fontSize: 12, fontFamily: 'monospace', color: 'var(--danger)' }}>{code}</span>
               </div>
             )}
             {message && (

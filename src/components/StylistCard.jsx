@@ -45,7 +45,7 @@ const StylistCard = ({ s, selected, onClick }) => {
         {selected && (
           <div style={{
             position: 'absolute', top: -1, left: 20,
-            background: 'var(--gold)', color: '#0B0B0B',
+            background: 'var(--gold)', color: 'var(--on-accent)',
             fontFamily: 'var(--font-serif)', fontSize: 9,
             fontWeight: 600, letterSpacing: '0.1em',
             padding: '3px 10px', zIndex: 1,
@@ -133,7 +133,6 @@ const StylistCard = ({ s, selected, onClick }) => {
           fontFamily: 'var(--font-serif)',
           letterSpacing: '0.12em',
           textDecoration: 'none',
-          borderTop: 'none',
           border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`,
           borderTop: 'none',
           background: 'var(--bg)',

@@ -172,7 +172,7 @@ const Contact = () => {
                           fontSize: 12,
                           letterSpacing: '0.04em',
                           border: `1px solid ${type === tp ? 'var(--gold)' : 'var(--border)'}`,
-                          background: type === tp ? 'rgba(232,160,32,0.08)' : 'transparent',
+                          background: type === tp ? 'var(--accent-a08)' : 'transparent',
                           color: type === tp ? 'var(--gold)' : 'var(--muted)',
                           cursor: 'pointer',
                           transition: 'all 0.2s',
@@ -213,7 +213,7 @@ const Contact = () => {
                   />
                 </div>
 
-                {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+                {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
 
                 <button type="submit" className="btn-primary"
                   disabled={loading}

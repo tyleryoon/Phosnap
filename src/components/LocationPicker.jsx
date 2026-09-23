@@ -205,10 +205,10 @@ const LocationPicker = ({ value, onChange, lang = 'ko' }) => {
                       color: 'var(--text)',
                       borderBottom: '1px solid var(--border)',
                       transition: 'background 0.15s',
-                      background: city.toLowerCase() === p.name.toLowerCase() ? 'rgba(232,160,32,0.1)' : 'transparent',
+                      background: city.toLowerCase() === p.name.toLowerCase() ? 'var(--accent-a10)' : 'transparent',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,160,32,0.15)'}
-                    onMouseLeave={e => e.currentTarget.style.background = city.toLowerCase() === p.name.toLowerCase() ? 'rgba(232,160,32,0.1)' : 'transparent'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-a15)'}
+                    onMouseLeave={e => e.currentTarget.style.background = city.toLowerCase() === p.name.toLowerCase() ? 'var(--accent-a10)' : 'transparent'}
                   >
                     {p.name}
                   </div>
@@ -246,8 +246,8 @@ const LocationPicker = ({ value, onChange, lang = 'ko' }) => {
       {value?.countryCode && value?.city && (
         <div style={{
           padding: 8,
-          background: 'rgba(232,160,32,0.05)',
-          border: '1px solid rgba(232,160,32,0.2)',
+          background: 'var(--accent-a05)',
+          border: '1px solid var(--accent-a20)',
           borderRadius: 2,
           fontSize: 12,
           color: 'var(--text)',

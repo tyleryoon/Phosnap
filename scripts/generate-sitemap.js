@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 // ─── Setup ──────────────────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
@@ -27,7 +27,14 @@ const STATIC_URLS = [
   { loc: '/explore', changefreq: 'weekly', priority: 0.9 },
   { loc: '/photographers', changefreq: 'weekly', priority: 0.9 },
   { loc: '/for-artists', changefreq: 'monthly', priority: 0.8 },
-  { loc: '/for-vendors', changefreq: 'monthly', priority: 0.7 },
+  // /for-vendors 라는 주소는 없다. 구글이 계속 404 를 받고 있었다.
+  { loc: '/vendor/register', changefreq: 'monthly', priority: 0.7 },
+  // 유형별 찾기 페이지. 검색 노출을 위해 주소를 넷으로 나눠뒀는데
+  // 정작 사이트맵에 빠져 있었다.
+  { loc: '/stylists', changefreq: 'weekly', priority: 0.8 },
+  { loc: '/dresses',  changefreq: 'weekly', priority: 0.8 },
+  { loc: '/venues',   changefreq: 'weekly', priority: 0.8 },
+  { loc: '/contact',  changefreq: 'monthly', priority: 0.4 },
   { loc: '/privacy', changefreq: 'yearly', priority: 0.3 },
   { loc: '/terms', changefreq: 'yearly', priority: 0.3 },
 ];
@@ -38,8 +45,12 @@ const STATIC_URLS = [
  */
 async function loadPhotographersData() {
   try {
-    // Use absolute path with .js extension for ESM import
-    const photographersPath = path.join(rootDir, 'src', 'data', 'photographers.js');
+    // Windows 에서 'C:\...' 를 그대로 import() 에 넘기면 ESM 로더가
+    // 'c:' 를 프로토콜로 읽고 거부한다. 그래서 작가 프로필이 사이트맵에서
+    // 통째로 빠져 있었다 — 경고만 찍히고 빈 배열로 넘어가서 아무도 몰랐다.
+    const photographersPath = pathToFileURL(
+      path.join(rootDir, 'src', 'data', 'photographers.js'),
+    ).href;
     const { PHOTOGRAPHERS } = await import(photographersPath);
     return PHOTOGRAPHERS || [];
   } catch (err) {
@@ -75,7 +86,8 @@ async function generateSitemap() {
   // Add photographer profile URLs
   photographers.forEach((photographer) => {
     urls.push({
-      loc: `${BASE_URL}/profile/${photographer.id}`,
+      // 라우트는 /photographer/:id 다. /profile/:id 는 존재한 적이 없다.
+      loc: `${BASE_URL}/photographer/${photographer.id}`,
       lastmod: TODAY,
       changefreq: 'weekly',
       priority: '0.8',

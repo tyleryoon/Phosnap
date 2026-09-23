@@ -34,7 +34,7 @@ const SizeSelector = ({ sizes = [], selected, onChange, disabled = false, booked
               style={{
                 padding: '8px 16px',
                 border: `1px solid ${isSelected ? 'var(--gold)' : isBooked ? 'var(--border)' : 'var(--border)'}`,
-                background: isSelected ? 'rgba(232,160,32,0.12)' : 'transparent',
+                background: isSelected ? 'var(--accent-a12)' : 'transparent',
                 color: isSelected ? 'var(--gold)' : isDisabled ? 'var(--muted)' : 'var(--text)',
                 fontFamily: 'var(--font-serif)',
                 fontSize: 12,

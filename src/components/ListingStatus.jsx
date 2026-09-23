@@ -57,7 +57,7 @@ const ListingStatus = ({ kind, id }) => {
     return (
       <div style={{
         border: '1px solid rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.06)',
-        padding: '12px 16px', marginBottom: 20, fontSize: 12.5, color: '#4ade80',
+        padding: '12px 16px', marginBottom: 20, fontSize: 12.5, color: 'var(--success)',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <span>✓</span> 고객 검색 결과에 노출되고 있습니다.
@@ -67,7 +67,7 @@ const ListingStatus = ({ kind, id }) => {
 
   return (
     <div style={{
-      border: '1px solid rgba(232,160,32,0.45)', background: 'rgba(232,160,32,0.07)',
+      border: '1px solid var(--accent-a50)', background: 'var(--accent-a06)',
       padding: '16px 18px', marginBottom: 20, fontSize: 12.5, lineHeight: 1.8,
       color: 'var(--text)',
     }}>

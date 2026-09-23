@@ -35,10 +35,10 @@ import ArtistInsights from '../components/ArtistInsights';
 
 // ── 배지 정의 (ARTIST_TIERS 기준과 통일) ─────────────────────────────
 const BADGES = [
-  { id: 'rising',      label: 'Rising',      symbol: '✦',    minShoots: 0,   minRating: 0,   color: '#9ca3af',    desc: '기본 프로필 노출' },
-  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 30,  minRating: 4.0, color: '#60a5fa',    desc: '검색 상위 노출' },
-  { id: 'premier',     label: 'Premier',     symbol: '✦✦✦',  minShoots: 100, minRating: 4.5, color: 'var(--gold)', desc: '추천 작가 배지 표시' },
-  { id: 'elite',       label: 'Elite',       symbol: '✦✦✦✦', minShoots: 300, minRating: 4.7, color: '#f472b6',    desc: '홈 피처드 섹션 노출' },
+  { id: 'rising',      label: 'Rising',      symbol: '✦',    minShoots: 0,   minRating: 0,   color: 'var(--grade-1)', desc: '기본 프로필 노출' },
+  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 30,  minRating: 4.0, color: 'var(--grade-2)', desc: '검색 상위 노출' },
+  { id: 'premier',     label: 'Premier',     symbol: '✦✦✦',  minShoots: 100, minRating: 4.5, color: 'var(--grade-3)', desc: '추천 작가 배지 표시' },
+  { id: 'elite',       label: 'Elite',       symbol: '✦✦✦✦', minShoots: 300, minRating: 4.7, color: 'var(--grade-4)',    desc: '홈 피처드 섹션 노출' },
 ];
 const getBadge = (shoots, rating = 5.0) => {
   let result = BADGES[0];
@@ -50,10 +50,10 @@ const getBadge = (shoots, rating = 5.0) => {
 
 // ── 상태 색상 ──────────────────────────────────────────────────────────
 const STATUS = {
-  pending:   { label: '확정 대기', color: '#f0ac2a', bg: 'rgba(240,172,42,0.1)'  },
-  confirmed: { label: '예약 확정', color: '#22c55e', bg: 'rgba(34,197,94,0.1)'   },
-  completed: { label: '촬영 완료', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
-  cancelled: { label: '취소됨',   color: '#e85d5d', bg: 'rgba(232,93,93,0.1)'   },
+  pending:   { label: '확정 대기', color: 'var(--accent-deep)', bg: 'var(--accent-a10)'  },
+  confirmed: { label: '예약 확정', color: 'var(--success)', bg: 'rgba(34,197,94,0.1)'   },
+  completed: { label: '촬영 완료', color: 'var(--info)', bg: 'rgba(96,165,250,0.1)'  },
+  cancelled: { label: '취소됨',   color: 'var(--danger)', bg: 'rgba(232,93,93,0.1)'   },
   delivered: { label: '전달 완료', color: '#4299e1', bg: 'rgba(66,153,225,0.12)', border: 'rgba(66,153,225,0.35)' },
 };
 
@@ -596,7 +596,7 @@ const ArtistDashboard = () => {
               padding: '10px 14px', marginBottom: 20, fontSize: 13,
               background: deliverMsg.includes('실패') ? 'rgba(232,93,93,0.1)' : 'rgba(34,197,94,0.1)',
               border: `1px solid ${deliverMsg.includes('실패') ? 'rgba(232,93,93,0.3)' : 'rgba(34,197,94,0.3)'}`,
-              color: deliverMsg.includes('실패') ? '#e85d5d' : '#22c55e',
+              color: deliverMsg.includes('실패') ? 'var(--danger)' : 'var(--success)',
             }}>
               {deliverMsg}
             </div>
@@ -666,7 +666,7 @@ const ArtistDashboard = () => {
               ))}
             </div>
             {b.note && (
-              <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,160,32,0.05)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
+              <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--accent-a05)', border: '1px solid var(--gold-border)', fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
                 📝 {b.note}
               </div>
             )}
@@ -685,7 +685,7 @@ const ArtistDashboard = () => {
                 disabled={actionLoading}
                 style={{
                   padding: '8px 18px', background: 'var(--gold)', border: 'none',
-                  color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                  color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}
               >
@@ -696,7 +696,7 @@ const ArtistDashboard = () => {
                 disabled={actionLoading}
                 style={{
                   padding: '8px 18px', background: 'transparent',
-                  border: '1px solid #e85d5d', color: '#e85d5d',
+                  border: '1px solid #e85d5d', color: 'var(--danger)',
                   fontFamily: 'var(--font-serif)', fontSize: 12,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}
@@ -864,7 +864,7 @@ const ArtistDashboard = () => {
             padding: '10px 16px',
             background: actionKind === 'warn' ? 'rgba(245,101,101,0.1)' : 'rgba(34,197,94,0.1)',
             border: `1px solid ${actionKind === 'warn' ? 'rgba(245,101,101,0.4)' : 'rgba(34,197,94,0.3)'}`,
-            color: actionKind === 'warn' ? '#f56565' : '#4ade80',
+            color: actionKind === 'warn' ? 'var(--danger)' : 'var(--success)',
             fontSize: 13, marginBottom: 20, whiteSpace: 'pre-line', lineHeight: 1.7,
             display: 'flex', alignItems: 'flex-start', gap: 12,
           }}>
@@ -903,9 +903,9 @@ const ArtistDashboard = () => {
                 {/* 요약 스탯 카드 4개 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
                   {[
-                    { label: '대기 중 예약', value: stats.pending,   color: '#f0ac2a', sub: '확정 필요' },
-                    { label: '확정된 예약',  value: stats.confirmed, color: '#22c55e', sub: '진행 예정' },
-                    { label: '이번달 완료',  value: stats.monthDone, color: '#60a5fa', sub: '건' },
+                    { label: '대기 중 예약', value: stats.pending,   color: 'var(--accent-deep)', sub: '확정 필요' },
+                    { label: '확정된 예약',  value: stats.confirmed, color: 'var(--success)', sub: '진행 예정' },
+                    { label: '이번달 완료',  value: stats.monthDone, color: 'var(--info)', sub: '건' },
                     { label: '누적 매출',    value: `₩${fmt(stats.revenue)}`, color: 'var(--gold)', sub: '패키지 기준', big: true },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
@@ -946,7 +946,7 @@ const ArtistDashboard = () => {
                 )}
 
                 {/* 배지 진행도 */}
-                <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.03)', padding: '28px 28px', marginBottom: 40, position: 'relative' }}>
+                <div style={{ border: '1px solid var(--gold-border)', background: 'var(--accent-a03)', padding: '28px 28px', marginBottom: 40, position: 'relative' }}>
                   <Corners />
                   <SectionLabel>Badge Progress</SectionLabel>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
@@ -989,10 +989,10 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
                       {[
-                        { symbol: '✦', label: 'Rising', range: '0~29건', color: '#9ca3af', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
-                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: '#60a5fa', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
+                        { symbol: '✦', label: 'Rising', range: '0~29건', color: 'var(--muted)', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
+                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: 'var(--info)', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
                         { symbol: '✦✦✦', label: 'Premier', range: '100~299건', color: 'var(--gold)', perks: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
-                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: '#f472b6', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
+                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: 'var(--grade-4)', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
                       ].map(tier => (
                         <div key={tier.label} style={{
                           padding: '12px 14px', border: `1px solid ${badge.label === tier.label ? tier.color + '55' : 'var(--border)'}`,
@@ -1002,7 +1002,7 @@ const ArtistDashboard = () => {
                             {tier.symbol} {tier.label}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>누적 완료 {tier.range}</div>
-                          <div style={{ fontSize: 11, color: 'rgba(242,242,242,0.65)', lineHeight: 1.6 }}>{tier.perks}</div>
+                          <div style={{ fontSize: 11, color: 'var(--ink-a50)', lineHeight: 1.6 }}>{tier.perks}</div>
                         </div>
                       ))}
                     </div>
@@ -1013,16 +1013,16 @@ const ArtistDashboard = () => {
                     <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', marginBottom: 10 }}>
                       수수료 정책
                     </div>
-                    <div style={{ fontSize: 12, color: 'rgba(242,242,242,0.6)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink-a50)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                       <div style={{ marginBottom: 6 }}>
                         <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 20%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: '#60a5fa' }}>30건 이상:</span> 수수료 15% |{' '}
+                        <span style={{ color: 'var(--info)' }}>30건 이상:</span> 수수료 15% |{' '}
                         <span style={{ color: 'var(--gold)' }}>100건 이상:</span> 수수료 12%
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'rgba(232,160,32,0.8)' }}>얼리억세스 작가:</span> 론칭 초기 가입 시 수수료 10% 고정 (6개월)
+                        <span style={{ color: 'var(--accent-a50)' }}>얼리억세스 작가:</span> 론칭 초기 가입 시 수수료 10% 고정 (6개월)
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                         정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 5~7일 내 등록 계좌로 자동 입금
@@ -1051,7 +1051,7 @@ const ArtistDashboard = () => {
                       style={{
                         fontSize: 11,
                         color: f.id === 'pending' && statusFilter !== f.id && bookings.filter(b=>b.status==='pending').length > 0
-                          ? '#f0ac2a' : undefined,
+                          ? 'var(--accent-deep)' : undefined,
                       }}
                     >
                       {f.label}
@@ -1148,7 +1148,7 @@ const ArtistDashboard = () => {
                         )}
                         style={{
                           padding: '8px 14px', border: `1px solid ${profileLanguages.includes(lang) ? 'var(--gold)' : 'var(--border)'}`,
-                          background: profileLanguages.includes(lang) ? 'rgba(232,160,32,0.1)' : 'var(--bg)',
+                          background: profileLanguages.includes(lang) ? 'var(--accent-a10)' : 'var(--bg)',
                           color: profileLanguages.includes(lang) ? 'var(--gold)' : 'var(--text)',
                           fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
                           cursor: 'pointer', transition: 'all 0.2s',
@@ -1179,7 +1179,7 @@ const ArtistDashboard = () => {
                           )}
                           style={{
                             padding: '8px 14px', border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
-                            background: active ? 'rgba(232,160,32,0.1)' : 'var(--bg)',
+                            background: active ? 'var(--accent-a10)' : 'var(--bg)',
                             color: active ? 'var(--gold)' : 'var(--text)',
                             fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
                             cursor: 'pointer', transition: 'all 0.2s',
@@ -1197,7 +1197,7 @@ const ArtistDashboard = () => {
                         onClick={() => setProfileTags(prev => prev.filter(t => t !== tag))}
                         style={{
                           padding: '8px 14px', border: '1px solid var(--gold)',
-                          background: 'rgba(232,160,32,0.1)', color: 'var(--gold)',
+                          background: 'var(--accent-a10)', color: 'var(--gold)',
                           fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
                           cursor: 'pointer', transition: 'all 0.2s',
                           display: 'flex', alignItems: 'center', gap: 6,
@@ -1268,8 +1268,8 @@ const ArtistDashboard = () => {
                               key={tag}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 6,
-                                padding: '5px 10px', background: 'rgba(232,160,32,0.08)',
-                                border: '1px solid rgba(232,160,32,0.3)', fontSize: 11,
+                                padding: '5px 10px', background: 'var(--accent-a08)',
+                                border: '1px solid var(--accent-a30)', fontSize: 11,
                                 color: 'var(--gold)', fontFamily: 'var(--font-serif)',
                               }}
                             >
@@ -1381,7 +1381,7 @@ const ArtistDashboard = () => {
                     padding: '12px 16px', marginBottom: 20, fontSize: 13,
                     background: profileMsg.includes('실패') ? 'rgba(232,93,93,0.1)' : 'rgba(34,197,94,0.1)',
                     border: `1px solid ${profileMsg.includes('실패') ? 'rgba(232,93,93,0.3)' : 'rgba(34,197,94,0.3)'}`,
-                    color: profileMsg.includes('실패') ? '#e85d5d' : '#22c55e',
+                    color: profileMsg.includes('실패') ? 'var(--danger)' : 'var(--success)',
                   }}>
                     {profileMsg}
                   </div>
@@ -1394,7 +1394,7 @@ const ArtistDashboard = () => {
                     disabled={profileSaving}
                     style={{
                       flex: 1, padding: '12px 0', background: 'var(--gold)', border: 'none',
-                      color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 13,
+                      color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 13,
                       letterSpacing: '0.08em', cursor: 'pointer', opacity: profileSaving ? 0.6 : 1,
                     }}
                   >
@@ -1421,11 +1421,11 @@ const ArtistDashboard = () => {
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '16px 20px', marginBottom: 20,
-                    border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+                    border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
                     cursor: 'pointer', transition: 'background 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,160,32,0.1)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'rgba(232,160,32,0.04)'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-a10)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'var(--accent-a04)'}
                 >
                   <div>
                     <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', color: 'var(--text)', marginBottom: 4 }}>
@@ -1438,16 +1438,19 @@ const ArtistDashboard = () => {
                   <span style={{ fontSize: 18, color: 'var(--gold)', marginLeft: 12 }}>→</span>
                 </div>
 
-                {/* 등급 시스템 안내 링크 */}
+                {/* 등급 시스템 안내 링크.
+                    예전엔 /artist/grade-system 으로 보냈는데 그런 라우트가 없어서
+                    누르면 404 였다. 등급 설명은 이 페이지 아래 '배지 등급 시스템'
+                    섹션에 이미 있다 — 없는 페이지를 만들 게 아니라 거기로 보낸다. */}
                 <div
-                  onClick={() => navigate('/artist/grade-system')}
+                  onClick={() => document.getElementById('badge-grades')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '14px 20px', marginBottom: 28,
                     border: '1px solid var(--border)', background: 'var(--bg2)',
                     cursor: 'pointer', transition: 'background 0.2s',
                   }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(232,160,32,0.06)'}
+                  onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-a06)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'var(--bg2)'}
                 >
                   <div>
@@ -1468,10 +1471,10 @@ const ArtistDashboard = () => {
                 <SectionLabel>이번달 실적</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
                   {[
-                    { label: '완료 건수',    value: stats.monthDone, suffix: '건',   color: '#22c55e' },
+                    { label: '완료 건수',    value: stats.monthDone, suffix: '건',   color: 'var(--success)' },
                     { label: '예상 수입',    value: `₩${fmt(stats.monthRev)}`, suffix: '', color: 'var(--gold)' },
-                    { label: '대기 중',      value: stats.pending,   suffix: '건',   color: '#f0ac2a' },
-                    { label: '누적 완료',    value: completedCount,  suffix: '건',   color: '#60a5fa' },
+                    { label: '대기 중',      value: stats.pending,   suffix: '건',   color: 'var(--accent-deep)' },
+                    { label: '누적 완료',    value: completedCount,  suffix: '건',   color: 'var(--info)' },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
                       <Corners />
@@ -1484,6 +1487,7 @@ const ArtistDashboard = () => {
                 </div>
 
                 {/* 배지 상세 */}
+                <div id="badge-grades" style={{ scrollMarginTop: 90 }} />
                 <SectionLabel>배지 등급 시스템</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 12, marginBottom: 40 }}>
                   {BADGES.map(b => {
@@ -1616,7 +1620,7 @@ const ArtistDashboard = () => {
                                 {rev.tags.map(tag => (
                                   <span key={tag} style={{
                                     padding: '3px 10px', fontSize: 11,
-                                    background: 'rgba(232,160,32,0.1)', border: '1px solid rgba(232,160,32,0.3)',
+                                    background: 'var(--accent-a10)', border: '1px solid var(--accent-a30)',
                                     color: 'var(--gold)', fontFamily: 'var(--font-serif)',
                                   }}>
                                     {tag}
@@ -1629,7 +1633,7 @@ const ArtistDashboard = () => {
                             {reply && !isEditing && (
                               <div style={{
                                 marginTop: 12, padding: '16px 20px',
-                                background: 'rgba(232,160,32,0.04)', borderLeft: '3px solid var(--gold)',
+                                background: 'var(--accent-a04)', borderLeft: '3px solid var(--gold)',
                               }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                                   <span style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em' }}>
@@ -1662,7 +1666,7 @@ const ArtistDashboard = () => {
                             {isEditing && (
                               <div style={{
                                 marginTop: 12, padding: '16px 20px',
-                                border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+                                border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
                               }}>
                                 <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 10 }}>
                                   {replyTarget.existing ? '답글 수정' : '답글 작성'}
@@ -1680,7 +1684,7 @@ const ArtistDashboard = () => {
                                 {replyMsg && (
                                   <div style={{
                                     fontSize: 12, marginTop: 8,
-                                    color: replyMsg.includes('✓') ? '#4ade80' : '#e85d5d',
+                                    color: replyMsg.includes('✓') ? 'var(--success)' : 'var(--danger)',
                                   }}>
                                     {replyMsg}
                                   </div>
@@ -1691,7 +1695,7 @@ const ArtistDashboard = () => {
                                     disabled={replySaving || !replyBody.trim()}
                                     style={{
                                       padding: '9px 24px', background: 'var(--gold)', border: 'none',
-                                      color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                                      color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                                       letterSpacing: '0.08em', cursor: 'pointer',
                                       opacity: (replySaving || !replyBody.trim()) ? 0.5 : 1,
                                     }}
@@ -1721,7 +1725,7 @@ const ArtistDashboard = () => {
                                 }}
                                 style={{
                                   marginTop: 12, padding: '8px 18px',
-                                  background: 'rgba(232,160,32,0.08)', border: '1px solid var(--gold-border)',
+                                  background: 'var(--accent-a08)', border: '1px solid var(--gold-border)',
                                   color: 'var(--gold)', fontSize: 11, fontFamily: 'var(--font-serif)',
                                   letterSpacing: '0.06em', cursor: 'pointer',
                                 }}
@@ -1742,7 +1746,7 @@ const ArtistDashboard = () => {
             {activeTab === 'referral' && (
               <div>
                 {/* 내 초대코드 */}
-                <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)', padding: '32px 28px', marginBottom: 32, position: 'relative' }}>
+                <div style={{ border: '1px solid var(--gold-border)', background: 'var(--accent-a04)', padding: '32px 28px', marginBottom: 32, position: 'relative' }}>
                   <Corners />
                   <SectionLabel>내 초대코드</SectionLabel>
                   {profile?.referral_code ? (
@@ -1760,7 +1764,7 @@ const ArtistDashboard = () => {
                         onClick={() => { navigator.clipboard.writeText(profile.referral_code); }}
                         style={{
                           padding: '10px 24px', background: 'var(--gold)', border: 'none',
-                          color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                          color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                           letterSpacing: '0.1em', cursor: 'pointer',
                         }}
                       >
@@ -1777,8 +1781,8 @@ const ArtistDashboard = () => {
                 {/* 초대 현황 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 36 }}>
                   {[
-                    { label: '초대한 작가 수',   value: profile?.referral_count     || 0, suffix: '명', color: '#60a5fa'       },
-                    { label: '초대 완료 건수',   value: profile?.referral_completed || 0, suffix: '건', color: '#22c55e'       },
+                    { label: '초대한 작가 수',   value: profile?.referral_count     || 0, suffix: '명', color: 'var(--info)'       },
+                    { label: '초대 완료 건수',   value: profile?.referral_completed || 0, suffix: '건', color: 'var(--success)'       },
                     { label: '현재 수수료 할인', value: profile?.referral_completed >= 20 ? '3%p' : profile?.referral_completed >= 10 ? '2%p' : profile?.referral_completed >= 5 ? '1%p' : '0%', suffix: '', color: 'var(--gold)' },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
@@ -1828,7 +1832,7 @@ const ArtistDashboard = () => {
                       { title: '✔ 실패', items: ['미달 시 1단계 하락', '1회 실패 → 유지', '2회 연속 실패 → 하락'] },
                       { title: '✔ 재상승', items: ['최근 30일 5건 달성', '→ 1단계 상승'] },
                     ].map((block, i) => (
-                      <div key={i} style={{ padding: '14px 16px', border: '1px solid var(--border)', background: 'rgba(232,160,32,0.03)' }}>
+                      <div key={i} style={{ padding: '14px 16px', border: '1px solid var(--border)', background: 'var(--accent-a03)' }}>
                         <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.12em', marginBottom: 8 }}>
                           {block.title}
                         </div>
@@ -1839,7 +1843,7 @@ const ArtistDashboard = () => {
                     ))}
                   </div>
 
-                  <div style={{ padding: '10px 14px', background: 'rgba(232,160,32,0.06)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.7 }}>
+                  <div style={{ padding: '10px 14px', background: 'var(--accent-a06)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.7 }}>
                     * 초대 인원 제한 없음 · 초대 건수는 초대된 작가의 예약 완료 시 집계됩니다
                   </div>
                 </div>
@@ -1888,7 +1892,7 @@ const ArtistDashboard = () => {
                 onClick={handleReject}
                 disabled={actionLoading}
                 style={{
-                  flex: 1, padding: '11px 0', background: '#e85d5d', border: 'none',
+                  flex: 1, padding: '11px 0', background: 'var(--danger)', border: 'none',
                   color: '#fff', fontFamily: 'var(--font-serif)', fontSize: 13,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}

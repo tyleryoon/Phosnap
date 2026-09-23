@@ -398,12 +398,12 @@ const ArtistRegister = () => {
         border: '1px solid rgba(232,93,93,0.25)',
         fontSize: 12, lineHeight: 1.8,
       }}>
-        <div style={{ color: '#e85d5d', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
+        <div style={{ color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
           ✦ 다음 항목을 확인해주세요
         </div>
         {issues.map((issue, i) => (
-          <div key={i} style={{ color: 'rgba(242,242,242,0.7)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span style={{ color: '#e85d5d', flexShrink: 0 }}>•</span>
+          <div key={i} style={{ color: 'var(--ink-a50)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+            <span style={{ color: 'var(--danger)', flexShrink: 0 }}>•</span>
             <span><strong style={{ color: '#f0a0a0' }}>{issue.field}</strong> — {issue.msg}</span>
           </div>
         ))}
@@ -691,12 +691,12 @@ const ArtistRegister = () => {
         <div key={i} style={{
           flex: 1, padding: '12px 8px', textAlign: 'center',
           fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.1em',
-          color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'rgba(232,160,32,0.5)' : 'var(--muted)',
+          color: step === i + 1 ? 'var(--gold)' : step > i + 1 ? 'var(--accent-a50)' : 'var(--muted)',
           borderBottom: step === i + 1 ? '2px solid var(--gold)' : '2px solid transparent',
           transition: 'all 0.2s',
         }}>
           {s.n} · {s.label}
-          {step > i + 1 && <span style={{ marginLeft: 6, color: '#22c55e' }}>✓</span>}
+          {step > i + 1 && <span style={{ marginLeft: 6, color: 'var(--success)' }}>✓</span>}
         </div>
       ))}
     </div>
@@ -753,12 +753,12 @@ const ArtistRegister = () => {
                 type="text" placeholder={lang === 'ko' ? '홍길동' : lang === 'ja' ? '山田太郎' : 'John Doe'}
                 value={realName} onChange={e => setRealName(e.target.value)} required />
               {realName && !isRealNameValid(realName) && (
-                <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {lang === 'ko' ? '특수문자나 기호는 사용할 수 없습니다.' : lang === 'ja' ? '特殊文字や記号は使用できません。' : 'Special characters are not allowed.'}</div>
+                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {lang === 'ko' ? '특수문자나 기호는 사용할 수 없습니다.' : lang === 'ja' ? '特殊文字や記号は使用できません。' : 'Special characters are not allowed.'}</div>
               )}
             </div>
 
             {/* 작가명 */}
-            <div style={{ background: 'rgba(232,160,32,0.05)', border: '1px solid var(--gold-border)', padding: '12px 16px', marginBottom: 20, fontSize: 12, color: 'rgba(242,242,242,0.6)', lineHeight: 1.7 }}>
+            <div style={{ background: 'var(--accent-a05)', border: '1px solid var(--gold-border)', padding: '12px 16px', marginBottom: 20, fontSize: 12, color: 'var(--ink-a50)', lineHeight: 1.7 }}>
               {f.nameInfoTitle}<br />
               {f.nameInfoExtra && <><br /><span style={{ color: 'var(--gold)', fontSize: 11 }}>💡 {f.nameInfoExtra}</span></>}
               <br />
@@ -805,7 +805,7 @@ const ArtistRegister = () => {
                     }, 500);
                   }}
                   required />
-                {nativeNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {nativeNameError}</div>}
+                {nativeNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {nativeNameError}</div>}
               </div>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>{f.englishName} *</label>
@@ -848,7 +848,7 @@ const ArtistRegister = () => {
                     }, 500);
                   }}
                   required />
-                {englishNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {englishNameError}</div>}
+                {englishNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {englishNameError}</div>}
               </div>
             </div>
 
@@ -865,7 +865,7 @@ const ArtistRegister = () => {
             <div style={{ marginBottom: 6 }}>
               <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
                 {lang === 'ko' ? '핸드폰 번호' : lang === 'ja' ? '携帯番号' : lang === 'zh' ? '手机号码' : 'Phone Number'} *
-                {otpVerified && <span style={{ color: '#22c55e', marginLeft: 8, fontSize: 10 }}>✓ {lang === 'ko' ? '인증 완료' : lang === 'ja' ? '認証済み' : lang === 'zh' ? '已验证' : 'Verified'}</span>}
+                {otpVerified && <span style={{ color: 'var(--success)', marginLeft: 8, fontSize: 10 }}>✓ {lang === 'ko' ? '인증 완료' : lang === 'ja' ? '認証済み' : lang === 'zh' ? '已验证' : 'Verified'}</span>}
               </label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input style={{ ...INPUT, flex: 1, ...(otpVerified ? { borderColor: '#22c55e', background: 'rgba(34,197,94,0.04)' } : {}) }}
@@ -911,7 +911,7 @@ const ArtistRegister = () => {
                     style={{
                       padding: '11px 16px', whiteSpace: 'nowrap',
                       background: phone.replace(/\D/g, '').length >= 10 && !otpLoading && otpTimer === 0 ? 'var(--gold)' : 'var(--border)',
-                      border: 'none', color: phone.replace(/\D/g, '').length >= 10 ? '#0B0B0B' : 'var(--muted)',
+                      border: 'none', color: phone.replace(/\D/g, '').length >= 10 ? 'var(--text)' : 'var(--muted)',
                       fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.05em', cursor: 'pointer',
                     }}>
                     {otpLoading ? '...' :
@@ -969,7 +969,7 @@ const ArtistRegister = () => {
                      lang === 'zh' ? '请输入短信收到的6位验证码。' :
                      'Enter the 6-digit code sent to your phone.'}
                     {otpTimer > 0 && (
-                      <span style={{ color: otpTimer <= 10 ? '#e85d5d' : 'var(--gold)', marginLeft: 8 }}>
+                      <span style={{ color: otpTimer <= 10 ? 'var(--danger)' : 'var(--gold)', marginLeft: 8 }}>
                         ⏱ {Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, '0')}
                       </span>
                     )}
@@ -979,12 +979,12 @@ const ArtistRegister = () => {
 
               {/* OTP 에러 */}
               {otpError && (
-                <p style={{ color: '#e85d5d', fontSize: 11, marginTop: 6 }}>{otpError}</p>
+                <p style={{ color: 'var(--danger)', fontSize: 11, marginTop: 6 }}>{otpError}</p>
               )}
 
               {/* 인증 완료 뱃지 */}
               {otpVerified && (
-                <div style={{ marginTop: 8, padding: '8px 14px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 11, color: '#22c55e', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ marginTop: 8, padding: '8px 14px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 11, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   ✓ {lang === 'ko' ? '전화번호 인증이 완료되었습니다.' :
                      lang === 'ja' ? '電話番号の認証が完了しました。' :
                      lang === 'zh' ? '手机号码验证完成。' :
@@ -1010,7 +1010,7 @@ const ArtistRegister = () => {
                 <button type="button" onClick={openDaumPostcode}
                   style={{
                     padding: '11px 16px', background: 'var(--gold)', border: 'none',
-                    color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                    color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                     letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap',
                   }}>
                   {f.searchAddr}
@@ -1040,16 +1040,16 @@ const ArtistRegister = () => {
             </div>
             {password && (
               <div style={{ fontSize: 11, marginTop: 8, lineHeight: 1.8, color: 'var(--muted)' }}>
-                <span style={{ color: password.length >= 8 && password.length <= 16 ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: password.length >= 8 && password.length <= 16 ? 'var(--success)' : 'var(--danger)' }}>
                   {password.length >= 8 && password.length <= 16 ? '✓' : '✗'} 8~16자
                 </span>{' · '}
-                <span style={{ color: /[A-Z]/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /[A-Z]/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/[A-Z]/.test(password) ? '✓' : '✗'} 대문자
                 </span>{' · '}
-                <span style={{ color: /[a-z]/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /[a-z]/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/[a-z]/.test(password) ? '✓' : '✗'} 소문자
                 </span>{' · '}
-                <span style={{ color: /\d/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /\d/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/\d/.test(password) ? '✓' : '✗'} 숫자
                 </span>{' · '}
                 <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) ? '#22c55e' : '#e85d5d' }}>
@@ -1058,7 +1058,7 @@ const ArtistRegister = () => {
               </div>
             )}
             {pwConfirm && password !== pwConfirm && (
-              <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 6 }}>{lang === 'ko' ? '비밀번호가 일치하지 않습니다.' : lang === 'ja' ? 'パスワードが一致しません。' : lang === 'zh' ? '密码不匹配。' : 'Passwords do not match.'}</p>
+              <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>{lang === 'ko' ? '비밀번호가 일치하지 않습니다.' : lang === 'ja' ? 'パスワードが一致しません。' : lang === 'zh' ? '密码不匹配。' : 'Passwords do not match.'}</p>
             )}
 
             {/* SNS · 웹사이트 (선택) */}
@@ -1074,7 +1074,7 @@ const ArtistRegister = () => {
                 value={website} onChange={e => setWebsite(e.target.value)} />
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 14, lineHeight: 1.6 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 14, lineHeight: 1.6 }}>{error}</p>}
 
             {!step1Valid && <ValidationHints issues={getStep1Issues()} />}
 
@@ -1108,13 +1108,13 @@ const ArtistRegister = () => {
                   style={{
                     border: `2px solid ${artistType === at.id ? 'var(--gold)' : 'var(--border)'}`,
                     padding: '20px 18px', cursor: 'pointer',
-                    background: artistType === at.id ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
+                    background: artistType === at.id ? 'var(--accent-a06)' : 'var(--bg2)',
                     transition: 'all 0.2s', position: 'relative',
                   }}
                 >
                   {artistType === at.id && (
                     <div style={{ position: 'absolute', top: 10, right: 10, width: 18, height: 18, borderRadius: '50%', background: 'var(--gold)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ color: '#0B0B0B', fontSize: 10, fontWeight: 700 }}>✓</span>
+                      <span style={{ color: 'var(--on-accent)', fontSize: 10, fontWeight: 700 }}>✓</span>
                     </div>
                   )}
                   <div style={{ fontSize: 24, marginBottom: 10 }}>{at.icon}</div>
@@ -1150,7 +1150,7 @@ const ArtistRegister = () => {
             {isPhotoVideo && (
               <>
                 {/* ── Q1: H&M 자체 진행 여부 ── */}
-                <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
+                <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'var(--accent-a03)', marginBottom: 24, position: 'relative' }}>
                   <Corners />
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 14 }}>
                     H&M · Hair & Makeup
@@ -1174,7 +1174,7 @@ const ArtistRegister = () => {
                         style={{
                           flex: 1, border: `2px solid ${hmkSelf === opt.val ? 'var(--gold)' : 'var(--border)'}`,
                           padding: '16px', cursor: 'pointer',
-                          background: hmkSelf === opt.val ? 'rgba(232,160,32,0.06)' : 'transparent',
+                          background: hmkSelf === opt.val ? 'var(--accent-a06)' : 'transparent',
                           transition: 'all 0.2s', textAlign: 'center',
                         }}
                       >
@@ -1187,7 +1187,7 @@ const ArtistRegister = () => {
 
                   {/* H&M 메뉴는 가입 후 대시보드에서 등록 */}
                   {hmkSelf && (
-                    <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+                    <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
                       <span style={{ color: 'var(--gold)' }}>안내</span> · H&M 메뉴와 가격은 가입 완료 후 작가 대시보드에서 등록하실 수 있습니다.
                     </div>
                   )}
@@ -1198,7 +1198,7 @@ const ArtistRegister = () => {
                   <div style={{
                     border: `1px solid ${(hmkExternalConnect || !hmkSelf) ? 'var(--gold-border)' : 'var(--border)'}`,
                     padding: '16px 20px',
-                    background: (hmkExternalConnect || !hmkSelf) ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
+                    background: (hmkExternalConnect || !hmkSelf) ? 'var(--accent-a06)' : 'var(--bg2)',
                     marginBottom: 24,
                     display: 'flex', alignItems: 'flex-start', gap: 14,
                     cursor: !hmkSelf ? 'default' : 'pointer',
@@ -1213,7 +1213,7 @@ const ArtistRegister = () => {
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       transition: 'all 0.2s',
                     }}>
-                      {hmkExternalConnect && <span style={{ color: '#0B0B0B', fontSize: 13, fontWeight: 'bold' }}>✓</span>}
+                      {hmkExternalConnect && <span style={{ color: 'var(--on-accent)', fontSize: 13, fontWeight: 'bold' }}>✓</span>}
                     </div>
                     <div>
                       <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', marginBottom: 4 }}>
@@ -1233,7 +1233,7 @@ const ArtistRegister = () => {
 
             {/* H&M 작가 선택 시 안내 */}
             {artistType === 'hmk' && (
-              <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
+              <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'var(--accent-a03)', marginBottom: 24, position: 'relative' }}>
                 <Corners />
                 <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8 }}>
                   <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)', fontSize: 14 }}>H&M 전문 작가</span>로 등록하셨습니다.
@@ -1249,7 +1249,7 @@ const ArtistRegister = () => {
             {(isPhotoVideo || artistType === 'hmk') && (
               <>
                 {/* ── Q2: 의상 자체 보유 여부 ── */}
-                <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 24, position: 'relative' }}>
+                <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'var(--accent-a03)', marginBottom: 24, position: 'relative' }}>
                   <Corners />
                   <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 14 }}>
                     Dress · 의상 대여
@@ -1270,7 +1270,7 @@ const ArtistRegister = () => {
                         style={{
                           flex: 1, border: `2px solid ${dressSelf === opt.val ? 'var(--gold)' : 'var(--border)'}`,
                           padding: '16px', cursor: 'pointer',
-                          background: dressSelf === opt.val ? 'rgba(232,160,32,0.06)' : 'transparent',
+                          background: dressSelf === opt.val ? 'var(--accent-a06)' : 'transparent',
                           transition: 'all 0.2s', textAlign: 'center',
                         }}
                       >
@@ -1282,7 +1282,7 @@ const ArtistRegister = () => {
                   </div>
 
                   {dressSelf && (
-                    <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+                    <div style={{ marginTop: 16, padding: '12px 16px', background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
                       <span style={{ color: 'var(--gold)' }}>안내</span> · 자체 의상 목록은 가입 완료 후 대시보드 &gt; 의상 관리에서 등록하실 수 있습니다.
                     </div>
                   )}
@@ -1290,7 +1290,7 @@ const ArtistRegister = () => {
 
                 {/* 의상 미보유 시 안내 */}
                 {!dressSelf && (
-                  <div style={{ marginTop: 0, padding: '12px 16px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 24 }}>
+                  <div style={{ marginTop: 0, padding: '12px 16px', background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 24 }}>
                     <span style={{ color: 'var(--gold)' }}>안내</span> · 의상이 필요한 고객은 Phosnap에 등록된 의상 벤더의 소품을 직접 선택할 수 있습니다. 별도 연계 설정은 필요하지 않습니다.
                   </div>
                 )}
@@ -1336,7 +1336,7 @@ const ArtistRegister = () => {
 
             <div style={{
               padding: '20px 24px', marginBottom: 24,
-              border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+              border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
             }}>
               <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)', marginBottom: 10 }}>
                 이미 가입된 이메일입니다
@@ -1359,7 +1359,7 @@ const ArtistRegister = () => {
               />
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12 }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button
@@ -1378,7 +1378,7 @@ const ArtistRegister = () => {
                 disabled={loading || !existingPassword}
                 style={{
                   flex: 2, padding: '12px', background: 'var(--gold)',
-                  border: 'none', color: '#0B0B0B', fontSize: 12, fontWeight: 600,
+                  border: 'none', color: 'var(--on-accent)', fontSize: 12, fontWeight: 600,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.7 : 1,
                 }}
@@ -1396,7 +1396,7 @@ const ArtistRegister = () => {
             </div>
 
             {/* 초대코드 */}
-            <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'rgba(232,160,32,0.03)', marginBottom: 28, position: 'relative' }}>
+            <div style={{ border: '1px solid var(--gold-border)', padding: '24px', background: 'var(--accent-a03)', marginBottom: 28, position: 'relative' }}>
               <Corners />
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 12 }}>{f.referralCode}</div>
               <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
@@ -1405,7 +1405,7 @@ const ArtistRegister = () => {
               <input style={{ ...INPUT, letterSpacing: '0.1em', textTransform: 'uppercase' }}
                 type="text" placeholder="예) MINA1234"
                 value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} />
-              <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(232,160,32,0.06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
+              <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--accent-a06)', borderLeft: '2px solid var(--gold)', fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
                 <span style={{ color: 'var(--gold)' }}>초대 혜택</span> · 초대한 작가 완료 5건 → 수수료 -1%p · 10건 → -2%p · 20건 → -3%p (등급 유효 3개월, 월 3건 유지) · 무제한 초대 가능
               </div>
             </div>
@@ -1418,7 +1418,7 @@ const ArtistRegister = () => {
               {(() => {
                 const allChecked = agreeVisa && agreePayment && agreeTerms && agreePrivacy && agreeRefund && agreeMarketing;
                 return (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '14px 16px', background: 'rgba(232,160,32,0.06)', border: '1px solid var(--gold-border)', marginBottom: 16 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', padding: '14px 16px', background: 'var(--accent-a06)', border: '1px solid var(--gold-border)', marginBottom: 16 }}>
                     <input type="checkbox"
                       checked={allChecked}
                       onChange={(e) => {
@@ -1455,7 +1455,7 @@ const ArtistRegister = () => {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.2s', cursor: 'pointer',
                   }}>
-                    {item.checked && <span style={{ color: '#0B0B0B', fontSize: 10, fontWeight: 700 }}>✓</span>}
+                    {item.checked && <span style={{ color: 'var(--on-accent)', fontSize: 10, fontWeight: 700 }}>✓</span>}
                   </div>
                   <span onClick={() => item.set(v => !v)} style={{ fontSize: 12, color: item.checked ? 'var(--text)' : 'var(--muted)', lineHeight: 1.7, transition: 'color 0.2s', flex: 1 }}>
                     {item.text}
@@ -1493,9 +1493,9 @@ const ArtistRegister = () => {
               ))}
             </div>
 
-            {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
+            {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
             {success && (
-              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: '#4ade80', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: 'var(--success)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
                 {success}
                 <div style={{ marginTop: 12 }}>
                   <button type="button" className="btn-outline" style={{ fontSize: 12 }} onClick={() => navigate('/')}>{f.goHome}</button>

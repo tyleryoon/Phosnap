@@ -28,7 +28,6 @@ const translations = {
     totalContribution: '총 절약',
     trees: '나무',
     cars: '자동차',
-    km: 'km',
     noData: '아직 데이터가 없습니다',
   },
   en: {
@@ -54,7 +53,6 @@ const translations = {
     totalContribution: 'Total Saved',
     trees: 'trees',
     cars: 'cars',
-    km: 'km',
     noData: 'No data yet',
   },
   ja: {
@@ -79,7 +77,6 @@ const translations = {
     totalContribution: '合計節約',
     trees: '本',
     cars: '台',
-    km: 'km',
     noData: 'データがまだありません',
   },
   zh: {
@@ -104,7 +101,6 @@ const translations = {
     totalContribution: '总计节省',
     trees: '棵',
     cars: '辆',
-    km: 'km',
     noData: '还没有数据',
   },
 };
@@ -195,7 +191,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
     },
     badge: {
       display: 'inline-block',
-      background: '#22c55e',
+      background: 'var(--success)',
       color: 'white',
       padding: '4px 8px',
       borderRadius: '4px',
@@ -226,7 +222,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
           <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '8px' }}>
             {t.savingText}
           </div>
-          <div style={{ fontSize: '24px', fontWeight: '700', color: '#22c55e', marginBottom: '12px' }}>
+          <div style={{ fontSize: '24px', fontWeight: '700', color: 'var(--success)', marginBottom: '12px' }}>
             {animatedValue.toFixed(1)} kg {t.saved}
           </div>
           <div style={styles.badge}>🌍 친환경 선택</div>
@@ -276,10 +272,12 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
     const ecoScore = Math.min(100, rentalCount * 15 + totalCO2 * 2);
 
     const getLevelBadge = () => {
-      if (ecoScore < 25) return { icon: '🌱', label: t.seed, color: '#84cc16' };
-      if (ecoScore < 50) return { icon: '🌿', label: t.sprout, color: '#22c55e' };
-      if (ecoScore < 75) return { icon: '🌳', label: t.tree, color: '#16a34a' };
-      return { icon: '🌲', label: t.forest, color: '#15803d' };
+      // 등급이 오를수록 진해진다. 예전 첫 단계(#84cc16)는 종이 바탕에서
+      // 2:1 이라 '새싹' 글자가 읽히지 않았다.
+      if (ecoScore < 25) return { icon: '🌱', label: t.seed, color: '#5C7331' };
+      if (ecoScore < 50) return { icon: '🌿', label: t.sprout, color: 'var(--success)' };
+      if (ecoScore < 75) return { icon: '🌳', label: t.tree, color: '#3A7D44' };
+      return { icon: '🌲', label: t.forest, color: '#2A5F35' };
     };
 
     const level = getLevelBadge();
@@ -373,7 +371,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px' }}>
               {t.totalSaved}
             </div>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#22c55e' }}>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--success)' }}>
               {animatedValue.toFixed(1)} kg
             </div>
           </div>
@@ -469,7 +467,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
           <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '12px' }}>
             {t.totalContribution}
           </div>
-          <div style={{ fontSize: '48px', fontWeight: '700', color: '#22c55e', marginBottom: '8px' }}>
+          <div style={{ fontSize: '48px', fontWeight: '700', color: 'var(--success)', marginBottom: '8px' }}>
             {(totalCO2 / 1000).toFixed(2)}
             <span style={{ fontSize: '24px', marginLeft: '8px' }}>톤</span>
           </div>
@@ -490,7 +488,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
             }}
           >
             <div style={{ fontSize: '24px', marginBottom: '4px' }}>🌳</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: '#22c55e' }}>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--success)' }}>
               {totalTrees}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
@@ -507,7 +505,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
             }}
           >
             <div style={{ fontSize: '24px', marginBottom: '4px' }}>🚗</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: '#22c55e' }}>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--success)' }}>
               {carsOff}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>
@@ -524,7 +522,7 @@ export default function CarbonFootprint({ mode = 'dashboard', booking = null, bo
             }}
           >
             <div style={{ fontSize: '24px', marginBottom: '4px' }}>🛣️</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: '#22c55e' }}>
+            <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--success)' }}>
               {totalKm}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '4px' }}>

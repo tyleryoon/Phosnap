@@ -411,3 +411,22 @@ export const refreshRegistryFromDB = async () => {
     // Silent failure
   }
 };
+
+/**
+ * 지역 id → 사람이 읽는 이름.
+ *
+ * 화면이 'seoul' 같은 원시 id 를 그대로 뱉는 곳이 두 군데 있었다
+ * (찾기 지역 드롭다운, 예약 구성 지역 칩). 둘 다 이걸 쓴다.
+ *
+ * LOCATION_META 를 먼저 본다 — 레지스트리는 하드코딩 작가 목록에서
+ * 만들어지므로, DB 에만 있는 지역은 레지스트리에 없을 수 있다.
+ * 끝까지 못 찾으면 id 를 돌려준다. 거짓 이름을 지어내지 않는다.
+ */
+export const locationLabel = (id, lang = 'ko') => {
+  if (!id) return '';
+  const meta = LOCATION_META[id];
+  if (meta?.nameI18n) return meta.nameI18n[lang] || meta.nameI18n.ko || id;
+  const reg = getLocationById(id);
+  if (reg?.nameI18n) return reg.nameI18n[lang] || reg.nameI18n.ko || id;
+  return id;
+};

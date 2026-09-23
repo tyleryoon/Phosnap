@@ -93,7 +93,7 @@ const RoleSelectModal = ({ user, onRoleSelected }) => {
                 textAlign: 'left', display: 'flex', alignItems: 'center', gap: 12,
                 background: selectedRole === id ? 'var(--gold)' : 'transparent',
                 border: '1px solid ' + (selectedRole === id ? 'var(--gold)' : 'var(--border)'),
-                color: selectedRole === id ? '#0B0B0B' : 'var(--text)',
+                color: selectedRole === id ? 'var(--text)' : 'var(--text)',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 borderRadius: 4, transition: 'all 0.2s',
                 opacity: loading && selectedRole !== id ? 0.5 : 1,
@@ -174,8 +174,8 @@ export const PhoneVerify = ({ onVerified, setError }) => {
   if (otpVerified) return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
       background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', marginBottom: 12 }}>
-      <span style={{ color: '#4ade80', fontSize: 13 }}>✓</span>
-      <span style={{ fontSize: 12, color: '#4ade80' }}>{t('auth.phoneVerified')} — {phone}</span>
+      <span style={{ color: 'var(--success)', fontSize: 13 }}>✓</span>
+      <span style={{ fontSize: 12, color: 'var(--success)' }}>{t('auth.phoneVerified')} — {phone}</span>
     </div>
   );
 
@@ -201,7 +201,7 @@ export const PhoneVerify = ({ onVerified, setError }) => {
             <button type="button" onClick={handleManualConfirm}
               style={{
                 padding: '0 14px', fontSize: 11, whiteSpace: 'nowrap',
-                background: 'var(--gold)', border: 'none', color: '#0B0B0B',
+                background: 'var(--gold)', border: 'none', color: 'var(--on-accent)',
                 cursor: 'pointer',
               }}>
               확인
@@ -223,7 +223,7 @@ export const PhoneVerify = ({ onVerified, setError }) => {
               style={{ flex: 1, letterSpacing: '0.2em', textAlign: 'center', fontSize: 16 }} />
             <button type="button" onClick={handleVerify} disabled={loading}
               style={{ padding: '0 14px', fontSize: 11, whiteSpace: 'nowrap',
-                background: 'var(--gold)', border: 'none', color: '#0B0B0B',
+                background: 'var(--gold)', border: 'none', color: 'var(--on-accent)',
                 cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
               {loading ? t('auth.checking') : t('auth.verify')}
             </button>
@@ -267,7 +267,7 @@ const LoginRolePicker = ({ roles, onSelect, onClose }) => {
                 color: 'var(--text)',
                 cursor: 'pointer', borderRadius: 4, transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'rgba(232,160,32,0.05)'; }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'var(--accent-a05)'; }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'transparent'; }}
             >
               <span style={{ fontSize: 20 }}>{info.emoji}</span>
@@ -467,7 +467,11 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             const sb = await getSupabase();
             if (sb) await sb.auth.signOut();
             sessionStorage.removeItem('phosnap_active_role');
-            const roleLabel = userRoles.includes('artist') ? '작가' : userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '전문가';
+            // stylist 분기가 없어서 헤메 계정이 '전문가' 로 뭉뚱그려졌다.
+            const roleLabel = userRoles.includes('artist') ? '작가'
+              : userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더'
+              : userRoles.includes('stylist') ? '헤어메이크업'
+              : '전문가';
             setError(`이 계정은 ${roleLabel} 전용 계정입니다. 고객으로도 이용하시려면 상단의 '고객 회원가입' 버튼으로 고객 역할을 추가해주세요.`);
           } else {
             sessionStorage.setItem('phosnap_active_role', 'customer');
@@ -575,7 +579,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="hello@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -643,7 +647,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
         <form onSubmit={handleExistingLogin}>
           <div style={{
             padding: '20px 24px', marginBottom: 20,
-            border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.04)',
+            border: '1px solid var(--gold-border)', background: 'var(--accent-a04)',
             borderRadius: 4,
           }}>
             <div style={{ fontSize: 13, color: 'var(--text)', fontFamily: 'var(--font-serif)', marginBottom: 10 }}>
@@ -664,7 +668,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             />
           </div>
 
-          {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, whiteSpace: 'pre-line' }}>{error}</p>}
+          {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, whiteSpace: 'pre-line' }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button
@@ -703,7 +707,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="text" placeholder="홍길동"
                 value={name} onChange={e => setName(e.target.value)} required
                 style={realNameError ? { borderColor: '#e85d5d', background: 'rgba(232,93,93,0.04)' } : {}} />
-              {realNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 4 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>}
+              {realNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>}
             </div>
             {/* 생년월일 */}
             <div className="form-group">
@@ -711,7 +715,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="date" value={birthdate}
                 onChange={e => setBirthdate(e.target.value)} required
                 max={new Date().toISOString().split('T')[0]}
-                style={{ colorScheme: 'dark' }} />
+                style={{ colorScheme: 'light' }} />
             </div>
           </>
         )}
@@ -732,19 +736,19 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             {/* 비밀번호 조건 표시 */}
             {password && (
               <div style={{ fontSize: 11, marginTop: -8, marginBottom: 10, lineHeight: 1.8, color: 'var(--muted)' }}>
-                <span style={{ color: pwChecks.length ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.length ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.length ? '✓' : '✗'} 8~16자
                 </span>{' · '}
-                <span style={{ color: pwChecks.upper ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.upper ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.upper ? '✓' : '✗'} 대문자
                 </span>{' · '}
-                <span style={{ color: pwChecks.lower ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.lower ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.lower ? '✓' : '✗'} 소문자
                 </span>{' · '}
-                <span style={{ color: pwChecks.digit ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.digit ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.digit ? '✓' : '✗'} 숫자
                 </span>{' · '}
-                <span style={{ color: pwChecks.special ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.special ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.special ? '✓' : '✗'} 특수문자
                 </span>
               </div>
@@ -755,10 +759,10 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="password" placeholder="비밀번호를 한번 더 입력해주세요"
                 value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} required minLength={8} />
               {pwConfirm && password !== pwConfirm && (
-                <p style={{ fontSize: 11, color: '#e85d5d', marginTop: 4 }}>비밀번호가 일치하지 않습니다.</p>
+                <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>비밀번호가 일치하지 않습니다.</p>
               )}
               {pwConfirm && password === pwConfirm && (
-                <p style={{ fontSize: 11, color: '#22c55e', marginTop: 4 }}>비밀번호가 일치합니다.</p>
+                <p style={{ fontSize: 11, color: 'var(--success)', marginTop: 4 }}>비밀번호가 일치합니다.</p>
               )}
             </div>
             {/* 핸드폰 인증 */}
@@ -776,7 +780,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
           </div>
         )}
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"
@@ -802,7 +806,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
                 color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
                 letterSpacing: '0.06em', transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
             >
               {t('auth.customerSignup') || '고객 회원가입 →'}
@@ -851,21 +855,34 @@ const ArtistAuth = ({ onClose }) => {
           ? t('auth.loginInvalid')
           : err.message);
       } else {
-        // ── 역할 검증: 작가 역할 확인 ──
+        // ── 역할 검증 ──
+        //
+        // 이 탭은 '📷 작가 · 💄 H&M' 이다. 그런데 artist 만 통과시키고
+        // 있었다. 헤메(stylist) 계정은 자기 탭에서 로그인이 막혔고,
+        // 라벨 계산에도 stylist 분기가 없어서 '고객' 으로 떨어져
+        // "이 계정은 고객 전용 계정입니다" 라는 엉뚱한 말을 들었다.
+        // 헤메는 서비스에 들어올 방법이 아예 없었다.
         const userRoles = await getUserRolesWithFallback(data.user.id);
-        const hasArtist = userRoles.includes('artist');
-        if (!hasArtist) {
+        const hasArtist  = userRoles.includes('artist');
+        const hasStylist = userRoles.includes('stylist');
+        if (!hasArtist && !hasStylist) {
           const { getSupabase } = await import('../lib/supabase');
           const sb = await getSupabase();
           if (sb) await sb.auth.signOut();
           sessionStorage.removeItem('phosnap_active_role');
-          const roleLabel = userRoles.includes('vendor') || userRoles.includes('dress_vendor') ? '벤더' : '고객';
-          setError(`이 계정은 ${roleLabel} 전용 계정입니다. 작가로도 활동하시려면 '작가 회원가입' 페이지에서 작가 역할을 추가해주세요.`);
+          const roleLabel = userRoles.includes('vendor') || userRoles.includes('dress_vendor')
+            ? '벤더'
+            : userRoles.includes('customer') ? '고객' : '';
+          setError(roleLabel
+            ? `이 계정은 ${roleLabel} 전용 계정입니다. 작가·헤어메이크업으로도 활동하시려면 '작가 회원가입' 페이지에서 역할을 추가해주세요.`
+            : `이 계정에는 작가·헤어메이크업 역할이 없습니다. '작가 회원가입' 페이지에서 역할을 추가해주세요.`);
         } else {
-          sessionStorage.setItem('phosnap_active_role', 'artist');
-          try { await switchUserRole('artist'); } catch (e) { /* Silently ignore role switch errors */ }
+          // 둘 다 있으면 작가를 우선한다 (대시보드가 더 넓다).
+          const role = hasArtist ? 'artist' : 'stylist';
+          sessionStorage.setItem('phosnap_active_role', role);
+          try { await switchUserRole(role); } catch (e) { /* Silently ignore role switch errors */ }
           onClose();
-          navigate('/artist/dashboard');
+          navigate(role === 'artist' ? '/artist/dashboard' : '/stylist/dashboard');
         }
       }
     } catch (e) {
@@ -917,7 +934,7 @@ const ArtistAuth = ({ onClose }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="artist@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -992,7 +1009,7 @@ const ArtistAuth = ({ onClose }) => {
             value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
         </div>
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"
@@ -1016,7 +1033,7 @@ const ArtistAuth = ({ onClose }) => {
             color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.06em', transition: 'all 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
         >
           {t('auth.artistSignupLink') || '작가 회원가입 →'}
@@ -1120,7 +1137,7 @@ const VendorAuth = ({ onClose }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="vendor@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -1195,7 +1212,7 @@ const VendorAuth = ({ onClose }) => {
             value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
         </div>
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"
@@ -1219,7 +1236,7 @@ const VendorAuth = ({ onClose }) => {
             color: 'var(--gold)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.06em', transition: 'all 0.2s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = '#0B0B0B'; }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--gold)'; e.currentTarget.style.color = 'var(--text)'; }}
           onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--gold)'; }}
         >
           벤더 회원가입 →
@@ -1285,7 +1302,7 @@ const AuthModal = ({ mode, onClose }) => {
               style={{
                 padding: '10px 0', fontSize: 11, border: 'none', cursor: 'pointer',
                 background: userType === id ? 'var(--gold)' : 'transparent',
-                color:      userType === id ? '#0B0B0B'    : 'var(--muted)',
+                color:      userType === id ? 'var(--on-accent)'    : 'var(--muted)',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
                 transition: 'all 0.2s',
               }}>

@@ -200,18 +200,18 @@ const MOCK_COUPONS = [
 
 // ─── Style Constants ──────────────────────────────────────────────────
 const sectionStyle = {
-  background: 'rgba(255,255,255,0.02)',
+  background: 'var(--ink-a03)',
   border: '1px solid var(--border)',
   padding: '1.5rem',
   marginBottom: '1.5rem',
 };
 const inputStyle = {
   width: '100%', padding: '0.65rem 0.85rem',
-  border: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)',
+  border: '1px solid var(--border)', background: 'var(--ink-a03)',
   color: 'var(--text)', fontFamily: 'var(--font-serif)', fontSize: '0.9rem',
 };
 const goldBtn = {
-  padding: '0.6rem 1.5rem', background: 'var(--gold)', color: '#0B0B0B',
+  padding: '0.6rem 1.5rem', background: 'var(--gold)', color: 'var(--on-accent)',
   border: 'none', fontFamily: 'var(--font-serif)', fontSize: '0.85rem',
   cursor: 'pointer', letterSpacing: '0.06em', transition: 'opacity 0.3s',
 };
@@ -221,9 +221,11 @@ const ghostBtn = {
   fontFamily: 'var(--font-serif)', fontSize: '0.8rem', cursor: 'pointer',
   transition: 'all 0.2s',
 };
+// 상태 색. 예전 값은 Tailwind 400 계열(어두운 화면용)이라 종이 바탕에서
+// '확정' 이 1.7:1 이었다 — 글자가 거의 안 보였다.
 const statusColors = {
-  confirmed: '#4ade80', pending: 'var(--gold)', completed: '#60a5fa',
-  cancelled: '#ef4444', refunded: '#f97316', delivered: '#a78bfa',
+  confirmed: 'var(--success)', pending: 'var(--gold)', completed: 'var(--info)',
+  cancelled: 'var(--danger)', refunded: 'var(--warning)', delivered: 'var(--grade-4)',
 };
 
 // ─── Component ────────────────────────────────────────────────────────
@@ -377,7 +379,7 @@ const CustomerDashboard = () => {
           {/* Sidebar tabs */}
           <div style={{
             width: 200, flexShrink: 0,
-            border: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)',
+            border: '1px solid var(--border)', background: 'var(--ink-a03)',
             position: 'sticky', top: 80,
           }}>
             {tabs.map(tab => {
@@ -504,14 +506,14 @@ const CustomerDashboard = () => {
                       .map(b => {
                         const pl = b.pipeline;
                         const pipelineStatusColor = (s) => ({
-                          confirmed: '#4ade80', reserved: 'var(--gold)', pending: '#f59e0b',
+                          confirmed: 'var(--success)', reserved: 'var(--gold)', pending: 'var(--warning)',
                           completed: '#60a5fa', returned: '#a78bfa', cancelled: '#ef4444',
                         }[s] || 'var(--muted)');
 
                         const PipelineCard = ({ icon, title, data, type }) => {
                           if (!data) return (
                             <div style={{
-                              padding: '1rem', background: 'rgba(255,255,255,0.02)',
+                              padding: '1rem', background: 'var(--ink-a03)',
                               border: '1px dashed var(--border)', display: 'flex',
                               alignItems: 'center', justifyContent: 'center', minHeight: 80,
                             }}>
@@ -522,7 +524,7 @@ const CustomerDashboard = () => {
                           );
                           return (
                             <div style={{
-                              padding: '1rem', background: 'rgba(255,255,255,0.02)',
+                              padding: '1rem', background: 'var(--ink-a03)',
                               border: '1px solid var(--border)',
                               borderLeft: `3px solid ${pipelineStatusColor(data.status)}`,
                             }}>
@@ -607,7 +609,7 @@ const CustomerDashboard = () => {
                                     <div key={idx} style={{
                                       width: 20, height: 4, borderRadius: 2,
                                       background: !item ? 'var(--border)' :
-                                        (item.status === 'confirmed' || item.status === 'reserved') ? '#4ade80' :
+                                        (item.status === 'confirmed' || item.status === 'reserved') ? 'var(--success)' :
                                         item.status === 'pending' ? 'var(--gold)' : 'var(--border)',
                                     }} />
                                   ))}
@@ -656,7 +658,7 @@ const CustomerDashboard = () => {
                               <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.9rem', color: 'var(--text)' }}>{b.artistName}</span>
                               <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: '0.75rem' }}>{b.date}</span>
                             </div>
-                            <span style={{ fontSize: '0.72rem', color: '#60a5fa', fontFamily: 'var(--font-serif)' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--info)', fontFamily: 'var(--font-serif)' }}>
                               {m.statuses.completed} ✓
                             </span>
                           </div>
@@ -689,7 +691,7 @@ const CustomerDashboard = () => {
                               fontSize: '0.78rem', padding: '0.4rem 0.8rem',
                               borderColor: isActive ? 'var(--gold)' : 'var(--border)',
                               color: isActive ? 'var(--gold)' : 'var(--muted)',
-                              background: isActive ? 'rgba(232,160,32,0.08)' : 'transparent',
+                              background: isActive ? 'var(--accent-a08)' : 'transparent',
                             }}
                           >
                             {f === 'all' ? (lang === 'ko' ? '전체' : 'All') : m.statuses[f]}
@@ -789,7 +791,7 @@ const CustomerDashboard = () => {
                                       return (
                                         <div key={item.key} style={{
                                           padding: '0.85rem', border: '1px solid var(--border)',
-                                          background: 'rgba(255,255,255,0.02)', display: 'flex', gap: '0.7rem', alignItems: 'center',
+                                          background: 'var(--ink-a03)', display: 'flex', gap: '0.7rem', alignItems: 'center',
                                         }}>
                                           {item.data.img ? (
                                             <img src={item.data.img} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border)' }} />
@@ -891,7 +893,7 @@ const CustomerDashboard = () => {
                               </div>
                               <button
                                 onClick={() => removeFav(p.id)}
-                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: '#ef4444', borderColor: '#ef444440' }}
+                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}
                               >
                                 {m.removeFav}
                               </button>
@@ -945,7 +947,7 @@ const CustomerDashboard = () => {
                         </p>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}>{m.editReview}</button>
-                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: '#ef4444', borderColor: '#ef444440' }}>{m.deleteReview}</button>
+                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}>{m.deleteReview}</button>
                         </div>
                       </div>
                     ))}
@@ -994,7 +996,7 @@ const CustomerDashboard = () => {
                             </div>
                             <div style={{
                               fontSize: '0.7rem', marginTop: 4,
-                              color: isAvailable ? '#4ade80' : isExpired ? '#ef4444' : 'var(--muted)',
+                              color: isAvailable ? 'var(--success)' : isExpired ? 'var(--danger)' : 'var(--muted)',
                             }}>
                               {isAvailable ? m.couponAvailable : isExpired ? m.couponExpired : m.couponUsed}
                             </div>
@@ -1060,7 +1062,7 @@ const CustomerDashboard = () => {
                       {m.saveProfile}
                     </button>
                     {profileSaved && (
-                      <span style={{ fontSize: '0.82rem', color: '#4ade80' }}>✓ {m.profileSaved}</span>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--success)' }}>✓ {m.profileSaved}</span>
                     )}
                   </div>
                 </div>
@@ -1127,7 +1129,7 @@ const CustomerDashboard = () => {
                       );
                     })()}
                     {pwMsg && (
-                      <div style={{ fontSize: '0.8rem', color: pwMsg.includes('✓') ? '#4ade80' : '#ef4444', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '0.8rem', color: pwMsg.includes('✓') ? 'var(--success)' : 'var(--danger)', lineHeight: 1.5 }}>
                         {pwMsg}
                       </div>
                     )}
@@ -1229,7 +1231,7 @@ const CustomerDashboard = () => {
                   borderColor: '#ef444430',
                   background: 'rgba(239,68,68,0.03)',
                 }}>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: '#ef4444', margin: '0 0 0.5rem' }}>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: 'var(--danger)', margin: '0 0 0.5rem' }}>
                     ⚠️ {m.deleteAccount}
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0 0 1rem', lineHeight: 1.6 }}>
@@ -1238,13 +1240,13 @@ const CustomerDashboard = () => {
                   {!showDeleteConfirm ? (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      style={{ ...ghostBtn, color: '#ef4444', borderColor: '#ef444440' }}
+                      style={{ ...ghostBtn, color: 'var(--danger)', borderColor: '#ef444440' }}
                     >
                       {m.deleteAccountBtn}
                     </button>
                   ) : (
                     <div style={{ padding: '1.2rem', background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444440' }}>
-                      <div style={{ fontSize: '0.95rem', color: '#ef4444', fontFamily: 'var(--font-serif)', fontWeight: 600, marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.95rem', color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontWeight: 600, marginBottom: '0.6rem' }}>
                         {lang === 'ko' ? '정말 탈퇴하시겠습니까?' : lang === 'ja' ? '本当に退会しますか？' : 'Are you sure you want to delete your account?'}
                       </div>
                       <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0 0 0.5rem', lineHeight: 1.7 }}>
@@ -1265,7 +1267,7 @@ const CustomerDashboard = () => {
                             await logout();
                             navigate('/');
                           }}
-                          style={{ ...goldBtn, background: '#ef4444', color: '#fff' }}
+                          style={{ ...goldBtn, background: 'var(--danger)', color: '#fff' }}
                         >
                           {lang === 'ko' ? '탈퇴 확정' : 'Confirm Delete'}
                         </button>

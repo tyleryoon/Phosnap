@@ -111,7 +111,7 @@ export default function ArtistInsights({ artistData = {} }) {
             label: lang === 'ko' ? '프로필 조회' : lang === 'en' ? 'Profile Views' : lang === 'ja' ? 'プロフィール表示' : '资料浏览',
             value: fmt(mockMetrics.profileViews),
             sub: lang === 'ko' ? '이번달' : lang === 'en' ? 'This month' : lang === 'ja' ? '今月' : '本月',
-            color: '#60a5fa',
+            color: 'var(--info)',
           },
           {
             label: lang === 'ko' ? '찜 수' : lang === 'en' ? 'Favorites' : lang === 'ja' ? 'お気に入り' : '收藏',
@@ -123,7 +123,7 @@ export default function ArtistInsights({ artistData = {} }) {
             label: lang === 'ko' ? '예약 전환율' : lang === 'en' ? 'Booking Rate' : lang === 'ja' ? '予約転換率' : '预订转化率',
             value: `${mockMetrics.conversionRate}%`,
             sub: lang === 'ko' ? '조회 대비' : lang === 'en' ? 'vs Views' : lang === 'ja' ? 'ビュー対比' : '对比浏览',
-            color: '#22c55e',
+            color: 'var(--success)',
           },
           {
             label: lang === 'ko' ? '평균 응답시간' : lang === 'en' ? 'Avg Response' : lang === 'ja' ? '平均応答時間' : '平均响应',
@@ -303,7 +303,7 @@ export default function ArtistInsights({ artistData = {} }) {
                   <div style={{
                     height: '100%',
                     width: `${kw.pct}%`,
-                    background: `linear-gradient(90deg, var(--gold), rgba(232,160,32,0.5))`,
+                    background: `linear-gradient(90deg, var(--gold), var(--accent-a50))`,
                     borderRadius: 2,
                   }} />
                 </div>
@@ -331,8 +331,8 @@ export default function ArtistInsights({ artistData = {} }) {
 
         {/* Main ranking */}
         <div style={{
-          background: 'rgba(232,160,32,0.08)',
-          border: '1px solid rgba(232,160,32,0.2)',
+          background: 'var(--accent-a08)',
+          border: '1px solid var(--accent-a20)',
           padding: '20px',
           marginBottom: 24,
           borderRadius: 2,
@@ -405,8 +405,8 @@ export default function ArtistInsights({ artistData = {} }) {
             const content = getTipContent(tip);
             return (
               <div key={idx} style={{
-                border: '1px solid rgba(232,160,32,0.3)',
-                background: 'rgba(232,160,32,0.05)',
+                border: '1px solid var(--accent-a30)',
+                background: 'var(--accent-a05)',
                 padding: '20px',
                 borderRadius: 2,
                 display: 'flex',
@@ -438,7 +438,7 @@ export default function ArtistInsights({ artistData = {} }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   paddingTop: 12,
-                  borderTop: '1px solid rgba(232,160,32,0.2)',
+                  borderTop: '1px solid var(--accent-a20)',
                 }}>
                   <span style={{ fontSize: 10, color: 'var(--muted)', textTransform: 'uppercase' }}>
                     {lang === 'en' ? 'Expected Impact' : lang === 'ja' ? '期待される効果' : lang === 'zh' ? '预期影响' : '기대 효과'}

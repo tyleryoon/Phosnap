@@ -83,14 +83,13 @@ const AdminDashboard = () => {
       inactive: '비활성',
       toggle: '전환',
       registrationDate: '등록일',
-      artist: '작가',
-      vendor: '벤더',
-      stylist: '헤메',
-      dress_vendor: '벤더',
-      customer: '고객',
-      admin: '관리자',
+      role_artist: '작가',
+      role_vendor: '벤더',
+      role_stylist: '헤메',
+      role_dress_vendor: '벤더',
+      role_customer: '고객',
+      role_admin: '관리자',
       approved: '승인됨',
-      pending: '대기 중',
       rejected: '거절됨',
       changeStatus: '상태 변경',
       noData: '데이터가 없습니다.',
@@ -138,14 +137,13 @@ const AdminDashboard = () => {
       inactive: 'Inactive',
       toggle: 'Toggle',
       registrationDate: 'Registration Date',
-      artist: 'Artist',
-      vendor: 'Vendor',
-      stylist: 'Hair & Makeup',
-      dress_vendor: 'Vendor',
-      customer: 'Customer',
-      admin: 'Admin',
+      role_artist: 'Artist',
+      role_vendor: 'Vendor',
+      role_stylist: 'Hair & Makeup',
+      role_dress_vendor: 'Vendor',
+      role_customer: 'Customer',
+      role_admin: 'Admin',
       approved: 'Approved',
-      pending: 'Pending',
       rejected: 'Rejected',
       changeStatus: 'Change Status',
       noData: 'No data available.',
@@ -193,14 +191,13 @@ const AdminDashboard = () => {
       inactive: '非アクティブ',
       toggle: 'トグル',
       registrationDate: '登録日',
-      artist: 'アーティスト',
-      vendor: 'ベンダー',
-      stylist: 'ヘアメイク',
-      dress_vendor: 'ベンダー',
-      customer: 'カスタマー',
-      admin: '管理者',
+      role_artist: 'アーティスト',
+      role_vendor: 'ベンダー',
+      role_stylist: 'ヘアメイク',
+      role_dress_vendor: 'ベンダー',
+      role_customer: 'カスタマー',
+      role_admin: '管理者',
       approved: '承認済み',
-      pending: '保留中',
       rejected: '却下',
       changeStatus: 'ステータス変更',
       noData: 'データはありません。',
@@ -248,14 +245,13 @@ const AdminDashboard = () => {
       inactive: '非活跃',
       toggle: '切换',
       registrationDate: '注册日期',
-      artist: '艺术家',
-      vendor: '供应商',
-      stylist: '化妆造型',
-      dress_vendor: '供应商',
-      customer: '客户',
-      admin: '管理员',
+      role_artist: '艺术家',
+      role_vendor: '供应商',
+      role_stylist: '化妆造型',
+      role_dress_vendor: '供应商',
+      role_customer: '客户',
+      role_admin: '管理员',
       approved: '已批准',
-      pending: '待处理',
       rejected: '已拒绝',
       changeStatus: '更改状态',
       noData: '没有可用数据。',
@@ -268,6 +264,35 @@ const AdminDashboard = () => {
   // Get language code (fallback to 'ko')
   const langCode = 'ko'; // Would be replaced with actual language context in real app
   const translate = (key) => i18n[langCode]?.[key] || i18n['ko'][key] || key;
+
+  /**
+   * 최근 6개월 예약 건수.
+   *
+   * 예전엔 [120, 145, 132, 178, 156, 142] 와 Oct~Mar 라벨이 코드에
+   * 박혀 있었다. 관리자가 '최근 6개월 예약 현황' 이라고 믿고 보는
+   * 그래프가 지어낸 숫자였고, 달 이름도 오늘과 무관하게 고정이었다.
+   * 경영 판단에 쓰이는 화면에서 이건 통계가 아니라 그림이다.
+   */
+  const monthlyBookings = useMemo(() => {
+    const now = new Date();
+    const buckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({ y: d.getFullYear(), m: d.getMonth(), count: 0 });
+    }
+    for (const b of bookings) {
+      if (!b?.created_at) continue;
+      const d = new Date(b.created_at);
+      if (Number.isNaN(d.getTime())) continue;
+      const hit = buckets.find(x => x.y === d.getFullYear() && x.m === d.getMonth());
+      if (hit) hit.count += 1;
+    }
+    const names = langCode === 'ko'
+      ? ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+      : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return buckets.map(x => ({ label: names[x.m], count: x.count }));
+  }, [bookings, langCode]);
+  const monthlyMax = Math.max(1, ...monthlyBookings.map(x => x.count));
 
   // ─── 데이터 로드 ────────────────────────────────────────────────────
   //
@@ -454,9 +479,9 @@ const AdminDashboard = () => {
       }}>
         {[
           { label: translate('totalBookings'), value: stats.totalBookings, color: 'var(--gold)' },
-          { label: translate('monthlyRevenue'), value: `₩${fmt(stats.monthlyRevenue)}`, color: '#22c55e' },
-          { label: translate('newSignups'), value: stats.newSignups, color: '#60a5fa' },
-          { label: translate('activePhotographers'), value: stats.activePhotographers, color: '#f472b6' },
+          { label: translate('monthlyRevenue'), value: `₩${fmt(stats.monthlyRevenue)}`, color: 'var(--success)' },
+          { label: translate('newSignups'), value: stats.newSignups, color: 'var(--info)' },
+          { label: translate('activePhotographers'), value: stats.activePhotographers, color: 'var(--grade-4)' },
         ].map((card, i) => (
           <div key={i} style={{
             border: '1px solid var(--border)',
@@ -515,14 +540,24 @@ const AdminDashboard = () => {
           height: 200,
           marginBottom: 16,
         }}>
-          {[120, 145, 132, 178, 156, 142].map((val, i) => (
+          {monthlyBookings.map((mb, i) => (
             <div key={i} style={{
               flex: 1,
-              height: `${(val / 180) * 100}%`,
-              background: 'var(--gold)',
+              /* 0건인 달도 자리를 차지해야 '그 달은 0' 임이 보인다.
+                 막대가 아예 없으면 데이터가 빠진 것과 구분이 안 된다. */
+              height: `${Math.max(2, (mb.count / monthlyMax) * 100)}%`,
+              background: mb.count === 0 ? 'var(--ink-a10)' : 'var(--gold)',
               borderRadius: '2px 2px 0 0',
               position: 'relative',
             }}>
+              <div style={{
+                position: 'absolute', top: -18, left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: 10, color: 'var(--text)',
+                fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+              }}>
+                {mb.count}
+              </div>
               <div style={{
                 position: 'absolute',
                 bottom: -20,
@@ -533,7 +568,7 @@ const AdminDashboard = () => {
                 fontFamily: 'var(--font-serif)',
                 whiteSpace: 'nowrap',
               }}>
-                {['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'][i]}
+                {mb.label}
               </div>
             </div>
           ))}
@@ -582,7 +617,7 @@ const AdminDashboard = () => {
                   fontSize: 9,
                   padding: '2px 8px',
                   background: b.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(96, 165, 250, 0.1)',
-                  color: b.status === 'confirmed' ? '#22c55e' : '#60a5fa',
+                  color: b.status === 'confirmed' ? 'var(--success)' : 'var(--info)',
                   borderRadius: 2,
                 }}>
                   {translate(b.status)}
@@ -626,10 +661,10 @@ const AdminDashboard = () => {
                   fontSize: 9,
                   padding: '2px 8px',
                   background: 'rgba(96, 165, 250, 0.1)',
-                  color: '#60a5fa',
+                  color: 'var(--info)',
                   borderRadius: 2,
                 }}>
-                  {translate(p.role)}
+                  {translate(`role_${p.role}`)}
                 </span>
               </div>
             ))}
@@ -728,9 +763,11 @@ const AdminDashboard = () => {
                       background: b.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' :
                                   b.status === 'completed' ? 'rgba(99, 102, 241, 0.1)' :
                                   b.status === 'pending' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                      color: b.status === 'confirmed' ? '#22c55e' :
-                             b.status === 'completed' ? '#6366f1' :
-                             b.status === 'pending' ? '#f97316' : '#6b7280',
+                      /* 상태 색이 Tailwind 400~500 계열이라 연한 배경 위에서
+                         2.9~4.5:1 였다. 종이 바탕용 토큰으로 맞춘다. */
+                      color: b.status === 'confirmed' ? 'var(--success)' :
+                             b.status === 'completed' ? 'var(--info)' :
+                             b.status === 'pending' ? 'var(--warning)' : 'var(--muted)',
                     }}>
                       {translate(b.status)}
                     </span>
@@ -786,7 +823,7 @@ const AdminDashboard = () => {
     if (!on) return null;
     const unknown = count === null || count === undefined;
     const empty   = !unknown && count === 0;
-    const color  = empty ? '#f56565' : unknown ? 'var(--muted)' : 'var(--gold)';
+    const color  = empty ? 'var(--danger)' : unknown ? 'var(--muted)' : 'var(--gold)';
     return (
       <span
         title={empty ? '보유로 표시했지만 등록된 항목이 0개입니다 — 고객 화면에서 빈칸으로 보입니다'
@@ -884,9 +921,9 @@ const AdminDashboard = () => {
                       fontSize: 10,
                       borderRadius: 2,
                       background: 'rgba(96, 165, 250, 0.1)',
-                      color: '#60a5fa',
+                      color: 'var(--info)',
                     }}>
-                      {translate(p.role)}
+                      {translate(`role_${p.role}`)}
                     </span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 12, minWidth: 170 }}>
@@ -937,7 +974,7 @@ const AdminDashboard = () => {
                         <span style={{
                           display: 'inline-block', padding: '3px 10px', fontSize: 10, borderRadius: 2,
                           border: `1px solid ${cap.active ? 'rgba(34,197,94,0.4)' : 'var(--border)'}`,
-                          color: cap.active ? '#4ade80' : 'var(--muted)',
+                          color: cap.active ? 'var(--success)' : 'var(--muted)',
                         }}>
                           {cap.active ? '고객에게 노출' : '비노출'}
                         </span>
@@ -1014,7 +1051,7 @@ const AdminDashboard = () => {
         {loadError && !['approvals','inquiries'].includes(activeTab) && (
           <div style={{
             border: '1px solid #e85d5d', background: 'var(--bg2)',
-            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#e85d5d',
+            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: 'var(--danger)',
           }}>
             데이터를 불러오지 못했습니다 — {loadError}
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>

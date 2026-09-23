@@ -178,9 +178,9 @@ const fmt = (n) => Number(n).toLocaleString();
 // ─── 저장 상태 배지 ──────────────────────────────────────────────────
 const SaveBadge = ({ status, message }) => {
   const colors = {
-    saving:      { bg: 'rgba(232,160,32,0.1)',  border: 'rgba(232,160,32,0.3)', color: 'var(--gold)' },
-    saved:       { bg: 'rgba(72,187,120,0.1)',  border: 'rgba(72,187,120,0.4)', color: '#48bb78'     },
-    error:       { bg: 'rgba(245,101,101,0.1)', border: 'rgba(245,101,101,0.4)',color: '#f56565'     },
+    saving:      { bg: 'var(--accent-a10)',  border: 'var(--accent-a30)', color: 'var(--gold)' },
+    saved:       { bg: 'rgba(72,187,120,0.1)',  border: 'rgba(72,187,120,0.4)', color: 'var(--success)'     },
+    error:       { bg: 'rgba(245,101,101,0.1)', border: 'rgba(245,101,101,0.4)',color: 'var(--danger)'     },
     duplicate:   { bg: 'rgba(160,160,160,0.1)', border: 'rgba(160,160,160,0.3)',color: 'var(--muted)'},
   };
   const icons = { saving: '⟳', saved: '✓', error: '!', duplicate: '✓' };
@@ -432,11 +432,11 @@ const BookingSuccess = () => {
         <div style={{ textAlign: 'center', marginBottom: failed ? 32 : 48 }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
-            background: failed ? 'rgba(245,101,101,0.12)' : 'rgba(232,160,32,0.12)',
+            background: failed ? 'rgba(245,101,101,0.12)' : 'var(--accent-a12)',
             border: `1px solid ${failed ? 'rgba(245,101,101,0.45)' : 'var(--gold-border)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 24px', fontSize: 28,
-            color: failed ? '#f56565' : 'inherit',
+            color: failed ? 'var(--danger)' : 'inherit',
           }}>
             {failed ? '!' : '✓'}
           </div>
@@ -479,7 +479,7 @@ const BookingSuccess = () => {
               style={{
                 padding: '10px 20px', fontSize: 12, letterSpacing: '0.1em',
                 border: '1px solid rgba(245,101,101,0.5)', background: 'transparent',
-                color: '#f56565', cursor: 'pointer', fontFamily: 'var(--font-serif)',
+                color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
               }}
             >
               {c.inquiryBtn}
@@ -491,7 +491,7 @@ const BookingSuccess = () => {
             헤메·의상·장소 값을 받았는데 그 항목이 예약에 안 들어간 경우 */}
         {partial && !failed && (
           <div style={{
-            border: '1px solid rgba(232,160,32,0.45)', background: 'rgba(232,160,32,0.07)',
+            border: '1px solid var(--accent-a50)', background: 'var(--accent-a06)',
             padding: '20px 24px', marginBottom: 24, fontSize: 12,
             color: 'var(--text)', lineHeight: 1.8,
           }}>
@@ -518,7 +518,7 @@ const BookingSuccess = () => {
             ].filter(item => item.value).map(item => (
               <div key={item.label} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '14px 0', borderBottom: '1px solid rgba(232,160,32,0.15)',
+                padding: '14px 0', borderBottom: '1px solid var(--accent-a15)',
               }}>
                 <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                   {item.label}
@@ -601,7 +601,7 @@ const BookingSuccess = () => {
             letterSpacing: '0.05em',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(232,160,32,0.1)';
+            e.currentTarget.style.background = 'var(--accent-a10)';
           }}
           onMouseLeave={e => {
             e.currentTarget.style.background = 'transparent';

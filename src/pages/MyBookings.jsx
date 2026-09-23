@@ -175,10 +175,10 @@ const CONTENT = {
 };
 
 const STATUS_STYLE = {
-  confirmed: { bg: 'rgba(72,187,120,0.12)',  color: '#48bb78',      border: 'rgba(72,187,120,0.35)' },
-  pending:   { bg: 'rgba(232,160,32,0.12)',  color: 'var(--gold)',  border: 'rgba(232,160,32,0.35)' },
+  confirmed: { bg: 'rgba(72,187,120,0.12)',  color: 'var(--success)',      border: 'rgba(72,187,120,0.35)' },
+  pending:   { bg: 'var(--accent-a12)',  color: 'var(--gold)',  border: 'var(--accent-a30)' },
   completed: { bg: 'rgba(160,174,192,0.1)',  color: 'var(--muted)', border: 'rgba(160,174,192,0.25)' },
-  cancelled: { bg: 'rgba(245,101,101,0.1)',  color: '#f56565',      border: 'rgba(245,101,101,0.3)' },
+  cancelled: { bg: 'rgba(245,101,101,0.1)',  color: 'var(--danger)',      border: 'rgba(245,101,101,0.3)' },
   refunded:  { bg: 'rgba(160,174,192,0.1)',  color: 'var(--muted)', border: 'rgba(160,174,192,0.25)' },
   delivered: { bg: 'rgba(66,153,225,0.12)', color: '#4299e1', border: 'rgba(66,153,225,0.35)' },
 };
@@ -584,7 +584,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
       </div>
 
       {/* 세부 정보 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px', paddingTop: 16, borderTop: '1px solid rgba(232,160,32,0.15)', marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px', paddingTop: 16, borderTop: '1px solid var(--accent-a15)', marginBottom: 20 }}>
         {[
           { label: c.amount,  value: booking.total_price ? `₩${fmt(booking.total_price)}` : '' },
           { label: c.paidAt,  value: booking.paid_at ? fmtDatetime(booking.paid_at) : '' },
@@ -605,8 +605,8 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
       {/* 일정 변경 요청 메모 표시 */}
       {booking.reschedule_request && (
         <div style={{
-          padding: '10px 14px', background: 'rgba(232,160,32,0.07)',
-          border: '1px solid rgba(232,160,32,0.2)', marginBottom: 16,
+          padding: '10px 14px', background: 'var(--accent-a06)',
+          border: '1px solid var(--accent-a20)', marginBottom: 16,
           fontSize: 12, color: 'var(--muted)', lineHeight: 1.6,
         }}>
           📋 변경 요청: {booking.reschedule_request}
@@ -669,7 +669,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
           )}
           {hasPkgReview && (
             <span style={{
-              fontSize: 11, padding: '8px 16px', color: '#48bb78',
+              fontSize: 11, padding: '8px 16px', color: 'var(--success)',
               border: '1px solid rgba(72,187,120,0.3)', background: 'rgba(72,187,120,0.08)',
               display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
@@ -687,7 +687,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
           )}
           {hasArtistReview && (
             <span style={{
-              fontSize: 11, padding: '8px 16px', color: '#48bb78',
+              fontSize: 11, padding: '8px 16px', color: 'var(--success)',
               border: '1px solid rgba(72,187,120,0.3)', background: 'rgba(72,187,120,0.08)',
               display: 'inline-flex', alignItems: 'center', gap: 4,
             }}>
@@ -706,7 +706,7 @@ const BookingCard = ({ booking, c, onCancel, onReschedule, onPkgReview, onArtist
           {canCancel && (
             <button
               className="btn-ghost"
-              style={{ fontSize: 11, padding: '8px 16px', color: '#f56565', borderColor: 'rgba(245,101,101,0.4)' }}
+              style={{ fontSize: 11, padding: '8px 16px', color: 'var(--danger)', borderColor: 'rgba(245,101,101,0.4)' }}
               onClick={() => onCancel(booking)}
             >
               {c.cancelBtn}
@@ -888,7 +888,7 @@ const MyBookings = () => {
           <div style={{
             padding: '12px 18px', marginBottom: 20,
             background: 'rgba(72,187,120,0.08)', border: '1px solid rgba(72,187,120,0.3)',
-            color: '#48bb78', fontSize: 13,
+            color: 'var(--success)', fontSize: 13,
           }}>
             {cancelMsg || rescheduleMsg || pkgReviewMsg || artistReviewMsg}
           </div>
@@ -910,7 +910,7 @@ const MyBookings = () => {
 
         {/* 에러 */}
         {error && !loading && (
-          <div style={{ padding: '14px 18px', background: 'rgba(245,101,101,0.08)', border: '1px solid rgba(245,101,101,0.3)', color: '#f56565', fontSize: 13, marginBottom: 24 }}>
+          <div style={{ padding: '14px 18px', background: 'rgba(245,101,101,0.08)', border: '1px solid rgba(245,101,101,0.3)', color: 'var(--danger)', fontSize: 13, marginBottom: 24 }}>
             {error}
           </div>
         )}

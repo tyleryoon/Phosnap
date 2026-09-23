@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Footer from './Footer';
 import SEO from './SEO';
 import ProviderDetailModal from './ProviderDetailModal';
-import { findProviders, KIND_LABEL } from '../lib/findProviders';
+import { findProviders } from '../lib/findProviders';
 import { getActiveLocations } from '../lib/supabase';
+import { locationLabel } from '../data/locationUtils';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // ─── 찾기 페이지의 껍데기 ──────────────────────────────────────────────
 //
@@ -31,9 +33,9 @@ const inputStyle = {
 
 // ── 카드 ──────────────────────────────────────────────────────────────
 
-const Card = ({ item, onOpen }) => {
+const Card = ({ item, onOpen, t }) => {
   const [err, setErr] = useState(false);
-  const sub = subtitleOf(item);
+  const sub = subtitleOf(item, t);
   const price = fmt(item.price);
 
   return (
@@ -59,14 +61,14 @@ const Card = ({ item, onOpen }) => {
             alignItems: 'center', justifyContent: 'center',
             color: 'var(--muted)', fontSize: 11,
           }}>
-            사진 없음
+            {t('find.noPhoto')}
           </div>
         )}
       </div>
       <div style={{ padding: '12px 14px 14px' }}>
         <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>
           {/* 이름이 없으면 비워두지 않고 그렇다고 말한다. 빈칸은 버그를 숨긴다. */}
-          {item.name || <span style={{ color: 'var(--muted)' }}>이름 없음</span>}
+          {item.name || <span style={{ color: 'var(--muted)' }}>{t('find.noName')}</span>}
         </div>
         {sub && (
           <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 5, lineHeight: 1.5 }}>
@@ -75,8 +77,9 @@ const Card = ({ item, onOpen }) => {
         )}
         {price && (
           <div style={{ fontSize: 12, color: 'var(--gold)', marginTop: 8 }}>
-            {price}{item.byPerson ? ' 부터' : ''}
-            {item.priceUnit ? ` / ${item.priceUnit}` : ''}
+            {price}{item.byPerson ? ` ${t('find.from')}` : ''}
+            {/* per_session 같은 DB 값을 그대로 내보내고 있었다. 사람 말로 바꾼다. */}
+            {item.priceUnit ? ` / ${enumLabel(t, 'priceUnit', item.priceUnit)}` : ''}
           </div>
         )}
       </div>
@@ -84,27 +87,44 @@ const Card = ({ item, onOpen }) => {
   );
 };
 
-const subtitleOf = (it) => {
+/**
+ * enum 값을 사람 말로.
+ *
+ * t() 는 키를 못 찾으면 키 문자열을 그대로 돌려준다. 그대로 쓰면
+ * 화면에 'dressCat.suit' 가 찍힌다 — 실제로 그랬다. DB 에 새 카테고리가
+ * 하나 생길 때마다 고객 화면이 깨지는 구조는 쓸 수 없다.
+ * 번역이 없으면 최소한 원래 값을 보여준다. 키는 절대 내보내지 않는다.
+ */
+const enumLabel = (t, ns, v) => {
+  if (!v) return null;
+  const out = t(`${ns}.${v}`);
+  return out === `${ns}.${v}` ? v : out;
+};
+
+// 카드 아래 한 줄 설명.
+// 예전에는 DB 의 원시 enum 을 그대로 흘려보냈다 — 고객 화면에
+// 'hanbok', 'suit', 'per_session' 이 그대로 찍혔다. 전부 번역을 거친다.
+const subtitleOf = (it, t) => {
   const bits = [];
   if (it.kind === 'photographer') {
-    const t = { photographer: '사진', videographer: '영상', both: '사진+영상' }[it.artistType];
-    if (t) bits.push(t);
-    if (it.hmkSelf) bits.push('자체 헤메');
-    if (it.dressSelf) bits.push('자체 의상');
+    if (it.artistType) bits.push(enumLabel(t, 'artistType', it.artistType));
+    if (it.hmkSelf) bits.push(t('findSub.hmkSelf'));
+    if (it.dressSelf) bits.push(t('findSub.dressSelf'));
   }
   if (it.kind === 'stylist') {
     if (it.specialty) bits.push(it.specialty);
     if (it.serviceName) bits.push(it.serviceName);
-    else if (it.serviceCount) bits.push(`시술 ${it.serviceCount}종`);
-    if (it.dressSelf) bits.push('의상 보유');
+    else if (it.serviceCount) bits.push(t('findSub.serviceCount').replace('{n}', it.serviceCount));
+    if (it.dressSelf) bits.push(t('findSub.dressOwned'));
   }
   if (it.kind === 'dress') {
-    if (it.category) bits.push(it.category);
+    if (it.category) bits.push(enumLabel(t, 'dressCat', it.category));
     if (it.sizes?.length) bits.push(it.sizes.join(', '));
     if (it.vendorName) bits.push(it.vendorName);
   }
   if (it.kind === 'venue') {
-    if (it.capacity) bits.push(`${it.capacity}명`);
+    if (it.category) bits.push(enumLabel(t, 'venueCat', it.category));
+    if (it.capacity) bits.push(t('findSub.capacity').replace('{n}', it.capacity));
     if (it.vendorName) bits.push(it.vendorName);
   }
   return bits.join(' · ') || null;
@@ -113,6 +133,7 @@ const subtitleOf = (it) => {
 // ── 본체 ──────────────────────────────────────────────────────────────
 
 const FindShell = ({ kind, title, description, emptyHint }) => {
+  const { lang, t } = useLanguage();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -180,7 +201,9 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
-      <SEO title={`${title} | Phosnap`} description={description} />
+      {/* SEO 가 ' | Phosnap' 을 알아서 붙인다. 여기서 또 붙이면
+          탭 제목이 '촬영 장소 찾기 | Phosnap | Phosnap' 이 된다. */}
+      <SEO title={title} description={description} />
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '130px 24px 60px' }}>
         <h1 style={{
@@ -198,32 +221,35 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
           marginTop: 26, paddingBottom: 22, borderBottom: '1px solid var(--border)',
         }}>
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>지역</span>
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.region')}</span>
             <select value={locationId} onChange={e => setLocationId(e.target.value)} style={inputStyle}>
-              <option value="">전 지역</option>
-              {locations.map(l => (
-                <option key={l.id} value={l.id}>{l.name_ko || l.name || l.id}</option>
+              <option value="">{t('find.allRegions')}</option>
+              {/* getActiveLocations 는 id 문자열 배열을 준다.
+                  예전엔 여기서 l.id / l.name_ko 를 읽어 전부 undefined 가 됐고,
+                  지역 선택이 통째로 죽어 있었다. (React key 경고의 정체) */}
+              {locations.map(id => (
+                <option key={id} value={id}>{locationLabel(id, lang)}</option>
               ))}
             </select>
           </label>
 
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>날짜 (선택)</span>
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.dateOpt')}</span>
             <input type="date" value={date} min={todayStr}
               onChange={e => setDate(e.target.value)} style={inputStyle} />
           </label>
 
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>시작 시각 (선택)</span>
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.timeOpt')}</span>
             <input type="time" value={time} step={1800}
               onChange={e => setTime(e.target.value)} style={inputStyle} />
           </label>
 
           {date && time && (
             <label style={{ display: 'grid', gap: 5 }}>
-              <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>촬영 길이</span>
+              <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.duration')}</span>
               <select value={hours} onChange={e => setHours(Number(e.target.value))} style={inputStyle}>
-                {HOURS.map(h => <option key={h} value={h}>{h}시간</option>)}
+                {HOURS.map(h => <option key={h} value={h}>{h}{t('find.hourSuffix')}</option>)}
               </select>
             </label>
           )}
@@ -234,7 +260,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
                 ...inputStyle, cursor: 'pointer', color: 'var(--muted)',
                 background: 'transparent',
               }}>
-              날짜 지우기
+              {t('find.clearDate')}
             </button>
           )}
         </div>
@@ -243,7 +269,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
             말 안 하면 "걸러졌겠거니" 하고 믿어버린다. */}
         {dateBroken && (
           <div style={{ marginTop: 16, fontSize: 12, color: 'var(--gold)' }}>
-            시작 시각까지 넣어야 그 시간에 가능한 곳만 걸러집니다. 지금은 전체를 보고 있습니다.
+            {t('find.dateOnlyWarn')}
           </div>
         )}
 
@@ -253,19 +279,19 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
           alignItems: 'center', gap: 12, flexWrap: 'wrap',
         }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            {loading ? '불러오는 중…'
+            {loading ? t('find.loading')
               : error ? ''
               : anchored
-                ? `${date} ${time} 부터 ${hours}시간 · 가능한 ${KIND_LABEL[kind]} ${items.length}`
-                : `전체 ${items.length}`}
+                ? `${date} ${time} ${t('find.anchorFrom')} ${hours}${t('find.hourSuffix')} · ${items.length}`
+                : `${t('find.total')} ${items.length}`}
           </div>
           {!loading && !error && items.length > 0 && (
             <button type="button" onClick={goBook} style={{
               padding: '10px 18px', border: 'none', background: 'var(--gold)',
-              color: '#0B0B0B', fontSize: 12, letterSpacing: '0.1em',
+              color: 'var(--on-accent)', fontSize: 12, letterSpacing: '0.1em',
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              예약 구성하기
+              {t('find.goBook')}
             </button>
           )}
         </div>
@@ -276,7 +302,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
             marginTop: 28, padding: '22px 24px', border: '1px solid var(--gold-border)',
             background: 'var(--bg2)',
           }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>목록을 불러오지 못했습니다</div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>{t('find.loadFail')}</div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
               {error}
             </div>
@@ -285,7 +311,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
               background: 'transparent', color: 'var(--gold)', fontSize: 12,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              다시 시도
+              {t('find.retry')}
             </button>
           </div>
         ) : loading ? null : items.length === 0 ? (
@@ -293,9 +319,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
             marginTop: 40, textAlign: 'center', color: 'var(--muted)',
             fontSize: 13, lineHeight: 1.8,
           }}>
-            {anchored
-              ? `그 시간에 가능한 ${KIND_LABEL[kind]}가 없습니다. 날짜나 시각을 바꿔보세요.`
-              : (emptyHint || `등록된 ${KIND_LABEL[kind]}가 없습니다.`)}
+            {anchored ? t('find.emptyAnchored') : (emptyHint || t('find.empty'))}
           </div>
         ) : (
           <div style={{
@@ -303,7 +327,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           }}>
             {items.map(it => (
-              <Card key={`${it.kind}-${it.id}`} item={it} onOpen={() => setDetail(it)} />
+              <Card key={`${it.kind}-${it.id}`} item={it} onOpen={() => setDetail(it)} t={t} />
             ))}
           </div>
         )}
@@ -317,10 +341,10 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
         >
           <button type="button" onClick={goBook} style={{
             padding: '11px 20px', border: 'none', background: 'var(--gold)',
-            color: '#0B0B0B', fontSize: 12, letterSpacing: '0.1em',
+            color: 'var(--on-accent)', fontSize: 12, letterSpacing: '0.1em',
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
-            이 조건으로 예약 구성하기
+            {t('find.bookThis')}
           </button>
         </ProviderDetailModal>
       )}

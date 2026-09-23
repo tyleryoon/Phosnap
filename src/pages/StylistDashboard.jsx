@@ -359,13 +359,13 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
   const getStatusColor = status => {
     switch (status) {
       case 'confirmed':
-        return '#48bb78';
+        return 'var(--success)';
       case 'pending':
         return 'var(--gold)';
       case 'completed':
         return 'var(--muted)';
       case 'cancelled':
-        return '#f56565';
+        return 'var(--danger)';
       default:
         return 'var(--muted)';
     }
@@ -433,7 +433,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
                       {item.item_name}
                       {item.item_option ? ` · ${item.item_option}` : ''}
                     </div>
-                    <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginTop: 2 }}>
                       {/* 의상은 하루 단위 점유라 시각 대신 대여 표시 */}
                       {item.timing === 'day' ? t.dressRentalDay : fmtSlot(item)}
                     </div>
@@ -622,7 +622,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             활동 지역과 연락처는 프로필 정보를 그대로 사용합니다.
           </p>
           {errorMsg && (
-            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
               {errorMsg}
             </div>
           )}
@@ -655,7 +655,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
           {errorMsg}
         </div>
       )}
@@ -678,7 +678,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
                 </div>
                 <button
                   onClick={() => handleDelete(it.id)}
-                  style={{ fontSize: 12, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
+                  style={{ fontSize: 12, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
                 >
                   {t.delete}
                 </button>
@@ -726,7 +726,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             </div>
           </div>
           {errorMsg && (
-            <div style={{ marginTop: 14, color: '#e85d5d', fontSize: 13 }}>{errorMsg}</div>
+            <div style={{ marginTop: 14, color: 'var(--danger)', fontSize: 13 }}>{errorMsg}</div>
           )}
           <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
             <button
@@ -905,7 +905,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
           {errorMsg}
         </div>
       )}
@@ -956,8 +956,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                   display: 'inline-block',
                   padding: '4px 10px',
                   fontSize: 12,
-                  color: 'rgba(232,160,32,0.9)',
-                  border: '1px solid rgba(232,160,32,0.35)',
+                  color: 'var(--accent-a50)',
+                  border: '1px solid var(--accent-a30)',
                 }}>
                   {service.timing === 'during' ? t.timingDuring
                     : service.timing === 'full' ? t.timingFull
@@ -988,8 +988,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                   style={{
                     padding: '8px 16px',
                     background: 'transparent',
-                    color: '#f56565',
-                    border: '1px solid #f56565',
+                    color: 'var(--danger)',
+                    border: '1px solid var(--danger)',
                     cursor: 'pointer',
                     fontFamily: 'var(--font-body)',
                     fontWeight: 600,
@@ -1090,8 +1090,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                         textAlign: 'left',
                         padding: 12,
                         cursor: 'pointer',
-                        background: on ? 'rgba(232,160,32,0.10)' : 'var(--bg)',
-                        border: `1px solid ${on ? 'rgba(232,160,32,0.8)' : 'var(--border)'}`,
+                        background: on ? 'var(--accent-a10)' : 'var(--bg)',
+                        border: `1px solid ${on ? 'var(--accent-a50)' : 'var(--border)'}`,
                         color: 'var(--text)',
                         fontFamily: 'var(--font-body)',
                       }}
@@ -1194,7 +1194,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                       {lang === 'ko' ? '시술' : 'Service'} {hm(slot.start)} ~ {hm(slot.end)}
                     </div>
                     {!same && (
-                      <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.9)', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginTop: 4 }}>
                         {lang === 'ko' ? '일정 점유' : 'Blocked'} {hm(slot.busyStart)} ~ {hm(slot.busyEnd)}
                       </div>
                     )}
@@ -1574,10 +1574,10 @@ const ProfileEditTab = ({ t, stylistId }) => {
           {saving ? t.saving : t.saveProfile}
         </button>
         {saveStatus === 'saved' && (
-          <div style={{ color: '#48bb78', fontSize: 14, fontWeight: 500 }}>{t.saved}</div>
+          <div style={{ color: 'var(--success)', fontSize: 14, fontWeight: 500 }}>{t.saved}</div>
         )}
         {saveStatus === 'error' && (
-          <div style={{ color: '#f56565', fontSize: 14, fontWeight: 500 }}>{t.error}</div>
+          <div style={{ color: 'var(--danger)', fontSize: 14, fontWeight: 500 }}>{t.error}</div>
         )}
       </div>
     </div>
@@ -1645,7 +1645,7 @@ export default function StylistDashboard() {
 
   if (stylistLoading) {
     return (
-      <div style={{ paddingTop: 100, color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
+      <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '100px 40px 40px' }}>
         …
       </div>
     );
@@ -1653,7 +1653,7 @@ export default function StylistDashboard() {
 
   if (!stylistId) {
     return (
-      <div style={{ paddingTop: 100, color: 'var(--muted)', textAlign: 'center', padding: 40 }}>
+      <div style={{ color: 'var(--muted)', textAlign: 'center', padding: '100px 40px 40px' }}>
         {t.error}
       </div>
     );
@@ -1900,7 +1900,7 @@ export default function StylistDashboard() {
                                       key={tag}
                                       style={{
                                         fontSize: 10,
-                                        backgroundColor: 'rgba(232,160,32,0.1)',
+                                        backgroundColor: 'var(--accent-a10)',
                                         color: 'var(--gold)',
                                         padding: '2px 8px',
                                         borderRadius: '2px',

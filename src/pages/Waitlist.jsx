@@ -42,7 +42,7 @@ const ROLES = [
     icon: '🏪',
     labelKey: 'waitlist.sectionVendor',
     descKey: 'waitlist.vendorDesc',
-    color: '#4caf50',
+    color: 'var(--success)',
   },
 ];
 
@@ -252,7 +252,7 @@ const Waitlist = () => {
               {/* 이름 (필수) */}
               <div className="form-group">
                 <label className="form-label">
-                  {lang === 'ko' ? '이름' : lang === 'ja' ? '名前' : 'Name'} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                  {lang === 'ko' ? '이름' : lang === 'ja' ? '名前' : 'Name'} <span style={{ color: 'var(--danger)', fontSize: 11 }}>*</span>
                 </label>
                 <input
                   className="form-input"
@@ -267,7 +267,7 @@ const Waitlist = () => {
               {/* 이메일 */}
               <div className="form-group">
                 <label className="form-label">
-                  {t('waitlist.emailLabel')} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                  {t('waitlist.emailLabel')} <span style={{ color: 'var(--danger)', fontSize: 11 }}>*</span>
                 </label>
                 <input
                   className="form-input"
@@ -282,7 +282,7 @@ const Waitlist = () => {
               {/* 핸드폰 번호 + 인증 */}
               <div className="form-group">
                 <label className="form-label">
-                  {lang === 'ko' ? '핸드폰 번호' : lang === 'ja' ? '電話番号' : 'Phone Number'} <span style={{ color: '#e85d5d', fontSize: 11 }}>*</span>
+                  {lang === 'ko' ? '핸드폰 번호' : lang === 'ja' ? '電話番号' : 'Phone Number'} <span style={{ color: 'var(--danger)', fontSize: 11 }}>*</span>
                 </label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -312,7 +312,7 @@ const Waitlist = () => {
                     </button>
                   )}
                   {phoneVerified && (
-                    <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', color: '#22c55e', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', color: 'var(--success)', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                       ✓ {lang === 'ko' ? '인증완료' : lang === 'ja' ? '認証済み' : 'Verified'}
                     </div>
                   )}
@@ -346,7 +346,7 @@ const Waitlist = () => {
                 )}
 
                 {verifyError && (
-                  <p style={{ color: '#e85d5d', fontSize: 11, marginTop: 6 }}>{verifyError}</p>
+                  <p style={{ color: 'var(--danger)', fontSize: 11, marginTop: 6 }}>{verifyError}</p>
                 )}
               </div>
 
@@ -354,7 +354,7 @@ const Waitlist = () => {
               <div className="form-group">
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {t('waitlist.instagramLabel')}
-                  <span style={{ fontSize: 10, color: 'var(--gold)', background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)', padding: '2px 8px', borderRadius: 0, letterSpacing: '0.08em' }}>
+                  <span style={{ fontSize: 10, color: 'var(--gold)', background: 'var(--accent-a10)', border: '1px solid var(--gold-border)', padding: '2px 8px', borderRadius: 0, letterSpacing: '0.08em' }}>
                     DM
                   </span>
                 </label>
@@ -378,7 +378,7 @@ const Waitlist = () => {
               </div>
 
               {error && (
-                <p style={{ color: '#e85d5d', fontSize: 13, marginTop: 8, letterSpacing: '0.02em' }}>
+                <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 8, letterSpacing: '0.02em' }}>
                   {error}
                 </p>
               )}

@@ -1,23 +1,127 @@
-/* ─── Phosnap Design Tokens ───────────────────────────────────────────── */
+/* ─── Phosnap Design Tokens ─────────────────────────────────────────────
+ *
+ * 방향: 에디토리얼 미니멀 (warm monochrome + 단일 브론즈 액센트)
+ *
+ * 왜 바꿨나
+ *   이전 팔레트는 #0B0B0B 다크 + #E8A020 골드였다. 2023년 이후 생성형
+ *   도구가 '고급스럽게' 를 주문받으면 거의 항상 내놓는 조합이고, 실제로
+ *   그렇게 보였다. 사진 플랫폼에서 화면이 화려하면 사진이 죽는다.
+ *   종이에 가까운 웜 오프화이트로 뒤집고, 색은 사진에서만 나오게 한다.
+ *
+ * 구조
+ *   색은 전부 여기서 정한다. 화면 코드에 rgba(232,160,32,0.08) 같은
+ *   값을 다시 심지 않는다 — 그게 지난번에 팔레트를 못 바꾸게 만든 이유다.
+ *   알파가 필요하면 아래 계단(--accent-a08 등)을 쓴다.
+ */
 :root {
-  /* Color palette */
-  --bg:           #0B0B0B;
-  --bg2:          #111111;
-  --bg3:          #181818;
-  --text:         #F2F2F2;
-  --muted:        #999999;
-  --gold:         #E8A020;
-  --gold-dim:     rgba(232, 160, 32, 0.15);
-  --gold-border:  rgba(232, 160, 32, 0.3);
-  --border:       rgba(242, 242, 242, 0.08);
-  --border-hover: rgba(242, 242, 242, 0.18);
+  /* ── 바탕과 표면 ──────────────────────────────────────────────────── */
+  --bg:           #FBFAF7;   /* 종이 */
+  --bg2:          #FFFFFF;   /* 카드 */
+  --bg3:          #F3F1EC;   /* 가라앉은 면 (이미지 자리, 빈 상태) */
 
-  /* Typography */
-  --font-serif:   'Cinzel', serif;
-  --font-elegant: 'Cinzel', serif;
-  --font-sans:    'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+  /* ── 글자 ─────────────────────────────────────────────────────────── */
+  --text:         #1A1917;   /* 순검정이 아니다 — 종이 위에서 순검정은 딱딱하다 */
+  --muted:        #6E6A63;
+  /* 가장 옅은 보조 글자. #A29D94 였는데 종이색 위에서 대비가 2.6:1 이라
+     푸터 저작권·컬럼 제목이 읽히지 않았다. 4.5:1 을 넘기게 내렸다. */
+  --faint:        #76716A;
 
-  /* Spacing scale */
+  /* ── 액센트: 브론즈 ────────────────────────────────────────────────
+   * 기존 골드(#E8A020)는 채도가 너무 높아 어디에 놓아도 튀었다.
+   * 채도를 내리고 웜 그레이 쪽으로 당겼다. 흰 바탕 대비 약 5:1 —
+   * 본문 크기 글자에도 쓸 수 있다. */
+  --gold:         #8C6D46;   /* 이름은 유지한다. 848곳이 이 이름을 쓴다 */
+  --accent:       #8C6D46;
+  --accent-deep:  #6F5636;
+  --on-accent:    #FFFFFF;   /* 액센트 위에 올라가는 글자 */
+
+  /* 잉크 CTA — 가장 강한 행동 하나에만 쓴다 */
+  --ink:          #1A1917;
+  --on-ink:       #FBFAF7;
+
+  /* ── 알파 계단 ─────────────────────────────────────────────────────
+   * 예전엔 rgba(232,160,32,0.06) 같은 값이 화면 코드에 299군데 박혀
+   * 있었다. 팔레트를 바꾸려면 그 299곳을 전부 찾아야 했다.
+   * 이제 이름으로 부른다. */
+  --accent-a03:   rgba(140, 109, 70, 0.03);
+  --accent-a04:   rgba(140, 109, 70, 0.04);
+  --accent-a05:   rgba(140, 109, 70, 0.05);
+  --accent-a06:   rgba(140, 109, 70, 0.06);
+  --accent-a08:   rgba(140, 109, 70, 0.08);
+  --accent-a10:   rgba(140, 109, 70, 0.10);
+  --accent-a12:   rgba(140, 109, 70, 0.12);
+  --accent-a15:   rgba(140, 109, 70, 0.15);
+  --accent-a20:   rgba(140, 109, 70, 0.20);
+  --accent-a30:   rgba(140, 109, 70, 0.30);
+  --accent-a50:   rgba(140, 109, 70, 0.50);
+  --gold-dim:     var(--accent-a10);
+  --gold-border:  var(--accent-a30);
+
+  /* 잉크 알파 — 예전의 rgba(255,255,255,X)·rgba(242,242,242,X) 자리.
+     다크에서는 '밝게', 라이트에서는 '어둡게' 가 같은 뜻이다. */
+  --ink-a03:      rgba(26, 25, 23, 0.03);
+  --ink-a04:      rgba(26, 25, 23, 0.04);
+  --ink-a05:      rgba(26, 25, 23, 0.05);
+  --ink-a06:      rgba(26, 25, 23, 0.06);
+  --ink-a08:      rgba(26, 25, 23, 0.08);
+  --ink-a10:      rgba(26, 25, 23, 0.10);
+  --ink-a12:      rgba(26, 25, 23, 0.12);
+  --ink-a15:      rgba(26, 25, 23, 0.15);
+  --ink-a20:      rgba(26, 25, 23, 0.20);
+  --ink-a35:      rgba(26, 25, 23, 0.35);
+  --ink-a45:      rgba(26, 25, 23, 0.45);
+  --ink-a55:      rgba(26, 25, 23, 0.55);
+  --ink-a82:      rgba(26, 25, 23, 0.82);
+  --ink-a25:      rgba(26, 25, 23, 0.25);
+  --ink-a30:      rgba(26, 25, 23, 0.30);
+  --ink-a60:      rgba(26, 25, 23, 0.60);
+  --ink-a70:      rgba(26, 25, 23, 0.70);
+  --ink-a75:      rgba(26, 25, 23, 0.75);
+  --ink-a80:      rgba(26, 25, 23, 0.80);
+  --ink-a85:      rgba(26, 25, 23, 0.85);
+  --ink-a88:      rgba(26, 25, 23, 0.88);
+  --ink-a90:      rgba(26, 25, 23, 0.90);
+  --ink-a95:      rgba(26, 25, 23, 0.95);
+
+  --border:       rgba(26, 25, 23, 0.10);
+  --border-hover: rgba(26, 25, 23, 0.22);
+
+  /* 의미색 — 채도를 낮춰 팔레트에 섞이게 한다 */
+  --success:      #4F7A52;
+  --warning:      #9A7433;
+  --danger:       #A6453F;
+  --info:         #46688C;
+
+  /* 등급 배지 — 예전 값은 Tailwind 400 계열(밝은 화면용)이라
+     종이 바탕에서 대비가 2.4:1 이었다. 글씨가 뭉개져 보였다. */
+  --grade-1:      #78736B;   /* Rising */
+  --grade-2:      #46688C;   /* Established */
+  --grade-3:      var(--accent);  /* Premier */
+  --grade-4:      #9A4A72;   /* Elite */
+
+  /* ── 타이포 ───────────────────────────────────────────────────────
+   * 디스플레이는 Instrument Serif — 대비가 크고 글자폭이 좁아 큰 크기에서
+   * 살아난다. 한글은 이 서체에 없으므로 바로 뒤에 Pretendard 가 받는다.
+   * 본문은 Pretendard. 한국어 화면에서 Noto Sans KR 보다 자간·획이 정돈돼 있다. */
+  --font-serif:   'Instrument Serif', 'Pretendard Variable', Pretendard, 'Noto Serif KR', serif;
+  --font-elegant: var(--font-serif);
+  --font-sans:    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+                  'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+  --font-body:    var(--font-sans);
+  /* 숫자·코드 — 가격과 일정은 자리수가 흔들리면 안 읽힌다 */
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* 타입 스케일 — 페이지마다 제각각이던 clamp 를 한 벌로 모았다 */
+  --t-display:    clamp(2.75rem, 6.5vw, 5.5rem);
+  --t-h1:         clamp(2rem, 4.2vw, 3.25rem);
+  --t-h2:         clamp(1.5rem, 2.8vw, 2.25rem);
+  --t-h3:         clamp(1.125rem, 1.8vw, 1.5rem);
+  --t-body:       1rem;
+  --t-sm:         0.875rem;
+  --t-xs:         0.8125rem;
+  --t-label:      0.6875rem;
+
+  /* ── 간격 ─────────────────────────────────────────────────────────── */
   --space-1:  4px;
   --space-2:  8px;
   --space-3:  12px;
@@ -30,29 +134,39 @@
   --space-16: 64px;
   --space-20: 80px;
   --space-24: 96px;
+  --space-32: 128px;
 
-  /* Border radius — soft rounding for modern, approachable feel */
-  --radius: 6px;
-  --radius-sm: 4px;
-  --radius-lg: 12px;
+  /* 본문 한 줄은 65자 언저리에서 가장 잘 읽힌다 */
+  --measure:  38rem;
+  --container: 1200px;
+
+  /* ── 모서리 ───────────────────────────────────────────────────────
+   * 바깥은 부드럽게, 안쪽은 또렷하게. 전부 같은 값이면 만든 티가 난다. */
+  --radius-sm:   3px;
+  --radius:      6px;
+  --radius-lg:   12px;
+  --radius-xl:   18px;
   --radius-full: 9999px;
 
-  /* Transitions */
-  --ease: 0.3s ease;
-  --ease-fast: 0.2s ease;
-  --ease-slow: 0.5s ease;
+  /* ── 움직임 ───────────────────────────────────────────────────────
+   * ease-in-out 은 기계처럼 움직인다. 무게가 실린 곡선을 쓴다. */
+  --ease-out:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-soft: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease:      0.28s var(--ease-out);
+  --ease-fast: 0.18s var(--ease-out);
+  --ease-slow: 0.6s var(--ease-out);
 
-  /* Shadows — clean depth system */
-  --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.25);
-  --shadow-lg:    0 8px 24px rgba(0, 0, 0, 0.3);
-  --shadow-gold:  0 0 20px rgba(232, 160, 32, 0.1);
-  /* Legacy aliases (for backward compatibility) */
-  --glow-gold:    0 0 20px rgba(232, 160, 32, 0.1);
-  --glow-gold-lg: 0 0 30px rgba(232, 160, 32, 0.12);
+  /* ── 그림자 ───────────────────────────────────────────────────────
+   * 순검정 그림자는 종이 위에서 더럽게 보인다. 바탕의 웜 톤을 섞는다. */
+  --shadow-sm:   0 1px 2px rgba(58, 48, 34, 0.05);
+  --shadow-md:   0 2px 8px rgba(58, 48, 34, 0.06);
+  --shadow-lg:   0 12px 32px rgba(58, 48, 34, 0.09);
+  --shadow-gold: 0 2px 12px rgba(140, 109, 70, 0.14);
+  --glow-gold:    var(--shadow-gold);
+  --glow-gold-lg: var(--shadow-lg);
   --text-glow:    none;
 
-  /* Z-index layers */
+  /* ── 겹침 순서 ────────────────────────────────────────────────────── */
   --z-base:    1;
   --z-card:    10;
   --z-nav:     100;

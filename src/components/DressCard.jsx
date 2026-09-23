@@ -86,7 +86,7 @@ const DressCard = ({
         style={{
           display: 'flex', gap: 14, padding: '12px 14px',
           border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`,
-          background: selected ? 'rgba(232,160,32,0.06)' : 'var(--bg2)',
+          background: selected ? 'var(--accent-a06)' : 'var(--bg2)',
           cursor: 'pointer', transition: 'all 0.2s',
           position: 'relative',
           borderRadius: 'var(--radius)',
@@ -98,7 +98,7 @@ const DressCard = ({
             borderRadius: '50%', background: 'var(--gold)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ color: '#0B0B0B', fontSize: 10, fontWeight: 700 }}>✓</span>
+            <span style={{ color: 'var(--on-accent)', fontSize: 10, fontWeight: 700 }}>✓</span>
           </div>
         )}
         {currentImg && (
@@ -141,7 +141,7 @@ const DressCard = ({
   return (
     <div style={{
       border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`,
-      background: selected ? 'rgba(232,160,32,0.04)' : 'var(--bg2)',
+      background: selected ? 'var(--accent-a04)' : 'var(--bg2)',
       transition: 'all 0.3s', position: 'relative',
       overflow: 'hidden',
       borderRadius: 'var(--radius)',
@@ -173,7 +173,7 @@ const DressCard = ({
                   onClick={(e) => { e.stopPropagation(); setImgIdx(i); }}
                   style={{
                     width: 8, height: 8, borderRadius: '50%', border: 'none',
-                    background: i === imgIdx ? 'var(--gold)' : 'rgba(255,255,255,0.5)',
+                    background: i === imgIdx ? 'var(--gold)' : 'var(--ink-a50)',
                     cursor: 'pointer', padding: 0,
                   }}
                 />
@@ -184,7 +184,7 @@ const DressCard = ({
           {/* 카테고리 뱃지 */}
           <div style={{
             position: 'absolute', top: 12, left: 12,
-            background: 'rgba(11,11,11,0.8)', backdropFilter: 'blur(8px)',
+            background: 'var(--ink-a80)', backdropFilter: 'blur(8px)',
             padding: '4px 10px', fontSize: 9, fontFamily: 'var(--font-serif)',
             letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--gold)',
           }}>
@@ -195,7 +195,7 @@ const DressCard = ({
           {dress.color && (
             <div style={{
               position: 'absolute', top: 12, right: 12,
-              background: 'rgba(11,11,11,0.8)', backdropFilter: 'blur(8px)',
+              background: 'var(--ink-a80)', backdropFilter: 'blur(8px)',
               padding: '4px 10px', fontSize: 9, color: 'var(--muted)',
               letterSpacing: '0.1em',
             }}>
@@ -268,7 +268,7 @@ const DressCard = ({
               marginTop: 14, width: '100%', padding: '11px 0',
               border: selected ? 'none' : '1px solid var(--gold)',
               background: selected ? 'var(--gold)' : 'transparent',
-              color: selected ? '#0B0B0B' : 'var(--gold)',
+              color: selected ? 'var(--on-accent)' : 'var(--gold)',
               fontFamily: 'var(--font-serif)', fontSize: 12,
               letterSpacing: '0.08em', cursor: 'pointer',
               transition: 'all 0.2s',

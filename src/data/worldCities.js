@@ -116,8 +116,6 @@ export const WORLD_COUNTRIES = {
   IT: { flag: '🇮🇹', ko: '이탈리아', en: 'Italy' },
   ES: { flag: '🇪🇸', ko: '스페인', en: 'Spain' },
   PT: { flag: '🇵🇹', ko: '포르투갈', en: 'Portugal' },
-  GR: { flag: '🇬🇷', ko: '그리스', en: 'Greece' },
-  HR: { flag: '🇭🇷', ko: '크로아티아', en: 'Croatia' },
   MT: { flag: '🇲🇹', ko: '몰타', en: 'Malta' },
   CY: { flag: '🇨🇾', ko: '키프로스', en: 'Cyprus' },
 

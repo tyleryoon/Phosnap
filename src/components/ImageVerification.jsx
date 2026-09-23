@@ -401,7 +401,7 @@ const ImageVerification = ({ images, onVerified }) => {
             borderTop: '1px solid var(--border)',
           }}
         >
-          <span style={{ color: '#4CAF50' }}>{verifiedCount}</span>
+          <span style={{ color: 'var(--success)' }}>{verifiedCount}</span>
           {labels.summary[lang]}
           <span style={{ color: '#FFC107' }}>{duplicateCount}</span>
           {labels.summaryTotal[lang]}

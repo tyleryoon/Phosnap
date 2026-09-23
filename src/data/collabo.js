@@ -100,8 +100,8 @@ export const COLLABO_ROLES = {
 // ── 제의 상태 ──
 export const PROPOSAL_STATUS = {
   pending:  { ko: '대기 중', en: 'Pending',  color: 'var(--gold)' },
-  accepted: { ko: '수락',   en: 'Accepted', color: '#22c55e' },
-  rejected: { ko: '거절',   en: 'Rejected', color: '#e85d5d' },
+  accepted: { ko: '수락',   en: 'Accepted', color: 'var(--success)' },
+  rejected: { ko: '거절',   en: 'Rejected', color: 'var(--danger)' },
   expired:  { ko: '만료',   en: 'Expired',  color: 'var(--muted)' },
 };
 

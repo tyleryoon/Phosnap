@@ -147,7 +147,7 @@ const PointsCard = ({ userId }) => {
       }}>
         <div style={{
           padding: '16px',
-          background: 'rgba(232,160,32,0.06)',
+          background: 'var(--accent-a06)',
           border: '1px solid var(--gold-border)',
           borderRadius: 6,
         }}>
@@ -174,7 +174,7 @@ const PointsCard = ({ userId }) => {
 
         <div style={{
           padding: '16px',
-          background: 'rgba(232,160,32,0.06)',
+          background: 'var(--accent-a06)',
           border: '1px solid var(--gold-border)',
           borderRadius: 6,
         }}>
@@ -203,7 +203,7 @@ const PointsCard = ({ userId }) => {
       {/* Tier Badge */}
       <div style={{
         padding: '16px',
-        background: 'rgba(232,160,32,0.08)',
+        background: 'var(--accent-a08)',
         border: '1px solid var(--gold-border)',
         borderRadius: 6,
         marginBottom: 24,
@@ -233,7 +233,7 @@ const PointsCard = ({ userId }) => {
           <div style={{ marginBottom: 12 }}>
             <div style={{
               height: 6,
-              background: 'rgba(255,255,255,0.1)',
+              background: 'var(--ink-a10)',
               borderRadius: 3,
               overflow: 'hidden',
               marginBottom: 8,
@@ -241,7 +241,7 @@ const PointsCard = ({ userId }) => {
               <div style={{
                 height: '100%',
                 width: `${progressPercent}%`,
-                background: 'linear-gradient(90deg, var(--gold), rgba(232,160,32,0.6))',
+                background: 'linear-gradient(90deg, var(--gold), var(--accent-a50))',
                 transition: 'width 0.3s ease-out',
               }} />
             </div>
@@ -297,7 +297,7 @@ const PointsCard = ({ userId }) => {
       {tier.nextTier && (
         <div style={{
           padding: '12px 14px',
-          background: 'rgba(232,160,32,0.03)',
+          background: 'var(--accent-a03)',
           border: '1px solid var(--border)',
           borderRadius: 6,
           fontSize: 11,

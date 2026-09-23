@@ -74,7 +74,8 @@
     "tabPortfolio": "Portfolio",
     "tabPackages": "패키지",
     "tabReviews": "후기",
-    "tabSchedule": "일정"
+    "tabSchedule": "일정",
+    "anonymous": "익명"
   },
   "photographers": {
     "sub": "장르, 언어, 지역으로 나에게 맞는 작가를 찾아보세요.",
@@ -88,7 +89,8 @@
     "sub": "국내 · 해외 어디서나 Phosnap 작가와 함께할 수 있습니다.",
     "domestic": "국내",
     "overseas": "해외",
-    "artistCount": "명의 작가"
+    "artistCount": "명의 작가",
+    "noLocations": "등록된 지역이 아직 없습니다"
   },
   "home": {
     "discoverTitle": "전 세계 어디서든",
@@ -326,7 +328,8 @@
     "supportTerms": "이용약관",
     "supportPrivacy": "개인정보처리방침",
     "supportInstagram": "Instagram · @phosnap.kr",
-    "copyright": "© 2026 Phosnap. All rights reserved."
+    "copyright": "© 2026 Phosnap. All rights reserved.",
+    "supportInquiry": "1:1 문의"
   },
   "badge": {
     "verified": "인증",
@@ -492,5 +495,63 @@
       "line5": "끝까지 프로답게 — 좋은 매너와 긍정적인 태도로 고객과 함께해주세요.",
       "confirm": "확인했습니다. 해외 지역을 추가합니다."
     }
+  },
+  "find": {
+    "region": "지역",
+    "allRegions": "전 지역",
+    "dateOpt": "날짜 (선택)",
+    "timeOpt": "시작 시각 (선택)",
+    "duration": "촬영 길이",
+    "hourSuffix": "시간",
+    "clearDate": "날짜 지우기",
+    "dateOnlyWarn": "시작 시각까지 넣어야 그 시간에 가능한 곳만 걸러집니다. 지금은 전체를 보고 있습니다.",
+    "loading": "불러오는 중…",
+    "total": "전체",
+    "goBook": "예약 구성하기",
+    "bookThis": "이 조건으로 예약 구성하기",
+    "loadFail": "목록을 불러오지 못했습니다",
+    "retry": "다시 시도",
+    "noPhoto": "사진 없음",
+    "noName": "이름 없음",
+    "from": "부터",
+    "anchorFrom": "부터",
+    "emptyAnchored": "그 시간에 가능한 곳이 없습니다. 날짜나 시각을 바꿔보세요.",
+    "empty": "아직 등록된 곳이 없습니다."
+  },
+  "dressCat": {
+    "hanbok": "한복",
+    "dress": "드레스",
+    "tuxedo": "턱시도",
+    "casual": "캐주얼",
+    "traditional_jp": "기모노",
+    "qipao": "치파오",
+    "accessory": "소품",
+    "other": "기타",
+    "suit": "정장"
+  },
+  "venueCat": {
+    "studio": "스튜디오",
+    "traditional_space": "한옥·전통 공간",
+    "outdoor": "야외",
+    "urban": "도심",
+    "event_hall": "행사장",
+    "other": "기타"
+  },
+  "priceUnit": {
+    "per_hour": "시간당",
+    "per_session": "회당",
+    "per_day": "일당"
+  },
+  "artistType": {
+    "photographer": "사진",
+    "videographer": "영상",
+    "both": "사진+영상"
+  },
+  "findSub": {
+    "hmkSelf": "자체 헤메",
+    "dressSelf": "자체 의상",
+    "dressOwned": "의상 보유",
+    "serviceCount": "시술 {n}종",
+    "capacity": "{n}명"
   }
 }

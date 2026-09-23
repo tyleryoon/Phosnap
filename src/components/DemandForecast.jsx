@@ -423,7 +423,7 @@ export default function DemandForecast({ bookings = [], currentPrice = 150000 })
               {t[forecast.demandLevel]}
             </div>
           </div>
-          <div style={styles.statMeta} style={{ marginTop: '8px' }}>
+          <div style={{ ...styles.statMeta, marginTop: '8px' }}>
             {t.confidence}: {forecast.confidence}%
           </div>
         </div>

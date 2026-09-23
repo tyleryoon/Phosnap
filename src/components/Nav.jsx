@@ -14,7 +14,7 @@ import useAdminAttention from '../hooks/useAdminAttention';
 // ─── Navigation ────────────────────────────────────────────────────────
 
 const Nav = ({ onAuthOpen }) => {
-  const { isLoggedIn, userName, isArtist, isVendor, isAdmin, logout } = useAuth();
+  const { isLoggedIn, userName, isArtist, isVendor, isStylist, isAdmin, logout } = useAuth();
   // 관리자가 확인해야 할 것이 있으면 링크 옆에 표시한다.
   // 활성 역할이 작가여도 관리자 계정이면 알려준다.
   const { counts, total } = useAdminAttention();
@@ -79,18 +79,13 @@ const Nav = ({ onAuthOpen }) => {
 
   return (
     <>
+      {/* 배경·테두리는 global.css 의 .nav / .nav.scrolled 가 정한다.
+          여기서 인라인으로 칠하면 인라인이 이겨서, 팔레트를 바꿔도
+          내비만 옛날 색으로 남는다. 실제로 그렇게 됐었다. */}
       <nav
-        className="nav"
+        className={`nav${scrolled ? ' scrolled' : ''}`}
         aria-label="Main navigation"
         role="navigation"
-        style={{
-          background: scrolled
-            ? 'rgba(11,11,11,0.97)'
-            : 'linear-gradient(180deg, rgba(11,11,11,0.92) 0%, transparent 100%)',
-          borderBottom: scrolled ? '1px solid var(--border-hover)' : '1px solid var(--border)',
-          boxShadow: scrolled ? '0 4px 32px rgba(0,0,0,0.4)' : 'none',
-          transition: 'background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease',
-        }}
       >
         {/* Logo */}
         <Link to="/" className="nav-logo" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 10 }} onClick={(e) => handleNavClick(e, '/')}>
@@ -164,7 +159,7 @@ const Nav = ({ onAuthOpen }) => {
                     style={{
                       width: '100%',
                       padding: '10px 16px',
-                      background: lang === code ? 'rgba(232,160,32,0.1)' : 'transparent',
+                      background: lang === code ? 'var(--accent-a10)' : 'transparent',
                       border: 'none',
                       borderBottom: code !== LANG_LABELS[LANG_LABELS.length - 1].code ? '1px solid var(--border)' : 'none',
                       fontFamily: 'var(--font-serif)',
@@ -176,7 +171,7 @@ const Nav = ({ onAuthOpen }) => {
                       transition: 'all 0.2s',
                     }}
                     onMouseEnter={e => {
-                      if (lang !== code) e.currentTarget.style.background = 'rgba(232,160,32,0.05)';
+                      if (lang !== code) e.currentTarget.style.background = 'var(--accent-a05)';
                     }}
                     onMouseLeave={e => {
                       if (lang !== code) e.currentTarget.style.background = 'transparent';
@@ -197,7 +192,7 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher />
               {isAdmin && (
                 <Link to="/admin"
-                  style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                  style={{ fontSize: 11, color: 'var(--grade-4)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                   ⚙ Admin
                   <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>
@@ -216,7 +211,14 @@ const Nav = ({ onAuthOpen }) => {
                   벤더 대시보드
                 </Link>
               )}
-              {!isArtist && !isVendor && !isAdmin && (
+              {isStylist && (
+                <Link to="/stylist/dashboard"
+                  onClick={(e) => handleNavClick(e, '/stylist/dashboard')}
+                  style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
+                  {t('nav.dashboard')}
+                </Link>
+              )}
+              {!isArtist && !isVendor && !isStylist && !isAdmin && (
                 <Link to="/my"
                   onClick={(e) => handleNavClick(e, '/my')}
                   style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none' }}>
@@ -279,7 +281,7 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher onNavigate={() => setMobileOpen(false)} />
               {/* 모바일 메뉴에는 관리자 링크가 아예 없었다. */}
               {isAdmin && (
-                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: 'var(--grade-4)', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
                   ⚙ Admin
                   <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>
@@ -294,7 +296,12 @@ const Nav = ({ onAuthOpen }) => {
                   벤더 대시보드
                 </Link>
               )}
-              {!isArtist && !isVendor && (
+              {isStylist && (
+                <Link to="/stylist/dashboard" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/stylist/dashboard'); setMobileOpen(false); }}>
+                  {t('nav.dashboard')}
+                </Link>
+              )}
+              {!isArtist && !isVendor && !isStylist && (
                 <Link to="/my" className="mobile-nav-link" style={{ textDecoration: 'none' }} onClick={(e) => { handleNavClick(e, '/my'); setMobileOpen(false); }}>
                   {t('nav.myPage') || '마이페이지'}
                 </Link>
@@ -347,7 +354,7 @@ const Nav = ({ onAuthOpen }) => {
                 padding: '8px 16px',
                 appearance: 'none',
                 WebkitAppearance: 'none',
-                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23e8a020%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")',
+                backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%2712%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%238C6D46%27 stroke-width=%272%27%3E%3Cpolyline points=%276 9 12 15 18 9%27/%3E%3C/svg%3E")',
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'right 10px center',
                 paddingRight: 32,

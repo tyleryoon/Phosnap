@@ -294,7 +294,7 @@ const AccountSettings = () => {
             return (
               <span key={r} style={{
                 padding: '5px 14px', fontSize: 11, fontFamily: 'var(--font-serif)',
-                background: 'rgba(232,160,32,0.1)', border: '1px solid var(--gold-border)',
+                background: 'var(--accent-a10)', border: '1px solid var(--gold-border)',
                 color: 'var(--gold)', letterSpacing: '0.06em',
               }}>
                 {label}
@@ -307,7 +307,7 @@ const AccountSettings = () => {
         {(roles || []).includes('artist') && (
           <div style={{ marginTop: 16, padding: '14px 20px', background: 'var(--bg)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.6 }}>
-              {f.artistType}: <span style={{ color: artistType && f.artistTypes?.[artistType] ? 'var(--gold)' : '#e85d5d', fontFamily: 'var(--font-serif)' }}>
+              {f.artistType}: <span style={{ color: artistType && f.artistTypes?.[artistType] ? 'var(--gold)' : 'var(--danger)', fontFamily: 'var(--font-serif)' }}>
                 {f.artistTypes?.[artistType] || f.artistTypeUnset}
               </span>
             </div>
@@ -376,7 +376,7 @@ const AccountSettings = () => {
             <button type="button" onClick={openDaumPostcode}
               style={{
                 padding: '11px 16px', background: 'var(--gold)', border: 'none',
-                color: '#0B0B0B', fontFamily: 'var(--font-serif)', fontSize: 12,
+                color: 'var(--on-accent)', fontFamily: 'var(--font-serif)', fontSize: 12,
                 letterSpacing: '0.06em', cursor: 'pointer', whiteSpace: 'nowrap',
               }}>
               {f.searchAddr}
@@ -398,7 +398,7 @@ const AccountSettings = () => {
             {saving ? f.saving : f.save}
           </button>
           {saveMsg && (
-            <span style={{ fontSize: 12, color: '#22c55e', fontFamily: 'var(--font-serif)' }}>{saveMsg}</span>
+            <span style={{ fontSize: 12, color: 'var(--success)', fontFamily: 'var(--font-serif)' }}>{saveMsg}</span>
           )}
         </div>
       </div>
@@ -428,16 +428,16 @@ const AccountSettings = () => {
         {/* 비밀번호 강도 표시 */}
         {newPw && (
           <div style={{ fontSize: 11, marginBottom: 14, lineHeight: 1.8, color: 'var(--muted)' }}>
-            <span style={{ color: newPw.length >= 8 && newPw.length <= 16 ? '#22c55e' : '#e85d5d' }}>
+            <span style={{ color: newPw.length >= 8 && newPw.length <= 16 ? 'var(--success)' : 'var(--danger)' }}>
               {newPw.length >= 8 && newPw.length <= 16 ? '✓' : '✗'} 8~16{lang === 'ko' ? '자' : ''}
             </span>{' · '}
-            <span style={{ color: /[A-Z]/.test(newPw) ? '#22c55e' : '#e85d5d' }}>
+            <span style={{ color: /[A-Z]/.test(newPw) ? 'var(--success)' : 'var(--danger)' }}>
               {/[A-Z]/.test(newPw) ? '✓' : '✗'} {lang === 'ko' ? '대문자' : 'A-Z'}
             </span>{' · '}
-            <span style={{ color: /[a-z]/.test(newPw) ? '#22c55e' : '#e85d5d' }}>
+            <span style={{ color: /[a-z]/.test(newPw) ? 'var(--success)' : 'var(--danger)' }}>
               {/[a-z]/.test(newPw) ? '✓' : '✗'} {lang === 'ko' ? '소문자' : 'a-z'}
             </span>{' · '}
-            <span style={{ color: /\d/.test(newPw) ? '#22c55e' : '#e85d5d' }}>
+            <span style={{ color: /\d/.test(newPw) ? 'var(--success)' : 'var(--danger)' }}>
               {/\d/.test(newPw) ? '✓' : '✗'} {lang === 'ko' ? '숫자' : '0-9'}
             </span>{' · '}
             <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(newPw) ? '#22c55e' : '#e85d5d' }}>
@@ -454,7 +454,7 @@ const AccountSettings = () => {
             {pwChanging ? '...' : f.changePw}
           </button>
           {pwMsg && (
-            <span style={{ fontSize: 12, color: pwMsg.includes('✓') ? '#22c55e' : '#e85d5d', fontFamily: 'var(--font-serif)' }}>
+            <span style={{ fontSize: 12, color: pwMsg.includes('✓') ? 'var(--success)' : 'var(--danger)', fontFamily: 'var(--font-serif)' }}>
               {pwMsg}
             </span>
           )}

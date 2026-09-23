@@ -26,7 +26,7 @@ export const CHAT_CHANNELS = {
 };
 
 export const CHANNEL_CONFIG = {
-  photo: { label: 'Photographer', color: '#e8a020', icon: '📷' },
+  photo: { label: 'Photographer', color: 'var(--gold)', icon: '📷' },
   stylist: { label: 'Stylist', color: '#e8a0d0', icon: '💄' },
   costume: { label: 'Costume', color: '#a0e8a0', icon: '👗' },
   venue: { label: 'Venue', color: '#a0d0e8', icon: '📍' },

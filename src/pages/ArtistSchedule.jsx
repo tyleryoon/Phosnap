@@ -259,7 +259,7 @@ const genId = () => Math.random().toString(36).substring(2, 8);
 
 const STATUS_COLORS = {
   open:    '#22c55e',
-  partial: '#f0ac2a',
+  partial: 'var(--accent-deep)',
   full:    '#e85d5d',
   off:     'rgba(136,136,136,0.25)',
 };
@@ -355,7 +355,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
     display: 'block', marginTop: 6, width: '100%',
     background: 'var(--bg)', border: '1px solid var(--border)',
     color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
-    colorScheme: 'dark',
+    colorScheme: 'light',
   };
 
   // photographerId를 Number로 정규화하여 타입 일관성 보장
@@ -364,7 +364,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
   return (
     <div style={{ border: '1px solid rgba(76,175,80,0.2)', background: 'rgba(76,175,80,0.02)', padding: '24px 28px', position: 'relative' }}>
       <Corners />
-      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: '#4caf50', textTransform: 'uppercase', marginBottom: 6 }}>
+      <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--success)', textTransform: 'uppercase', marginBottom: 6 }}>
         📅 투어 일정 오픈 <span style={{ color: 'rgba(76,175,80,0.5)' }}>— {instances.filter(i => i.status === 'recruiting').length}개 모집 중</span>
       </div>
       <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
@@ -402,14 +402,14 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   </div>
                   {/* 투어 간략 정보 */}
                   {(tourData.durationMin || tourData.photos || tourData.desc) && (
-                    <div style={{ fontSize: 10, color: 'rgba(136,136,136,0.7)', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 4, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {tourData.durationMin && <span>⏱ {tourData.durationMin}분</span>}
                       {tourData.photos && <span>📷 {tourData.photos}컷</span>}
                       {tourData.route?.departure && <span>📍 {tourData.route.departure} → {tourData.route.destination || '...'}</span>}
                     </div>
                   )}
                   {tourData.desc && (
-                    <div style={{ fontSize: 10, color: 'rgba(136,136,136,0.5)', marginTop: 2, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2, maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {tourData.desc}
                     </div>
                   )}
@@ -433,7 +433,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   <div style={{
                     height: '100%', borderRadius: 2, transition: 'width 0.3s',
                     width: `${Math.min(100, (count / inst.maxGuests) * 100)}%`,
-                    background: count >= inst.maxGuests ? '#4caf50' : count >= inst.minGuests ? '#e8a020' : '#e85d5d',
+                    background: count >= inst.maxGuests ? '#4caf50' : count >= inst.minGuests ? 'var(--gold)' : '#e85d5d',
                   }} />
                 </div>
                 <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 2 }}>
@@ -462,7 +462,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
               <div style={{ display: 'flex', gap: 8 }}>
                 {inst.status === 'recruiting' && (
                   <button onClick={() => handleCancel(inst.id)}
-                    style={{ fontSize: 10, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+                    style={{ fontSize: 10, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,93,93,0.3)', padding: '4px 12px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
                     모집 취소
                   </button>
                 )}
@@ -481,7 +481,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
       {/* 현재 오픈 중인 날짜 요약 */}
       {instances.filter(i => i.status === 'recruiting').length > 0 && (
         <div style={{ padding: '12px 16px', background: 'rgba(76,175,80,0.04)', border: '1px solid rgba(76,175,80,0.15)', marginBottom: 16, fontSize: 11, color: 'var(--muted)', lineHeight: 1.8 }}>
-          <span style={{ color: '#4caf50', fontFamily: 'var(--font-serif)' }}>현재 오픈 날짜:</span>{' '}
+          <span style={{ color: 'var(--success)', fontFamily: 'var(--font-serif)' }}>현재 오픈 날짜:</span>{' '}
           {instances.filter(i => i.status === 'recruiting')
             .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
             .map(i => {
@@ -495,7 +495,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
       {/* 새 일정 오픈 폼 */}
       {showCreate ? (
         <div style={{ border: '1px solid rgba(76,175,80,0.3)', padding: '16px 20px', background: 'rgba(76,175,80,0.03)' }}>
-          <div style={{ fontSize: 11, color: '#4caf50', fontFamily: 'var(--font-serif)', marginBottom: 12 }}>📅 새 투어 일정 오픈</div>
+          <div style={{ fontSize: 11, color: 'var(--success)', fontFamily: 'var(--font-serif)', marginBottom: 12 }}>📅 새 투어 일정 오픈</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
             <label style={{ fontSize: 11, color: 'var(--muted)' }}>
               투어 선택
@@ -520,7 +520,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
                   setNewForm({ ...newForm, scheduledDate: val });
                 }}
                 style={{ ...inputStyle, borderColor: dateError ? '#e85d5d' : undefined }} />
-              {dateError && <div style={{ fontSize: 10, color: '#e85d5d', marginTop: 4 }}>{dateError}</div>}
+              {dateError && <div style={{ fontSize: 10, color: 'var(--danger)', marginTop: 4 }}>{dateError}</div>}
             </label>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
@@ -539,7 +539,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={handleCreate}
-              style={{ fontSize: 11, color: '#fff', background: '#4caf50', border: 'none', padding: '8px 20px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+              style={{ fontSize: 11, color: '#fff', background: 'var(--success)', border: 'none', padding: '8px 20px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
               일정 오픈
             </button>
             <button onClick={() => setShowCreate(false)}
@@ -549,7 +549,7 @@ const TourInstanceManager = ({ photographerId, tours }) => {
           </div>
         </div>
       ) : (
-        <button className="btn-ghost" style={{ fontSize: 12, color: '#4caf50' }} onClick={() => setShowCreate(true)}>+ 일정 오픈</button>
+        <button className="btn-ghost" style={{ fontSize: 12, color: 'var(--success)' }} onClick={() => setShowCreate(true)}>+ 일정 오픈</button>
       )}
     </div>
   );
@@ -1217,7 +1217,7 @@ const ArtistSchedule = () => {
   // ─────────────────────────────────────────────────────────────────
 
   // ── 지역별 색상 매핑 ──
-  const LOC_COLORS = ['#e8a020', '#60a5fa', '#22c55e', '#f472b6', '#a78bfa', '#fb923c'];
+  const LOC_COLORS = ['var(--gold)', '#60a5fa', '#22c55e', '#f472b6', '#a78bfa', '#fb923c'];
   const getLocColor = (idx) => LOC_COLORS[idx % LOC_COLORS.length];
 
   // 특정 날짜에 활동 중인 지역 목록 반환
@@ -1277,8 +1277,8 @@ const ArtistSchedule = () => {
                 <button key={idx} onClick={() => toggleExcludeDay(idx)} style={{
                   width: 36, height: 36, fontSize: 12, fontFamily: 'var(--font-serif)',
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
-                  background: active ? 'rgba(232,160,32,0.15)' : 'transparent',
-                  color: active ? 'var(--gold)' : (idx === 0 ? '#e85d5d' : idx === 6 ? '#60a5fa' : 'var(--muted)'),
+                  background: active ? 'var(--accent-a15)' : 'transparent',
+                  color: active ? 'var(--gold)' : (idx === 0 ? 'var(--danger)' : idx === 6 ? 'var(--info)' : 'var(--muted)'),
                   cursor: 'pointer', borderRadius: 0,
                 }}>{label}</button>
               );
@@ -1291,13 +1291,13 @@ const ArtistSchedule = () => {
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
             설정 기간 내 전체 오픈 →
           </button>
-          <button style={{ fontSize: 12, padding: '10px 20px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'transparent', border: '1px solid #e85d5d', color: '#e85d5d', cursor: 'pointer' }}
+          <button style={{ fontSize: 12, padding: '10px 20px', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', background: 'transparent', border: '1px solid #e85d5d', color: 'var(--danger)', cursor: 'pointer' }}
             onClick={handleCloseRange}
             disabled={!rangeStart || !rangeEnd || rangeStart > rangeEnd}>
             설정 기간 내 전체 클로즈 ×
           </button>
         </div>
-        <p style={{ fontSize: 11, color: 'rgba(232,160,32,0.6)', marginTop: 12, lineHeight: 1.7 }}>
+        <p style={{ fontSize: 11, color: 'var(--accent-a50)', marginTop: 12, lineHeight: 1.7 }}>
           날짜 범위를 선택하면 해당 기간 전체 시간(00:00~24:00)이 오픈됩니다. 이후 달력에서 날짜 클릭 → 개별 시간 차단/해제가 가능합니다.
           <br/>* 표시 시간은 활동 지역 현지 시간 기준입니다
         </p>
@@ -1329,7 +1329,7 @@ const ArtistSchedule = () => {
                 <span style={{ fontSize: 11, color: 'var(--muted)', marginLeft: 8 }}>(상시)</span>
               </div>
             ) : (
-              <div style={{ fontSize: 11, color: '#e85d5d' }}>⚠ 메인 활동지를 활동 지역 탭에서 지정해주세요</div>
+              <div style={{ fontSize: 11, color: 'var(--danger)' }}>⚠ 메인 활동지를 활동 지역 탭에서 지정해주세요</div>
             )}
             {allLocs.length > 0 && (() => {
               // ── 현재 보고 있는 월의 시작일/종료일 ──
@@ -1387,7 +1387,7 @@ const ArtistSchedule = () => {
             <Corners />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
               {['일','월','화','수','목','금','토'].map((d, i) => (
-                <div key={i} style={{ textAlign: 'center', fontSize: 10, color: i === 0 ? 'rgba(232,80,80,0.5)' : i === 6 ? 'rgba(100,150,255,0.5)' : 'var(--muted)', padding: '8px 0', fontFamily: 'var(--font-serif)' }}>
+                <div key={i} style={{ textAlign: 'center', fontSize: 10, color: i === 0 ? 'var(--danger)' : i === 6 ? 'var(--info)' : 'var(--muted)', padding: '8px 0', fontFamily: 'var(--font-serif)' }}>
                   {d}
                 </div>
               ))}
@@ -1414,7 +1414,7 @@ const ArtistSchedule = () => {
                       padding: '4px 4px 16px', textAlign: 'center',
                       fontSize: 13, fontFamily: 'var(--font-serif)',
                       background: isActive ? 'var(--gold)' : 'transparent',
-                      color: past ? 'rgba(136,136,136,0.2)' : isActive ? '#0B0B0B' : isToday ? 'var(--gold)' : dow === 0 ? 'rgba(232,80,80,0.7)' : dow === 6 ? 'rgba(100,150,255,0.7)' : 'var(--text)',
+                      color: past ? 'rgba(136,136,136,0.2)' : isActive ? 'var(--text)' : isToday ? 'var(--gold)' : dow === 0 ? 'var(--danger)' : dow === 6 ? 'var(--info)' : 'var(--text)',
                       border: `1px solid ${isActive ? 'var(--gold)' : isToday ? 'var(--gold-border)' : 'transparent'}`,
                       cursor: past ? 'default' : 'pointer',
                       transition: 'all 0.15s',
@@ -1425,14 +1425,14 @@ const ArtistSchedule = () => {
                     {!past && locIndices.length > 0 && (
                       <div style={{ display: 'flex', gap: 1, justifyContent: 'center', marginBottom: 2, minHeight: 4 }}>
                         {locIndices.map(li => (
-                          <span key={li} style={{ width: Math.max(6, Math.floor(28 / locIndices.length)), height: 3, background: isActive ? '#0B0B0B' : getLocColor(li), borderRadius: 1 }} />
+                          <span key={li} style={{ width: Math.max(6, Math.floor(28 / locIndices.length)), height: 3, background: isActive ? 'var(--text)' : getLocColor(li), borderRadius: 1 }} />
                         ))}
                       </div>
                     )}
                     {!past && locIndices.length === 0 && <div style={{ minHeight: 6 }} />}
                     {past && <div style={{ minHeight: 6 }} />}
                     {day}
-                    {!past && <span style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', width: 4, height: 4, borderRadius: '50%', background: isActive ? '#0B0B0B' : STATUS_COLORS[status] ?? 'transparent' }} />}
+                    {!past && <span style={{ position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)', width: 4, height: 4, borderRadius: '50%', background: isActive ? 'var(--text)' : STATUS_COLORS[status] ?? 'transparent' }} />}
                   </button>
                 );
               })}
@@ -1474,8 +1474,8 @@ const ArtistSchedule = () => {
                     onClick={() => setDraftDefault(prev => prev.includes(time) ? prev.filter(t => t !== time) : [...prev, time].sort())}
                     style={{
                       padding: '8px 14px', fontSize: 12, fontFamily: 'var(--font-serif)',
-                      background: isOn ? (editingDefault ? 'var(--gold)' : 'rgba(232,160,32,0.12)') : 'transparent',
-                      color: isOn ? (editingDefault ? '#0B0B0B' : 'var(--gold)') : 'var(--muted)',
+                      background: isOn ? (editingDefault ? 'var(--gold)' : 'var(--accent-a12)') : 'transparent',
+                      color: isOn ? (editingDefault ? 'var(--on-accent)' : 'var(--gold)') : 'var(--muted)',
                       border: `1px solid ${isOn ? 'var(--gold-border)' : 'var(--border)'}`,
                       cursor: editingDefault ? 'pointer' : 'default', transition: 'all 0.15s',
                     }}>
@@ -1518,7 +1518,7 @@ const ArtistSchedule = () => {
                 <button onClick={handleToggleDayOff} style={{
                   width: '100%', padding: '11px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
                   background: activeDayData?.dayOff ? 'rgba(232,80,80,0.08)' : 'transparent',
-                  color: activeDayData?.dayOff ? '#e85d5d' : 'var(--muted)',
+                  color: activeDayData?.dayOff ? 'var(--danger)' : 'var(--muted)',
                   border: `1px solid ${activeDayData?.dayOff ? 'rgba(232,80,80,0.3)' : 'var(--border)'}`,
                   cursor: 'pointer', transition: 'all 0.2s',
                 }}>
@@ -1531,7 +1531,7 @@ const ArtistSchedule = () => {
                   <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
                     클릭하여 운영 / 차단 선택
                   </div>
-                  <div style={{ fontSize: 11, color: 'rgba(232,160,32,0.6)', marginBottom: 10, lineHeight: 1.6 }}>
+                  <div style={{ fontSize: 11, color: 'var(--accent-a50)', marginBottom: 10, lineHeight: 1.6 }}>
                     * 표시 시간은 활동 지역 현지 시간 기준입니다
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 420, overflowY: 'auto' }}>
@@ -1547,13 +1547,13 @@ const ArtistSchedule = () => {
                         <button key={time} onClick={() => handleToggleSlot(time)} style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '11px 16px',
-                          background: blocked ? 'rgba(232,80,80,0.05)' : 'rgba(232,160,32,0.04)',
-                          border: `1px solid ${blocked ? 'rgba(232,80,80,0.18)' : 'rgba(232,160,32,0.18)'}`,
+                          background: blocked ? 'rgba(232,80,80,0.05)' : 'var(--accent-a04)',
+                          border: `1px solid ${blocked ? 'rgba(232,80,80,0.18)' : 'var(--accent-a20)'}`,
                           cursor: 'pointer', transition: 'all 0.15s',
                         }}>
                           <span style={{ fontFamily: 'var(--font-serif)', fontSize: 15, color: blocked ? 'rgba(136,136,136,0.35)' : 'var(--text)' }}>{time}</span>
                           <span style={{ fontSize: 9, fontFamily: 'var(--font-serif)', letterSpacing: '0.12em', textTransform: 'uppercase',
-                            color: blocked ? '#e85d5d' : 'var(--gold)',
+                            color: blocked ? 'var(--danger)' : 'var(--gold)',
                             padding: '2px 8px', border: `1px solid ${blocked ? 'rgba(232,80,80,0.25)' : 'var(--gold-border)'}`,
                           }}>
                             {blocked ? '차단' : '운영'}
@@ -1568,7 +1568,7 @@ const ArtistSchedule = () => {
                     style={{
                       width: '100%', marginTop: 16, padding: '13px 0',
                       background: slotsDirty ? 'var(--gold)' : 'rgba(136,136,136,0.15)',
-                      color: slotsDirty ? '#0B0B0B' : 'var(--muted)',
+                      color: slotsDirty ? 'var(--on-accent)' : 'var(--muted)',
                       border: 'none', fontFamily: 'var(--font-serif)', fontSize: 13,
                       letterSpacing: '0.08em', cursor: slotsDirty ? 'pointer' : 'not-allowed',
                       transition: 'all 0.2s',
@@ -1884,7 +1884,7 @@ const ArtistSchedule = () => {
       return (
         <div style={{
           border: `1px solid ${hasUnsaved ? 'rgba(100,180,255,0.5)' : isMain ? 'var(--gold)' : isActive ? 'var(--gold-border)' : 'rgba(136,136,136,0.3)'}`,
-          background: hasUnsaved ? 'rgba(100,180,255,0.03)' : isMain ? 'rgba(232,160,32,0.04)' : isActive ? 'var(--bg2)' : 'rgba(136,136,136,0.03)',
+          background: hasUnsaved ? 'rgba(100,180,255,0.03)' : isMain ? 'var(--accent-a04)' : isActive ? 'var(--bg2)' : 'rgba(136,136,136,0.03)',
           padding: '20px 24px', position: 'relative',
           opacity: isActive || isMain ? 1 : 0.7,
           transition: 'all 0.2s',
@@ -1892,7 +1892,7 @@ const ArtistSchedule = () => {
           <Corners />
           {/* 메인 활동지 뱃지 */}
           {isMain && (
-            <div style={{ position: 'absolute', top: 10, right: 16, fontSize: 9, fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', color: 'var(--gold)', background: 'rgba(232,160,32,0.12)', padding: '3px 10px', border: '1px solid var(--gold-border)', textTransform: 'uppercase' }}>
+            <div style={{ position: 'absolute', top: 10, right: 16, fontSize: 9, fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', color: 'var(--gold)', background: 'var(--accent-a12)', padding: '3px 10px', border: '1px solid var(--gold-border)', textTransform: 'uppercase' }}>
               ★ 메인 활동지
             </div>
           )}
@@ -1956,7 +1956,7 @@ const ArtistSchedule = () => {
                       const selected = loc.regionId === r.id;
                       const isFav = favCities.includes(r.id);
                       return (
-                        <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: taken ? 'not-allowed' : 'pointer', opacity: taken ? 0.4 : 1, background: selected ? 'rgba(232,160,32,0.08)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                        <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: taken ? 'not-allowed' : 'pointer', opacity: taken ? 0.4 : 1, background: selected ? 'var(--accent-a08)' : 'transparent', borderBottom: '1px solid var(--ink-a03)' }}
                           onClick={() => {
                             if (taken) return;
                             const next = locs.map(l => l.id === loc.id ? { ...l, regionId: r.id, name: r.ko, nameEn: r.en } : l);
@@ -2011,13 +2011,13 @@ const ArtistSchedule = () => {
                       const isFav = favCountries.includes(code);
                       const cityCount = (OVERSEAS_BY_COUNTRY[code] || []).length;
                       return (
-                        <div key={code} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                        <div key={code} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: 'pointer', borderBottom: '1px solid var(--ink-a03)' }}
                           onClick={() => { setLocPickerCountry(code); setLocPickerSearch(''); if (locSearchRef.current) locSearchRef.current.value = ''; }}
                         >
                           <span style={{ fontSize: 16, marginRight: 8 }}>{c.flag}</span>
                           <span style={{ flex: 1, fontSize: 12, fontFamily: 'var(--font-serif)', color: 'var(--text)' }}>
                             {c.ko} <span style={{ color: 'var(--muted)', fontSize: 11 }}>({c.en})</span>
-                            {cityCount > 0 && <span style={{ color: 'rgba(232,160,32,0.5)', fontSize: 10, marginLeft: 6 }}>{cityCount}개 도시</span>}
+                            {cityCount > 0 && <span style={{ color: 'var(--accent-a50)', fontSize: 10, marginLeft: 6 }}>{cityCount}개 도시</span>}
                           </span>
                           <button onClick={e => {
                             e.stopPropagation();
@@ -2074,7 +2074,7 @@ const ArtistSchedule = () => {
                       const selected = loc.regionId === r.id;
                       const isFav = favCities.includes(r.id);
                       return (
-                        <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: taken ? 'not-allowed' : 'pointer', opacity: taken ? 0.4 : 1, background: selected ? 'rgba(232,160,32,0.08)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                        <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '8px 12px', cursor: taken ? 'not-allowed' : 'pointer', opacity: taken ? 0.4 : 1, background: selected ? 'var(--accent-a08)' : 'transparent', borderBottom: '1px solid var(--ink-a03)' }}
                           onClick={() => {
                             if (taken) return;
                             const next = locs.map(l => l.id === loc.id ? { ...l, regionId: r.id, name: r.ko, nameEn: r.en, country: r.country } : l);
@@ -2084,7 +2084,7 @@ const ArtistSchedule = () => {
                         >
                           <span style={{ flex: 1, fontSize: 12, fontFamily: 'var(--font-serif)', color: selected ? 'var(--gold)' : 'var(--text)' }}>
                             {r.ko} <span style={{ color: 'var(--muted)', fontSize: 11 }}>({r.en})</span>
-                            {taken ? <span style={{ color: 'rgba(136,136,136,0.5)', marginLeft: 6 }}>— 사용 중</span> : ''}
+                            {taken ? <span style={{ color: 'var(--muted)', marginLeft: 6 }}>— 사용 중</span> : ''}
                           </span>
                           <button onClick={e => {
                             e.stopPropagation();
@@ -2146,7 +2146,7 @@ const ArtistSchedule = () => {
             </div>
           )}
           {isMain && (
-            <div style={{ fontSize: 12, color: 'rgba(232,160,32,0.7)', marginBottom: 14, lineHeight: 1.6 }}>
+            <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginBottom: 14, lineHeight: 1.6 }}>
               상시 활동 지역 — 날짜 제한 없음
             </div>
           )}
@@ -2215,7 +2215,7 @@ const ArtistSchedule = () => {
                     boxShadow: `0 1px 3px ${isActive ? 'rgba(80,200,80,0.4)' : 'rgba(232,80,80,0.4)'}`,
                   }} />
                 </div>
-                <span style={{ fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', color: isActive ? 'rgba(80,200,80,0.9)' : 'rgba(232,80,80,0.8)' }}>
+                <span style={{ fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', color: isActive ? 'rgba(80,200,80,0.9)' : 'var(--danger)' }}>
                   {isActive ? '고객 노출 중' : '노출 OFF'}
                 </span>
               </div>
@@ -2226,17 +2226,17 @@ const ArtistSchedule = () => {
               )}
             </div>
             {!isMain && (
-              <button onClick={() => removeLoc(loc.id)} style={{ fontSize: 11, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer' }}>삭제</button>
+              <button onClick={() => removeLoc(loc.id)} style={{ fontSize: 11, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer' }}>삭제</button>
             )}
           </div>
           {/* 시작일/종료일 미입력 시 안내 */}
           {!isMain && (!loc.period?.start || !loc.period?.end) && loc.active !== false && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(232,160,32,0.05)', border: '1px solid rgba(232,160,32,0.2)', fontSize: 11, color: 'var(--gold)' }}>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--accent-a05)', border: '1px solid var(--accent-a20)', fontSize: 11, color: 'var(--gold)' }}>
               ℹ 시작일과 종료일을 입력해야 고객에게 노출됩니다
             </div>
           )}
           {!isMain && loc.period?.start && loc.period?.end && !loc.pauseMain && (
-            <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(232,160,32,0.05)', border: '1px solid var(--gold-border)', fontSize: 11, color: 'var(--gold)' }}>
+            <div style={{ marginTop: 12, padding: '8px 12px', background: 'var(--accent-a05)', border: '1px solid var(--gold-border)', fontSize: 11, color: 'var(--gold)' }}>
               ◉ 출장 활동: {loc.period.start} ~ {loc.period.end} (메인 활동지 병행)
             </div>
           )}
@@ -2257,7 +2257,7 @@ const ArtistSchedule = () => {
 
         {/* 메인 활동지 미지정 경고 */}
         {locs.length > 0 && !mainLoc && (
-          <div style={{ marginBottom: 20, padding: '14px 20px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.25)', fontSize: 12, color: '#e85d5d', lineHeight: 1.7 }}>
+          <div style={{ marginBottom: 20, padding: '14px 20px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.25)', fontSize: 12, color: 'var(--danger)', lineHeight: 1.7 }}>
             ⚠ 메인 활동지가 지정되지 않았습니다. 아래 지역 중 하나를 "메인으로 지정" 해주세요.
           </div>
         )}
@@ -2321,7 +2321,7 @@ const ArtistSchedule = () => {
                 "중단"을 선택하면 해당 기간 메인 활동지에서 고객에게 노출되지 않습니다.<br/>
                 "병행"을 선택하면 두 지역 모두 노출됩니다.
               </p>
-              <p style={{ fontSize: 12, color: 'rgba(232,80,80,0.8)', lineHeight: 1.6, marginBottom: 24, padding: '10px 14px', background: 'rgba(232,80,80,0.05)', border: '1px solid rgba(232,80,80,0.15)' }}>
+              <p style={{ fontSize: 12, color: 'var(--danger)', lineHeight: 1.6, marginBottom: 24, padding: '10px 14px', background: 'rgba(232,80,80,0.05)', border: '1px solid rgba(232,80,80,0.15)' }}>
                 ⚠ 하루에 두 지역 촬영은 노쇼·사고 위험이 있습니다. 같은 날 두 지역에 예약이 잡힐 경우, 두 번째 예약은 작가님의 수동 승인이 필요합니다.
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -2352,7 +2352,7 @@ const ArtistSchedule = () => {
               </h2>
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 20 }}>
                 메인 활동지 외에 {mainPauseNotice.mainLocType === 'domestic' ? '국내' : '해외'}에서 활동 중인 다른 지역도 고객 노출을 해제할 수 있습니다.<br/>
-                체크된 지역은 <strong style={{ color: 'rgba(232,160,32,0.9)' }}>"고객에게 노출"이 자동 해제</strong>되어 검색에 표시되지 않습니다.
+                체크된 지역은 <strong style={{ color: 'var(--accent-a50)' }}>"고객에게 노출"이 자동 해제</strong>되어 검색에 표시되지 않습니다.
               </p>
 
               {/* 타 지역 체크박스 목록 */}
@@ -2360,7 +2360,7 @@ const ArtistSchedule = () => {
                 {(mainPauseNotice.otherSameTypeLocs || []).map(loc => {
                   const checked = (mainPauseNotice.selectedToPause || []).includes(loc.id);
                   return (
-                    <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', border: `1px solid ${checked ? 'rgba(232,160,32,0.3)' : 'var(--border)'}`, background: checked ? 'rgba(232,160,32,0.04)' : 'var(--bg)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', border: `1px solid ${checked ? 'var(--accent-a30)' : 'var(--border)'}`, background: checked ? 'var(--accent-a04)' : 'var(--bg)', cursor: 'pointer', transition: 'all 0.15s' }}>
                       <input type="checkbox" checked={checked} onChange={() => togglePauseLoc(loc.id)} style={{ accentColor: 'var(--gold)', width: 16, height: 16, flexShrink: 0 }} />
                       <div>
                         <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', color: checked ? 'var(--gold)' : 'var(--text)' }}>
@@ -2378,7 +2378,7 @@ const ArtistSchedule = () => {
                 })}
               </div>
 
-              <p style={{ fontSize: 11, color: 'rgba(232,160,32,0.7)', lineHeight: 1.6, marginBottom: 20 }}>
+              <p style={{ fontSize: 11, color: 'var(--accent-a50)', lineHeight: 1.6, marginBottom: 20 }}>
                 * 노출이 해제된 지역은 고객 검색에 표시되지 않습니다.<br/>
                 * 나중에 해당 지역의 "고객에게 노출"을 다시 체크하면 언제든 복원할 수 있습니다.
               </p>
@@ -2421,7 +2421,7 @@ const ArtistSchedule = () => {
               </p>
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 20 }}>
                 겹치는 기간 동안 아래 {crossOverlapNotice.oppositeType === 'domestic' ? '국내' : '해외'} 지역의 고객 노출을 해제하시겠습니까?<br/>
-                체크된 지역은 <strong style={{ color: 'rgba(232,160,32,0.9)' }}>"고객에게 노출"이 자동 해제</strong>되어 해당 기간 검색에 표시되지 않습니다.
+                체크된 지역은 <strong style={{ color: 'var(--accent-a50)' }}>"고객에게 노출"이 자동 해제</strong>되어 해당 기간 검색에 표시되지 않습니다.
               </p>
 
               {/* 겹치는 지역 체크박스 목록 */}
@@ -2429,7 +2429,7 @@ const ArtistSchedule = () => {
                 {(crossOverlapNotice.overlappingLocs || []).map(loc => {
                   const checked = (crossOverlapNotice.selectedToPause || []).includes(loc.id);
                   return (
-                    <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', border: `1px solid ${checked ? 'rgba(232,160,32,0.3)' : 'var(--border)'}`, background: checked ? 'rgba(232,160,32,0.04)' : 'var(--bg)', cursor: 'pointer', transition: 'all 0.15s' }}>
+                    <label key={loc.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', border: `1px solid ${checked ? 'var(--accent-a30)' : 'var(--border)'}`, background: checked ? 'var(--accent-a04)' : 'var(--bg)', cursor: 'pointer', transition: 'all 0.15s' }}>
                       <input type="checkbox" checked={checked} onChange={() => {
                         const sel = crossOverlapNotice.selectedToPause || [];
                         const next = sel.includes(loc.id) ? sel.filter(id => id !== loc.id) : [...sel, loc.id];
@@ -2451,7 +2451,7 @@ const ArtistSchedule = () => {
                 })}
               </div>
 
-              <p style={{ fontSize: 11, color: 'rgba(232,160,32,0.7)', lineHeight: 1.6, marginBottom: 20 }}>
+              <p style={{ fontSize: 11, color: 'var(--accent-a50)', lineHeight: 1.6, marginBottom: 20 }}>
                 * 노출이 해제된 지역은 고객 검색에 표시되지 않습니다.<br/>
                 * 나중에 해당 지역의 "고객에게 노출"을 다시 체크하면 언제든 복원할 수 있습니다.
               </p>
@@ -2466,7 +2466,7 @@ const ArtistSchedule = () => {
                 return (
                   <>
                     {overLimit && selectedIds.length === 0 && (
-                      <div style={{ padding: '10px 16px', marginBottom: 16, background: 'rgba(232,80,80,0.08)', border: '1px solid rgba(232,80,80,0.3)', fontSize: 12, color: '#e85d5d', lineHeight: 1.7 }}>
+                      <div style={{ padding: '10px 16px', marginBottom: 16, background: 'rgba(232,80,80,0.08)', border: '1px solid rgba(232,80,80,0.3)', fontSize: 12, color: 'var(--danger)', lineHeight: 1.7 }}>
                         ⚠ 고객에게 노출되는 지역이 {activeExposedCount}개입니다. 최대 {MAX_EXPOSED}개까지 동시 노출이 가능합니다.<br/>
                         최소 {activeExposedCount - MAX_EXPOSED}개 지역의 노출을 해제해주세요.
                       </div>
@@ -2567,7 +2567,7 @@ const ArtistSchedule = () => {
                 </button>
                 <button
                   className="btn-outline"
-                  style={{ borderColor: 'rgba(240,172,42,0.4)', color: 'var(--muted)' }}
+                  style={{ borderColor: 'var(--accent-a30)', color: 'var(--muted)' }}
                   onClick={() => setHmkLocNotice({ ...hmkLocNotice, step: 'warn' })}
                 >
                   아니요, 이 지역에서는 H&M 동행 없이 활동합니다
@@ -2586,7 +2586,7 @@ const ArtistSchedule = () => {
         {/* H&M 미동행 안내 팝업 */}
         {hmkLocNotice?.step === 'warn' && (
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-            <div style={{ background: 'var(--bg2)', border: '1px solid rgba(240,172,42,0.4)', maxWidth: 480, width: '100%', padding: '40px 36px', position: 'relative' }}>
+            <div style={{ background: 'var(--bg2)', border: '1px solid var(--accent-a30)', maxWidth: 480, width: '100%', padding: '40px 36px', position: 'relative' }}>
               <Corners />
               <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 16 }}>
                 상품 등록 안내
@@ -2644,7 +2644,7 @@ const ArtistSchedule = () => {
       <div>
         <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 28, maxWidth: 560 }}>
           고객이 결제 완료한 예약 요청 목록입니다.<br/>
-          <strong style={{ color: 'var(--gold)' }}>48시간 이내에 수락 또는 거절해주세요.</strong> 미응답 시 예약은 <strong style={{ color: '#e85d5d' }}>자동 취소</strong>되고 고객에게 환불됩니다. (촬영일이 임박한 경우 더 일찍 마감될 수 있습니다)
+          <strong style={{ color: 'var(--gold)' }}>48시간 이내에 수락 또는 거절해주세요.</strong> 미응답 시 예약은 <strong style={{ color: 'var(--danger)' }}>자동 취소</strong>되고 고객에게 환불됩니다. (촬영일이 임박한 경우 더 일찍 마감될 수 있습니다)
         </div>
 
         {bookingsLoading && (
@@ -2665,7 +2665,7 @@ const ArtistSchedule = () => {
               <Corners />
               {/* 헤더 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <span style={{ padding: '3px 10px', background: 'rgba(232,160,32,0.15)', border: '1px solid rgba(232,160,32,0.4)', color: 'var(--gold)', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.06em' }}>
+                <span style={{ padding: '3px 10px', background: 'var(--accent-a15)', border: '1px solid var(--accent-a30)', color: 'var(--gold)', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.06em' }}>
                   확정 대기
                 </span>
                 <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
@@ -2686,7 +2686,7 @@ const ArtistSchedule = () => {
                   </div>
                 )}
                 {b.reschedule_request && (
-                  <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(232,160,32,0.08)', border: '1px solid rgba(232,160,32,0.25)', fontSize: 12, color: 'var(--muted)' }}>
+                  <div style={{ marginTop: 10, padding: '10px 14px', background: 'var(--accent-a08)', border: '1px solid var(--accent-a20)', fontSize: 12, color: 'var(--muted)' }}>
                     📋 고객 메모: {b.reschedule_request}
                   </div>
                 )}
@@ -2715,7 +2715,7 @@ const ArtistSchedule = () => {
                   <button className="btn-primary" style={{ flex: 1, fontSize: 12 }} onClick={() => handleApprove(b.id)}>
                     ✓ 수락 — 예약 확정
                   </button>
-                  <button className="btn-ghost" style={{ fontSize: 12, color: '#f56565', borderColor: 'rgba(245,101,101,0.4)' }} onClick={() => setRejectTarget(b.id)}>
+                  <button className="btn-ghost" style={{ fontSize: 12, color: 'var(--danger)', borderColor: 'rgba(245,101,101,0.4)' }} onClick={() => setRejectTarget(b.id)}>
                     거절
                   </button>
                 </div>
@@ -2851,7 +2851,7 @@ const ArtistSchedule = () => {
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase' }}>대표 게시글 미리보기</div>
-            <div style={{ fontSize: 10, color: featuredCount >= 5 ? '#e85d5d' : 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+            <div style={{ fontSize: 10, color: featuredCount >= 5 ? 'var(--danger)' : 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
               {featuredCount}/5개
             </div>
           </div>
@@ -2927,8 +2927,8 @@ const ArtistSchedule = () => {
 
           {/* 고객 미리보기 모드 (인스타그램 스타일) */}
           {pfPreview && filteredPortfolio.length > 0 && (
-            <div style={{ border: '2px solid var(--gold-border)', background: '#0B0B0B', padding: '28px', marginBottom: 20, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 8, right: 12, fontSize: 9, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', background: 'rgba(232,160,32,0.1)', padding: '2px 8px' }}>
+            <div style={{ border: '2px solid var(--gold-border)', background: 'var(--bg)', padding: '28px', marginBottom: 20, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 8, right: 12, fontSize: 9, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', background: 'var(--accent-a10)', padding: '2px 8px' }}>
                 CUSTOMER VIEW
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
@@ -2947,11 +2947,11 @@ const ArtistSchedule = () => {
                               background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
                               padding: '3px 8px', borderRadius: 2,
                             }}>
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-a50)" strokeWidth="2">
                                 <rect x="3" y="3" width="14" height="14" rx="1" />
                                 <path d="M7 21h14a2 2 0 002-2V7" />
                               </svg>
-                              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-serif)' }}>{imgs.length}</span>
+                              <span style={{ fontSize: 10, color: 'var(--ink-a50)', fontFamily: 'var(--font-serif)' }}>{imgs.length}</span>
                             </div>
                           )}
                           {/* 대표 게시글 표시 */}
@@ -2969,7 +2969,7 @@ const ArtistSchedule = () => {
                           </div>
                         )}
                         {pf.regionId && (
-                          <span style={{ fontSize: 10, color: 'var(--gold)', background: 'rgba(232,160,32,0.1)', padding: '2px 6px', border: '1px solid rgba(232,160,32,0.2)' }}>
+                          <span style={{ fontSize: 10, color: 'var(--gold)', background: 'var(--accent-a10)', padding: '2px 6px', border: '1px solid var(--accent-a20)' }}>
                             {getRegionLabel(pf.regionId)}
                           </span>
                         )}
@@ -2993,7 +2993,7 @@ const ArtistSchedule = () => {
               return (
                 <div key={pf.id} style={{
                   border: `1px solid ${pf.featured ? 'var(--gold-border)' : !pf.regionId ? 'rgba(232,80,80,0.3)' : 'var(--border)'}`,
-                  background: pf.featured ? 'rgba(232,160,32,0.03)' : 'var(--bg)', position: 'relative', overflow: 'hidden',
+                  background: pf.featured ? 'var(--accent-a03)' : 'var(--bg)', position: 'relative', overflow: 'hidden',
                 }}>
                   {/* 상단: 이미지 슬라이더 + 기본 정보 */}
                   <div style={{ display: 'flex', gap: 0 }}>
@@ -3029,12 +3029,12 @@ const ArtistSchedule = () => {
                           ★ {pf.featured ? '대표 게시글' : '대표설정'}
                         </button>
                         {!pf.featured && featuredCount >= 5 && (
-                          <span style={{ fontSize: 10, color: '#e85d5d' }}>최대 5개</span>
+                          <span style={{ fontSize: 10, color: 'var(--danger)' }}>최대 5개</span>
                         )}
                       </div>
                       {/* 지역 선택 (필수) — 활동 지역 탭과 동일한 나라→도시 피커 */}
                       <div style={{ position: 'relative' }}>
-                        <div style={{ fontSize: 10, color: !pf.regionId ? '#e85d5d' : 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em' }}>
+                        <div style={{ fontSize: 10, color: !pf.regionId ? 'var(--danger)' : 'var(--muted)', marginBottom: 4, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em' }}>
                           {!pf.regionId ? '⚠ 지역을 선택해주세요' : '촬영 지역'}
                         </div>
                         <button
@@ -3100,13 +3100,13 @@ const ArtistSchedule = () => {
                                 {sorted.map(([code, c]) => {
                                   const cityCount = (code === 'KR' ? DOMESTIC_REGIONS.length : (OVERSEAS_BY_COUNTRY[code] || []).length);
                                   return (
-                                    <div key={code} style={{ display: 'flex', alignItems: 'center', padding: '7px 12px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                                    <div key={code} style={{ display: 'flex', alignItems: 'center', padding: '7px 12px', cursor: 'pointer', borderBottom: '1px solid var(--ink-a03)' }}
                                       onClick={() => { setPfPickerCountry(code); setPfPickerSearch(''); if (pfSearchRef.current) pfSearchRef.current.value = ''; }}
                                     >
                                       <span style={{ fontSize: 14, marginRight: 8 }}>{c.flag}</span>
                                       <span style={{ flex: 1, fontSize: 11, fontFamily: 'var(--font-serif)', color: 'var(--text)' }}>
                                         {c.ko} <span style={{ color: 'var(--muted)', fontSize: 10 }}>({c.en})</span>
-                                        {cityCount > 0 && <span style={{ color: 'rgba(232,160,32,0.5)', fontSize: 9, marginLeft: 4 }}>{cityCount}</span>}
+                                        {cityCount > 0 && <span style={{ color: 'var(--accent-a50)', fontSize: 9, marginLeft: 4 }}>{cityCount}</span>}
                                       </span>
                                       <span style={{ fontSize: 10, color: 'var(--muted)' }}>→</span>
                                     </div>
@@ -3148,7 +3148,7 @@ const ArtistSchedule = () => {
                                 {filtered.map(r => {
                                   const selected = pf.regionId === r.id;
                                   return (
-                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '7px 12px', cursor: 'pointer', background: selected ? 'rgba(232,160,32,0.08)' : 'transparent', borderBottom: '1px solid rgba(255,255,255,0.03)' }}
+                                    <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '7px 12px', cursor: 'pointer', background: selected ? 'var(--accent-a08)' : 'transparent', borderBottom: '1px solid var(--ink-a03)' }}
                                       onClick={() => {
                                         updatePf(idx, 'regionId', r.id);
                                         setPfPickerOpen(null); setPfPickerCountry(null); setPfPickerSearch('');
@@ -3180,7 +3180,7 @@ const ArtistSchedule = () => {
                           📷 {images.length}/10장 {coverIdx < images.length ? `· ★ ${coverIdx + 1}번 대표사진` : ''}
                         </span>
                         <button onClick={() => removePf(idx)}
-                          style={{ fontSize: 11, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}>
+                          style={{ fontSize: 11, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}>
                           삭제
                         </button>
                       </div>
@@ -3247,7 +3247,7 @@ const ArtistSchedule = () => {
             </button>
           </div>
 
-          <p style={{ fontSize: 11, color: dbConnected ? '#48bb78' : 'var(--muted)', marginTop: 16, lineHeight: 1.7 }}>
+          <p style={{ fontSize: 11, color: dbConnected ? 'var(--success)' : 'var(--muted)', marginTop: 16, lineHeight: 1.7 }}>
             {dbConnected ? '✓ Supabase Storage 연동됨 — 이미지가 클라우드에 저장됩니다.' : '현재는 미리보기 전용입니다. Supabase 연결 후 클라우드 저장이 활성화됩니다.'}
           </p>
         </div>
@@ -3417,7 +3417,7 @@ const ArtistSchedule = () => {
         {sortedImages.length > 1 && (
           <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 4 }}>
             {sortedImages.map((_, i) => (
-              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === slideIdx ? 'var(--gold)' : 'rgba(255,255,255,0.4)', transition: 'background 0.2s' }} />
+              <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: i === slideIdx ? 'var(--gold)' : 'var(--ink-a30)', transition: 'background 0.2s' }} />
             ))}
           </div>
         )}
@@ -3436,7 +3436,7 @@ const ArtistSchedule = () => {
                 padding: '3px 10px', fontSize: 10, fontFamily: 'var(--font-serif)', fontWeight: 600,
                 background: featured ? 'var(--gold)' : 'rgba(0,0,0,0.6)',
                 color: featured ? '#000' : '#fff',
-                border: featured ? '1px solid var(--gold)' : '1px solid rgba(255,255,255,0.2)',
+                border: featured ? '1px solid var(--gold)' : '1px solid var(--ink-a20)',
                 cursor: (!featured && featuredFull) ? 'not-allowed' : 'pointer',
                 opacity: (!featured && featuredFull) ? 0.5 : 1,
                 borderRadius: 10, backdropFilter: 'blur(4px)', transition: 'all 0.15s',
@@ -3546,7 +3546,7 @@ const ArtistSchedule = () => {
             onClick={() => fileRef.current?.click()}
             style={{
               border: `2px dashed ${dragOver ? 'var(--gold)' : 'var(--border)'}`,
-              background: dragOver ? 'rgba(232,160,32,0.06)' : 'transparent',
+              background: dragOver ? 'var(--accent-a06)' : 'transparent',
               padding: '20px', textAlign: 'center', cursor: 'pointer', transition: 'all 0.2s',
             }}
           >
@@ -3603,7 +3603,7 @@ const ArtistSchedule = () => {
           onClick={() => fileRef.current?.click()}
           style={{
             border: `2px dashed ${dragOver ? 'var(--gold)' : 'var(--border)'}`,
-            background: dragOver ? 'rgba(232,160,32,0.06)' : 'transparent',
+            background: dragOver ? 'var(--accent-a06)' : 'transparent',
             padding: '16px', textAlign: 'center', cursor: 'pointer',
             transition: 'all 0.2s', marginBottom: 8,
           }}
@@ -3661,14 +3661,14 @@ const ArtistSchedule = () => {
                   {imgIdx === 0 && (
                     <div style={{
                       position: 'absolute', bottom: 0, left: 0, right: 0,
-                      background: 'var(--gold)', color: '#0B0B0B',
+                      background: 'var(--gold)', color: 'var(--on-accent)',
                       fontSize: 9, textAlign: 'center', padding: '1px 0',
                       fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
                     }}>
                       대표
                     </div>
                   )}
-                  <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: '#e85d5d', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                  <button onClick={(e) => { e.stopPropagation(); onRemove(imgIdx); }} style={{ position: 'absolute', top: -6, right: -6, background: 'var(--danger)', color: '#fff', border: 'none', cursor: 'pointer', width: 18, height: 18, borderRadius: '50%', fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                 </div>
               ))}
             </div>
@@ -3869,7 +3869,7 @@ const ArtistSchedule = () => {
       display: 'block', marginTop: 6, width: '100%',
       background: 'var(--bg)', border: '1px solid var(--border)',
       color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13,
-      colorScheme: 'dark',
+      colorScheme: 'light',
     };
 
     return (
@@ -3910,7 +3910,7 @@ const ArtistSchedule = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {hmkMenus.map((menu, idx) => (
                     <div key={menu.id} style={{ border: '1px solid var(--border)', padding: '14px 18px', position: 'relative', background: 'var(--bg)' }}>
-                      <button onClick={() => removeHmkMenu(idx)} style={{ position: 'absolute', top: 8, right: 10, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                      <button onClick={() => removeHmkMenu(idx)} style={{ position: 'absolute', top: 8, right: 10, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 10, marginBottom: 8 }}>
                         <input value={menu.name} onChange={e => updateHmkMenu(idx, 'name', e.target.value)}
                           placeholder="메뉴명 (예: Natural 메이크업)"
@@ -3931,11 +3931,11 @@ const ArtistSchedule = () => {
         </div>
 
         {/* Section C: 스냅 촬영 상품 (포트폴리오와 동일 형태) */}
-        <div style={{ border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative' }}>
+        <div style={{ border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-              📷 스냅 촬영 상품 <span style={{ color: 'rgba(232,160,32,0.5)' }}>— {snapProducts.length}개</span>
+              📷 스냅 촬영 상품 <span style={{ color: 'var(--accent-a50)' }}>— {snapProducts.length}개</span>
               {snapProducts.length === 0 && <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#e85d5d', display: 'inline-block', flexShrink: 0 }} title="필수: 1개 이상 등록" />}
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -3949,8 +3949,8 @@ const ArtistSchedule = () => {
 
           {/* 고객 미리보기 모드 */}
           {snapPreview !== null && snapProducts.length > 0 && (
-            <div style={{ border: '2px solid var(--gold-border)', background: '#0B0B0B', padding: '28px', marginBottom: 20, position: 'relative' }}>
-              <div style={{ position: 'absolute', top: 8, right: 12, fontSize: 9, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', background: 'rgba(232,160,32,0.1)', padding: '2px 8px' }}>
+            <div style={{ border: '2px solid var(--gold-border)', background: 'var(--bg)', padding: '28px', marginBottom: 20, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 8, right: 12, fontSize: 9, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', background: 'var(--accent-a10)', padding: '2px 8px' }}>
                 CUSTOMER VIEW
               </div>
               {(() => {
@@ -4036,7 +4036,7 @@ const ArtistSchedule = () => {
                                 style={{
                                   padding: '3px 8px', fontSize: 10, fontFamily: 'var(--font-serif)',
                                   background: selected ? 'var(--gold)' : 'transparent',
-                                  color: selected ? '#0B0B0B' : 'var(--muted)',
+                                  color: selected ? 'var(--on-accent)' : 'var(--muted)',
                                   border: `1px solid ${selected ? 'var(--gold)' : 'var(--border)'}`, cursor: 'pointer',
                                 }}>{loc.isMain && '★ '}{loc.name}</button>
                             );
@@ -4045,7 +4045,7 @@ const ArtistSchedule = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 'auto' }}>
                           <span style={{ fontSize: 10, color: 'var(--muted)' }}>📷 {imgs.length}/10장</span>
                           <button onClick={() => removeSnapProduct(idx)}
-                            style={{ fontSize: 10, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '3px 8px', cursor: 'pointer' }}>삭제</button>
+                            style={{ fontSize: 10, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '3px 8px', cursor: 'pointer' }}>삭제</button>
                         </div>
                       </div>
                     </div>
@@ -4085,10 +4085,10 @@ const ArtistSchedule = () => {
         </div>
 
         {/* Section D: 포토 투어 상품 */}
-        <div style={{ border: '1px solid rgba(232,160,32,0.2)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative' }}>
+        <div style={{ border: '1px solid var(--accent-a20)', background: 'var(--accent-a03)', padding: '24px 28px', position: 'relative' }}>
           <Corners />
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase', marginBottom: 6 }}>
-            🗺️ 포토 투어 <span style={{ color: 'rgba(232,160,32,0.5)' }}>— {tours.length}개</span>
+            🗺️ 포토 투어 <span style={{ color: 'var(--accent-a50)' }}>— {tours.length}개</span>
           </div>
           <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
             촬영 + 투어를 결합한 특별 상품을 만들어보세요. 고객에게 장소 가이드와 함께 촬영을 제공합니다.
@@ -4096,7 +4096,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
             {tours.map((tour, idx) => (
               <div key={idx} style={{ border: '1px solid var(--border)', padding: '16px 20px', position: 'relative' }}>
-                <button onClick={() => removeTour(idx)} style={{ position: 'absolute', top: 10, right: 12, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                <button onClick={() => removeTour(idx)} style={{ position: 'absolute', top: 10, right: 12, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
 
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 10 }}>
                   투어명
@@ -4115,7 +4115,7 @@ const ArtistSchedule = () => {
                       style={{
                         flex: 1, padding: '8px 12px', textAlign: 'left', cursor: 'pointer',
                         border: `1px solid ${(tour.pricingType || 'perPerson') === mode.id ? 'var(--gold)' : 'var(--border)'}`,
-                        background: (tour.pricingType || 'perPerson') === mode.id ? 'rgba(232,160,32,0.06)' : 'transparent',
+                        background: (tour.pricingType || 'perPerson') === mode.id ? 'var(--accent-a06)' : 'transparent',
                         color: 'var(--text)', fontSize: 11, fontFamily: 'var(--font-serif)',
                       }}
                     >
@@ -4150,7 +4150,7 @@ const ArtistSchedule = () => {
 
                 {/* 토탈 모드: 1인당 금액 미리보기 */}
                 {(tour.pricingType || 'perPerson') === 'total' && tour.price && tour.maxGuests && (
-                  <div style={{ fontSize: 10, color: 'var(--gold)', marginBottom: 10, padding: '4px 10px', background: 'rgba(232,160,32,0.04)', border: '1px solid rgba(232,160,32,0.12)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--gold)', marginBottom: 10, padding: '4px 10px', background: 'var(--accent-a04)', border: '1px solid var(--accent-a12)' }}>
                     💡 {tour.maxGuests}명 기준 1인당 ₩{Math.round(Number(tour.price) / tour.maxGuests).toLocaleString('ko-KR')}
                   </div>
                 )}
@@ -4187,13 +4187,13 @@ const ArtistSchedule = () => {
                       <button onClick={() => {
                         const r = tour.route || { departure: '', waypoints: [], destination: '' };
                         updateTour(idx, 'route', { ...r, waypoints: [...(r.waypoints || []), ''] });
-                      }} style={{ fontSize: 10, color: 'var(--gold)', background: 'transparent', border: '1px solid rgba(232,160,32,0.3)', padding: '2px 8px', cursor: 'pointer' }}>
+                      }} style={{ fontSize: 10, color: 'var(--gold)', background: 'transparent', border: '1px solid var(--accent-a30)', padding: '2px 8px', cursor: 'pointer' }}>
                         + 추가
                       </button>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {(tour.route?.waypoints || []).map((wp, wi) => (
-                        <div key={wi} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)', padding: '3px 8px' }}>
+                        <div key={wi} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--accent-a06)', border: '1px solid var(--accent-a15)', padding: '3px 8px' }}>
                           <input value={wp} onChange={e => {
                             const wps = [...(tour.route?.waypoints || [])];
                             wps[wi] = e.target.value;
@@ -4202,7 +4202,7 @@ const ArtistSchedule = () => {
                           <button onClick={() => {
                             const wps = (tour.route?.waypoints || []).filter((_, i) => i !== wi);
                             updateTour(idx, 'route', { ...(tour.route || {}), waypoints: wps });
-                          }} style={{ color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0 }}>×</button>
+                          }} style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0 }}>×</button>
                         </div>
                       ))}
                     </div>
@@ -4218,10 +4218,10 @@ const ArtistSchedule = () => {
                     const w = 420, h = 80, pad = 30;
                     const step = (w - pad * 2) / (pts.length - 1);
                     return (
-                      <div style={{ background: 'rgba(232,160,32,0.03)', border: '1px solid rgba(232,160,32,0.15)', padding: '12px 16px', marginTop: 4 }}>
+                      <div style={{ background: 'var(--accent-a03)', border: '1px solid var(--accent-a15)', padding: '12px 16px', marginTop: 4 }}>
                         <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block', margin: '0 auto' }}>
                           {/* 연결 선 */}
-                          <line x1={pad} y1={h / 2} x2={w - pad} y2={h / 2} stroke="rgba(232,160,32,0.4)" strokeWidth="2" strokeDasharray="6,4" />
+                          <line x1={pad} y1={h / 2} x2={w - pad} y2={h / 2} stroke="var(--accent-a30)" strokeWidth="2" strokeDasharray="6,4" />
                           {/* 포인트 + 레이블 */}
                           {pts.map((label, i) => {
                             const cx = pad + i * step;
@@ -4249,7 +4249,7 @@ const ArtistSchedule = () => {
                             const mx = (x1 + x2) / 2;
                             return (
                               <polygon key={`arr-${i}`} points={`${mx - 3},${h / 2 - 3} ${mx + 3},${h / 2} ${mx - 3},${h / 2 + 3}`}
-                                fill="rgba(232,160,32,0.6)" />
+                                fill="var(--accent-a50)" />
                             );
                           })}
                         </svg>
@@ -4264,10 +4264,10 @@ const ArtistSchedule = () => {
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>📍 기존 경유지 (루트로 전환 가능)</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {(tour.spots || []).map((spot, si) => (
-                        <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)', padding: '3px 8px' }}>
+                        <div key={si} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--accent-a06)', border: '1px solid var(--accent-a15)', padding: '3px 8px' }}>
                           <span style={{ color: 'var(--gold)', fontSize: 11, fontFamily: 'var(--font-serif)' }}>{spot}</span>
                           <button onClick={() => removeTourSpot(idx, si)}
-                            style={{ color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0 }}>×</button>
+                            style={{ color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0 }}>×</button>
                         </div>
                       ))}
                     </div>
@@ -4312,7 +4312,7 @@ const ArtistSchedule = () => {
         {tours.length > 0 && <TourInstanceManager photographerId={profile.id || artistId} tours={tours} />}
 
         {/* Section B-2: 시간 단위 가격 설정 */}
-        <div style={{ border: '1px solid var(--gold-border)', background: 'rgba(232,160,32,0.02)', padding: '24px 28px', position: 'relative', marginBottom: 20 }}>
+        <div style={{ border: '1px solid var(--gold-border)', background: 'var(--accent-a03)', padding: '24px 28px', position: 'relative', marginBottom: 20 }}>
           <Corners />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.2em', color: 'var(--gold)', textTransform: 'uppercase' }}>
@@ -4320,7 +4320,7 @@ const ArtistSchedule = () => {
             </div>
             {/* 활성/비활성 토글 */}
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 11 }}>
-              <span style={{ color: profile.hourlyRateEnabled === false ? '#e85d5d' : 'var(--muted)' }}>
+              <span style={{ color: profile.hourlyRateEnabled === false ? 'var(--danger)' : 'var(--muted)' }}>
                 {profile.hourlyRateEnabled === false ? '비활성' : '활성'}
               </span>
               <div
@@ -4381,12 +4381,12 @@ const ArtistSchedule = () => {
             </div>
           </div>
           {profile.hourlyRateEnabled === false && profile.hourlyRate && (
-            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.15)', fontSize: 10, color: 'rgba(232,80,80,0.8)', lineHeight: 1.6 }}>
+            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.15)', fontSize: 10, color: 'var(--danger)', lineHeight: 1.6 }}>
               🔒 시간 단위 예약이 비활성화되었습니다. 가격(₩{Number(profile.hourlyRate).toLocaleString('ko-KR')})은 저장된 상태이며, 토글을 켜면 즉시 활성화됩니다.
             </div>
           )}
           {profile.hourlyRateEnabled !== false && profile.hourlyRate && (
-            <div style={{ marginTop: 10, padding: '8px 12px', background: 'rgba(232,160,32,0.06)', border: '1px solid rgba(232,160,32,0.15)', fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
+            <div style={{ marginTop: 10, padding: '8px 12px', background: 'var(--accent-a06)', border: '1px solid var(--accent-a15)', fontSize: 10, color: 'var(--muted)', lineHeight: 1.6 }}>
               💡 고객이 프로필에서 "시간 단위 예약" 옵션을 볼 수 있습니다. 최소 1시간부터 예약 가능합니다.
             </div>
           )}
@@ -4399,7 +4399,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 16 }}>
             {props.map((prop, idx) => (
               <div key={prop.id} style={{ border: '1px solid var(--border)', padding: '14px 18px', position: 'relative' }}>
-                <button onClick={() => removeProp(idx)} style={{ position: 'absolute', top: 8, right: 10, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                <button onClick={() => removeProp(idx)} style={{ position: 'absolute', top: 8, right: 10, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, marginBottom: 10 }}>
                   <input value={prop.name} onChange={e => updateProp(idx, 'name', e.target.value)}
                     placeholder="소품명 (예: 베일)" style={inputStyle} />
@@ -4431,7 +4431,7 @@ const ArtistSchedule = () => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
             {costumes.map((costume, idx) => (
               <div key={costume.id} style={{ border: '1px solid var(--border)', padding: '16px 20px', position: 'relative' }}>
-                <button onClick={() => removeCostume(idx)} style={{ position: 'absolute', top: 10, right: 12, color: '#e85d5d', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
+                <button onClick={() => removeCostume(idx)} style={{ position: 'absolute', top: 10, right: 12, color: 'var(--danger)', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 16 }}>×</button>
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 10 }}>
                   의상명
                   <input value={costume.name} onChange={e => updateCostume(idx, 'name', e.target.value)}
@@ -4520,7 +4520,7 @@ const ArtistSchedule = () => {
               </div>
             </div>
           ))}
-          <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.2)', fontSize: 12, color: 'rgba(232,80,80,0.8)', lineHeight: 1.7 }}>
+          <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(232,80,80,0.06)', border: '1px solid rgba(232,80,80,0.2)', fontSize: 12, color: 'var(--danger)', lineHeight: 1.7 }}>
             ⚠ 고객에게 개인 계좌번호를 직접 노출하거나 플랫폼 외 결제를 유도하는 행위는 서비스 이용약관 위반입니다.<br/>
             계좌이체는 TossPayments 가상계좌를 통해서만 제공되어 수수료 구조가 유지됩니다.
           </div>
@@ -4609,16 +4609,16 @@ const ArtistSchedule = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
             {[
               { label: '매출', value: formatMoneyFull(thisMonth.revenue), change: revChange, color: 'var(--gold)' },
-              { label: '건수', value: `${thisMonth.count}건`, change: cntChange, color: '#60a5fa' },
+              { label: '건수', value: `${thisMonth.count}건`, change: cntChange, color: 'var(--info)' },
               { label: '평균 단가', value: formatMoneyFull(thisMonth.count > 0 ? Math.round(thisMonth.revenue / thisMonth.count) : 0), color: 'var(--text)' },
-              { label: '정산 대기', value: `${thisMonth.pendingCount}건`, sub: formatMoneyFull(thisMonth.pendingAmount), color: thisMonth.pendingCount > 0 ? '#facc15' : 'var(--muted)' },
+              { label: '정산 대기', value: `${thisMonth.pendingCount}건`, sub: formatMoneyFull(thisMonth.pendingAmount), color: thisMonth.pendingCount > 0 ? 'var(--warning)' : 'var(--muted)' },
             ].map((c, i) => (
               <div key={i} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '16px 14px', position: 'relative' }}>
                 <Corners />
                 <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 8 }}>{c.label}</div>
                 <div style={{ fontSize: 18, fontFamily: 'var(--font-serif)', color: c.color, marginBottom: 4 }}>{c.value}</div>
                 {c.change !== undefined && c.change !== null && (
-                  <div style={{ fontSize: 10, color: c.change >= 0 ? '#22c55e' : '#e85d5d' }}>
+                  <div style={{ fontSize: 10, color: c.change >= 0 ? 'var(--success)' : 'var(--danger)' }}>
                     전월 대비 {c.change > 0 ? '+' : ''}{c.change}%
                   </div>
                 )}
@@ -4636,12 +4636,12 @@ const ArtistSchedule = () => {
             <div>
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>시작일</div>
               <input type="date" value={perfDateStart} onChange={e => setPerfDateStart(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} />
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>종료일</div>
               <input type="date" value={perfDateEnd} onChange={e => setPerfDateEnd(e.target.value)}
-                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} />
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} />
             </div>
             <button className="btn-primary" style={{ padding: '8px 20px', fontSize: 12 }} onClick={handleRangeSearch}
               disabled={!perfDateStart || !perfDateEnd}>
@@ -4659,8 +4659,8 @@ const ArtistSchedule = () => {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
               {[
                 { label: '총 매출', value: formatMoneyFull(perfRangeResult.revenue), color: 'var(--gold)' },
-                { label: '정산액', value: formatMoneyFull(perfRangeResult.netRevenue), color: '#22c55e' },
-                { label: '총 건수', value: `${perfRangeResult.count}건`, color: '#60a5fa' },
+                { label: '정산액', value: formatMoneyFull(perfRangeResult.netRevenue), color: 'var(--success)' },
+                { label: '총 건수', value: `${perfRangeResult.count}건`, color: 'var(--info)' },
                 { label: '평균 단가', value: formatMoneyFull(perfRangeResult.avgAmount), color: 'var(--text)' },
                 { label: '콜라보', value: `${perfRangeResult.collaboCount}건`, color: '#c084fc' },
               ].map((c, i) => (
@@ -4697,7 +4697,7 @@ const ArtistSchedule = () => {
                     ? Math.round(((m.revenue - prevMonth.revenue) / prevMonth.revenue) * 100)
                     : null;
                   return (
-                    <tr key={m.yearMonth} style={{ background: idx === 0 ? 'rgba(232,160,32,0.03)' : 'transparent' }}>
+                    <tr key={m.yearMonth} style={{ background: idx === 0 ? 'var(--accent-a03)' : 'transparent' }}>
                       <td style={{ ...cellStyle, textAlign: 'left', fontFamily: 'var(--font-serif)', color: idx === 0 ? 'var(--gold)' : 'var(--text)' }}>
                         {m.yearMonth}
                         {idx === 0 && <span style={{ fontSize: 9, color: 'var(--gold)', marginLeft: 6 }}>이번 달</span>}
@@ -4706,23 +4706,23 @@ const ArtistSchedule = () => {
                       <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}>
                         {formatMoneyFull(m.revenue)}
                         {revDelta !== null && (
-                          <span style={{ fontSize: 9, color: revDelta >= 0 ? '#22c55e' : '#e85d5d', marginLeft: 6 }}>
+                          <span style={{ fontSize: 9, color: revDelta >= 0 ? 'var(--success)' : 'var(--danger)', marginLeft: 6 }}>
                             {revDelta > 0 ? '↑' : revDelta < 0 ? '↓' : '→'}{Math.abs(revDelta)}%
                           </span>
                         )}
                       </td>
-                      <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: '#22c55e' }}>{formatMoneyFull(m.netRevenue)}</td>
+                      <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--success)' }}>{formatMoneyFull(m.netRevenue)}</td>
                       <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--muted)' }}>{formatMoneyFull(avg)}</td>
                       <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: m.collaboCount > 0 ? '#c084fc' : 'var(--muted)' }}>
                         {m.collaboCount > 0 ? `${m.collaboCount}건` : '-'}
                       </td>
                       <td style={{ ...cellStyle, textAlign: 'center' }}>
                         {m.pending > 0 ? (
-                          <span style={{ fontSize: 10, padding: '2px 8px', border: '1px solid rgba(250,204,21,0.3)', color: '#facc15', fontFamily: 'var(--font-serif)' }}>
+                          <span style={{ fontSize: 10, padding: '2px 8px', border: '1px solid rgba(250,204,21,0.3)', color: 'var(--warning)', fontFamily: 'var(--font-serif)' }}>
                             대기 {m.pending}건
                           </span>
                         ) : (
-                          <span style={{ fontSize: 10, padding: '2px 8px', border: '1px solid rgba(34,197,94,0.2)', color: '#22c55e', fontFamily: 'var(--font-serif)' }}>
+                          <span style={{ fontSize: 10, padding: '2px 8px', border: '1px solid rgba(34,197,94,0.2)', color: 'var(--success)', fontFamily: 'var(--font-serif)' }}>
                             완료
                           </span>
                         )}
@@ -4735,7 +4735,7 @@ const ArtistSchedule = () => {
                   <td style={{ ...cellStyle, textAlign: 'left', fontFamily: 'var(--font-serif)', color: 'var(--gold)', fontWeight: 600 }}>합계</td>
                   <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}>{totalCnt}건</td>
                   <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--gold)' }}>{formatMoneyFull(totalRev)}</td>
-                  <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: '#22c55e' }}>{formatMoneyFull(getTotalNetRevenue(artistId))}</td>
+                  <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--success)' }}>{formatMoneyFull(getTotalNetRevenue(artistId))}</td>
                   <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: 'var(--muted)' }}>{formatMoneyFull(avgPrice)}</td>
                   <td style={{ ...cellStyle, textAlign: 'right', fontFamily: 'var(--font-serif)', color: '#c084fc' }}>
                     {monthly.reduce((s, m) => s + m.collaboCount, 0)}건
@@ -4790,7 +4790,7 @@ const ArtistSchedule = () => {
                     전체 {totalCnt}건 중 {collaboTotal}건 ({collaboRatio}%)
                   </div>
                   <div>
-                    <span style={{ color: '#60a5fa' }}>누적 평균 단가:</span>{' '}
+                    <span style={{ color: 'var(--info)' }}>누적 평균 단가:</span>{' '}
                     {formatMoneyFull(avgPrice)} / 건
                   </div>
                 </>
@@ -5031,7 +5031,7 @@ const ArtistSchedule = () => {
                   >
                     콜라보 제의
                   </button>
-                  <div style={{ fontSize: 9, color: '#e85d5d', marginTop: 4 }}>
+                  <div style={{ fontSize: 9, color: 'var(--danger)', marginTop: 4 }}>
                     해당 지역 노출 ON 필요
                   </div>
                 </div>
@@ -5076,11 +5076,11 @@ const ArtistSchedule = () => {
           {/* 동종 콜라보 역할 표시 */}
           {proposal.isSameType && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 10, padding: '3px 10px', background: 'rgba(232,160,32,0.08)', border: '1px solid var(--gold-border)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+              <span style={{ fontSize: 10, padding: '3px 10px', background: 'var(--accent-a08)', border: '1px solid var(--gold-border)', color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
                 동종 콜라보
               </span>
               {proposal.collaboRole && (
-                <span style={{ fontSize: 10, padding: '3px 10px', background: proposal.collaboRole === 'main' ? 'rgba(34,197,94,0.08)' : 'rgba(200,200,200,0.08)', border: `1px solid ${proposal.collaboRole === 'main' ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`, color: proposal.collaboRole === 'main' ? '#22c55e' : 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
+                <span style={{ fontSize: 10, padding: '3px 10px', background: proposal.collaboRole === 'main' ? 'rgba(34,197,94,0.08)' : 'rgba(200,200,200,0.08)', border: `1px solid ${proposal.collaboRole === 'main' ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`, color: proposal.collaboRole === 'main' ? 'var(--success)' : 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
                   {COLLABO_ROLES[proposal.collaboRole]?.ko || proposal.collaboRole} ({proposal.revenueShare?.[proposal.collaboRole]}%)
                 </span>
               )}
@@ -5101,7 +5101,7 @@ const ArtistSchedule = () => {
               <button className="btn-primary" style={{ flex: 1, fontSize: 12 }} onClick={() => handleAccept(proposal.id)}>
                 ✓ 수락
               </button>
-              <button className="btn-ghost" style={{ fontSize: 12, color: '#e85d5d', borderColor: 'rgba(232,80,80,0.3)' }}
+              <button className="btn-ghost" style={{ fontSize: 12, color: 'var(--danger)', borderColor: 'rgba(232,80,80,0.3)' }}
                 onClick={() => setCollaboRejectPopup({ proposalId: proposal.id })}>
                 거절
               </button>
@@ -5109,7 +5109,7 @@ const ArtistSchedule = () => {
           )}
           {/* 거절 사유 표시 */}
           {proposal.status === 'rejected' && proposal.rejectReason && (
-            <div style={{ fontSize: 11, color: 'rgba(232,80,80,0.7)', marginTop: 4 }}>
+            <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>
               사유: {proposal.rejectReason}
             </div>
           )}
@@ -5131,24 +5131,24 @@ const ArtistSchedule = () => {
                 <Corners />
                 <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: 'var(--gold)', marginBottom: 4 }}>{remaining}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>이번 달 남은 수락</div>
-                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>콜라보 수락 월 {COLLABO_RULES.maxProposalsPerMonth}회 제한</div>
+                <div style={{ fontSize: 9, color: 'var(--accent-a50)', marginTop: 3 }}>콜라보 수락 월 {COLLABO_RULES.maxProposalsPerMonth}회 제한</div>
               </div>
               <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '18px 16px', position: 'relative', textAlign: 'center' }}>
                 <Corners />
-                <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: dailyRemaining <= 0 ? '#e85d5d' : 'var(--text)', marginBottom: 4 }}>{dailyRemaining}</div>
+                <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: dailyRemaining <= 0 ? 'var(--danger)' : 'var(--text)', marginBottom: 4 }}>{dailyRemaining}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>오늘 남은 제안</div>
-                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>확장형 콜라보 제안 1일 {COLLABO_RULES.maxDailyProposals}회 제한</div>
+                <div style={{ fontSize: 9, color: 'var(--accent-a50)', marginTop: 3 }}>확장형 콜라보 제안 1일 {COLLABO_RULES.maxDailyProposals}회 제한</div>
               </div>
               <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '18px 16px', position: 'relative', textAlign: 'center' }}>
                 <Corners />
-                <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: pendingIn.length > 0 ? '#22c55e' : 'var(--text)', marginBottom: 4 }}>{pendingIn.length}</div>
+                <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: pendingIn.length > 0 ? 'var(--success)' : 'var(--text)', marginBottom: 4 }}>{pendingIn.length}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>받은 제의 (대기)</div>
               </div>
               <div style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '18px 16px', position: 'relative', textAlign: 'center' }}>
                 <Corners />
                 <div style={{ fontSize: 26, fontFamily: 'var(--font-serif)', color: 'var(--text)', marginBottom: 4 }}>{sent.filter(p => p.status === 'accepted').length}</div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>성사된 콜라보</div>
-                <div style={{ fontSize: 9, color: 'rgba(232,160,32,0.5)', marginTop: 3 }}>동종 {sameTypeRemaining}/{COLLABO_RULES.maxSameTypePerMonth}회 남음</div>
+                <div style={{ fontSize: 9, color: 'var(--accent-a50)', marginTop: 3 }}>동종 {sameTypeRemaining}/{COLLABO_RULES.maxSameTypePerMonth}회 남음</div>
               </div>
             </div>
           );
@@ -5245,7 +5245,7 @@ const ArtistSchedule = () => {
                         <ArtistCard ph={ph} />
                         {overlaps.length > 0 && (
                           <div style={{ marginTop: -1, padding: '8px 20px', background: 'rgba(34,197,94,0.04)', border: '1px solid rgba(34,197,94,0.2)', borderTop: 'none', display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <span style={{ fontSize: 10, color: '#22c55e', fontFamily: 'var(--font-serif)', letterSpacing: '0.06em' }}>📅 겹치는 일정:</span>
+                            <span style={{ fontSize: 10, color: 'var(--success)', fontFamily: 'var(--font-serif)', letterSpacing: '0.06em' }}>📅 겹치는 일정:</span>
                             {overlaps.map((o, i) => (
                               <span key={i} style={{ fontSize: 10, color: 'var(--text)', padding: '3px 10px', background: o.type === 'main' ? 'rgba(34,197,94,0.12)' : 'rgba(34,197,94,0.08)', border: `1px solid ${o.type === 'main' ? 'rgba(34,197,94,0.25)' : 'rgba(34,197,94,0.15)'}` }}>
                                 {o.city} {o.start} ~ {o.end} ({o.days}일){o.type === 'main' ? ' · 상주' : ''}
@@ -5270,7 +5270,7 @@ const ArtistSchedule = () => {
                 </p>
                 <button
                   onClick={() => setActiveTab('locations')}
-                  style={{ padding: '10px 24px', fontSize: 12, fontFamily: 'var(--font-serif)', background: 'var(--gold)', color: '#0B0B0B', border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}
+                  style={{ padding: '10px 24px', fontSize: 12, fontFamily: 'var(--font-serif)', background: 'var(--gold)', color: 'var(--on-accent)', border: 'none', cursor: 'pointer', letterSpacing: '0.05em' }}
                 >
                   활동 지역 등록하기 →
                 </button>
@@ -5357,7 +5357,7 @@ const ArtistSchedule = () => {
 
                 {/* 동종 콜라보 안내 + 역할 선택 */}
                 {sameType && (
-                  <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(232,160,32,0.06)', border: '1px solid var(--gold-border)' }}>
+                  <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--accent-a06)', border: '1px solid var(--gold-border)' }}>
                     <div id="collabo-role-desc" style={{ fontSize: 11, color: 'var(--gold)', marginBottom: 8, fontFamily: 'var(--font-serif)' }}>
                       동종 콜라보 — 역할을 선택해주세요
                     </div>
@@ -5405,7 +5405,7 @@ const ArtistSchedule = () => {
                   <label style={{ fontSize: 11, color: 'var(--muted)' }}>
                     콜라보 희망 날짜 (연속일은 시작~종료일)
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 6 }}>
-                      <input type="date" id="collabo-start" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="date" id="collabo-start" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5419,7 +5419,7 @@ const ArtistSchedule = () => {
                           if (dailyH > 0) sumEl.textContent = `일 ${dailyH.toFixed(1)}시간 × ${days}일 = 총 ${(dailyH * days).toFixed(1)}시간`;
                         }
                       }} />
-                      <input type="date" id="collabo-end" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="date" id="collabo-end" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5440,7 +5440,7 @@ const ArtistSchedule = () => {
                   <label style={{ fontSize: 11, color: 'var(--muted)' }}>
                     희망 시간대
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 10, marginTop: 6, alignItems: 'center' }}>
-                      <input type="time" id="collabo-time-start" defaultValue="10:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="time" id="collabo-time-start" defaultValue="10:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
                         const sumEl = document.getElementById('collabo-time-summary');
@@ -5459,7 +5459,7 @@ const ArtistSchedule = () => {
                           }
                         }
                       }} />
-                      <input type="time" id="collabo-time-end" defaultValue="14:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'dark' }} onChange={() => {
+                      <input type="time" id="collabo-time-end" defaultValue="14:00" style={{ background: 'var(--bg)', border: '1px solid var(--border)', color: 'var(--text)', padding: '8px 12px', fontFamily: 'var(--font-serif)', fontSize: 13, colorScheme: 'light' }} onChange={() => {
                         // 동일 로직 (시작 시간 onChange와 같음)
                         const ts = document.getElementById('collabo-time-start')?.value;
                         const te = document.getElementById('collabo-time-end')?.value;
@@ -5495,7 +5495,7 @@ const ArtistSchedule = () => {
                   </label>
                 </div>
 
-                <div style={{ fontSize: 11, color: 'rgba(232,160,32,0.6)', marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: 'var(--accent-a50)', marginBottom: 20 }}>
                   남은 제의 횟수: <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>{remaining}회</span> / 월 {COLLABO_RULES.maxProposalsPerMonth}회
                   {sameType && <span> · 동종 남은 횟수: {COLLABO_RULES.maxSameTypePerMonth - getMonthlySameTypeCount(artistId, myType)}회</span>}
                 </div>
@@ -5553,7 +5553,7 @@ const ArtistSchedule = () => {
           <div style={{ position: 'fixed', inset: 0, zIndex: 1003, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
             <div style={{ background: 'var(--bg2)', border: '1px solid rgba(232,80,80,0.3)', maxWidth: 440, width: '100%', padding: '36px 32px', position: 'relative' }}>
               <Corners />
-              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: '#e85d5d', textTransform: 'uppercase', marginBottom: 16 }}>
+              <div style={{ fontFamily: 'var(--font-serif)', fontSize: 10, letterSpacing: '0.3em', color: 'var(--danger)', textTransform: 'uppercase', marginBottom: 16 }}>
                 콜라보 거절
               </div>
               <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.8, marginBottom: 16 }}>
@@ -5586,7 +5586,7 @@ const ArtistSchedule = () => {
       {saveMsg && (
         <div style={{
           position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
-          zIndex: 9999, padding: '12px 32px', background: 'rgba(11,11,11,0.95)',
+          zIndex: 9999, padding: '12px 32px', background: 'var(--ink-a95)',
           border: '1px solid var(--gold-border)', fontSize: 13,
           color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
           textAlign: 'center', boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
@@ -5626,9 +5626,9 @@ const ArtistSchedule = () => {
 
           const cards = [
             { label: '총 누적 매출', value: formatMoney(totalRev), sub: `정산 완료: ${formatMoney(totalNet)}`, color: 'var(--gold)' },
-            { label: '총 누적 건수', value: `${totalCnt}건`, sub: `평균 단가: ${formatMoney(totalCnt > 0 ? Math.round(totalRev / totalCnt) : 0)}원`, color: '#60a5fa' },
-            { label: '이번 달 매출', value: formatMoney(thisMonth.revenue), sub: revDiff !== 0 ? `전월 대비 ${revDiff > 0 ? '+' : ''}${revDiff}%` : '전월 데이터 없음', color: revDiff >= 0 ? '#22c55e' : '#e85d5d' },
-            { label: '이번 달 건수', value: `${thisMonth.count}건`, sub: `정산 대기: ${thisMonth.pendingCount}건 (${formatMoney(thisMonth.pendingAmount)})`, color: thisMonth.pendingCount > 0 ? '#facc15' : 'var(--muted)' },
+            { label: '총 누적 건수', value: `${totalCnt}건`, sub: `평균 단가: ${formatMoney(totalCnt > 0 ? Math.round(totalRev / totalCnt) : 0)}원`, color: 'var(--info)' },
+            { label: '이번 달 매출', value: formatMoney(thisMonth.revenue), sub: revDiff !== 0 ? `전월 대비 ${revDiff > 0 ? '+' : ''}${revDiff}%` : '전월 데이터 없음', color: revDiff >= 0 ? 'var(--success)' : 'var(--danger)' },
+            { label: '이번 달 건수', value: `${thisMonth.count}건`, sub: `정산 대기: ${thisMonth.pendingCount}건 (${formatMoney(thisMonth.pendingAmount)})`, color: thisMonth.pendingCount > 0 ? 'var(--warning)' : 'var(--muted)' },
           ];
 
           return (
@@ -5689,7 +5689,7 @@ const ArtistSchedule = () => {
                       background: 'rgba(232,80,80,0.06)',
                       border: '1px solid rgba(232,80,80,0.15)',
                       fontSize: 12,
-                      color: 'rgba(232,80,80,0.85)',
+                      color: 'var(--danger)',
                       lineHeight: 1.6,
                       display: 'flex',
                       alignItems: 'center',
@@ -5728,13 +5728,13 @@ const ArtistSchedule = () => {
                               height: 18,
                               borderRadius: '50%',
                               background: item.completed ? 'rgba(76,181,100,0.2)' : 'rgba(232,80,80,0.2)',
-                              color: item.completed ? '#4cb564' : '#e85d5d',
+                              color: item.completed ? '#4cb564' : 'var(--danger)',
                               fontWeight: 'bold',
                               fontSize: 11,
                             }}>
                               {item.completed ? '✓' : '✗'}
                             </span>
-                            <span style={{ color: item.completed ? 'var(--muted)' : 'rgba(232,80,80,0.85)' }}>
+                            <span style={{ color: item.completed ? 'var(--muted)' : 'var(--danger)' }}>
                               {item.name}
                             </span>
                           </div>
@@ -5758,7 +5758,7 @@ const ArtistSchedule = () => {
                   <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
                     padding: '12px 20px', fontSize: 12, fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
                     background: 'transparent',
-                    color: activeTab === tab.key ? 'var(--gold)' : tab.key === 'bookings' && pendingBookings.length > 0 ? '#f0ac2a' : 'var(--muted)',
+                    color: activeTab === tab.key ? 'var(--gold)' : tab.key === 'bookings' && pendingBookings.length > 0 ? 'var(--accent-deep)' : 'var(--muted)',
                     border: 'none',
                     borderBottom: `2px solid ${activeTab === tab.key ? 'var(--gold)' : 'transparent'}`,
                     cursor: 'pointer', transition: 'all 0.2s',
@@ -5770,7 +5770,7 @@ const ArtistSchedule = () => {
                       <span style={{
                         position: 'absolute', top: 6, right: 6,
                         width: 8, height: 8, borderRadius: '50%',
-                        background: tab.key === 'bookings' || tab.key === 'collabo' ? '#f0ac2a' : '#e85d5d',
+                        background: tab.key === 'bookings' || tab.key === 'collabo' ? 'var(--accent-deep)' : '#e85d5d',
                         display: 'inline-block',
                       }} />
                     )}

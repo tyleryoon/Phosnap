@@ -192,15 +192,15 @@ const StylistProfile = () => {
       }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(to bottom, rgba(11,11,11,0.2) 0%, rgba(11,11,11,0.85) 100%)',
+          background: 'linear-gradient(to bottom, var(--ink-a20) 0%, var(--ink-a85) 100%)',
         }} />
         {/* 뒤로 가기 */}
         <button
           onClick={() => { try { navigate(-1); } catch { navigate('/'); } }}
           style={{
             position: 'absolute', top: 20, left: 24,
-            background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)',
-            color: 'rgba(255,255,255,0.8)', padding: '8px 16px',
+            background: 'rgba(0,0,0,0.5)', border: '1px solid var(--ink-a20)',
+            color: 'var(--ink-a50)', padding: '8px 16px',
             fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.08em',
           }}
@@ -229,8 +229,8 @@ const StylistProfile = () => {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {displayTags.map(tag => (
               <span key={tag} style={{
-                padding: '4px 10px', background: 'rgba(232,160,32,0.2)',
-                border: '1px solid rgba(232,160,32,0.5)',
+                padding: '4px 10px', background: 'var(--accent-a20)',
+                border: '1px solid var(--accent-a50)',
                 fontSize: 11, color: 'var(--gold)',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
               }}>
@@ -320,11 +320,11 @@ const StylistProfile = () => {
                         background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
                         padding: '3px 8px', borderRadius: 2,
                       }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-a50)" strokeWidth="2">
                           <rect x="3" y="3" width="14" height="14" rx="1" />
                           <path d="M7 21h14a2 2 0 002-2V7" />
                         </svg>
-                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
+                        <span style={{ fontSize: 10, color: 'var(--ink-a50)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
                       </div>
                     )}
                     {post.caption && (
@@ -332,7 +332,7 @@ const StylistProfile = () => {
                         position: 'absolute', bottom: 0, left: 0, right: 0,
                         padding: '8px 12px',
                         background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                        fontSize: 11, color: 'rgba(255,255,255,0.85)',
+                        fontSize: 11, color: 'var(--ink-a50)',
                         fontFamily: 'var(--font-serif)',
                       }}>
                         {post.caption}
@@ -366,7 +366,7 @@ const StylistProfile = () => {
                   {svc.popular && (
                     <div style={{
                       position: 'absolute', top: -1, left: 20,
-                      background: 'var(--gold)', color: '#0B0B0B',
+                      background: 'var(--gold)', color: 'var(--on-accent)',
                       fontFamily: 'var(--font-serif)', fontSize: 9,
                       fontWeight: 600, letterSpacing: '0.1em', padding: '3px 10px',
                     }}>

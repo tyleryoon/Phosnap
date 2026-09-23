@@ -14,7 +14,7 @@ import {
 
 const STATUS_META = {
   open:     { label: '답변 대기', color: 'var(--gold)' },
-  answered: { label: '답변 완료', color: '#22c55e' },
+  answered: { label: '답변 완료', color: 'var(--success)' },
   closed:   { label: '종료',     color: 'var(--muted)' },
 };
 
@@ -113,7 +113,7 @@ const InquiryAdmin = ({ onChanged }) => {
               style={{
                 padding: '6px 14px', fontSize: 11, cursor: 'pointer',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.06em',
-                background: filter === f.k ? 'rgba(232,160,32,0.08)' : 'transparent',
+                background: filter === f.k ? 'var(--accent-a08)' : 'transparent',
                 border: `1px solid ${filter === f.k ? 'var(--gold)' : 'var(--border)'}`,
                 color: filter === f.k ? 'var(--gold)' : 'var(--muted)',
               }}
@@ -213,7 +213,7 @@ const InquiryAdmin = ({ onChanged }) => {
                         background: 'var(--bg)', borderLeft: '3px solid #22c55e',
                       }}>
                         <div style={{
-                          fontSize: 10, color: '#22c55e', fontFamily: 'var(--font-serif)',
+                          fontSize: 10, color: 'var(--success)', fontFamily: 'var(--font-serif)',
                           letterSpacing: '0.15em', marginBottom: 8,
                         }}>
                           답변 · {fmt(row.answered_at)}

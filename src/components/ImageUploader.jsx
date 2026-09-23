@@ -84,7 +84,7 @@ const ImageUploader = ({
             <button
               onClick={() => inputRef.current?.click()}
               style={{
-                background: 'rgba(11,11,11,0.8)', border: '1px solid var(--border)',
+                background: 'var(--ink-a80)', border: '1px solid var(--border)',
                 color: 'var(--text)', fontSize: 10, padding: '4px 12px', cursor: 'pointer',
                 fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
               }}
@@ -96,7 +96,7 @@ const ImageUploader = ({
                 onClick={() => onRemove(value)}
                 style={{
                   background: 'rgba(245,101,101,0.15)', border: '1px solid rgba(245,101,101,0.3)',
-                  color: '#f56565', fontSize: 10, padding: '4px 12px', cursor: 'pointer',
+                  color: 'var(--danger)', fontSize: 10, padding: '4px 12px', cursor: 'pointer',
                   fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
                 }}
               >
@@ -156,7 +156,7 @@ const ImageUploader = ({
       </div>
 
       {error && (
-        <div style={{ fontSize: 11, color: '#f56565', marginTop: 6 }}>{error}</div>
+        <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>{error}</div>
       )}
 
       <input

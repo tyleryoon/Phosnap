@@ -243,7 +243,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
             <div key={key} style={{
               marginBottom: 24, padding: '20px 20px 16px',
               border: d.rating > 0 ? '1px solid var(--gold-border)' : '1px solid var(--border)',
-              background: d.rating > 0 ? 'rgba(232,160,32,0.03)' : 'var(--bg2)',
+              background: d.rating > 0 ? 'var(--accent-a03)' : 'var(--bg2)',
               position: 'relative', transition: 'all 0.2s',
             }}>
               <Corners />
@@ -284,7 +284,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
                       return (
                         <button key={tag} onClick={() => toggleTag(key, tag)} style={{
                           padding: '6px 14px', fontSize: 12,
-                          background: selected ? 'rgba(232,160,32,0.15)' : 'transparent',
+                          background: selected ? 'var(--accent-a15)' : 'transparent',
                           border: selected ? '1px solid var(--gold)' : '1px solid var(--border)',
                           color: selected ? 'var(--gold)' : 'var(--muted)',
                           cursor: 'pointer', transition: 'all 0.15s',
@@ -323,7 +323,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
         {savedMsg && (
           <div style={{
             padding: '10px 14px', marginBottom: 16, fontSize: 13,
-            color: savedMsg.includes('✓') ? '#4ade80' : '#ef4444',
+            color: savedMsg.includes('✓') ? 'var(--success)' : 'var(--danger)',
             background: savedMsg.includes('✓') ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
             border: `1px solid ${savedMsg.includes('✓') ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
           }}>
@@ -343,7 +343,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
           style={{
             width: '100%', padding: '14px 0',
             background: canSave ? 'var(--gold)' : 'var(--bg2)',
-            color: canSave ? '#0B0B0B' : 'var(--muted)',
+            color: canSave ? 'var(--on-accent)' : 'var(--muted)',
             border: canSave ? 'none' : '1px solid var(--border)',
             fontFamily: 'var(--font-serif)', fontSize: 14,
             letterSpacing: '0.1em', cursor: canSave ? 'pointer' : 'default',

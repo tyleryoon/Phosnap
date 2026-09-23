@@ -12,7 +12,7 @@ const ToastIcon = ({ type }) => {
       return <span style={{ color: '#FF6B6B' }}>✕</span>;
     case 'info':
     default:
-      return <span style={{ color: 'rgba(242,242,242,0.6)' }}>ℹ</span>;
+      return <span style={{ color: 'var(--ink-a50)' }}>ℹ</span>;
   }
 };
 
@@ -24,7 +24,7 @@ const getBorderColor = (type) => {
       return 'rgba(255, 107, 107, 0.3)';
     case 'info':
     default:
-      return 'rgba(242, 242, 242, 0.1)';
+      return 'var(--ink-a10)';
   }
 };
 

@@ -17,7 +17,7 @@ const AlertDot = ({ count = null, show = true, title = '' }) => {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#e85d5d',
+    background: 'var(--danger)',
     color: '#fff',
     verticalAlign: 'middle',
   };
