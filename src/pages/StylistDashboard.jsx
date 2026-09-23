@@ -622,7 +622,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             활동 지역과 연락처는 프로필 정보를 그대로 사용합니다.
           </p>
           {errorMsg && (
-            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
               {errorMsg}
             </div>
           )}
@@ -655,7 +655,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
           {errorMsg}
         </div>
       )}
@@ -678,7 +678,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
                 </div>
                 <button
                   onClick={() => handleDelete(it.id)}
-                  style={{ fontSize: 12, color: '#e85d5d', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
+                  style={{ fontSize: 12, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
                 >
                   {t.delete}
                 </button>
@@ -726,7 +726,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             </div>
           </div>
           {errorMsg && (
-            <div style={{ marginTop: 14, color: '#e85d5d', fontSize: 13 }}>{errorMsg}</div>
+            <div style={{ marginTop: 14, color: 'var(--danger)', fontSize: 13 }}>{errorMsg}</div>
           )}
           <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
             <button
@@ -905,7 +905,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: '#e85d5d', fontSize: 13 }}>
+        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
           {errorMsg}
         </div>
       )}
@@ -988,7 +988,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                   style={{
                     padding: '8px 16px',
                     background: 'transparent',
-                    color: '#f56565',
+                    color: 'var(--danger)',
                     border: '1px solid #f56565',
                     cursor: 'pointer',
                     fontFamily: 'var(--font-body)',
@@ -1574,10 +1574,10 @@ const ProfileEditTab = ({ t, stylistId }) => {
           {saving ? t.saving : t.saveProfile}
         </button>
         {saveStatus === 'saved' && (
-          <div style={{ color: '#48bb78', fontSize: 14, fontWeight: 500 }}>{t.saved}</div>
+          <div style={{ color: 'var(--success)', fontSize: 14, fontWeight: 500 }}>{t.saved}</div>
         )}
         {saveStatus === 'error' && (
-          <div style={{ color: '#f56565', fontSize: 14, fontWeight: 500 }}>{t.error}</div>
+          <div style={{ color: 'var(--danger)', fontSize: 14, fontWeight: 500 }}>{t.error}</div>
         )}
       </div>
     </div>

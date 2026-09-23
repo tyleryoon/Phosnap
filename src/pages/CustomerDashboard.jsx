@@ -656,7 +656,7 @@ const CustomerDashboard = () => {
                               <span style={{ fontFamily: 'var(--font-serif)', fontSize: '0.9rem', color: 'var(--text)' }}>{b.artistName}</span>
                               <span style={{ fontSize: '0.78rem', color: 'var(--muted)', marginLeft: '0.75rem' }}>{b.date}</span>
                             </div>
-                            <span style={{ fontSize: '0.72rem', color: '#60a5fa', fontFamily: 'var(--font-serif)' }}>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--info)', fontFamily: 'var(--font-serif)' }}>
                               {m.statuses.completed} ✓
                             </span>
                           </div>
@@ -891,7 +891,7 @@ const CustomerDashboard = () => {
                               </div>
                               <button
                                 onClick={() => removeFav(p.id)}
-                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: '#ef4444', borderColor: '#ef444440' }}
+                                style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}
                               >
                                 {m.removeFav}
                               </button>
@@ -945,7 +945,7 @@ const CustomerDashboard = () => {
                         </p>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem' }}>{m.editReview}</button>
-                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: '#ef4444', borderColor: '#ef444440' }}>{m.deleteReview}</button>
+                          <button style={{ ...ghostBtn, fontSize: '0.72rem', padding: '0.3rem 0.6rem', color: 'var(--danger)', borderColor: '#ef444440' }}>{m.deleteReview}</button>
                         </div>
                       </div>
                     ))}
@@ -994,7 +994,7 @@ const CustomerDashboard = () => {
                             </div>
                             <div style={{
                               fontSize: '0.7rem', marginTop: 4,
-                              color: isAvailable ? '#4ade80' : isExpired ? '#ef4444' : 'var(--muted)',
+                              color: isAvailable ? 'var(--success)' : isExpired ? 'var(--danger)' : 'var(--muted)',
                             }}>
                               {isAvailable ? m.couponAvailable : isExpired ? m.couponExpired : m.couponUsed}
                             </div>
@@ -1060,7 +1060,7 @@ const CustomerDashboard = () => {
                       {m.saveProfile}
                     </button>
                     {profileSaved && (
-                      <span style={{ fontSize: '0.82rem', color: '#4ade80' }}>✓ {m.profileSaved}</span>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--success)' }}>✓ {m.profileSaved}</span>
                     )}
                   </div>
                 </div>
@@ -1127,7 +1127,7 @@ const CustomerDashboard = () => {
                       );
                     })()}
                     {pwMsg && (
-                      <div style={{ fontSize: '0.8rem', color: pwMsg.includes('✓') ? '#4ade80' : '#ef4444', lineHeight: 1.5 }}>
+                      <div style={{ fontSize: '0.8rem', color: pwMsg.includes('✓') ? 'var(--success)' : 'var(--danger)', lineHeight: 1.5 }}>
                         {pwMsg}
                       </div>
                     )}
@@ -1229,7 +1229,7 @@ const CustomerDashboard = () => {
                   borderColor: '#ef444430',
                   background: 'rgba(239,68,68,0.03)',
                 }}>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: '#ef4444', margin: '0 0 0.5rem' }}>
+                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '0.95rem', color: 'var(--danger)', margin: '0 0 0.5rem' }}>
                     ⚠️ {m.deleteAccount}
                   </h3>
                   <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0 0 1rem', lineHeight: 1.6 }}>
@@ -1238,13 +1238,13 @@ const CustomerDashboard = () => {
                   {!showDeleteConfirm ? (
                     <button
                       onClick={() => setShowDeleteConfirm(true)}
-                      style={{ ...ghostBtn, color: '#ef4444', borderColor: '#ef444440' }}
+                      style={{ ...ghostBtn, color: 'var(--danger)', borderColor: '#ef444440' }}
                     >
                       {m.deleteAccountBtn}
                     </button>
                   ) : (
                     <div style={{ padding: '1.2rem', background: 'rgba(239,68,68,0.08)', border: '1px solid #ef444440' }}>
-                      <div style={{ fontSize: '0.95rem', color: '#ef4444', fontFamily: 'var(--font-serif)', fontWeight: 600, marginBottom: '0.6rem' }}>
+                      <div style={{ fontSize: '0.95rem', color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontWeight: 600, marginBottom: '0.6rem' }}>
                         {lang === 'ko' ? '정말 탈퇴하시겠습니까?' : lang === 'ja' ? '本当に退会しますか？' : 'Are you sure you want to delete your account?'}
                       </div>
                       <p style={{ fontSize: '0.8rem', color: 'var(--muted)', margin: '0 0 0.5rem', lineHeight: 1.7 }}>

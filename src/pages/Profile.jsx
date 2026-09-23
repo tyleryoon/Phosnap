@@ -527,7 +527,7 @@ const Profile = ({ onAuthOpen }) => {
                   padding: '6px 12px', fontSize: '12px',
                   background: isFavorited ? 'rgba(239,68,68,0.1)' : 'transparent',
                   border: isFavorited ? '1px solid rgba(239,68,68,0.5)' : '1px solid var(--border)',
-                  color: isFavorited ? '#ef4444' : 'var(--muted)',
+                  color: isFavorited ? 'var(--danger)' : 'var(--muted)',
                   cursor: 'pointer', transition: 'all 0.2s', borderRadius: '2px',
                   fontFamily: 'var(--font-serif)',
                 }}

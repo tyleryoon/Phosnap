@@ -3084,13 +3084,34 @@ export const sendNotificationTo = async (userId, { type = 'info', title, body = 
   return { data, error };
 };
 
-/** 알림 Realtime 구독 */
+/**
+ * 알림 Realtime 구독
+ *
+ * 채널 이름이 'my-notifications' 로 고정돼 있었다. Supabase 클라이언트는
+ * 같은 이름이면 **같은 채널 객체를 돌려준다.** 그래서 effect 가 두 번째로
+ * 돌 때(StrictMode 이중 마운트, 의존성 변경 등) 이미 subscribe() 된 채널에
+ * .on() 을 다시 부르게 되고, 클라이언트가 이렇게 거부한다:
+ *
+ *   cannot add `postgres_changes` callbacks for realtime:my-notifications
+ *   after `subscribe()`
+ *
+ * 예외가 터진 뒤로는 구독이 없는 셈이라 알림이 실시간으로 안 들어온다.
+ * 조용히 안 오는 거라 아무도 몰랐다.
+ *
+ * 붙기 전에 같은 이름으로 남아 있는 채널을 먼저 치운다.
+ */
 export const subscribeNotifications = async (callback) => {
   const sb = await getSupabase();
   if (!sb) return null;
   const { data: { session } } = await sb.auth.getSession();
   if (!session?.user) return null;
-  return sb.channel('my-notifications')
+
+  const name = `notifications-${session.user.id}`;
+  for (const ch of sb.getChannels()) {
+    if (ch.topic === `realtime:${name}`) await sb.removeChannel(ch);
+  }
+
+  return sb.channel(name)
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',

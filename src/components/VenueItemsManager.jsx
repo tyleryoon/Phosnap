@@ -171,7 +171,7 @@ export default function VenueItemsManager({ vendorProfile, lang = 'ko' }) {
 
       {err && (
         <div style={{
-          padding: 12, fontSize: 13, color: '#e85d5d',
+          padding: 12, fontSize: 13, color: 'var(--danger)',
           border: '1px solid rgba(232,93,93,0.5)',
         }}>{err}</div>
       )}
@@ -221,7 +221,7 @@ export default function VenueItemsManager({ vendorProfile, lang = 'ko' }) {
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button className="btn-outline" onClick={() => openModal(v)}>{ko ? '편집' : 'Edit'}</button>
               <button className="btn-outline" onClick={() => remove(v.id)}
-                style={{ color: '#e85d5d', borderColor: 'rgba(232,93,93,0.5)' }}>
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>
                 {ko ? '삭제' : 'Delete'}
               </button>
             </div>
@@ -308,7 +308,7 @@ export default function VenueItemsManager({ vendorProfile, lang = 'ko' }) {
                 onChange={e => setForm({ ...form, description: e.target.value })} />
             </div>
 
-            {err && <div style={{ fontSize: 13, color: '#e85d5d' }}>{err}</div>}
+            {err && <div style={{ fontSize: 13, color: 'var(--danger)' }}>{err}</div>}
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
               <button className="btn-outline" onClick={() => setOpen(false)}>{ko ? '취소' : 'Cancel'}</button>

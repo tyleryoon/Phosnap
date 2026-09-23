@@ -398,12 +398,12 @@ const ArtistRegister = () => {
         border: '1px solid rgba(232,93,93,0.25)',
         fontSize: 12, lineHeight: 1.8,
       }}>
-        <div style={{ color: '#e85d5d', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
+        <div style={{ color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
           ✦ 다음 항목을 확인해주세요
         </div>
         {issues.map((issue, i) => (
           <div key={i} style={{ color: 'var(--ink-a50)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span style={{ color: '#e85d5d', flexShrink: 0 }}>•</span>
+            <span style={{ color: 'var(--danger)', flexShrink: 0 }}>•</span>
             <span><strong style={{ color: '#f0a0a0' }}>{issue.field}</strong> — {issue.msg}</span>
           </div>
         ))}
@@ -696,7 +696,7 @@ const ArtistRegister = () => {
           transition: 'all 0.2s',
         }}>
           {s.n} · {s.label}
-          {step > i + 1 && <span style={{ marginLeft: 6, color: '#22c55e' }}>✓</span>}
+          {step > i + 1 && <span style={{ marginLeft: 6, color: 'var(--success)' }}>✓</span>}
         </div>
       ))}
     </div>
@@ -753,7 +753,7 @@ const ArtistRegister = () => {
                 type="text" placeholder={lang === 'ko' ? '홍길동' : lang === 'ja' ? '山田太郎' : 'John Doe'}
                 value={realName} onChange={e => setRealName(e.target.value)} required />
               {realName && !isRealNameValid(realName) && (
-                <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {lang === 'ko' ? '특수문자나 기호는 사용할 수 없습니다.' : lang === 'ja' ? '特殊文字や記号は使用できません。' : 'Special characters are not allowed.'}</div>
+                <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {lang === 'ko' ? '특수문자나 기호는 사용할 수 없습니다.' : lang === 'ja' ? '特殊文字や記号は使用できません。' : 'Special characters are not allowed.'}</div>
               )}
             </div>
 
@@ -805,7 +805,7 @@ const ArtistRegister = () => {
                     }, 500);
                   }}
                   required />
-                {nativeNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {nativeNameError}</div>}
+                {nativeNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {nativeNameError}</div>}
               </div>
               <div>
                 <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>{f.englishName} *</label>
@@ -848,7 +848,7 @@ const ArtistRegister = () => {
                     }, 500);
                   }}
                   required />
-                {englishNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {englishNameError}</div>}
+                {englishNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {englishNameError}</div>}
               </div>
             </div>
 
@@ -865,7 +865,7 @@ const ArtistRegister = () => {
             <div style={{ marginBottom: 6 }}>
               <label style={{ fontSize: 11, color: 'var(--muted)', display: 'block', marginBottom: 6 }}>
                 {lang === 'ko' ? '핸드폰 번호' : lang === 'ja' ? '携帯番号' : lang === 'zh' ? '手机号码' : 'Phone Number'} *
-                {otpVerified && <span style={{ color: '#22c55e', marginLeft: 8, fontSize: 10 }}>✓ {lang === 'ko' ? '인증 완료' : lang === 'ja' ? '認証済み' : lang === 'zh' ? '已验证' : 'Verified'}</span>}
+                {otpVerified && <span style={{ color: 'var(--success)', marginLeft: 8, fontSize: 10 }}>✓ {lang === 'ko' ? '인증 완료' : lang === 'ja' ? '認証済み' : lang === 'zh' ? '已验证' : 'Verified'}</span>}
               </label>
               <div style={{ display: 'flex', gap: 8 }}>
                 <input style={{ ...INPUT, flex: 1, ...(otpVerified ? { borderColor: '#22c55e', background: 'rgba(34,197,94,0.04)' } : {}) }}
@@ -969,7 +969,7 @@ const ArtistRegister = () => {
                      lang === 'zh' ? '请输入短信收到的6位验证码。' :
                      'Enter the 6-digit code sent to your phone.'}
                     {otpTimer > 0 && (
-                      <span style={{ color: otpTimer <= 10 ? '#e85d5d' : 'var(--gold)', marginLeft: 8 }}>
+                      <span style={{ color: otpTimer <= 10 ? 'var(--danger)' : 'var(--gold)', marginLeft: 8 }}>
                         ⏱ {Math.floor(otpTimer / 60)}:{String(otpTimer % 60).padStart(2, '0')}
                       </span>
                     )}
@@ -979,12 +979,12 @@ const ArtistRegister = () => {
 
               {/* OTP 에러 */}
               {otpError && (
-                <p style={{ color: '#e85d5d', fontSize: 11, marginTop: 6 }}>{otpError}</p>
+                <p style={{ color: 'var(--danger)', fontSize: 11, marginTop: 6 }}>{otpError}</p>
               )}
 
               {/* 인증 완료 뱃지 */}
               {otpVerified && (
-                <div style={{ marginTop: 8, padding: '8px 14px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 11, color: '#22c55e', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ marginTop: 8, padding: '8px 14px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', fontSize: 11, color: 'var(--success)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   ✓ {lang === 'ko' ? '전화번호 인증이 완료되었습니다.' :
                      lang === 'ja' ? '電話番号の認証が完了しました。' :
                      lang === 'zh' ? '手机号码验证完成。' :
@@ -1040,16 +1040,16 @@ const ArtistRegister = () => {
             </div>
             {password && (
               <div style={{ fontSize: 11, marginTop: 8, lineHeight: 1.8, color: 'var(--muted)' }}>
-                <span style={{ color: password.length >= 8 && password.length <= 16 ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: password.length >= 8 && password.length <= 16 ? 'var(--success)' : 'var(--danger)' }}>
                   {password.length >= 8 && password.length <= 16 ? '✓' : '✗'} 8~16자
                 </span>{' · '}
-                <span style={{ color: /[A-Z]/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /[A-Z]/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/[A-Z]/.test(password) ? '✓' : '✗'} 대문자
                 </span>{' · '}
-                <span style={{ color: /[a-z]/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /[a-z]/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/[a-z]/.test(password) ? '✓' : '✗'} 소문자
                 </span>{' · '}
-                <span style={{ color: /\d/.test(password) ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: /\d/.test(password) ? 'var(--success)' : 'var(--danger)' }}>
                   {/\d/.test(password) ? '✓' : '✗'} 숫자
                 </span>{' · '}
                 <span style={{ color: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) ? '#22c55e' : '#e85d5d' }}>
@@ -1058,7 +1058,7 @@ const ArtistRegister = () => {
               </div>
             )}
             {pwConfirm && password !== pwConfirm && (
-              <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 6 }}>{lang === 'ko' ? '비밀번호가 일치하지 않습니다.' : lang === 'ja' ? 'パスワードが一致しません。' : lang === 'zh' ? '密码不匹配。' : 'Passwords do not match.'}</p>
+              <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 6 }}>{lang === 'ko' ? '비밀번호가 일치하지 않습니다.' : lang === 'ja' ? 'パスワードが一致しません。' : lang === 'zh' ? '密码不匹配。' : 'Passwords do not match.'}</p>
             )}
 
             {/* SNS · 웹사이트 (선택) */}
@@ -1074,7 +1074,7 @@ const ArtistRegister = () => {
                 value={website} onChange={e => setWebsite(e.target.value)} />
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 14, lineHeight: 1.6 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 14, lineHeight: 1.6 }}>{error}</p>}
 
             {!step1Valid && <ValidationHints issues={getStep1Issues()} />}
 
@@ -1359,7 +1359,7 @@ const ArtistRegister = () => {
               />
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12 }}>{error}</p>}
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button
@@ -1493,9 +1493,9 @@ const ArtistRegister = () => {
               ))}
             </div>
 
-            {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
+            {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
             {success && (
-              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: '#4ade80', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: 'var(--success)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
                 {success}
                 <div style={{ marginTop: 12 }}>
                   <button type="button" className="btn-outline" style={{ fontSize: 12 }} onClick={() => navigate('/')}>{f.goHome}</button>

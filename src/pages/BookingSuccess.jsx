@@ -179,8 +179,8 @@ const fmt = (n) => Number(n).toLocaleString();
 const SaveBadge = ({ status, message }) => {
   const colors = {
     saving:      { bg: 'var(--accent-a10)',  border: 'var(--accent-a30)', color: 'var(--gold)' },
-    saved:       { bg: 'rgba(72,187,120,0.1)',  border: 'rgba(72,187,120,0.4)', color: '#48bb78'     },
-    error:       { bg: 'rgba(245,101,101,0.1)', border: 'rgba(245,101,101,0.4)',color: '#f56565'     },
+    saved:       { bg: 'rgba(72,187,120,0.1)',  border: 'rgba(72,187,120,0.4)', color: 'var(--success)'     },
+    error:       { bg: 'rgba(245,101,101,0.1)', border: 'rgba(245,101,101,0.4)',color: 'var(--danger)'     },
     duplicate:   { bg: 'rgba(160,160,160,0.1)', border: 'rgba(160,160,160,0.3)',color: 'var(--muted)'},
   };
   const icons = { saving: '⟳', saved: '✓', error: '!', duplicate: '✓' };
@@ -436,7 +436,7 @@ const BookingSuccess = () => {
             border: `1px solid ${failed ? 'rgba(245,101,101,0.45)' : 'var(--gold-border)'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 24px', fontSize: 28,
-            color: failed ? '#f56565' : 'inherit',
+            color: failed ? 'var(--danger)' : 'inherit',
           }}>
             {failed ? '!' : '✓'}
           </div>
@@ -479,7 +479,7 @@ const BookingSuccess = () => {
               style={{
                 padding: '10px 20px', fontSize: 12, letterSpacing: '0.1em',
                 border: '1px solid rgba(245,101,101,0.5)', background: 'transparent',
-                color: '#f56565', cursor: 'pointer', fontFamily: 'var(--font-serif)',
+                color: 'var(--danger)', cursor: 'pointer', fontFamily: 'var(--font-serif)',
               }}
             >
               {c.inquiryBtn}

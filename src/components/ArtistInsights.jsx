@@ -111,7 +111,7 @@ export default function ArtistInsights({ artistData = {} }) {
             label: lang === 'ko' ? '프로필 조회' : lang === 'en' ? 'Profile Views' : lang === 'ja' ? 'プロフィール表示' : '资料浏览',
             value: fmt(mockMetrics.profileViews),
             sub: lang === 'ko' ? '이번달' : lang === 'en' ? 'This month' : lang === 'ja' ? '今月' : '本月',
-            color: '#60a5fa',
+            color: 'var(--info)',
           },
           {
             label: lang === 'ko' ? '찜 수' : lang === 'en' ? 'Favorites' : lang === 'ja' ? 'お気に入り' : '收藏',
@@ -123,7 +123,7 @@ export default function ArtistInsights({ artistData = {} }) {
             label: lang === 'ko' ? '예약 전환율' : lang === 'en' ? 'Booking Rate' : lang === 'ja' ? '予約転換率' : '预订转化率',
             value: `${mockMetrics.conversionRate}%`,
             sub: lang === 'ko' ? '조회 대비' : lang === 'en' ? 'vs Views' : lang === 'ja' ? 'ビュー対比' : '对比浏览',
-            color: '#22c55e',
+            color: 'var(--success)',
           },
           {
             label: lang === 'ko' ? '평균 응답시간' : lang === 'en' ? 'Avg Response' : lang === 'ja' ? '平均応答時間' : '平均响应',

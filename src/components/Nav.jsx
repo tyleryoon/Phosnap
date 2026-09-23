@@ -192,7 +192,7 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher />
               {isAdmin && (
                 <Link to="/admin"
-                  style={{ fontSize: 11, color: '#f472b6', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                  style={{ fontSize: 11, color: 'var(--grade-4)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
                   ⚙ Admin
                   <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>
@@ -274,7 +274,7 @@ const Nav = ({ onAuthOpen }) => {
               <RoleSwitcher onNavigate={() => setMobileOpen(false)} />
               {/* 모바일 메뉴에는 관리자 링크가 아예 없었다. */}
               {isAdmin && (
-                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: '#f472b6', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
+                <Link to="/admin" className="mobile-nav-link" style={{ textDecoration: 'none', color: 'var(--grade-4)', display: 'inline-flex', alignItems: 'center' }} onClick={() => setMobileOpen(false)}>
                   ⚙ Admin
                   <AlertDot count={total} title={`승인 대기 ${counts.pending_roles}건 · 문의 ${counts.open_inquiries}건`} />
                 </Link>

@@ -35,10 +35,10 @@ import ArtistInsights from '../components/ArtistInsights';
 
 // ── 배지 정의 (ARTIST_TIERS 기준과 통일) ─────────────────────────────
 const BADGES = [
-  { id: 'rising',      label: 'Rising',      symbol: '✦',    minShoots: 0,   minRating: 0,   color: '#9ca3af',    desc: '기본 프로필 노출' },
-  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 30,  minRating: 4.0, color: '#60a5fa',    desc: '검색 상위 노출' },
-  { id: 'premier',     label: 'Premier',     symbol: '✦✦✦',  minShoots: 100, minRating: 4.5, color: 'var(--gold)', desc: '추천 작가 배지 표시' },
-  { id: 'elite',       label: 'Elite',       symbol: '✦✦✦✦', minShoots: 300, minRating: 4.7, color: '#f472b6',    desc: '홈 피처드 섹션 노출' },
+  { id: 'rising',      label: 'Rising',      symbol: '✦',    minShoots: 0,   minRating: 0,   color: 'var(--grade-1)', desc: '기본 프로필 노출' },
+  { id: 'established', label: 'Established', symbol: '✦✦',   minShoots: 30,  minRating: 4.0, color: 'var(--grade-2)', desc: '검색 상위 노출' },
+  { id: 'premier',     label: 'Premier',     symbol: '✦✦✦',  minShoots: 100, minRating: 4.5, color: 'var(--grade-3)', desc: '추천 작가 배지 표시' },
+  { id: 'elite',       label: 'Elite',       symbol: '✦✦✦✦', minShoots: 300, minRating: 4.7, color: 'var(--grade-4)',    desc: '홈 피처드 섹션 노출' },
 ];
 const getBadge = (shoots, rating = 5.0) => {
   let result = BADGES[0];
@@ -51,9 +51,9 @@ const getBadge = (shoots, rating = 5.0) => {
 // ── 상태 색상 ──────────────────────────────────────────────────────────
 const STATUS = {
   pending:   { label: '확정 대기', color: 'var(--accent-deep)', bg: 'var(--accent-a10)'  },
-  confirmed: { label: '예약 확정', color: '#22c55e', bg: 'rgba(34,197,94,0.1)'   },
-  completed: { label: '촬영 완료', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
-  cancelled: { label: '취소됨',   color: '#e85d5d', bg: 'rgba(232,93,93,0.1)'   },
+  confirmed: { label: '예약 확정', color: 'var(--success)', bg: 'rgba(34,197,94,0.1)'   },
+  completed: { label: '촬영 완료', color: 'var(--info)', bg: 'rgba(96,165,250,0.1)'  },
+  cancelled: { label: '취소됨',   color: 'var(--danger)', bg: 'rgba(232,93,93,0.1)'   },
   delivered: { label: '전달 완료', color: '#4299e1', bg: 'rgba(66,153,225,0.12)', border: 'rgba(66,153,225,0.35)' },
 };
 
@@ -596,7 +596,7 @@ const ArtistDashboard = () => {
               padding: '10px 14px', marginBottom: 20, fontSize: 13,
               background: deliverMsg.includes('실패') ? 'rgba(232,93,93,0.1)' : 'rgba(34,197,94,0.1)',
               border: `1px solid ${deliverMsg.includes('실패') ? 'rgba(232,93,93,0.3)' : 'rgba(34,197,94,0.3)'}`,
-              color: deliverMsg.includes('실패') ? '#e85d5d' : '#22c55e',
+              color: deliverMsg.includes('실패') ? 'var(--danger)' : 'var(--success)',
             }}>
               {deliverMsg}
             </div>
@@ -696,7 +696,7 @@ const ArtistDashboard = () => {
                 disabled={actionLoading}
                 style={{
                   padding: '8px 18px', background: 'transparent',
-                  border: '1px solid #e85d5d', color: '#e85d5d',
+                  border: '1px solid #e85d5d', color: 'var(--danger)',
                   fontFamily: 'var(--font-serif)', fontSize: 12,
                   letterSpacing: '0.08em', cursor: 'pointer', opacity: actionLoading ? 0.6 : 1,
                 }}
@@ -864,7 +864,7 @@ const ArtistDashboard = () => {
             padding: '10px 16px',
             background: actionKind === 'warn' ? 'rgba(245,101,101,0.1)' : 'rgba(34,197,94,0.1)',
             border: `1px solid ${actionKind === 'warn' ? 'rgba(245,101,101,0.4)' : 'rgba(34,197,94,0.3)'}`,
-            color: actionKind === 'warn' ? '#f56565' : '#4ade80',
+            color: actionKind === 'warn' ? 'var(--danger)' : 'var(--success)',
             fontSize: 13, marginBottom: 20, whiteSpace: 'pre-line', lineHeight: 1.7,
             display: 'flex', alignItems: 'flex-start', gap: 12,
           }}>
@@ -904,8 +904,8 @@ const ArtistDashboard = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
                   {[
                     { label: '대기 중 예약', value: stats.pending,   color: 'var(--accent-deep)', sub: '확정 필요' },
-                    { label: '확정된 예약',  value: stats.confirmed, color: '#22c55e', sub: '진행 예정' },
-                    { label: '이번달 완료',  value: stats.monthDone, color: '#60a5fa', sub: '건' },
+                    { label: '확정된 예약',  value: stats.confirmed, color: 'var(--success)', sub: '진행 예정' },
+                    { label: '이번달 완료',  value: stats.monthDone, color: 'var(--info)', sub: '건' },
                     { label: '누적 매출',    value: `₩${fmt(stats.revenue)}`, color: 'var(--gold)', sub: '패키지 기준', big: true },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
@@ -989,10 +989,10 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
                       {[
-                        { symbol: '✦', label: 'Rising', range: '0~29건', color: '#9ca3af', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
-                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: '#60a5fa', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
+                        { symbol: '✦', label: 'Rising', range: '0~29건', color: 'var(--muted)', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
+                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: 'var(--info)', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
                         { symbol: '✦✦✦', label: 'Premier', range: '100~299건', color: 'var(--gold)', perks: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
-                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: '#f472b6', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
+                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: 'var(--grade-4)', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
                       ].map(tier => (
                         <div key={tier.label} style={{
                           padding: '12px 14px', border: `1px solid ${badge.label === tier.label ? tier.color + '55' : 'var(--border)'}`,
@@ -1018,7 +1018,7 @@ const ArtistDashboard = () => {
                         <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 20%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: '#60a5fa' }}>30건 이상:</span> 수수료 15% |{' '}
+                        <span style={{ color: 'var(--info)' }}>30건 이상:</span> 수수료 15% |{' '}
                         <span style={{ color: 'var(--gold)' }}>100건 이상:</span> 수수료 12%
                       </div>
                       <div style={{ marginBottom: 6 }}>
@@ -1381,7 +1381,7 @@ const ArtistDashboard = () => {
                     padding: '12px 16px', marginBottom: 20, fontSize: 13,
                     background: profileMsg.includes('실패') ? 'rgba(232,93,93,0.1)' : 'rgba(34,197,94,0.1)',
                     border: `1px solid ${profileMsg.includes('실패') ? 'rgba(232,93,93,0.3)' : 'rgba(34,197,94,0.3)'}`,
-                    color: profileMsg.includes('실패') ? '#e85d5d' : '#22c55e',
+                    color: profileMsg.includes('실패') ? 'var(--danger)' : 'var(--success)',
                   }}>
                     {profileMsg}
                   </div>
@@ -1471,10 +1471,10 @@ const ArtistDashboard = () => {
                 <SectionLabel>이번달 실적</SectionLabel>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 40 }}>
                   {[
-                    { label: '완료 건수',    value: stats.monthDone, suffix: '건',   color: '#22c55e' },
+                    { label: '완료 건수',    value: stats.monthDone, suffix: '건',   color: 'var(--success)' },
                     { label: '예상 수입',    value: `₩${fmt(stats.monthRev)}`, suffix: '', color: 'var(--gold)' },
                     { label: '대기 중',      value: stats.pending,   suffix: '건',   color: 'var(--accent-deep)' },
-                    { label: '누적 완료',    value: completedCount,  suffix: '건',   color: '#60a5fa' },
+                    { label: '누적 완료',    value: completedCount,  suffix: '건',   color: 'var(--info)' },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>
                       <Corners />
@@ -1684,7 +1684,7 @@ const ArtistDashboard = () => {
                                 {replyMsg && (
                                   <div style={{
                                     fontSize: 12, marginTop: 8,
-                                    color: replyMsg.includes('✓') ? '#4ade80' : '#e85d5d',
+                                    color: replyMsg.includes('✓') ? 'var(--success)' : 'var(--danger)',
                                   }}>
                                     {replyMsg}
                                   </div>
@@ -1781,8 +1781,8 @@ const ArtistDashboard = () => {
                 {/* 초대 현황 */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 36 }}>
                   {[
-                    { label: '초대한 작가 수',   value: profile?.referral_count     || 0, suffix: '명', color: '#60a5fa'       },
-                    { label: '초대 완료 건수',   value: profile?.referral_completed || 0, suffix: '건', color: '#22c55e'       },
+                    { label: '초대한 작가 수',   value: profile?.referral_count     || 0, suffix: '명', color: 'var(--info)'       },
+                    { label: '초대 완료 건수',   value: profile?.referral_completed || 0, suffix: '건', color: 'var(--success)'       },
                     { label: '현재 수수료 할인', value: profile?.referral_completed >= 20 ? '3%p' : profile?.referral_completed >= 10 ? '2%p' : profile?.referral_completed >= 5 ? '1%p' : '0%', suffix: '', color: 'var(--gold)' },
                   ].map(card => (
                     <div key={card.label} style={{ border: '1px solid var(--border)', background: 'var(--bg2)', padding: '24px 20px', position: 'relative' }}>

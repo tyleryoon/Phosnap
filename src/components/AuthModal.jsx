@@ -174,8 +174,8 @@ export const PhoneVerify = ({ onVerified, setError }) => {
   if (otpVerified) return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px',
       background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', marginBottom: 12 }}>
-      <span style={{ color: '#4ade80', fontSize: 13 }}>✓</span>
-      <span style={{ fontSize: 12, color: '#4ade80' }}>{t('auth.phoneVerified')} — {phone}</span>
+      <span style={{ color: 'var(--success)', fontSize: 13 }}>✓</span>
+      <span style={{ fontSize: 12, color: 'var(--success)' }}>{t('auth.phoneVerified')} — {phone}</span>
     </div>
   );
 
@@ -575,7 +575,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="hello@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -664,7 +664,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             />
           </div>
 
-          {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, whiteSpace: 'pre-line' }}>{error}</p>}
+          {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, whiteSpace: 'pre-line' }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 10 }}>
             <button
@@ -703,7 +703,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="text" placeholder="홍길동"
                 value={name} onChange={e => setName(e.target.value)} required
                 style={realNameError ? { borderColor: '#e85d5d', background: 'rgba(232,93,93,0.04)' } : {}} />
-              {realNameError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 4 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>}
+              {realNameError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>}
             </div>
             {/* 생년월일 */}
             <div className="form-group">
@@ -732,19 +732,19 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
             {/* 비밀번호 조건 표시 */}
             {password && (
               <div style={{ fontSize: 11, marginTop: -8, marginBottom: 10, lineHeight: 1.8, color: 'var(--muted)' }}>
-                <span style={{ color: pwChecks.length ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.length ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.length ? '✓' : '✗'} 8~16자
                 </span>{' · '}
-                <span style={{ color: pwChecks.upper ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.upper ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.upper ? '✓' : '✗'} 대문자
                 </span>{' · '}
-                <span style={{ color: pwChecks.lower ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.lower ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.lower ? '✓' : '✗'} 소문자
                 </span>{' · '}
-                <span style={{ color: pwChecks.digit ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.digit ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.digit ? '✓' : '✗'} 숫자
                 </span>{' · '}
-                <span style={{ color: pwChecks.special ? '#22c55e' : '#e85d5d' }}>
+                <span style={{ color: pwChecks.special ? 'var(--success)' : 'var(--danger)' }}>
                   {pwChecks.special ? '✓' : '✗'} 특수문자
                 </span>
               </div>
@@ -755,10 +755,10 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
               <input className="form-input" type="password" placeholder="비밀번호를 한번 더 입력해주세요"
                 value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} required minLength={8} />
               {pwConfirm && password !== pwConfirm && (
-                <p style={{ fontSize: 11, color: '#e85d5d', marginTop: 4 }}>비밀번호가 일치하지 않습니다.</p>
+                <p style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>비밀번호가 일치하지 않습니다.</p>
               )}
               {pwConfirm && password === pwConfirm && (
-                <p style={{ fontSize: 11, color: '#22c55e', marginTop: 4 }}>비밀번호가 일치합니다.</p>
+                <p style={{ fontSize: 11, color: 'var(--success)', marginTop: 4 }}>비밀번호가 일치합니다.</p>
               )}
             </div>
             {/* 핸드폰 인증 */}
@@ -776,7 +776,7 @@ const CustomerAuth = ({ onClose, onPendingLogin }) => {
           </div>
         )}
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6, whiteSpace: 'pre-line' }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"
@@ -917,7 +917,7 @@ const ArtistAuth = ({ onClose }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="artist@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -992,7 +992,7 @@ const ArtistAuth = ({ onClose }) => {
             value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
         </div>
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"
@@ -1120,7 +1120,7 @@ const VendorAuth = ({ onClose }) => {
           <input className="form-input" type="email" value={resetEmail}
             onChange={e => setResetEmail(e.target.value)} placeholder="vendor@phosnap.com" required />
         </div>
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginBottom: 8 }}>{success}</p>}
         <button type="submit" className="btn-primary"
           style={{ width: '100%', justifyContent: 'center', opacity: loading ? 0.7 : 1 }} disabled={loading}>
@@ -1195,7 +1195,7 @@ const VendorAuth = ({ onClose }) => {
             value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
         </div>
 
-        {error   && <p style={{ color: '#e85d5d', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
+        {error   && <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{error}</p>}
         {success && <p style={{ color: 'var(--gold)', fontSize: 12, marginTop: 4, lineHeight: 1.6 }}>{success}</p>}
 
         <button type="submit" className="btn-primary"

@@ -16,7 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 // 역할이 하나뿐이면 아무것도 그리지 않는다.
 
 const ROLE_META = {
-  admin:        { label: '관리자',   path: '/admin',              color: '#f472b6' },
+  admin:        { label: '관리자',   path: '/admin',              color: 'var(--grade-4)' },
   artist:       { label: '작가',     path: '/artist/dashboard',   color: 'var(--gold)' },
   stylist:      { label: '헤메',     path: '/stylist/dashboard',  color: 'var(--gold)' },
   dress_vendor: { label: '벤더',     path: '/vendor/dashboard',   color: 'var(--gold)' },

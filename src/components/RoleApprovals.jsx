@@ -289,7 +289,7 @@ const RoleApprovals = ({ onChanged }) => {
                       }}
                       disabled={busy}
                       style={{
-                        padding: '10px 20px', background: 'transparent', color: '#e85d5d',
+                        padding: '10px 20px', background: 'transparent', color: 'var(--danger)',
                         border: '1px solid #e85d5d', fontSize: 12,
                         fontFamily: 'var(--font-serif)',
                         cursor: busy ? 'default' : 'pointer', letterSpacing: '0.1em',

@@ -57,7 +57,7 @@ const ListingStatus = ({ kind, id }) => {
     return (
       <div style={{
         border: '1px solid rgba(34,197,94,0.35)', background: 'rgba(34,197,94,0.06)',
-        padding: '12px 16px', marginBottom: 20, fontSize: 12.5, color: '#4ade80',
+        padding: '12px 16px', marginBottom: 20, fontSize: 12.5, color: 'var(--success)',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
         <span>✓</span> 고객 검색 결과에 노출되고 있습니다.

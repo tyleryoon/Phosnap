@@ -238,12 +238,12 @@ const VendorRegister = () => {
         border: '1px solid rgba(232,93,93,0.25)',
         fontSize: 12, lineHeight: 1.8,
       }}>
-        <div style={{ color: '#e85d5d', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
+        <div style={{ color: 'var(--danger)', fontFamily: 'var(--font-serif)', fontSize: 11, letterSpacing: '0.1em', marginBottom: 8 }}>
           ✦ 다음 항목을 확인해주세요
         </div>
         {issues.map((issue, i) => (
           <div key={i} style={{ color: 'var(--ink-a50)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span style={{ color: '#e85d5d', flexShrink: 0 }}>•</span>
+            <span style={{ color: 'var(--danger)', flexShrink: 0 }}>•</span>
             <span><strong style={{ color: '#f0a0a0' }}>{issue.field}</strong> — {issue.msg}</span>
           </div>
         ))}
@@ -396,7 +396,7 @@ const VendorRegister = () => {
           transition: 'all 0.2s',
         }}>
           {s.n} · {s.label}
-          {step > i + 1 && <span style={{ marginLeft: 6, color: '#22c55e' }}>✓</span>}
+          {step > i + 1 && <span style={{ marginLeft: 6, color: 'var(--success)' }}>✓</span>}
         </div>
       ))}
     </div>
@@ -481,7 +481,7 @@ const VendorRegister = () => {
                   }, 500);
                 }}
               />
-              {nameKoError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {nameKoError}</div>}
+              {nameKoError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {nameKoError}</div>}
             </div>
 
             <div style={{ marginBottom: 24 }}>
@@ -524,7 +524,7 @@ const VendorRegister = () => {
                   }, 500);
                 }}
               />
-              {nameEnError && <div style={{ fontSize: 11, color: '#e85d5d', marginTop: 6 }}>✗ {nameEnError}</div>}
+              {nameEnError && <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 6 }}>✗ {nameEnError}</div>}
             </div>
 
             <SectionDivider label="담당자 정보" />
@@ -535,7 +535,7 @@ const VendorRegister = () => {
               type="text" placeholder="담당자 실명"
               value={realName} onChange={e => setRealName(e.target.value)} />
             {realName && !isRealNameValid(realName) && (
-              <div style={{ fontSize: 11, color: '#e85d5d', marginBottom: 12, marginTop: 0 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>
+              <div style={{ fontSize: 11, color: 'var(--danger)', marginBottom: 12, marginTop: 0 }}>✗ 특수문자나 기호는 사용할 수 없습니다.</div>
             )}
             <input style={{ ...INPUT, marginBottom: 24 }}
               type="date" placeholder="생년월일"
@@ -557,7 +557,7 @@ const VendorRegister = () => {
                 setError={setError}
               />
               {phoneVerified && (
-                <div style={{ fontSize: 11, color: '#4ade80', marginTop: 6 }}>
+                <div style={{ fontSize: 11, color: 'var(--success)', marginTop: 6 }}>
                   ✓ 핸드폰 인증이 완료되었습니다.
                 </div>
               )}
@@ -571,11 +571,11 @@ const VendorRegister = () => {
             {/* 비밀번호 조건 표시 */}
             {password && (
               <div style={{ fontSize: 11, lineHeight: 1.8, marginBottom: 12, color: 'var(--muted)' }}>
-                <div style={{ color: pwChecks.length  ? '#4ade80' : '#e85d5d' }}>{pwChecks.length  ? '✓' : '✗'} 8~16자</div>
-                <div style={{ color: pwChecks.upper   ? '#4ade80' : '#e85d5d' }}>{pwChecks.upper   ? '✓' : '✗'} 대문자 포함</div>
-                <div style={{ color: pwChecks.lower   ? '#4ade80' : '#e85d5d' }}>{pwChecks.lower   ? '✓' : '✗'} 소문자 포함</div>
-                <div style={{ color: pwChecks.digit   ? '#4ade80' : '#e85d5d' }}>{pwChecks.digit   ? '✓' : '✗'} 숫자 포함</div>
-                <div style={{ color: pwChecks.special ? '#4ade80' : '#e85d5d' }}>{pwChecks.special ? '✓' : '✗'} 특수문자 포함</div>
+                <div style={{ color: pwChecks.length  ? 'var(--success)' : 'var(--danger)' }}>{pwChecks.length  ? '✓' : '✗'} 8~16자</div>
+                <div style={{ color: pwChecks.upper   ? 'var(--success)' : 'var(--danger)' }}>{pwChecks.upper   ? '✓' : '✗'} 대문자 포함</div>
+                <div style={{ color: pwChecks.lower   ? 'var(--success)' : 'var(--danger)' }}>{pwChecks.lower   ? '✓' : '✗'} 소문자 포함</div>
+                <div style={{ color: pwChecks.digit   ? 'var(--success)' : 'var(--danger)' }}>{pwChecks.digit   ? '✓' : '✗'} 숫자 포함</div>
+                <div style={{ color: pwChecks.special ? 'var(--success)' : 'var(--danger)' }}>{pwChecks.special ? '✓' : '✗'} 특수문자 포함</div>
               </div>
             )}
 
@@ -583,7 +583,7 @@ const VendorRegister = () => {
               type="password" placeholder="비밀번호 확인"
               value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} />
             {pwConfirm && (
-              <div style={{ fontSize: 11, marginTop: 4, marginBottom: 20, color: password === pwConfirm ? '#4ade80' : '#e85d5d' }}>
+              <div style={{ fontSize: 11, marginTop: 4, marginBottom: 20, color: password === pwConfirm ? 'var(--success)' : 'var(--danger)' }}>
                 {password === pwConfirm ? '✓ 비밀번호가 일치합니다.' : '✗ 비밀번호가 일치하지 않습니다.'}
               </div>
             )}
@@ -627,7 +627,7 @@ const VendorRegister = () => {
               type="text" placeholder="추천인 코드가 있으면 입력하세요"
               value={referralCode} onChange={e => setReferralCode(e.target.value)} />
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>{error}</p>}
 
             {!step1Valid && <ValidationHints issues={getStep1Issues()} />}
 
@@ -686,7 +686,7 @@ const VendorRegister = () => {
               <span style={{ color: 'var(--gold)' }}>안내</span> · 활동 지역, 세부 카테고리, 대표 이미지, 상세 소개 등은 가입 완료 후 벤더 대시보드에서 설정하실 수 있습니다.
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 20, lineHeight: 1.6 }}>{error}</p>}
 
             {!step2Valid && <ValidationHints issues={getStep2Issues()} />}
 
@@ -732,7 +732,7 @@ const VendorRegister = () => {
                 }}
               />
             </div>
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12 }}>{error}</p>}
             <div style={{ display: 'flex', gap: 10 }}>
               <button
                 type="button"
@@ -832,9 +832,9 @@ const VendorRegister = () => {
               ))}
             </div>
 
-            {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
+            {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, lineHeight: 1.6 }}>{error}</p>}
             {success && (
-              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: '#4ade80', lineHeight: 1.7 }}>
+              <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)', padding: '16px 20px', marginBottom: 20, fontSize: 13, color: 'var(--success)', lineHeight: 1.7 }}>
                 {success}
                 <div style={{ marginTop: 12 }}>
                   <button type="button" className="btn-outline" style={{ fontSize: 12 }} onClick={() => navigate('/')}>홈으로 이동</button>

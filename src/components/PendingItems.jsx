@@ -81,7 +81,7 @@ const PendingItems = ({ onChanged }) => {
     return (
       <div style={{
         border: '1px solid rgba(232,85,85,0.4)', background: 'rgba(232,85,85,0.08)',
-        padding: '14px 18px', marginBottom: 20, fontSize: 13, color: '#e85d5d', lineHeight: 1.7,
+        padding: '14px 18px', marginBottom: 20, fontSize: 13, color: 'var(--danger)', lineHeight: 1.7,
       }}>
         예약 요청을 불러오지 못했습니다 — {error}
         <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
@@ -112,7 +112,7 @@ const PendingItems = ({ onChanged }) => {
       {error && (
         <div style={{
           border: '1px solid rgba(232,85,85,0.4)', background: 'rgba(232,85,85,0.08)',
-          padding: '10px 12px', marginBottom: 14, fontSize: 12.5, color: '#e85d5d',
+          padding: '10px 12px', marginBottom: 14, fontSize: 12.5, color: 'var(--danger)',
         }}>
           처리하지 못했습니다 — {error}
         </div>
@@ -146,7 +146,7 @@ const PendingItems = ({ onChanged }) => {
                         {i > 0 && ', '}
                         {TYPE_LABEL[s.type] || s.type} {s.name || ''}
                         <span style={{
-                          color: s.status === 'confirmed' ? '#4ade80'
+                          color: s.status === 'confirmed' ? 'var(--success)'
                                : s.status === 'cancelled' ? '#e85d5d' : 'var(--muted)',
                         }}>
                           {s.status === 'confirmed' ? ' 수락' : s.status === 'cancelled' ? ' 거절' : ' 대기'}
@@ -181,7 +181,7 @@ const PendingItems = ({ onChanged }) => {
                     onClick={() => setDeclining({ itemId: it.item_id, reason: '' })}
                     style={{
                       padding: '9px 16px', border: '1px solid rgba(232,85,85,0.5)',
-                      background: 'transparent', color: '#e85d5d',
+                      background: 'transparent', color: 'var(--danger)',
                       fontFamily: 'var(--font-serif)', fontSize: 12.5, cursor: 'pointer',
                     }}
                   >

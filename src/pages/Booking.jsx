@@ -1282,7 +1282,7 @@ const Booking = () => {
                 {loadError && (
                   <div style={{
                     border: '1px solid #e85d5d', background: 'var(--bg2)',
-                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#e85d5d',
+                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: 'var(--danger)',
                   }}>
                     헤어메이크업·의상·장소 정보를 불러오지 못했습니다 — {loadError}
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
@@ -1294,7 +1294,7 @@ const Booking = () => {
                 {scheduleError && (
                   <div style={{
                     border: '1px solid #e85d5d', background: 'var(--bg2)',
-                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: '#e85d5d',
+                    padding: '14px 18px', marginBottom: 16, fontSize: 13, color: 'var(--danger)',
                   }}>
                     일정을 불러오지 못했습니다 — {scheduleError}
                     <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
@@ -1361,9 +1361,9 @@ const Booking = () => {
                 {/* ─ 달력 범례 ─ */}
                 <div style={{ display: 'flex', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
                   {[
-                    { color: '#22c55e',  label: t('booking.slotOpen')    },
+                    { color: 'var(--success)',  label: t('booking.slotOpen')    },
                     { color: 'var(--accent-deep)',  label: t('booking.slotPartial') },
-                    { color: '#e85d5d',  label: t('booking.slotFull')   },
+                    { color: 'var(--danger)',  label: t('booking.slotFull')   },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--muted)' }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: item.color, display: 'inline-block' }} />
@@ -1516,7 +1516,7 @@ const Booking = () => {
                       )}
 
                       {selectedTime && pkgHours > 1 && (
-                        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', fontSize: 12, color: '#4ade80', lineHeight: 1.6 }}>
+                        <div style={{ marginTop: 14, padding: '10px 14px', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', fontSize: 12, color: 'var(--success)', lineHeight: 1.6 }}>
                           ✓ {selectedTime} ~ {String(parseInt(selectedTime.split(':')[0]) + pkgHours).padStart(2, '0')}:00 ({pkgHours}시간) 예약됩니다
                         </div>
                       )}
@@ -2161,7 +2161,7 @@ const Booking = () => {
                 {/* 취소 정책 타임라인 (GYG 벤치마킹) */}
                 <div style={{ border: '1px solid rgba(232,93,93,0.2)', background: 'rgba(232,93,93,0.02)', padding: '20px 24px', position: 'relative', marginBottom: 24 }}>
                   <Corners />
-                  <div style={{ fontSize: 10, color: '#e85d5d', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 10, color: 'var(--danger)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 13 }}>🛡️</span>
                     {lang === 'ko' ? '취소 정책' : lang === 'ja' ? 'キャンセルポリシー' : lang === 'zh' ? '取消政策' : 'Cancellation Policy'}
                   </div>
@@ -2173,7 +2173,7 @@ const Booking = () => {
 
                     {[
                       {
-                        color: '#4caf50',
+                        color: 'var(--success)',
                         label: { ko: '7일 전까지', en: '7+ days before', ja: '7日前まで', zh: '7天前' },
                         value: { ko: '100% 환불', en: '100% Refund', ja: '100%返金', zh: '100%退款' },
                         desc: { ko: '전액 환불됩니다', en: 'Full refund', ja: '全額返金されます', zh: '全额退款' },
@@ -2185,7 +2185,7 @@ const Booking = () => {
                         desc: { ko: '촬영 비용의 50%가 환불됩니다', en: '50% of the session fee is refunded', ja: '撮影料金の50%が返金されます', zh: '退还50%的拍摄费用' },
                       },
                       {
-                        color: '#e85d5d',
+                        color: 'var(--danger)',
                         label: { ko: '2일 이내', en: 'Within 2 days', ja: '2日以内', zh: '2天内' },
                         value: { ko: '환불 불가', en: 'No Refund', ja: '返金不可', zh: '不可退款' },
                         desc: { ko: '촬영일 기준 2일 이내 취소 시 환불이 불가합니다', en: 'No refund for cancellations within 2 days of the session', ja: '撮影日の2日以内のキャンセルは返金不可です', zh: '拍摄日2天内取消不予退款' },
@@ -2225,7 +2225,7 @@ const Booking = () => {
                 </div>
 
                 {payError && (
-                  <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 12, letterSpacing: '0.02em' }}>
+                  <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 12, letterSpacing: '0.02em' }}>
                     {payError}
                   </p>
                 )}

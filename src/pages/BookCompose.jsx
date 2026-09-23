@@ -488,7 +488,7 @@ const BookCompose = () => {
         {error && (
           <div style={{
             border: '1px solid #e85d5d', background: 'var(--bg2)',
-            padding: '14px 18px', marginBottom: 20, fontSize: 13, color: '#e85d5d',
+            padding: '14px 18px', marginBottom: 20, fontSize: 13, color: 'var(--danger)',
           }}>
             {error}
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>

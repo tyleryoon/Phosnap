@@ -95,7 +95,7 @@ const RoleRejected = ({ role }) => {
         <div style={{ fontSize: 48, marginBottom: 16 }}>📝</div>
         <div style={{
           fontFamily: 'var(--font-serif)', fontSize: 20,
-          letterSpacing: '0.1em', marginBottom: 12, color: '#e85d5d',
+          letterSpacing: '0.1em', marginBottom: 12, color: 'var(--danger)',
         }}>
           {label} 가입이 보류되었습니다
         </div>
@@ -153,7 +153,7 @@ const RoleRejected = ({ role }) => {
       {error && (
         <div style={{
           border: '1px solid #e85d5d', background: 'var(--bg2)',
-          padding: '12px 16px', marginTop: 16, fontSize: 13, color: '#e85d5d',
+          padding: '12px 16px', marginTop: 16, fontSize: 13, color: 'var(--danger)',
         }}>
           {error}
         </div>

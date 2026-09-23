@@ -257,7 +257,7 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
                   width: 38, height: 38, cursor: 'pointer', fontSize: 13,
                   background: on ? 'rgba(232,93,93,0.15)' : 'transparent',
                   border: `1px solid ${on ? 'rgba(232,93,93,0.7)' : 'var(--border)'}`,
-                  color: on ? '#e85d5d' : 'var(--muted)',
+                  color: on ? 'var(--danger)' : 'var(--muted)',
                 }}>{d}</button>
             );
           })}
@@ -301,7 +301,7 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
             padding: 14, fontSize: 13, lineHeight: 1.7,
             background: err ? 'rgba(232,93,93,0.08)' : 'var(--accent-a08)',
             border: `1px solid ${err ? 'rgba(232,93,93,0.5)' : 'var(--accent-a50)'}`,
-            color: err ? '#e85d5d' : 'var(--gold)',
+            color: err ? 'var(--danger)' : 'var(--gold)',
           }}>{err || msg}</div>
       )}
 
@@ -367,10 +367,10 @@ export default function ScheduleManager({ providerType, providerId, lang = 'ko' 
 
         <div style={{ display: 'flex', gap: 14, marginTop: 14, fontSize: 11,
                       color: 'var(--muted)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ color: '#48bb78' }}>■ {t.legendOpen}</span>
+          <span style={{ color: 'var(--success)' }}>■ {t.legendOpen}</span>
           <span>■ {t.legendDefault}</span>
-          <span style={{ color: '#e85d5d' }}>■ {t.legendClosed}</span>
-          <span style={{ color: 'rgba(232,93,93,0.75)' }}>■ {t.legendWeekly}</span>
+          <span style={{ color: 'var(--danger)' }}>■ {t.legendClosed}</span>
+          <span style={{ color: 'var(--danger)' }}>■ {t.legendWeekly}</span>
           <span style={{ marginLeft: 'auto' }}>{t.hint}</span>
         </div>
         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>

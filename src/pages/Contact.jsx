@@ -213,7 +213,7 @@ const Contact = () => {
                   />
                 </div>
 
-                {error && <p style={{ color: '#e85d5d', fontSize: 12, marginBottom: 8 }}>{error}</p>}
+                {error && <p style={{ color: 'var(--danger)', fontSize: 12, marginBottom: 8 }}>{error}</p>}
 
                 <button type="submit" className="btn-primary"
                   disabled={loading}

@@ -173,7 +173,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 32 }}>💬</div>
             <div style={{ fontSize: 13, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>채팅방을 선택하세요</div>
-            <div style={{ fontSize: 11, color: 'rgba(136,136,136,0.5)', maxWidth: 280, textAlign: 'center', lineHeight: 1.7 }}>
+            <div style={{ fontSize: 11, color: 'var(--muted)', maxWidth: 280, textAlign: 'center', lineHeight: 1.7 }}>
               콜라보 수락 후 여기서 직접 소통할 수 있습니다. 텍스트, 사진, 영상, 위치 공유가 가능합니다.
             </div>
           </div>
@@ -191,7 +191,7 @@ const CollaboChat = ({ myId, theirId: initialTheirId, onClose }) => {
                     <div style={{ fontSize: 13, fontFamily: 'var(--font-serif)', color: 'var(--text)' }}>{other?.nameKo || other?.name || '?'}</div>
                     <div style={{ fontSize: 10, color: 'var(--muted)' }}>{other?.location}</div>
                   </div>
-                  <div style={{ marginLeft: 'auto', fontSize: 10, color: 'rgba(232,80,80,0.7)', padding: '3px 10px', border: '1px solid rgba(232,80,80,0.2)' }}>
+                  <div style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--danger)', padding: '3px 10px', border: '1px solid rgba(232,80,80,0.2)' }}>
                     플랫폼 내 소통만 허용
                   </div>
                 </div>

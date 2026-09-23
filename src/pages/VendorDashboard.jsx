@@ -1135,7 +1135,7 @@ function VendorDashboard() {
               position: 'fixed', top: 80, right: 24, zIndex: 100,
               padding: '10px 20px', fontSize: 12, fontFamily: 'var(--font-serif)',
               background: saveStatus === 'saving' ? 'var(--accent-a15)' : saveStatus === 'saved' ? 'rgba(76,175,80,0.15)' : 'rgba(232,93,93,0.15)',
-              color: saveStatus === 'saving' ? 'var(--gold)' : saveStatus === 'saved' ? '#4caf50' : '#e85d5d',
+              color: saveStatus === 'saving' ? 'var(--gold)' : saveStatus === 'saved' ? 'var(--success)' : 'var(--danger)',
               border: `1px solid ${saveStatus === 'saving' ? 'var(--accent-a30)' : saveStatus === 'saved' ? 'rgba(76,175,80,0.3)' : 'rgba(232,93,93,0.3)'}`,
               transition: 'all 0.3s', animation: 'pageEnter 0.3s ease-out',
             }}>
@@ -1149,7 +1149,7 @@ function VendorDashboard() {
               position: 'fixed', top: 80, right: 24, zIndex: 100,
               padding: '10px 20px', fontSize: 12, fontFamily: 'var(--font-serif)',
               background: profileSaveStatus === 'saving' ? 'var(--accent-a15)' : profileSaveStatus === 'saved' ? 'rgba(76,175,80,0.15)' : 'rgba(232,93,93,0.15)',
-              color: profileSaveStatus === 'saving' ? 'var(--gold)' : profileSaveStatus === 'saved' ? '#4caf50' : '#e85d5d',
+              color: profileSaveStatus === 'saving' ? 'var(--gold)' : profileSaveStatus === 'saved' ? 'var(--success)' : 'var(--danger)',
               border: `1px solid ${profileSaveStatus === 'saving' ? 'var(--accent-a30)' : profileSaveStatus === 'saved' ? 'rgba(76,175,80,0.3)' : 'rgba(232,93,93,0.3)'}`,
               transition: 'all 0.3s', animation: 'pageEnter 0.3s ease-out',
             }}>
@@ -1189,7 +1189,7 @@ function VendorDashboard() {
             {/* 업체명 미입력 경고 + CTA */}
             {!profileForm.nameKo && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', margin: '0.2rem 0 0.4rem' }}>
-                <p style={{ fontSize: '0.72rem', color: '#e85d5d', margin: 0, fontStyle: 'italic' }}>
+                <p style={{ fontSize: '0.72rem', color: 'var(--danger)', margin: 0, fontStyle: 'italic' }}>
                   ⚠ 업체명을 입력하고 저장해야 고객에게 노출됩니다 (담당자 실명은 노출되지 않습니다)
                 </p>
                 <button
@@ -1199,7 +1199,7 @@ function VendorDashboard() {
                     padding: '0.25rem 0.75rem',
                     background: 'rgba(232,93,93,0.15)',
                     border: '1px solid rgba(232,93,93,0.4)',
-                    color: '#e85d5d',
+                    color: 'var(--danger)',
                     cursor: 'pointer',
                     fontFamily: 'var(--font-serif)',
                     transition: 'all 0.2s',
@@ -1654,7 +1654,7 @@ function VendorDashboard() {
                             padding: '0.15rem 0.5rem',
                             border: `1px solid ${mode === 'instant' ? '#4caf50' : '#ff9800'}`,
                             background: `${mode === 'instant' ? 'rgba(76,175,80,0.1)' : 'rgba(255,152,0,0.1)'}`,
-                            color: mode === 'instant' ? '#4caf50' : '#ff9800',
+                            color: mode === 'instant' ? 'var(--success)' : '#ff9800',
                             cursor: 'pointer',
                             fontFamily: 'var(--font-serif)',
                             transition: 'all 0.2s',
@@ -1703,7 +1703,7 @@ function VendorDashboard() {
                                 fontSize: '0.65rem',
                                 padding: '0.15rem 0.4rem',
                                 border: `1px solid ${soldOut ? '#e85d5d' : 'rgba(212,175,55,0.3)'}`,
-                                color: soldOut ? '#e85d5d' : 'var(--muted)',
+                                color: soldOut ? 'var(--danger)' : 'var(--muted)',
                                 background: soldOut ? 'rgba(232,93,93,0.08)' : 'transparent',
                               }}>
                                 {size}: {available}/{inv.total || 0}
@@ -1782,7 +1782,7 @@ function VendorDashboard() {
                           </div>
                           <span style={{
                             fontSize: '0.7rem',
-                            color: availability[dress.id] ? '#22c55e' : '#e85d5d',
+                            color: availability[dress.id] ? 'var(--success)' : 'var(--danger)',
                             fontFamily: 'var(--font-serif)',
                             whiteSpace: 'nowrap',
                           }}>
@@ -1976,8 +1976,8 @@ function VendorDashboard() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameKo ? '#e85d5d' : 'var(--muted)' }}>
-                    업체명 (한글) <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameKo ? 'var(--danger)' : 'var(--muted)' }}>
+                    업체명 (한글) <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1995,13 +1995,13 @@ function VendorDashboard() {
                     }}
                   />
                   {!profileForm.nameKo && (
-                    <p style={{ fontSize: '0.7rem', color: '#e85d5d', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--danger)', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
                   )}
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameEn ? '#e85d5d' : 'var(--muted)' }}>
-                    업체명 (영문) <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: !profileForm.nameEn ? 'var(--danger)' : 'var(--muted)' }}>
+                    업체명 (영문) <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -2019,7 +2019,7 @@ function VendorDashboard() {
                     }}
                   />
                   {!profileForm.nameEn && (
-                    <p style={{ fontSize: '0.7rem', color: '#e85d5d', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
+                    <p style={{ fontSize: '0.7rem', color: 'var(--danger)', margin: '0.3rem 0 0' }}>필수 입력 항목입니다</p>
                   )}
                 </div>
 
@@ -2092,7 +2092,7 @@ function VendorDashboard() {
                   등록한 의상이 고객에게 한 번도 노출되지 않았다. */}
               <div style={{ marginBottom: '1.5rem' }}>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  활동 지역 <span style={{ color: '#e85d5d', fontSize: '0.75rem' }}>*</span>
+                  활동 지역 <span style={{ color: 'var(--danger)', fontSize: '0.75rem' }}>*</span>
                 </label>
                 <LocationPicker
                   value={profileForm.location}
@@ -2132,7 +2132,7 @@ function VendorDashboard() {
                   <span style={{
                     fontSize: '0.75rem',
                     fontFamily: 'var(--font-sans)',
-                    color: profileForm.intro.length >= 70 ? '#e85d5d' : profileForm.intro.length >= 50 ? 'var(--gold)' : 'var(--muted)',
+                    color: profileForm.intro.length >= 70 ? 'var(--danger)' : profileForm.intro.length >= 50 ? 'var(--gold)' : 'var(--muted)',
                     fontWeight: profileForm.intro.length >= 70 ? 600 : 400,
                     transition: 'color 0.2s',
                   }}>
@@ -2252,7 +2252,7 @@ function VendorDashboard() {
                   </button>
                 </div>
                 {customTagError && (
-                  <p style={{ fontSize: '0.75rem', color: '#e85d5d', margin: '0 0 0.5rem' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--danger)', margin: '0 0 0.5rem' }}>
                     {customTagError}
                   </p>
                 )}
@@ -2277,7 +2277,7 @@ function VendorDashboard() {
                           type="button"
                           onClick={() => removeCustomTag(tag)}
                           style={{
-                            background: 'none', border: 'none', color: '#e85d5d',
+                            background: 'none', border: 'none', color: 'var(--danger)',
                             cursor: 'pointer', padding: 0, fontSize: '0.9rem', lineHeight: 1,
                           }}
                         >
@@ -2422,7 +2422,7 @@ function VendorDashboard() {
                             {booking.status === 'confirmed' && booking.confirmType === 'instant' && (
                               <span style={{
                                 fontSize: '0.6rem', padding: '0.15rem 0.4rem',
-                                background: 'rgba(76,175,80,0.15)', color: '#4caf50',
+                                background: 'rgba(76,175,80,0.15)', color: 'var(--success)',
                                 border: '1px solid rgba(76,175,80,0.3)',
                                 fontFamily: 'var(--font-serif)',
                               }}>
@@ -2459,7 +2459,7 @@ function VendorDashboard() {
                                 onClick={() => handleBookingAction(booking.id, 'reject')}
                                 style={{
                                   fontSize: '0.7rem', padding: '0.3rem 0.6rem',
-                                  background: 'transparent', color: '#e85d5d',
+                                  background: 'transparent', color: 'var(--danger)',
                                   border: '1px solid #e85d5d', cursor: 'pointer',
                                   fontFamily: 'var(--font-serif)',
                                 }}
@@ -2475,7 +2475,7 @@ function VendorDashboard() {
                             <span style={{ fontSize: '0.75rem', color: '#4AFF6A' }}>완료</span>
                           )}
                           {booking.status === 'rejected' && (
-                            <span style={{ fontSize: '0.75rem', color: '#e85d5d' }}>거절됨</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>거절됨</span>
                           )}
                         </td>
                       </tr>
@@ -2668,7 +2668,7 @@ function VendorDashboard() {
                                 </span>
                                 <span style={{
                                   fontSize: '0.6rem', padding: '1px 5px', borderRadius: '4px', fontFamily: 'var(--font-serif)',
-                                  color: avail > 0 ? '#4AFF6A' : '#e85d5d',
+                                  color: avail > 0 ? '#4AFF6A' : 'var(--danger)',
                                   background: avail > 0 ? 'rgba(74,255,106,0.08)' : 'rgba(232,93,93,0.08)',
                                   border: `1px solid ${avail > 0 ? 'rgba(74,255,106,0.2)' : 'rgba(232,93,93,0.2)'}`,
                                 }}>
@@ -2701,7 +2701,7 @@ function VendorDashboard() {
               );
               } catch (err) {
                 return (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: '#e85d5d', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}>
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--danger)', background: 'var(--bg2)', border: '1px solid var(--gold-dim)' }}>
                     <p style={{ marginBottom: '0.5rem' }}>일정표를 불러오는 중 오류가 발생했습니다.</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{String(err?.message || err)}</p>
                   </div>
@@ -2788,7 +2788,7 @@ function VendorDashboard() {
                       style={{
                         textAlign: 'center',
                         fontFamily: 'var(--font-serif)',
-                        color: di === 5 ? '#4A9EFF' : di === 6 ? '#e85d5d' : 'var(--gold)',
+                        color: di === 5 ? '#4A9EFF' : di === 6 ? 'var(--danger)' : 'var(--gold)',
                         fontSize: '0.85rem',
                         padding: '0.75rem 0',
                         borderBottom: '1px solid var(--gold-dim)',
@@ -2864,14 +2864,14 @@ function VendorDashboard() {
                           <>
                             <div style={{
                               fontSize: '0.85rem', fontFamily: 'var(--font-serif)',
-                              color: isHoliday ? 'rgba(232,80,80,0.5)' : isToday ? 'var(--gold)' : isSun ? '#e85d5d' : isSat ? '#4A9EFF' : 'var(--text)',
+                              color: isHoliday ? 'var(--danger)' : isToday ? 'var(--gold)' : isSun ? '#e85d5d' : isSat ? '#4A9EFF' : 'var(--text)',
                               fontWeight: isToday ? '700' : 'normal',
                               marginBottom: '0.3rem',
                               textDecoration: isHoliday ? 'line-through' : 'none',
                             }}>
                               {dayNum}
                               {isToday && <span style={{ fontSize: '0.55rem', color: 'var(--gold)', marginLeft: 4 }}>오늘</span>}
-                              {isHoliday && <span style={{ fontSize: '0.5rem', color: '#e85d5d', marginLeft: 4 }}>휴무</span>}
+                              {isHoliday && <span style={{ fontSize: '0.5rem', color: 'var(--danger)', marginLeft: 4 }}>휴무</span>}
                             </div>
                             {/* 아이템별 그룹화된 대여 현황 */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -2924,8 +2924,8 @@ function VendorDashboard() {
                   {[
                     { label: '확정', color: 'var(--gold)' },
                     { label: '대기', color: '#4A9EFF' },
-                    { label: '완료', color: '#4caf50' },
-                    { label: '휴무', color: '#e85d5d' },
+                    { label: '완료', color: 'var(--success)' },
+                    { label: '휴무', color: 'var(--danger)' },
                   ].map(item => (
                     <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                       <div style={{
@@ -3195,7 +3195,7 @@ function VendorDashboard() {
                                       {replyMsg && (
                                         <div style={{
                                           fontSize: 11, marginTop: 6,
-                                          color: replyMsg.includes('✓') ? '#4ade80' : '#e85d5d',
+                                          color: replyMsg.includes('✓') ? 'var(--success)' : 'var(--danger)',
                                         }}>
                                           {replyMsg}
                                         </div>
@@ -3557,7 +3557,7 @@ function VendorDashboard() {
                     color: 'var(--muted)',
                   }}
                 >
-                  의상명 (한글) <span style={{ color: '#e85d5d' }}>*</span>
+                  의상명 (한글) <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -3582,7 +3582,7 @@ function VendorDashboard() {
                   }}
                 />
                 {addFormErrors.nameKo && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {addFormErrors.nameKo}
                   </span>
                 )}
@@ -3651,7 +3651,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  사이즈별 재고 수량 <span style={{ color: '#e85d5d' }}>*</span>
+                  사이즈별 재고 수량 <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 {/* 2-column table: Size | Quantity */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
@@ -3716,7 +3716,7 @@ function VendorDashboard() {
                               setFormData(prev => ({ ...prev, sizes: parts.join(','), sizeStock: newStock }));
                             }}
                             style={{
-                              background: 'transparent', border: 'none', color: '#e85d5d',
+                              background: 'transparent', border: 'none', color: 'var(--danger)',
                               cursor: 'pointer', fontSize: '1rem', padding: '2px 6px', lineHeight: 1,
                             }}
                             title="삭제"
@@ -3750,7 +3750,7 @@ function VendorDashboard() {
                   각 행에 사이즈와 보유 수량을 입력하세요. Free 사이즈의 경우 "Free"를 입력합니다. (최대 6개)
                 </p>
                 {addFormErrors.sizes && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {addFormErrors.sizes}
                   </span>
                 )}
@@ -3815,7 +3815,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  이미지 파일 <span style={{ color: '#e85d5d' }}>*</span>
+                  이미지 파일 <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <DragDropImageUpload
                   label=""
@@ -3833,7 +3833,7 @@ function VendorDashboard() {
                   }}
                 />
                 {addFormErrors.image && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {addFormErrors.image}
                   </span>
                 )}
@@ -3993,7 +3993,7 @@ function VendorDashboard() {
                     color: 'var(--muted)',
                   }}
                 >
-                  의상명 (한글) <span style={{ color: '#e85d5d' }}>*</span>
+                  의상명 (한글) <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -4018,7 +4018,7 @@ function VendorDashboard() {
                   }}
                 />
                 {editFormErrors.nameKo && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {editFormErrors.nameKo}
                   </span>
                 )}
@@ -4087,7 +4087,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  사이즈별 재고 수량 <span style={{ color: '#e85d5d' }}>*</span>
+                  사이즈별 재고 수량 <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '0.5rem' }}>
                   <thead>
@@ -4151,7 +4151,7 @@ function VendorDashboard() {
                               setEditForm(prev => ({ ...prev, sizes: parts.join(','), sizeStock: newStock }));
                             }}
                             style={{
-                              background: 'transparent', border: 'none', color: '#e85d5d',
+                              background: 'transparent', border: 'none', color: 'var(--danger)',
                               cursor: 'pointer', fontSize: '1rem', padding: '2px 6px', lineHeight: 1,
                             }}
                             title="삭제"
@@ -4182,7 +4182,7 @@ function VendorDashboard() {
                   </button>
                 )}
                 {editFormErrors.sizes && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {editFormErrors.sizes}
                   </span>
                 )}
@@ -4247,7 +4247,7 @@ function VendorDashboard() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--muted)' }}>
-                  이미지 파일 <span style={{ color: '#e85d5d' }}>*</span>
+                  이미지 파일 <span style={{ color: 'var(--danger)' }}>*</span>
                 </label>
                 <DragDropImageUpload
                   label=""
@@ -4265,7 +4265,7 @@ function VendorDashboard() {
                   }}
                 />
                 {editFormErrors.image && (
-                  <span style={{ fontSize: '0.75rem', color: '#e85d5d', marginTop: '0.25rem', display: 'block' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '0.25rem', display: 'block' }}>
                     {editFormErrors.image}
                   </span>
                 )}
@@ -4427,7 +4427,7 @@ function VendorDashboard() {
                   padding: '12px 12px',
                   marginBottom: 20,
                   fontSize: 12,
-                  color: '#e85d5d',
+                  color: 'var(--danger)',
                   borderRadius: '2px',
                   lineHeight: 1.6,
                 }}>
@@ -4459,7 +4459,7 @@ function VendorDashboard() {
               {bookingError && (
                 <div style={{
                   border: '1px solid rgba(232,85,85,0.4)', background: 'rgba(232,85,85,0.1)',
-                  padding: '10px 12px', marginBottom: 16, fontSize: 12.5, color: '#e85d5d',
+                  padding: '10px 12px', marginBottom: 16, fontSize: 12.5, color: 'var(--danger)',
                   lineHeight: 1.7,
                 }}>
                   처리하지 못했습니다 — {bookingError}

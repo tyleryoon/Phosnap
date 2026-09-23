@@ -21,7 +21,7 @@ import {
 
 const STATUS_META = {
   open:     { label: '답변 대기', color: 'var(--gold)' },
-  answered: { label: '답변 완료', color: '#22c55e' },
+  answered: { label: '답변 완료', color: 'var(--success)' },
   closed:   { label: '종료',     color: 'var(--muted)' },
 };
 
@@ -322,7 +322,7 @@ const Support = ({ onAuthOpen }) => {
                           background: 'var(--bg)', borderLeft: '3px solid #22c55e',
                         }}>
                           <div style={{
-                            fontSize: 10, color: '#22c55e', fontFamily: 'var(--font-serif)',
+                            fontSize: 10, color: 'var(--success)', fontFamily: 'var(--font-serif)',
                             letterSpacing: '0.15em', marginBottom: 8,
                           }}>
                             답변 · {fmt(q.answered_at)}

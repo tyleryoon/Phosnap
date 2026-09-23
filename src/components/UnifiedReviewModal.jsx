@@ -323,7 +323,7 @@ const UnifiedReviewModal = ({ booking, onClose, onSaved }) => {
         {savedMsg && (
           <div style={{
             padding: '10px 14px', marginBottom: 16, fontSize: 13,
-            color: savedMsg.includes('✓') ? '#4ade80' : '#ef4444',
+            color: savedMsg.includes('✓') ? 'var(--success)' : 'var(--danger)',
             background: savedMsg.includes('✓') ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)',
             border: `1px solid ${savedMsg.includes('✓') ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
           }}>

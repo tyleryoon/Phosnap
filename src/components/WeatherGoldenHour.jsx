@@ -166,13 +166,13 @@ export default function WeatherGoldenHour({ date, latitude, longitude, locationN
       return {
         icon: '☀️',
         text: t.excellent,
-        color: '#4ade80', // green
+        color: 'var(--success)', // green
       };
     } else if (code < 61 && precipProb < 60) {
       return {
         icon: '⛅',
         text: t.good,
-        color: '#facc15', // amber
+        color: 'var(--warning)', // amber
       };
     } else {
       return {
@@ -265,7 +265,7 @@ export default function WeatherGoldenHour({ date, latitude, longitude, locationN
       border: '1px solid rgba(239, 68, 68, 0.3)',
       borderRadius: '8px',
       padding: '12px',
-      color: '#ef4444',
+      color: 'var(--danger)',
       fontSize: '14px',
       marginBottom: '12px',
     },

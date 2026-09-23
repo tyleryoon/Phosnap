@@ -450,9 +450,9 @@ const AdminDashboard = () => {
       }}>
         {[
           { label: translate('totalBookings'), value: stats.totalBookings, color: 'var(--gold)' },
-          { label: translate('monthlyRevenue'), value: `₩${fmt(stats.monthlyRevenue)}`, color: '#22c55e' },
-          { label: translate('newSignups'), value: stats.newSignups, color: '#60a5fa' },
-          { label: translate('activePhotographers'), value: stats.activePhotographers, color: '#f472b6' },
+          { label: translate('monthlyRevenue'), value: `₩${fmt(stats.monthlyRevenue)}`, color: 'var(--success)' },
+          { label: translate('newSignups'), value: stats.newSignups, color: 'var(--info)' },
+          { label: translate('activePhotographers'), value: stats.activePhotographers, color: 'var(--grade-4)' },
         ].map((card, i) => (
           <div key={i} style={{
             border: '1px solid var(--border)',
@@ -578,7 +578,7 @@ const AdminDashboard = () => {
                   fontSize: 9,
                   padding: '2px 8px',
                   background: b.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(96, 165, 250, 0.1)',
-                  color: b.status === 'confirmed' ? '#22c55e' : '#60a5fa',
+                  color: b.status === 'confirmed' ? 'var(--success)' : 'var(--info)',
                   borderRadius: 2,
                 }}>
                   {translate(b.status)}
@@ -622,7 +622,7 @@ const AdminDashboard = () => {
                   fontSize: 9,
                   padding: '2px 8px',
                   background: 'rgba(96, 165, 250, 0.1)',
-                  color: '#60a5fa',
+                  color: 'var(--info)',
                   borderRadius: 2,
                 }}>
                   {translate(`role_${p.role}`)}
@@ -724,7 +724,7 @@ const AdminDashboard = () => {
                       background: b.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' :
                                   b.status === 'completed' ? 'rgba(99, 102, 241, 0.1)' :
                                   b.status === 'pending' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                      color: b.status === 'confirmed' ? '#22c55e' :
+                      color: b.status === 'confirmed' ? 'var(--success)' :
                              b.status === 'completed' ? '#6366f1' :
                              b.status === 'pending' ? '#f97316' : '#6b7280',
                     }}>
@@ -880,7 +880,7 @@ const AdminDashboard = () => {
                       fontSize: 10,
                       borderRadius: 2,
                       background: 'rgba(96, 165, 250, 0.1)',
-                      color: '#60a5fa',
+                      color: 'var(--info)',
                     }}>
                       {translate(`role_${p.role}`)}
                     </span>
@@ -933,7 +933,7 @@ const AdminDashboard = () => {
                         <span style={{
                           display: 'inline-block', padding: '3px 10px', fontSize: 10, borderRadius: 2,
                           border: `1px solid ${cap.active ? 'rgba(34,197,94,0.4)' : 'var(--border)'}`,
-                          color: cap.active ? '#4ade80' : 'var(--muted)',
+                          color: cap.active ? 'var(--success)' : 'var(--muted)',
                         }}>
                           {cap.active ? '고객에게 노출' : '비노출'}
                         </span>
@@ -1010,7 +1010,7 @@ const AdminDashboard = () => {
         {loadError && !['approvals','inquiries'].includes(activeTab) && (
           <div style={{
             border: '1px solid #e85d5d', background: 'var(--bg2)',
-            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: '#e85d5d',
+            padding: '14px 18px', marginBottom: 24, fontSize: 13, color: 'var(--danger)',
           }}>
             데이터를 불러오지 못했습니다 — {loadError}
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>

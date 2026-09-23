@@ -613,7 +613,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
             padding: '8px 16px',
             background: 'rgba(232,93,93,0.1)',
             border: '1px solid rgba(232,93,93,0.3)',
-            color: '#e85d5d',
+            color: 'var(--danger)',
             fontSize: 11,
             fontFamily: 'var(--font-serif)',
           }}
