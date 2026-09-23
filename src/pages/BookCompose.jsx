@@ -341,6 +341,20 @@ const BookCompose = () => {
     urlTabUsed.current = true;
   }, [locationId, date, time, hours]);
 
+  // 찾기 페이지에서 조건을 들고 넘어왔으면 바로 조회한다.
+  //
+  // 예전에는 주소의 date·time 을 입력칸에만 채워 넣고 조회는 하지 않았다.
+  // 고객 입장에서는 '이 조건으로 예약 구성하기' 를 눌렀는데 똑같은 조건
+  // 입력 화면이 다시 뜨는 셈이라, 버튼이 아무 일도 안 한 것처럼 보였다.
+  // 한 번만 자동으로 돌린다 — 그 뒤 조건 변경은 고객 몫이다.
+  const autoSearched = useRef(false);
+  useEffect(() => {
+    if (autoSearched.current) return;
+    if (!urlParams.get('date') || !urlParams.get('time')) return;
+    autoSearched.current = true;
+    search();
+  }, [search, urlParams]);
+
   // ── 담기 ──
   const pick = (key, value) => setCart(c => ({ ...c, [key]: value }));
   const drop = (key) => setCart(c => ({ ...c, [key]: null }));
