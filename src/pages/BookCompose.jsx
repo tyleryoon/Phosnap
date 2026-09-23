@@ -68,7 +68,7 @@ const TABS = [
   { key: 'venue', label: '장소' },
 ];
 // 담은 구성 규칙은 lib/cart.js 로 옮겼다 — 전역 장바구니도 같은 규칙을 쓴다.
-import { normalizeCart } from '../lib/cart';
+import { normalizeCart, locationConflict } from '../lib/cart';
 
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
 
@@ -473,6 +473,7 @@ const BookCompose = () => {
       pick('photographer', {
         id: a.id,
         name: a.name_ko || a.name,
+        locationIds: a.location_ids || [],
         pkg: fits[0],
         hmkSelf: a.hmk_self === true,
         dressSelf: a.dress_self === true,
@@ -493,6 +494,21 @@ const BookCompose = () => {
       (cart.venue?.price || 0),
     [cart]
   );
+
+  // 보증금.
+  //
+  // 주인이 현장에 들고 오는 의상(byOwner)은 받지 않는다 — 옷이 주인
+  // 손을 떠나지 않기 때문이다. 헤메가 자기 옷을 입혀주는 경우가 그렇다.
+  // 같은 옷이라도 고객이 픽업하거나 배송받으면 받는다.
+  const deposit = useMemo(() => {
+    const d = cart.dress;
+    if (!d) return 0;
+    const byOwner = !!(d.ownerStylistId || d.artistId);
+    return byOwner ? 0 : d.deposit || 0;
+  }, [cart.dress]);
+
+  // 담은 것들의 활동 지역이 서로 맞는가 (전 지역으로 볼 때 실제로 일한다)
+  const locMismatch = useMemo(() => locationConflict(cart), [cart]);
 
   // 의상은 세 곳에서 온다 — 벤더 · 담은 헤메 · 담은 작가.
   // 고객 입장에서는 그날 현장에 오는 사람이 가진 옷이 전부 선택지다.
@@ -541,6 +557,7 @@ const BookCompose = () => {
       const s = allStylists.find((x) => String(x.service_id) === id);
       if (!s) return setPickMiss('그 시술은 이 시간에 가능하지 않습니다.');
       return pick('stylist', {
+        locationIds: s.location_ids || [],
         stylistId: s.stylist_id,
         serviceId: s.service_id,
         name: s.name_ko,
@@ -556,6 +573,10 @@ const BookCompose = () => {
       const d = allDresses.find((x) => String(x.id) === id);
       if (!d) return setPickMiss('그 의상은 이 시간에 대여할 수 없습니다.');
       return pick('dress', {
+        locationIds: d.location_ids || [],
+        deposit: d.deposit || 0,
+        fulfillment: d.fulfillment || [],
+        deliveryFee: d.delivery_fee || 0,
         id: d.id,
         name: d.name_ko,
         price: d.price,
@@ -569,7 +590,7 @@ const BookCompose = () => {
     if (k === 'venue') {
       const v = (result.venues || []).find((x) => String(x.id) === id);
       if (!v) return setPickMiss('그 장소는 이 시간에 예약할 수 없습니다.');
-      return pick('venue', { id: v.id, name: v.name, price: v.price, vendorId: v.vendor_id });
+      return pick('venue', { id: v.id, name: v.name, price: v.price, vendorId: v.vendor_id, locationIds: v.location_ids || [] });
     }
     if (k === 'photographer') {
       const a = (result.photographers || []).find((x) => String(x.id) === id);
@@ -591,10 +612,15 @@ const BookCompose = () => {
             type="button"
             onClick={() => setShowAnchor(true)}
             style={{
-              marginBottom: 20, padding: '9px 16px', cursor: 'pointer',
-              border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              background: 'transparent', color: 'var(--muted)',
-              fontSize: 12.5, fontFamily: 'inherit',
+              marginBottom: 20,
+              padding: '9px 16px',
+              cursor: 'pointer',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              background: 'transparent',
+              color: 'var(--muted)',
+              fontSize: 12.5,
+              fontFamily: 'inherit',
             }}
           >
             조건 바꾸기
@@ -790,10 +816,14 @@ const BookCompose = () => {
                   type="button"
                   onClick={() => setShowList((v) => !v)}
                   style={{
-                    padding: '9px 16px', cursor: 'pointer',
-                    border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-                    background: 'transparent', color: 'var(--text)',
-                    fontSize: 12.5, fontFamily: 'inherit',
+                    padding: '9px 16px',
+                    cursor: 'pointer',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    background: 'transparent',
+                    color: 'var(--text)',
+                    fontSize: 12.5,
+                    fontFamily: 'inherit',
                   }}
                 >
                   {listOpen ? '목록 접기' : '+ 더 담기'}
@@ -894,7 +924,8 @@ const BookCompose = () => {
                             cart.stylist?.serviceId === s.service_id
                               ? drop('stylist')
                               : pick('stylist', {
-                                  stylistId: s.stylist_id,
+                                  locationIds: s.location_ids || [],
+                stylistId: s.stylist_id,
                                   serviceId: s.service_id,
                                   name: s.name_ko,
                                   service: s.service_name,
@@ -939,6 +970,10 @@ const BookCompose = () => {
                             cart.dress?.id === d.id
                               ? drop('dress')
                               : pick('dress', {
+                                  locationIds: d.location_ids || [],
+                                  deposit: d.deposit || 0,
+                                  fulfillment: d.fulfillment || [],
+                                  deliveryFee: d.delivery_fee || 0,
                                   id: d.id,
                                   name: d.name_ko,
                                   price: d.price,
@@ -972,6 +1007,7 @@ const BookCompose = () => {
                             cart.venue?.id === v.id
                               ? drop('venue')
                               : pick('venue', {
+                                  locationIds: v.location_ids || [],
                                   id: v.id,
                                   name: v.name,
                                   price: v.price,
@@ -1143,9 +1179,39 @@ const BookCompose = () => {
                   <span style={{ fontSize: 19, color: 'var(--gold)' }}>{fmt(total)}</span>
                 </div>
 
+                {/* 보증금은 합계와 따로 적는다. 돌려받는 돈이라 촬영값과
+                    성격이 다르다 — 섞어 적으면 더 비싸 보인다. */}
+                {deposit > 0 && (
+                  <div
+                    style={{
+                      display: 'flex', justifyContent: 'space-between',
+                      padding: '0 0 14px', fontSize: 12, color: 'var(--muted)',
+                    }}
+                  >
+                    <span>보증금 (반환)</span>
+                    <span>{fmt(deposit)}</span>
+                  </div>
+                )}
+
+                {/* 지역이 서로 안 맞으면 결제로 보내지 않는다.
+                    서울 헤메와 부산 장소를 한 촬영에 부를 수는 없다. */}
+                {locMismatch && (
+                  <div
+                    style={{
+                      border: '1px solid var(--danger)', background: 'var(--bg)',
+                      padding: '10px 12px', marginBottom: 12,
+                      fontSize: 11.5, lineHeight: 1.7, color: 'var(--text)',
+                    }}
+                  >
+                    담은 것들의 활동 지역이 서로 맞지 않습니다. 한 촬영에
+                    서로 다른 지역의 사람과 장소를 부를 수는 없습니다.
+                    하나를 빼거나 지역을 정해 다시 찾아보세요.
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  disabled={!hasAny}
+                  disabled={!hasAny || locMismatch}
                   onClick={() => setNotReady(true)}
                   style={{
                     width: '100%',
