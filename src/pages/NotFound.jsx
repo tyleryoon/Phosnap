@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
+import SEO from '../components/SEO';
 import { useLanguage } from '../contexts/LanguageContext';
 
 // ─── 404 Not Found Page ────────────────────────────────────────────────
@@ -17,6 +18,9 @@ const NotFound = () => {
   const m = MSG[lang] || MSG.en;
 
   return (
+    <>
+    {/* 없는 주소가 색인되면 검색 결과에 빈 페이지가 남는다 */}
+    <SEO title={m.title} description={m.sub} lang={lang} noIndex />
     <div className="page-enter" style={{ paddingTop: 160, textAlign: 'center', minHeight: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       {/* 404 code */}
       <div style={{
@@ -61,6 +65,7 @@ const NotFound = () => {
         </button>
       </div>
     </div>
+    </>
   );
 };
 

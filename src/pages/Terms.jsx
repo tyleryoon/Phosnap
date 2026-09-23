@@ -48,7 +48,7 @@ const Terms = () => {
             </h2>
             <p style={{
               fontSize: 13,
-              color: 'var(--ink-a50)',
+              color: 'var(--muted)',
               lineHeight: 2,
               letterSpacing: '0.02em',
               whiteSpace: 'pre-line',

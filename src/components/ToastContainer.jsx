@@ -12,7 +12,7 @@ const ToastIcon = ({ type }) => {
       return <span style={{ color: '#FF6B6B' }}>✕</span>;
     case 'info':
     default:
-      return <span style={{ color: 'var(--ink-a50)' }}>ℹ</span>;
+      return <span style={{ color: 'var(--muted)' }}>ℹ</span>;
   }
 };
 

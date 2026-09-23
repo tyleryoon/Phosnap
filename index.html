@@ -12,7 +12,10 @@
   <meta name="keywords" content="스냅촬영, 여행 사진작가, 스냅사진, 커플스냅, 웨딩스냅, travel photographer, snap photo, phosnap" />
   <meta name="author" content="Phosnap" />
   <meta name="robots" content="index, follow" />
-  <link rel="canonical" href="https://phosnap.com/" />
+  <!-- canonical 은 여기 두지 않는다. 여기에 홈 주소를 박아두면 SPA 의
+       모든 하위 페이지가 "사실 나는 홈이다" 라고 선언하게 되어 작가 찾기·
+       헤메 찾기 같은 목록이 통째로 색인에서 빠진다.
+       페이지별 canonical 은 src/components/SEO.jsx 가 낸다. -->
 
   <!-- ── Open Graph (Facebook / KakaoTalk) ── -->
   <meta property="og:type" content="website" />

@@ -660,11 +660,11 @@ const Profile = ({ onAuthOpen }) => {
                         background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
                         padding: '3px 8px', borderRadius: 2,
                       }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-a50)" strokeWidth="2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--on-ink)" strokeWidth="2">
                           <rect x="3" y="3" width="14" height="14" rx="1" />
                           <path d="M7 21h14a2 2 0 002-2V7" />
                         </svg>
-                        <span style={{ fontSize: 10, color: 'var(--ink-a50)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
+                        <span style={{ fontSize: 10, color: 'var(--on-ink)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
                       </div>
                     )}
                     {/* 위치 태그 배지 */}

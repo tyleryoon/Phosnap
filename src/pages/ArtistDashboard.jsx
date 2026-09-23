@@ -1002,7 +1002,7 @@ const ArtistDashboard = () => {
                             {tier.symbol} {tier.label}
                           </div>
                           <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 4 }}>누적 완료 {tier.range}</div>
-                          <div style={{ fontSize: 11, color: 'var(--ink-a50)', lineHeight: 1.6 }}>{tier.perks}</div>
+                          <div style={{ fontSize: 11, color: 'var(--muted)', lineHeight: 1.6 }}>{tier.perks}</div>
                         </div>
                       ))}
                     </div>
@@ -1013,7 +1013,7 @@ const ArtistDashboard = () => {
                     <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', marginBottom: 10 }}>
                       수수료 정책
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--ink-a50)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
                       <div style={{ marginBottom: 6 }}>
                         <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 20%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
                       </div>

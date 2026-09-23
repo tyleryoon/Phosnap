@@ -73,7 +73,7 @@ const PointRewardToast = ({ amount, details, onDismiss }) => {
             </div>
             <div style={{
               fontSize: 12,
-              color: 'var(--ink-a70)',
+              color: 'var(--on-accent)',
               fontFamily: 'var(--font-serif)',
               letterSpacing: '0.02em',
             }}>
@@ -86,7 +86,7 @@ const PointRewardToast = ({ amount, details, onDismiss }) => {
         {details && details.length > 0 && (
           <div style={{
             fontSize: 11,
-            color: 'var(--ink-a60)',
+            color: 'var(--on-accent)',
             paddingTop: 8,
             borderTop: '1px solid var(--ink-a10)',
             marginTop: 8,

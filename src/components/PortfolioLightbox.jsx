@@ -82,12 +82,12 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
         style={{
           position: 'absolute', top: 16, right: 20, zIndex: 10,
           background: 'none', border: 'none',
-          color: 'var(--ink-a50)', fontSize: 32,
+          color: 'var(--on-ink)', fontSize: 32,
           cursor: 'pointer', lineHeight: 1,
           transition: 'color 0.2s',
         }}
         onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-        onMouseLeave={e => e.currentTarget.style.color = 'var(--ink-a50)'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--on-ink)'}
       >
         ×
       </button>
@@ -97,7 +97,7 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
         <div style={{
           position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)',
           fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.15em',
-          color: 'var(--ink-a50)', zIndex: 10,
+          color: 'var(--on-ink)', zIndex: 10,
         }}>
           {idx + 1} / {total}
         </div>
@@ -110,13 +110,13 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
           style={{
             position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
             zIndex: 10, background: 'rgba(0,0,0,0.4)', border: 'none',
-            color: 'var(--ink-a50)', fontSize: 28, cursor: 'pointer',
+            color: 'var(--on-ink)', fontSize: 28, cursor: 'pointer',
             width: 48, height: 48, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             backdropFilter: 'blur(4px)', transition: 'all 0.2s',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--ink-a15)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.color = 'var(--ink-a50)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.color = 'var(--on-ink)'; }}
         >
           ‹
         </button>
@@ -142,13 +142,13 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
           style={{
             position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)',
             zIndex: 10, background: 'rgba(0,0,0,0.4)', border: 'none',
-            color: 'var(--ink-a50)', fontSize: 28, cursor: 'pointer',
+            color: 'var(--on-ink)', fontSize: 28, cursor: 'pointer',
             width: 48, height: 48, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             backdropFilter: 'blur(4px)', transition: 'all 0.2s',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = 'var(--ink-a15)'; e.currentTarget.style.color = '#fff'; }}
-          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.color = 'var(--ink-a50)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.color = 'var(--on-ink)'; }}
         >
           ›
         </button>
@@ -157,7 +157,7 @@ const PortfolioLightbox = ({ images, startIndex = 0, onClose }) => {
       {/* 캡션 */}
       {caption && (
         <div style={{
-          marginTop: 16, fontSize: 12, color: 'var(--ink-a50)',
+          marginTop: 16, fontSize: 12, color: 'var(--on-ink)',
           fontFamily: 'var(--font-serif)', letterSpacing: '0.08em',
           textAlign: 'center', maxWidth: '80vw',
         }}>

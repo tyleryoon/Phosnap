@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
+import SEO from '../components/SEO';
 import { useAuth } from '../contexts/AuthContext';
 import {
   INQUIRY_CATEGORIES, submitInquiry, getMyInquiries,
@@ -123,6 +124,10 @@ const Support = ({ onAuthOpen }) => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      <SEO
+        title="고객센터"
+        description="Phosnap 예약·취소·환불에 대한 자주 묻는 질문과 1:1 문의. 촬영 전후로 궁금한 점을 여기서 해결하세요."
+      />
       <div className="section" style={{ maxWidth: 760, margin: '0 auto' }}>
 
         <div style={{ marginBottom: 36 }}>

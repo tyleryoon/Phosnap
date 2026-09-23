@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
+import SEO from '../components/SEO';
 import { MapPinIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { fmtStylist } from '../data/stylists';
@@ -183,6 +184,15 @@ const StylistProfile = () => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      {/* 공개 프로필이라 링크를 그대로 공유한다. 제목·설명·미리보기 이미지가
+          없으면 카카오톡에 붙였을 때 사이트 기본값만 뜬다. */}
+      <SEO
+        title={`${displayName} — 헤어메이크업`}
+        description={(displayBio || `${displayName} 헤어메이크업 작가의 포트폴리오와 예약 가능 시간.`).slice(0, 155)}
+        image={s.img || undefined}
+        type="profile"
+        lang={lang}
+      />
 
       {/* ── 히어로 배너 ── */}
       <div style={{
@@ -200,7 +210,7 @@ const StylistProfile = () => {
           style={{
             position: 'absolute', top: 20, left: 24,
             background: 'rgba(0,0,0,0.5)', border: '1px solid var(--ink-a20)',
-            color: 'var(--ink-a50)', padding: '8px 16px',
+            color: 'var(--on-ink)', padding: '8px 16px',
             fontSize: 12, cursor: 'pointer', fontFamily: 'var(--font-serif)',
             letterSpacing: '0.08em',
           }}
@@ -320,11 +330,11 @@ const StylistProfile = () => {
                         background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
                         padding: '3px 8px', borderRadius: 2,
                       }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--ink-a50)" strokeWidth="2">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--on-ink)" strokeWidth="2">
                           <rect x="3" y="3" width="14" height="14" rx="1" />
                           <path d="M7 21h14a2 2 0 002-2V7" />
                         </svg>
-                        <span style={{ fontSize: 10, color: 'var(--ink-a50)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
+                        <span style={{ fontSize: 10, color: 'var(--on-ink)', fontFamily: 'var(--font-serif)' }}>{photoCount}</span>
                       </div>
                     )}
                     {post.caption && (
@@ -332,7 +342,7 @@ const StylistProfile = () => {
                         position: 'absolute', bottom: 0, left: 0, right: 0,
                         padding: '8px 12px',
                         background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                        fontSize: 11, color: 'var(--ink-a50)',
+                        fontSize: 11, color: 'var(--on-ink)',
                         fontFamily: 'var(--font-serif)',
                       }}>
                         {post.caption}

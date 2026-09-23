@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
-import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -21,7 +20,6 @@ window.__BUILD__ = { commit: __BUILD_COMMIT__, time: __BUILD_TIME__ };
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <HelmetProvider>
         <LanguageProvider>
           <CurrencyProvider>
             <AuthProvider>
@@ -34,7 +32,6 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             </AuthProvider>
           </CurrencyProvider>
         </LanguageProvider>
-      </HelmetProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

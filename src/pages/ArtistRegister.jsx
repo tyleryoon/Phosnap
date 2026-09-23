@@ -402,7 +402,7 @@ const ArtistRegister = () => {
           ✦ 다음 항목을 확인해주세요
         </div>
         {issues.map((issue, i) => (
-          <div key={i} style={{ color: 'var(--ink-a50)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
+          <div key={i} style={{ color: 'var(--muted)', display: 'flex', gap: 8, alignItems: 'baseline' }}>
             <span style={{ color: 'var(--danger)', flexShrink: 0 }}>•</span>
             <span><strong style={{ color: '#f0a0a0' }}>{issue.field}</strong> — {issue.msg}</span>
           </div>
@@ -758,7 +758,7 @@ const ArtistRegister = () => {
             </div>
 
             {/* 작가명 */}
-            <div style={{ background: 'var(--accent-a05)', border: '1px solid var(--gold-border)', padding: '12px 16px', marginBottom: 20, fontSize: 12, color: 'var(--ink-a50)', lineHeight: 1.7 }}>
+            <div style={{ background: 'var(--accent-a05)', border: '1px solid var(--gold-border)', padding: '12px 16px', marginBottom: 20, fontSize: 12, color: 'var(--muted)', lineHeight: 1.7 }}>
               {f.nameInfoTitle}<br />
               {f.nameInfoExtra && <><br /><span style={{ color: 'var(--gold)', fontSize: 11 }}>💡 {f.nameInfoExtra}</span></>}
               <br />
