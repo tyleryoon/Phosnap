@@ -30,8 +30,8 @@
    * 기존 골드(#E8A020)는 채도가 너무 높아 어디에 놓아도 튀었다.
    * 채도를 내리고 웜 그레이 쪽으로 당겼다. 흰 바탕 대비 약 5:1 —
    * 본문 크기 글자에도 쓸 수 있다. */
-  --gold:         #8C6D46;   /* 이름은 유지한다. 848곳이 이 이름을 쓴다 */
-  --accent:       #8C6D46;
+  --gold:         #836540;   /* 이름은 유지한다. 848곳이 이 이름을 쓴다 */
+  --accent:       #836540;
   --accent-deep:  #6F5636;
   --on-accent:    #FFFFFF;   /* 액센트 위에 올라가는 글자 */
 
@@ -43,17 +43,17 @@
    * 예전엔 rgba(232,160,32,0.06) 같은 값이 화면 코드에 299군데 박혀
    * 있었다. 팔레트를 바꾸려면 그 299곳을 전부 찾아야 했다.
    * 이제 이름으로 부른다. */
-  --accent-a03:   rgba(140, 109, 70, 0.03);
-  --accent-a04:   rgba(140, 109, 70, 0.04);
-  --accent-a05:   rgba(140, 109, 70, 0.05);
-  --accent-a06:   rgba(140, 109, 70, 0.06);
-  --accent-a08:   rgba(140, 109, 70, 0.08);
-  --accent-a10:   rgba(140, 109, 70, 0.10);
-  --accent-a12:   rgba(140, 109, 70, 0.12);
-  --accent-a15:   rgba(140, 109, 70, 0.15);
-  --accent-a20:   rgba(140, 109, 70, 0.20);
-  --accent-a30:   rgba(140, 109, 70, 0.30);
-  --accent-a50:   rgba(140, 109, 70, 0.50);
+  --accent-a03:   rgba(131, 101, 64, 0.03);
+  --accent-a04:   rgba(131, 101, 64, 0.04);
+  --accent-a05:   rgba(131, 101, 64, 0.05);
+  --accent-a06:   rgba(131, 101, 64, 0.06);
+  --accent-a08:   rgba(131, 101, 64, 0.08);
+  --accent-a10:   rgba(131, 101, 64, 0.10);
+  --accent-a12:   rgba(131, 101, 64, 0.12);
+  --accent-a15:   rgba(131, 101, 64, 0.15);
+  --accent-a20:   rgba(131, 101, 64, 0.20);
+  --accent-a30:   rgba(131, 101, 64, 0.30);
+  --accent-a50:   rgba(131, 101, 64, 0.50);
   --gold-dim:     var(--accent-a10);
   --gold-border:  var(--accent-a30);
 
@@ -161,7 +161,7 @@
   --shadow-sm:   0 1px 2px rgba(58, 48, 34, 0.05);
   --shadow-md:   0 2px 8px rgba(58, 48, 34, 0.06);
   --shadow-lg:   0 12px 32px rgba(58, 48, 34, 0.09);
-  --shadow-gold: 0 2px 12px rgba(140, 109, 70, 0.14);
+  --shadow-gold: 0 2px 12px rgba(131, 101, 64, 0.14);
   --glow-gold:    var(--shadow-gold);
   --glow-gold-lg: var(--shadow-lg);
   --text-glow:    none;
