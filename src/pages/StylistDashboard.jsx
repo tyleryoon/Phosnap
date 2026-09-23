@@ -989,7 +989,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                     padding: '8px 16px',
                     background: 'transparent',
                     color: 'var(--danger)',
-                    border: '1px solid #f56565',
+                    border: '1px solid var(--danger)',
                     cursor: 'pointer',
                     fontFamily: 'var(--font-body)',
                     fontWeight: 600,

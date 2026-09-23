@@ -265,6 +265,35 @@ const AdminDashboard = () => {
   const langCode = 'ko'; // Would be replaced with actual language context in real app
   const translate = (key) => i18n[langCode]?.[key] || i18n['ko'][key] || key;
 
+  /**
+   * 최근 6개월 예약 건수.
+   *
+   * 예전엔 [120, 145, 132, 178, 156, 142] 와 Oct~Mar 라벨이 코드에
+   * 박혀 있었다. 관리자가 '최근 6개월 예약 현황' 이라고 믿고 보는
+   * 그래프가 지어낸 숫자였고, 달 이름도 오늘과 무관하게 고정이었다.
+   * 경영 판단에 쓰이는 화면에서 이건 통계가 아니라 그림이다.
+   */
+  const monthlyBookings = useMemo(() => {
+    const now = new Date();
+    const buckets = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      buckets.push({ y: d.getFullYear(), m: d.getMonth(), count: 0 });
+    }
+    for (const b of bookings) {
+      if (!b?.created_at) continue;
+      const d = new Date(b.created_at);
+      if (Number.isNaN(d.getTime())) continue;
+      const hit = buckets.find(x => x.y === d.getFullYear() && x.m === d.getMonth());
+      if (hit) hit.count += 1;
+    }
+    const names = langCode === 'ko'
+      ? ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
+      : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return buckets.map(x => ({ label: names[x.m], count: x.count }));
+  }, [bookings, langCode]);
+  const monthlyMax = Math.max(1, ...monthlyBookings.map(x => x.count));
+
   // ─── 데이터 로드 ────────────────────────────────────────────────────
   //
   // ⚠ 실패하면 실패라고 말한다. mock 으로 대체하지 않는다.
@@ -511,14 +540,24 @@ const AdminDashboard = () => {
           height: 200,
           marginBottom: 16,
         }}>
-          {[120, 145, 132, 178, 156, 142].map((val, i) => (
+          {monthlyBookings.map((mb, i) => (
             <div key={i} style={{
               flex: 1,
-              height: `${(val / 180) * 100}%`,
-              background: 'var(--gold)',
+              /* 0건인 달도 자리를 차지해야 '그 달은 0' 임이 보인다.
+                 막대가 아예 없으면 데이터가 빠진 것과 구분이 안 된다. */
+              height: `${Math.max(2, (mb.count / monthlyMax) * 100)}%`,
+              background: mb.count === 0 ? 'var(--ink-a10)' : 'var(--gold)',
               borderRadius: '2px 2px 0 0',
               position: 'relative',
             }}>
+              <div style={{
+                position: 'absolute', top: -18, left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: 10, color: 'var(--text)',
+                fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap',
+              }}>
+                {mb.count}
+              </div>
               <div style={{
                 position: 'absolute',
                 bottom: -20,
@@ -529,7 +568,7 @@ const AdminDashboard = () => {
                 fontFamily: 'var(--font-serif)',
                 whiteSpace: 'nowrap',
               }}>
-                {['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'][i]}
+                {mb.label}
               </div>
             </div>
           ))}
@@ -724,9 +763,11 @@ const AdminDashboard = () => {
                       background: b.status === 'confirmed' ? 'rgba(34, 197, 94, 0.1)' :
                                   b.status === 'completed' ? 'rgba(99, 102, 241, 0.1)' :
                                   b.status === 'pending' ? 'rgba(249, 115, 22, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+                      /* 상태 색이 Tailwind 400~500 계열이라 연한 배경 위에서
+                         2.9~4.5:1 였다. 종이 바탕용 토큰으로 맞춘다. */
                       color: b.status === 'confirmed' ? 'var(--success)' :
-                             b.status === 'completed' ? '#6366f1' :
-                             b.status === 'pending' ? '#f97316' : '#6b7280',
+                             b.status === 'completed' ? 'var(--info)' :
+                             b.status === 'pending' ? 'var(--warning)' : 'var(--muted)',
                     }}>
                       {translate(b.status)}
                     </span>
@@ -782,7 +823,7 @@ const AdminDashboard = () => {
     if (!on) return null;
     const unknown = count === null || count === undefined;
     const empty   = !unknown && count === 0;
-    const color  = empty ? '#f56565' : unknown ? 'var(--muted)' : 'var(--gold)';
+    const color  = empty ? 'var(--danger)' : unknown ? 'var(--muted)' : 'var(--gold)';
     return (
       <span
         title={empty ? '보유로 표시했지만 등록된 항목이 0개입니다 — 고객 화면에서 빈칸으로 보입니다'
