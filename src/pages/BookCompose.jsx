@@ -6,6 +6,7 @@ import ProviderDetailModal from '../components/ProviderDetailModal';
 import { getAvailableProviders, getActiveLocations, getPackages, getStylistDresses } from '../lib/supabase';
 import { locationLabel } from '../data/locationUtils';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
 
 // ─── 예약 구성 (새 흐름) ────────────────────────────────────────────────
 //
@@ -53,27 +54,8 @@ const TABS = [
   { key: 'dress',        label: '의상' },
   { key: 'venue',        label: '장소' },
 ];
-
-// 장바구니에 쓰기 전에 항상 여기를 지난다.
-//
-// 왜 필요한가
-//   자체 의상은 그 사람이 현장에 와야 입을 수 있다. 그런데 옷을 담아둔
-//   상태에서 주인(작가·헤메)을 빼거나 다른 사람으로 바꾸면, 의상 탭에서는
-//   그 옷이 사라지지만 **담은 목록에는 남는다.** 합계에도 계속 더해진다.
-//   아무도 안 가져오는 옷에 고객이 돈을 내게 된다. (규칙 5-18)
-//
-//   담기·빼기·패키지 선택·재조회 — 호출부마다 막으면 새 경로가 생길 때
-//   또 샌다. 쓰기를 한 곳으로 모아 여기서만 판단한다.
-//
-// 벤더 의상은 artistId·ownerStylistId 가 둘 다 null 이라 걸리지 않는다.
-// 누구를 담든 빼든 그대로 남는 게 맞다 — 벤더는 옷만 빌려주니까.
-export const normalizeCart = (c) => {
-  const d = c.dress;
-  if (!d) return c;
-  if (d.artistId && c.photographer?.id !== d.artistId) return { ...c, dress: null };
-  if (d.ownerStylistId && c.stylist?.stylistId !== d.ownerStylistId) return { ...c, dress: null };
-  return c;
-};
+// 담은 구성 규칙은 lib/cart.js 로 옮겼다 — 전역 장바구니도 같은 규칙을 쓴다.
+import { normalizeCart } from '../lib/cart';
 
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
 
@@ -214,9 +196,9 @@ const BookCompose = () => {
   const urlTabUsed = useRef(!urlParams.get('tab'));
 
   // 담은 것. 각 칸은 하나씩만 담는다.
-  const [cart, setCartRaw] = useState({
-    photographer: null, stylist: null, dress: null, venue: null,
-  });
+  // 이제 이 화면의 state 가 아니라 전역 장바구니다. 찾기 탭에서 담고
+  // 여기로 넘어와도 그대로 남아 있어야 하기 때문이다.
+  const { items: cart, setItems: setCartRaw, anchor: cartAnchor, setAnchor: setCartAnchor } = useCart();
 
   // 자체 의상이 주인과 함께 빠졌을 때 그 사실을 알린다.
   // 말없이 사라지면 고객은 자기가 뭘 잘못 눌렀는지 모른다.
@@ -230,7 +212,7 @@ const BookCompose = () => {
       setDropNotice(`${owner ? `${owner} 님이 ` : ''}가져오기로 한 의상이라 함께 빠졌습니다 — ${wanted.dress.name}`);
     }
     return fixed;
-  }), []);
+  }), [setCartRaw]);
 
   // 작가를 담을 때 고를 패키지 후보
   const [pkgChoice, setPkgChoice] = useState(null);   // { artist, packages[] }
@@ -325,7 +307,9 @@ const BookCompose = () => {
     setLoading(true);
     setError(null);
     // 조건이 바뀌면 담아둔 건 무효다. 남겨두면 "가능하지 않은 조합" 이 된다.
-    setCart({ photographer: null, stylist: null, dress: null, venue: null });
+    // 판단은 장바구니가 한다 — 같은 조건으로 다시 조회하면 담은 건 그대로 두고,
+    // 조건이 달라졌을 때만 비운다. (찾기 탭에서 담고 여기로 넘어온 경우가 전자다)
+    setCartAnchor({ locationId: locationId || null, date, time, hours });
     setDropNotice(null);
     const { data, error: e } = await getAvailableProviders({
       locationId: locationId || null, date, time, hours,
@@ -339,7 +323,7 @@ const BookCompose = () => {
     // 그때까지 보던 걸 빼앗으면 왜 화면이 바뀌었는지 알 수 없다.
     if (urlTabUsed.current) setTab('photographer');
     urlTabUsed.current = true;
-  }, [locationId, date, time, hours]);
+  }, [locationId, date, time, hours, setCartAnchor]);
 
   // 찾기 페이지에서 조건을 들고 넘어왔으면 바로 조회한다.
   //
@@ -347,13 +331,32 @@ const BookCompose = () => {
   // 고객 입장에서는 '이 조건으로 예약 구성하기' 를 눌렀는데 똑같은 조건
   // 입력 화면이 다시 뜨는 셈이라, 버튼이 아무 일도 안 한 것처럼 보였다.
   // 한 번만 자동으로 돌린다 — 그 뒤 조건 변경은 고객 몫이다.
+  //
+  // 주소에 조건이 없으면 담아둔 장바구니의 조건을 되살린다.
+  // 찾기 탭에서 담고 나중에 '예약하기' 로 들어온 고객에게, 방금 담은 걸
+  // 두고 조건부터 다시 입력하라고 하면 장바구니를 둔 의미가 없다.
   const autoSearched = useRef(false);
+  const restored = useRef(false);
+
+  useEffect(() => {
+    if (autoSearched.current || restored.current) return;
+    if (urlParams.get('date') && urlParams.get('time')) return;  // 주소가 우선
+    if (!cartAnchor?.date || !cartAnchor?.time) return;
+    restored.current = true;
+    setLocationId(cartAnchor.locationId || '');
+    setDate(cartAnchor.date);
+    setTime(cartAnchor.time);
+    setHours([2, 3, 4, 8].includes(Number(cartAnchor.hours)) ? Number(cartAnchor.hours) : 2);
+  }, [cartAnchor, urlParams]);
+
   useEffect(() => {
     if (autoSearched.current) return;
-    if (!urlParams.get('date') || !urlParams.get('time')) return;
+    const fromUrl  = !!(urlParams.get('date') && urlParams.get('time'));
+    const fromCart = restored.current && !!date && !!time;
+    if (!fromUrl && !fromCart) return;
     autoSearched.current = true;
     search();
-  }, [search, urlParams]);
+  }, [search, urlParams, date, time]);
 
   // ── 담기 ──
   const pick = (key, value) => setCart(c => ({ ...c, [key]: value }));

@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import App from './App';
 
@@ -24,9 +25,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <LanguageProvider>
           <CurrencyProvider>
             <AuthProvider>
-              <BrowserRouter>
-                <App />
-              </BrowserRouter>
+              {/* 담은 구성은 화면 밖에 둔다 — 탭을 옮겨도 살아 있어야 한다 */}
+              <CartProvider>
+                <BrowserRouter>
+                  <App />
+                </BrowserRouter>
+              </CartProvider>
             </AuthProvider>
           </CurrencyProvider>
         </LanguageProvider>
