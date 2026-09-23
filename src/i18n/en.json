@@ -516,7 +516,9 @@
     "from": "from",
     "anchorFrom": "from",
     "emptyAnchored": "Nothing is available at that time. Try another date or time.",
-    "empty": "Nothing is listed yet."
+    "empty": "Nothing is listed yet.",
+    "pick": "Add",
+    "pickNeedsTime": "Pick a date and time first"
   },
   "dressCat": {
     "hanbok": "Hanbok",

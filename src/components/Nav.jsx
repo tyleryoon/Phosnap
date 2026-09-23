@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { MenuIcon, CloseIcon } from './Icons';
 import { useLanguage, LANG_LABELS } from '../contexts/LanguageContext';
+import { useCart } from '../contexts/CartContext';
 // import { useCurrency } from '../contexts/CurrencyContext'; // removed — currency selector no longer shown
 import { useAuth } from '../contexts/AuthContext';
 import logoMark from '../assets/logo-mark.svg';
@@ -15,6 +16,9 @@ import useAdminAttention from '../hooks/useAdminAttention';
 
 const Nav = ({ onAuthOpen }) => {
   const { isLoggedIn, userName, isArtist, isVendor, isStylist, isAdmin, logout } = useAuth();
+  // 담아둔 개수를 메뉴에 띄운다 — 탭을 옮겨 다니는 동안 장바구니가
+  // 살아 있다는 걸 알 방법이 그것밖에 없다.
+  const { count: cartCount } = useCart();
   // 관리자가 확인해야 할 것이 있으면 링크 옆에 표시한다.
   // 활성 역할이 작가여도 관리자 계정이면 알려준다.
   const { counts, total } = useAdminAttention();
@@ -103,6 +107,15 @@ const Nav = ({ onAuthOpen }) => {
               onClick={(e) => handleNavClick(e, to)}
             >
               {label}
+              {/* 담아둔 개수. 0 이면 아무 표시도 하지 않는다 */}
+              {to === '/book' && cartCount > 0 && (
+                <span aria-label={`담은 항목 ${cartCount}개`} style={{
+                  marginLeft: 6, minWidth: 16, height: 16, padding: '0 5px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 8, background: 'var(--accent)', color: 'var(--on-accent)',
+                  fontSize: 10, fontWeight: 700, lineHeight: 1, verticalAlign: 'middle',
+                }}>{cartCount}</span>
+              )}
             </Link>
           ))}
 
@@ -269,6 +282,15 @@ const Nav = ({ onAuthOpen }) => {
               onClick={(e) => { handleNavClick(e, to); setMobileOpen(false); }}
             >
               {label}
+              {/* 담아둔 개수. 0 이면 아무 표시도 하지 않는다 */}
+              {to === '/book' && cartCount > 0 && (
+                <span aria-label={`담은 항목 ${cartCount}개`} style={{
+                  marginLeft: 6, minWidth: 16, height: 16, padding: '0 5px',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  borderRadius: 8, background: 'var(--accent)', color: 'var(--on-accent)',
+                  fontSize: 10, fontWeight: 700, lineHeight: 1, verticalAlign: 'middle',
+                }}>{cartCount}</span>
+              )}
             </Link>
           ))}
 

@@ -516,7 +516,9 @@
     "from": "から",
     "anchorFrom": "から",
     "emptyAnchored": "その時間に可能な場所がありません。日付か時刻を変えてみてください。",
-    "empty": "まだ登録がありません。"
+    "empty": "まだ登録がありません。",
+    "pick": "追加",
+    "pickNeedsTime": "先に日付と時刻を選択"
   },
   "dressCat": {
     "hanbok": "韓服",

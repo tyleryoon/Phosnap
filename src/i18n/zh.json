@@ -516,7 +516,9 @@
     "from": "起",
     "anchorFrom": "起",
     "emptyAnchored": "该时段没有可预约的选项。请更换日期或时间。",
-    "empty": "暂无登记。"
+    "empty": "暂无登记。",
+    "pick": "加入",
+    "pickNeedsTime": "请先选择日期和时间"
   },
   "dressCat": {
     "hanbok": "韩服",

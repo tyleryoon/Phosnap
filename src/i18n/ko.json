@@ -516,7 +516,9 @@
     "from": "부터",
     "anchorFrom": "부터",
     "emptyAnchored": "그 시간에 가능한 곳이 없습니다. 날짜나 시각을 바꿔보세요.",
-    "empty": "아직 등록된 곳이 없습니다."
+    "empty": "아직 등록된 곳이 없습니다.",
+    "pick": "담기",
+    "pickNeedsTime": "날짜·시각을 먼저 선택"
   },
   "dressCat": {
     "hanbok": "한복",

@@ -33,18 +33,28 @@ const inputStyle = {
 
 // ── 카드 ──────────────────────────────────────────────────────────────
 
-const Card = ({ item, onOpen, t }) => {
+const Card = ({ item, onOpen, onPick, canPick, t }) => {
   const [err, setErr] = useState(false);
   const sub = subtitleOf(item, t);
   const price = fmt(item.price);
 
+  // 카드 전체가 <button> 이었다. 그 안에 '담기' 버튼을 넣을 수 없어서
+  // (버튼 안의 버튼은 HTML 이 허용하지 않는다) 바깥을 div 로 바꾸고,
+  // 내용을 누르면 상세가 열리는 버튼 하나를 안에 둔다.
   return (
+    <div
+      style={{
+        display: 'flex', flexDirection: 'column',
+        border: '1px solid var(--border)', background: 'var(--bg2)',
+        borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+      }}
+    >
     <button
       type="button"
       onClick={onOpen}
       style={{
         display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
-        border: '1px solid var(--border)', background: 'var(--bg2)',
+        border: 'none', background: 'transparent',
         padding: 0, color: 'var(--text)', fontFamily: 'inherit',
       }}
     >
@@ -84,6 +94,28 @@ const Card = ({ item, onOpen, t }) => {
         )}
       </div>
     </button>
+
+      {/* 담기.
+          날짜·시각을 안 골랐으면 '그 시간에 가능한지' 를 판정할 수 없다.
+          누를 수 있게 해두고 나중에 안 된다고 하느니, 왜 못 누르는지
+          먼저 말한다. */}
+      <button
+        type="button"
+        onClick={onPick}
+        disabled={!canPick}
+        title={canPick ? undefined : t('find.pickNeedsTime')}
+        style={{
+          margin: '0 14px 14px', padding: '10px 0',
+          cursor: canPick ? 'pointer' : 'not-allowed',
+          border: 'none', borderRadius: 'var(--radius)',
+          background: canPick ? 'var(--ink)' : 'var(--ink-a08)',
+          color: canPick ? 'var(--on-ink)' : 'var(--muted)',
+          fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit',
+        }}
+      >
+        {canPick ? t('find.pick') : t('find.pickNeedsTime')}
+      </button>
+    </div>
   );
 };
 
@@ -186,15 +218,32 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
     setParams(next, { replace: true });
   }, [locationId, date, time, hours, setParams]);
 
-  const goBook = () => {
+  /**
+   * 예약 구성으로 넘어간다.
+   *
+   * pickId 를 주면 그 항목을 담은 채로 시작한다. 항목을 여기서 직접
+   * 장바구니에 넣지 않는 이유가 있다 — 찾기 목록(findProviders)과 예약
+   * 목록(available_providers)은 같은 것을 다른 모양으로 준다. 여기서
+   * 베껴 넣으면 담은 구성 칸이 못 읽는 모양이 섞인다.
+   *
+   * 대신 id 만 넘기고, 예약 구성이 그 조건으로 조회한 실제 가용 목록에서
+   * 같은 id 를 찾아 담는다. 모양도 맞고, 그 시간에 안 되는 것은 애초에
+   * 목록에 없으니 가용성 검증도 공짜로 따라온다.
+   */
+  const goBook = (pickId) => {
     const q = new URLSearchParams();
     if (locationId) q.set('loc', locationId);
     if (date) q.set('date', date);
     if (time) q.set('time', time);
     q.set('hours', String(hours));
     q.set('tab', kind);
-    navigate(`/book?${q}`);
+    if (pickId) q.set('pick', String(pickId));
+    navigate('/book?' + q.toString());
   };
+
+  // 담기는 날짜·시각이 있어야 뜻이 있다. 언제인지 모르면 그 시간에
+  // 가능한지도 판정할 수 없다.
+  const canPick = !!date && !!time;
 
   const dateBroken = !!date && !time;
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
@@ -327,7 +376,14 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
             gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
           }}>
             {items.map(it => (
-              <Card key={`${it.kind}-${it.id}`} item={it} onOpen={() => setDetail(it)} t={t} />
+              <Card
+                key={`${it.kind}-${it.id}`}
+                item={it}
+                onOpen={() => setDetail(it)}
+                onPick={() => goBook(it.id)}
+                canPick={canPick}
+                t={t}
+              />
             ))}
           </div>
         )}

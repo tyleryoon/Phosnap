@@ -68,8 +68,14 @@ export const CartProvider = ({ children }) => {
     try {
       const empty = !anchor && !Object.values(items).some(Boolean);
       if (empty) localStorage.removeItem(KEY);
-      else localStorage.setItem(KEY, JSON.stringify({ anchor, items, savedAt: new Date().toISOString() }));
-    } catch { /* 저장 못 해도 이번 세션은 정상 동작한다 */ }
+      else
+        localStorage.setItem(
+          KEY,
+          JSON.stringify({ anchor, items, savedAt: new Date().toISOString() })
+        );
+    } catch {
+      /* 저장 못 해도 이번 세션은 정상 동작한다 */
+    }
   }, [anchor, items]);
 
   /**
@@ -98,11 +104,13 @@ export const CartProvider = ({ children }) => {
   const setAnchor = useCallback((next) => {
     setState((cur) => {
       const a = cur.anchor;
-      const same = a && next
-        && a.locationId === next.locationId
-        && a.date === next.date
-        && a.time === next.time
-        && Number(a.hours) === Number(next.hours);
+      const same =
+        a &&
+        next &&
+        a.locationId === next.locationId &&
+        a.date === next.date &&
+        a.time === next.time &&
+        Number(a.hours) === Number(next.hours);
       return { anchor: next, items: same ? cur.items : EMPTY_ITEMS };
     });
   }, []);
@@ -112,18 +120,29 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const count = useMemo(() => Object.values(items).filter(Boolean).length, [items]);
-  const total = useMemo(() => (
-    (items.photographer?.price || 0)
-    + (items.stylist?.price || 0)
-    + (items.dress?.price || 0)
-    + (items.venue?.price || 0)
-  ), [items]);
+  const total = useMemo(
+    () =>
+      (items.photographer?.price || 0) +
+      (items.stylist?.price || 0) +
+      (items.dress?.price || 0) +
+      (items.venue?.price || 0),
+    [items]
+  );
 
-  const value = useMemo(() => ({
-    anchor, setAnchor,
-    items, setItems, put, drop,
-    clear, count, total,
-  }), [anchor, setAnchor, items, setItems, put, drop, clear, count, total]);
+  const value = useMemo(
+    () => ({
+      anchor,
+      setAnchor,
+      items,
+      setItems,
+      put,
+      drop,
+      clear,
+      count,
+      total,
+    }),
+    [anchor, setAnchor, items, setItems, put, drop, clear, count, total]
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };
