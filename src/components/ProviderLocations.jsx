@@ -24,32 +24,76 @@ import { getProviderLocations, setProviderLocations } from '../lib/supabase';
 // ────────────────────────────────────────────────────────────────────────
 
 const T = {
-  ko: { title: '활동 지역', desc: '여기에 적은 지역의 촬영에만 노출됩니다. 여러 곳에서 활동하면 모두 더해주세요.',
-        base: '대표', add: '지역 추가', cancel: '취소', loading: '불러오는 중…',
-        empty: '아직 등록된 활동 지역이 없습니다.', saving: '저장 중…', saved: '저장되었습니다',
-        failed: '저장하지 못했습니다', remove: '빼기' },
-  en: { title: 'Service areas', desc: 'You appear only in shoots in these areas. Add every city you work in.',
-        base: 'Primary', add: 'Add area', cancel: 'Cancel', loading: 'Loading…',
-        empty: 'No service areas yet.', saving: 'Saving…', saved: 'Saved',
-        failed: 'Could not save', remove: 'Remove' },
-  ja: { title: '活動地域', desc: 'ここに登録した地域の撮影にのみ表示されます。複数ある場合はすべて追加してください。',
-        base: '代表', add: '地域を追加', cancel: 'キャンセル', loading: '読み込み中…',
-        empty: '登録された活動地域がありません。', saving: '保存中…', saved: '保存しました',
-        failed: '保存できませんでした', remove: '削除' },
-  zh: { title: '活动地区', desc: '仅在此处登记的地区的拍摄中显示。如在多地活动请全部添加。',
-        base: '代表', add: '添加地区', cancel: '取消', loading: '加载中…',
-        empty: '尚未登记活动地区。', saving: '保存中…', saved: '已保存',
-        failed: '无法保存', remove: '移除' },
+  ko: {
+    title: '활동 지역',
+    desc: '여기에 적은 지역의 촬영에만 노출됩니다. 여러 곳에서 활동하면 모두 더해주세요.',
+    base: '대표',
+    add: '지역 추가',
+    cancel: '취소',
+    loading: '불러오는 중…',
+    empty: '아직 등록된 활동 지역이 없습니다.',
+    saving: '저장 중…',
+    saved: '저장되었습니다',
+    failed: '저장하지 못했습니다',
+    remove: '빼기',
+  },
+  en: {
+    title: 'Service areas',
+    desc: 'You appear only in shoots in these areas. Add every city you work in.',
+    base: 'Primary',
+    add: 'Add area',
+    cancel: 'Cancel',
+    loading: 'Loading…',
+    empty: 'No service areas yet.',
+    saving: 'Saving…',
+    saved: 'Saved',
+    failed: 'Could not save',
+    remove: 'Remove',
+  },
+  ja: {
+    title: '活動地域',
+    desc: 'ここに登録した地域の撮影にのみ表示されます。複数ある場合はすべて追加してください。',
+    base: '代表',
+    add: '地域を追加',
+    cancel: 'キャンセル',
+    loading: '読み込み中…',
+    empty: '登録された活動地域がありません。',
+    saving: '保存中…',
+    saved: '保存しました',
+    failed: '保存できませんでした',
+    remove: '削除',
+  },
+  zh: {
+    title: '活动地区',
+    desc: '仅在此处登记的地区的拍摄中显示。如在多地活动请全部添加。',
+    base: '代表',
+    add: '添加地区',
+    cancel: '取消',
+    loading: '加载中…',
+    empty: '尚未登记活动地区。',
+    saving: '保存中…',
+    saved: '已保存',
+    failed: '无法保存',
+    remove: '移除',
+  },
 };
 
-export default function ProviderLocations({ providerType, providerId, baseLocationId = null, lang = 'ko' }) {
+export default function ProviderLocations({
+  providerType,
+  providerId,
+  baseLocationId = null,
+  lang = 'ko',
+}) {
   const c = T[lang] || T.ko;
-  const [ids, setIds]       = useState(null);   // null = 아직 모름
+  const [ids, setIds] = useState(null); // null = 아직 모름
   const [adding, setAdding] = useState(false);
   const [status, setStatus] = useState('');
 
   const load = useCallback(async () => {
-    if (!providerId) { setIds([]); return; }
+    if (!providerId) {
+      setIds([]);
+      return;
+    }
     const { data } = await getProviderLocations(providerType, providerId);
     // 대표 지역이 목록에 없으면 넣어둔다. 등록 직후에는 provider_locations
     // 행이 아직 없는데, 그 상태로 다른 지역을 더하면 대표 지역이 빠진 채
@@ -58,15 +102,17 @@ export default function ProviderLocations({ providerType, providerId, baseLocati
     setIds(next);
   }, [providerType, providerId, baseLocationId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const commit = async (next) => {
     const prev = ids;
-    setIds(next);                       // 먼저 반영하고
+    setIds(next); // 먼저 반영하고
     setStatus(c.saving);
     const { error } = await setProviderLocations(providerType, providerId, next);
     if (error) {
-      setIds(prev);                     // 실패하면 되돌린다
+      setIds(prev); // 실패하면 되돌린다
       setStatus(c.failed);
       return;
     }
@@ -83,7 +129,7 @@ export default function ProviderLocations({ providerType, providerId, baseLocati
 
   const handleRemove = (id) => {
     if (id === baseLocationId) return;
-    commit((ids || []).filter(x => x !== id));
+    commit((ids || []).filter((x) => x !== id));
   };
 
   if (!providerId) return null;
@@ -93,24 +139,37 @@ export default function ProviderLocations({ providerType, providerId, baseLocati
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: 10,
+          marginBottom: 6,
+          flexWrap: 'wrap',
+        }}
+      >
         <span style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>{c.title}</span>
         {status && <span style={{ fontSize: 11, color: 'var(--muted)' }}>{status}</span>}
       </div>
-      <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 14 }}>{c.desc}</p>
+      <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 14 }}>
+        {c.desc}
+      </p>
 
       {ids.length === 0 ? (
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14 }}>{c.empty}</div>
       ) : (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
-          {ids.map(id => {
+          {ids.map((id) => {
             const isBase = id === baseLocationId;
             return (
               <span
                 key={id}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  padding: '6px 12px', fontSize: 12,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 12px',
+                  fontSize: 12,
                   border: `1px solid ${isBase ? 'var(--accent-a40)' : 'var(--border)'}`,
                   background: isBase ? 'var(--accent-a05)' : 'transparent',
                   color: 'var(--text)',
@@ -124,8 +183,13 @@ export default function ProviderLocations({ providerType, providerId, baseLocati
                     onClick={() => handleRemove(id)}
                     aria-label={`${locationLabel(id, lang)} ${c.remove}`}
                     style={{
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      color: 'var(--muted)', fontSize: 14, lineHeight: 1, padding: 0,
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--muted)',
+                      fontSize: 14,
+                      lineHeight: 1,
+                      padding: 0,
                     }}
                   >
                     ×

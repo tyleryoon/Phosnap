@@ -54,13 +54,13 @@ export const dressMethods = (dress) => {
  */
 export const dressCharges = (dress, picked = null) => {
   const methods = dressMethods(dress);
-  const method = picked && methods.includes(picked) ? picked : (methods[0] || null);
+  const method = picked && methods.includes(picked) ? picked : methods[0] || null;
   if (!dress || !method) return { methods, method: null, deposit: 0, deliveryFee: 0 };
   return {
     methods,
     method,
-    deposit:     method === 'byOwner'  ? 0 : (dress.deposit || 0),
-    deliveryFee: method === 'delivery' ? (dress.deliveryFee || 0) : 0,
+    deposit: method === 'byOwner' ? 0 : dress.deposit || 0,
+    deliveryFee: method === 'delivery' ? dress.deliveryFee || 0 : 0,
   };
 };
 

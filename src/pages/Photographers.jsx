@@ -134,15 +134,20 @@ const FILTER_LABELS = {
 
 // ─── Tag translations (expanded tags) ────────────────────────────────────
 const EXPANDED_TAGS = {
-  traditional_costume: { ko: '전통의상', en: 'Traditional Costume', ja: '伝統衣装', zh: '传统服装' },
-  dress_rental:  { ko: '드레스', en: 'Dress', ja: 'ドレス', zh: '礼服' },
-  suit_rental:   { ko: '정장', en: 'Suit', ja: 'スーツ', zh: '西装' },
+  traditional_costume: {
+    ko: '전통의상',
+    en: 'Traditional Costume',
+    ja: '伝統衣装',
+    zh: '传统服装',
+  },
+  dress_rental: { ko: '드레스', en: 'Dress', ja: 'ドレス', zh: '礼服' },
+  suit_rental: { ko: '정장', en: 'Suit', ja: 'スーツ', zh: '西装' },
   other_costume: { ko: '기타 의상', en: 'Other Costume', ja: 'その他衣装', zh: '其他服装' },
-  props:         { ko: '소품', en: 'Props', ja: '小道具', zh: '道具' },
-  hmu:           { ko: 'HMU', en: 'HMU', ja: 'HMU', zh: 'HMU' },
-  instant_book:  { ko: '즉시예약', en: 'Instant Book', ja: '即予約', zh: '即时预订' },
-  photo_tour:    { ko: '투어 포함', en: 'Photo Tour', ja: 'ツアー付き', zh: '包含旅游' },
-  golden_hour:   { ko: '골든아워', en: 'Golden Hour', ja: 'ゴールデンアワー', zh: '黄金时段' },
+  props: { ko: '소품', en: 'Props', ja: '小道具', zh: '道具' },
+  hmu: { ko: 'HMU', en: 'HMU', ja: 'HMU', zh: 'HMU' },
+  instant_book: { ko: '즉시예약', en: 'Instant Book', ja: '即予約', zh: '即时预订' },
+  photo_tour: { ko: '투어 포함', en: 'Photo Tour', ja: 'ツアー付き', zh: '包含旅游' },
+  golden_hour: { ko: '골든아워', en: 'Golden Hour', ja: 'ゴールデンアワー', zh: '黄金时段' },
 };
 
 // ─── Photographers List Page ───────────────────────────────────────────
@@ -160,15 +165,15 @@ const Photographers = ({ onAuthOpen }) => {
 
   // Explore/Home에서 넘어온 state 수신
   const initialLocation = location.state?.locationId || 'all';
-  const initialSearch   = location.state?.searchQuery || '';
+  const initialSearch = location.state?.searchQuery || '';
 
   // ─── Filter State ─────────────────────────────────────────────────────
-  const [activeFilter,   setActiveFilter]   = useState('all');
+  const [activeFilter, setActiveFilter] = useState('all');
   const [activeLanguage, setActiveLanguage] = useState('all');
   // 작가 유형(사진/영상/사진+영상). genre 는 tags 기반이라 별개다.
   const [activeArtistType, setActiveArtistType] = useState('all');
   const [activeLocation, setActiveLocation] = useState(initialLocation);
-  const [searchQuery,    setSearchQuery]    = useState(initialSearch);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [activeSnapFilters, setActiveSnapFilters] = useState(new Set());
 
   // New filters
@@ -188,9 +193,10 @@ const Photographers = ({ onAuthOpen }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const toggleSnapFilter = (key) => {
-    setActiveSnapFilters(prev => {
+    setActiveSnapFilters((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -258,7 +264,19 @@ const Photographers = ({ onAuthOpen }) => {
     } else {
       window.history.replaceState(null, '', window.location.pathname);
     }
-  }, [selectedCountry, selectedCity, minPrice, maxPrice, sortBy, activeFilter, activeArtistType, activeLanguage, activeLocation, activeSnapFilters, searchQuery]);
+  }, [
+    selectedCountry,
+    selectedCity,
+    minPrice,
+    maxPrice,
+    sortBy,
+    activeFilter,
+    activeArtistType,
+    activeLanguage,
+    activeLocation,
+    activeSnapFilters,
+    searchQuery,
+  ]);
 
   // TASK 1C: 마운트 시 DB에서 지역 레지스트리 새로고침
   useEffect(() => {
@@ -273,7 +291,7 @@ const Photographers = ({ onAuthOpen }) => {
           setIsLoadingMore(true);
           // Simulate loading delay for UX
           setTimeout(() => {
-            setDisplayedCount(prev => prev + PHOTOGRAPHERS_PER_PAGE);
+            setDisplayedCount((prev) => prev + PHOTOGRAPHERS_PER_PAGE);
             setIsLoadingMore(false);
           }, 300);
         }
@@ -295,7 +313,18 @@ const Photographers = ({ onAuthOpen }) => {
   // Reset displayed count when filters change
   useEffect(() => {
     setDisplayedCount(PHOTOGRAPHERS_PER_PAGE);
-  }, [selectedCountry, selectedCity, activeFilter, activeArtistType, activeLanguage, minPrice, maxPrice, sortBy, searchQuery, activeSnapFilters]);
+  }, [
+    selectedCountry,
+    selectedCity,
+    activeFilter,
+    activeArtistType,
+    activeLanguage,
+    minPrice,
+    maxPrice,
+    sortBy,
+    searchQuery,
+    activeSnapFilters,
+  ]);
 
   // ─── Fetch photographers from Supabase with current filters ──────────────
   useEffect(() => {
@@ -325,7 +354,17 @@ const Photographers = ({ onAuthOpen }) => {
     fetchWithFilters();
     // activeArtistType 이 빠져 있어 유형을 바꿔도 재조회가 일어나지 않았다.
     // 필터를 눌러도 결과가 그대로라 아무 일도 안 하는 것처럼 보였다.
-  }, [selectedCountry, selectedCity, activeFilter, activeArtistType, activeLanguage, minPrice, maxPrice, sortBy, searchQuery]);
+  }, [
+    selectedCountry,
+    selectedCity,
+    activeFilter,
+    activeArtistType,
+    activeLanguage,
+    minPrice,
+    maxPrice,
+    sortBy,
+    searchQuery,
+  ]);
 
   const resetAllFilters = () => {
     setActiveFilter('all');
@@ -345,11 +384,15 @@ const Photographers = ({ onAuthOpen }) => {
   // 동적 지역 목록 (작가 데이터 기반)
   const domesticLocs = useMemo(() => getDomesticLocations(), []);
   const overseasLocs = useMemo(() => getOverseasLocations(), []);
-  const allLocs      = useMemo(() => getAllLocationsSorted(), []);
+  const allLocs = useMemo(() => getAllLocationsSorted(), []);
 
   // 즐겨찾기 국가 (로컬스토리지 or Supabase)
   const [favCountries, setFavCountries] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('phosnap_fav_countries') || '[]'); } catch { return []; }
+    try {
+      return JSON.parse(localStorage.getItem('phosnap_fav_countries') || '[]');
+    } catch {
+      return [];
+    }
   });
   const [favToast, setFavToast] = useState('');
 
@@ -359,7 +402,9 @@ const Photographers = ({ onAuthOpen }) => {
       setTimeout(() => setFavToast(''), 2500);
       return;
     }
-    const next = favCountries.includes(code) ? favCountries.filter(c => c !== code) : [...favCountries, code];
+    const next = favCountries.includes(code)
+      ? favCountries.filter((c) => c !== code)
+      : [...favCountries, code];
     setFavCountries(next);
     localStorage.setItem('phosnap_fav_countries', JSON.stringify(next));
   };
@@ -370,17 +415,39 @@ const Photographers = ({ onAuthOpen }) => {
   const countriesList = useMemo(() => {
     const source = dbPhotographers || [];
     const counts = {};
-    source.forEach(p => {
+    source.forEach((p) => {
       const cc = p.countryCode || p.country_code || 'KR';
       counts[cc] = (counts[cc] || 0) + 1;
     });
 
     const all = getCountriesFromPortfolio(lang);
-    const byCode = all.reduce((acc, c) => { acc[c.code] = c; return acc; }, {});
-    const order = ['KR', 'JP', 'CN', 'TW', 'TH', 'VN', 'ID', 'US', 'FR', 'IT', 'ES', 'GB', 'DE', 'AU', 'SG', 'MY', 'PH', 'IN'];
+    const byCode = all.reduce((acc, c) => {
+      acc[c.code] = c;
+      return acc;
+    }, {});
+    const order = [
+      'KR',
+      'JP',
+      'CN',
+      'TW',
+      'TH',
+      'VN',
+      'ID',
+      'US',
+      'FR',
+      'IT',
+      'ES',
+      'GB',
+      'DE',
+      'AU',
+      'SG',
+      'MY',
+      'PH',
+      'IN',
+    ];
 
     const list = Object.keys(counts)
-      .map(code => ({
+      .map((code) => ({
         ...(byCode[code] || { code, name: code, flag: '' }),
         artistCount: counts[code],
       }))
@@ -388,7 +455,8 @@ const Photographers = ({ onAuthOpen }) => {
         const aFav = favCountries.includes(a.code) ? 0 : 1;
         const bFav = favCountries.includes(b.code) ? 0 : 1;
         if (aFav !== bFav) return aFav - bFav;
-        const ai = order.indexOf(a.code); const bi = order.indexOf(b.code);
+        const ai = order.indexOf(a.code);
+        const bi = order.indexOf(b.code);
         return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
       });
     return list;
@@ -403,7 +471,7 @@ const Photographers = ({ onAuthOpen }) => {
   // Handle country change - reset city
   useEffect(() => {
     if (selectedCity !== 'all' && citiesForCountry.length > 0) {
-      const cityExists = citiesForCountry.some(c => c.id === selectedCity);
+      const cityExists = citiesForCountry.some((c) => c.id === selectedCity);
       if (!cityExists) {
         setSelectedCity('all');
       }
@@ -413,7 +481,7 @@ const Photographers = ({ onAuthOpen }) => {
   // Get cheapest package price for each photographer
   const getCheapestPrice = (p) => {
     if (!p.packages || p.packages.length === 0) return Infinity;
-    return Math.min(...p.packages.map(pkg => pkg.price));
+    return Math.min(...p.packages.map((pkg) => pkg.price));
   };
 
   // DB 가 유일한 출처다. 로딩 전에는 빈 배열로 두고, 로드 후 결과가 없으면
@@ -421,7 +489,7 @@ const Photographers = ({ onAuthOpen }) => {
   const photographersSource = dbPhotographers || [];
 
   // Filter logic - chain all filters together
-  const filtered = photographersSource.filter(p => {
+  const filtered = photographersSource.filter((p) => {
     // Genre filter
     const tagMatch = activeFilter === 'all' || p.tags.includes(activeFilter);
 
@@ -433,7 +501,7 @@ const Photographers = ({ onAuthOpen }) => {
       activeArtistType === 'all' ||
       p.artistType === activeArtistType ||
       (p.artistType === 'both' &&
-       (activeArtistType === 'photographer' || activeArtistType === 'videographer'));
+        (activeArtistType === 'photographer' || activeArtistType === 'videographer'));
 
     // Language filter
     const langMatch = activeLanguage === 'all' || p.languages.includes(activeLanguage);
@@ -444,7 +512,7 @@ const Photographers = ({ onAuthOpen }) => {
     // Country filter
     let countryMatch = true;
     if (selectedCountry !== 'all') {
-      const locMeta = citiesForCountry.find(c => c.id === p.locationId);
+      const locMeta = citiesForCountry.find((c) => c.id === p.locationId);
       countryMatch = !!locMeta;
     }
 
@@ -468,13 +536,25 @@ const Photographers = ({ onAuthOpen }) => {
     if (activeSnapFilters.size > 0) {
       for (const key of activeSnapFilters) {
         if (key === 'instant_booking') {
-          if (!p.instantBooking) { snapMatch = false; break; }
+          if (!p.instantBooking) {
+            snapMatch = false;
+            break;
+          }
         } else if (key === 'hmu') {
-          if (!p.hmk) { snapMatch = false; break; }
+          if (!p.hmk) {
+            snapMatch = false;
+            break;
+          }
         } else if (key === 'photo_tour') {
-          if (!p.tours || p.tours.length === 0) { snapMatch = false; break; }
+          if (!p.tours || p.tours.length === 0) {
+            snapMatch = false;
+            break;
+          }
         } else {
-          if (!(p.snapFilters || []).includes(key)) { snapMatch = false; break; }
+          if (!(p.snapFilters || []).includes(key)) {
+            snapMatch = false;
+            break;
+          }
         }
       }
     }
@@ -492,10 +572,23 @@ const Photographers = ({ onAuthOpen }) => {
         (p.locationNames?.ja || '').toLowerCase().includes(q) ||
         (p.locationNames?.zh || '').toLowerCase().includes(q) ||
         (p.locationId || '').toLowerCase().includes(q) ||
-        (p.tags || []).some(tag => tag.toLowerCase().includes(q) || (t(`tags.${tag}`) || '').toLowerCase().includes(q));
+        (p.tags || []).some(
+          (tag) =>
+            tag.toLowerCase().includes(q) || (t(`tags.${tag}`) || '').toLowerCase().includes(q)
+        );
     }
 
-    return tagMatch && typeMatch && langMatch && locMatch && countryMatch && cityMatch && priceMatch && searchMatch && snapMatch;
+    return (
+      tagMatch &&
+      typeMatch &&
+      langMatch &&
+      locMatch &&
+      countryMatch &&
+      cityMatch &&
+      priceMatch &&
+      searchMatch &&
+      snapMatch
+    );
   });
 
   // Apply sorting
@@ -538,7 +631,17 @@ const Photographers = ({ onAuthOpen }) => {
     if (activeSnapFilters.size > 0) count += activeSnapFilters.size;
     if (searchQuery) count++;
     return count;
-  }, [selectedCountry, selectedCity, activeFilter, activeLanguage, activeLocation, minPrice, maxPrice, activeSnapFilters, searchQuery]);
+  }, [
+    selectedCountry,
+    selectedCity,
+    activeFilter,
+    activeLanguage,
+    activeLocation,
+    minPrice,
+    maxPrice,
+    activeSnapFilters,
+    searchQuery,
+  ]);
 
   const filterLabelsForLang = FILTER_LABELS[lang] || FILTER_LABELS.en;
 
@@ -569,18 +672,43 @@ const Photographers = ({ onAuthOpen }) => {
         <p className="section-sub">{t('photographers.sub')}</p>
 
         {/* Mobile Filter Toggle */}
-        <div style={{ display: 'none', marginBottom: 16, '@media (maxWidth: 768px)': { display: 'flex' } }}>
+        <div
+          style={{
+            display: 'none',
+            marginBottom: 16,
+            '@media (maxWidth: 768px)': { display: 'flex' },
+          }}
+        >
           <button
             onClick={() => setMobileFilterExpanded(!mobileFilterExpanded)}
             style={{
-              width: '100%', padding: '12px', fontSize: 12, fontFamily: 'var(--font-serif)',
-              background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--gold)',
-              cursor: 'pointer', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              width: '100%',
+              padding: '12px',
+              fontSize: 12,
+              fontFamily: 'var(--font-serif)',
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              color: 'var(--gold)',
+              cursor: 'pointer',
+              letterSpacing: '0.05em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
           >
             {mobileFilterExpanded ? filterLabelsForLang.collapse : filterLabelsForLang.expand}
             {activeFilterCount > 0 && (
-              <span style={{ background: 'var(--gold)', color: 'var(--bg)', padding: '2px 6px', borderRadius: 10, fontSize: 10, fontWeight: 'bold' }}>
+              <span
+                style={{
+                  background: 'var(--gold)',
+                  color: 'var(--bg)',
+                  padding: '2px 6px',
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 'bold',
+                }}
+              >
                 {activeFilterCount}
               </span>
             )}
@@ -590,15 +718,49 @@ const Photographers = ({ onAuthOpen }) => {
         {/* Advanced Filters Container */}
         <div style={{ display: mobileFilterExpanded ? 'block' : 'block' }}>
           {/* ── 촬영 국가 (포트폴리오 기반 + 즐겨찾기) ── */}
-          <div style={{ marginBottom: 16, border: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <div
+            style={{
+              marginBottom: 16,
+              border: '1px solid var(--border)',
+              padding: '16px 20px',
+              background: 'var(--bg2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {filterLabelsForLang.country}
               </div>
               {selectedCountry !== 'all' && (
                 <button
-                  onClick={() => { setSelectedCountry('all'); setSelectedCity('all'); }}
-                  style={{ fontSize: 10, color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '3px 10px', cursor: 'pointer', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}
+                  onClick={() => {
+                    setSelectedCountry('all');
+                    setSelectedCity('all');
+                  }}
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--muted)',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    padding: '3px 10px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-serif)',
+                    letterSpacing: '0.05em',
+                  }}
                 >
                   {filterLabelsForLang.all} ✕
                 </button>
@@ -607,12 +769,19 @@ const Photographers = ({ onAuthOpen }) => {
 
             {/* 즐겨찾기 토스트 */}
             {favToast && (
-              <div style={{
-                marginBottom: 10, padding: '8px 14px', fontSize: 11,
-                background: 'var(--accent-a10)', border: '1px solid var(--gold-border)',
-                color: 'var(--gold)', fontFamily: 'var(--font-serif)', textAlign: 'center',
-                animation: 'fadeIn 0.2s',
-              }}>
+              <div
+                style={{
+                  marginBottom: 10,
+                  padding: '8px 14px',
+                  fontSize: 11,
+                  background: 'var(--accent-a10)',
+                  border: '1px solid var(--gold-border)',
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-serif)',
+                  textAlign: 'center',
+                  animation: 'fadeIn 0.2s',
+                }}
+              >
                 {favToast}
               </div>
             )}
@@ -620,35 +789,64 @@ const Photographers = ({ onAuthOpen }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <button
                 className={`filter-btn ${selectedCountry === 'all' ? 'active' : ''}`}
-                onClick={() => { setSelectedCountry('all'); setSelectedCity('all'); }}
+                onClick={() => {
+                  setSelectedCountry('all');
+                  setSelectedCity('all');
+                }}
                 style={{ padding: '6px 14px', fontSize: 11 }}
               >
                 {filterLabelsForLang.all}
               </button>
-              {countriesList.map(c => {
+              {countriesList.map((c) => {
                 const isActive = selectedCountry === c.code;
                 const isFav = favCountries.includes(c.code);
                 return (
-                  <div key={c.code} style={{ display: 'inline-flex', alignItems: 'center', gap: 0, position: 'relative' }}>
+                  <div
+                    key={c.code}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0,
+                      position: 'relative',
+                    }}
+                  >
                     <button
                       className={`filter-btn ${isActive ? 'active' : ''}`}
                       onClick={() => {
                         setSelectedCountry(isActive ? 'all' : c.code);
                         setSelectedCity('all');
                       }}
-                      style={{ padding: '6px 12px 6px 10px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 5, borderRight: 'none', borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                      style={{
+                        padding: '6px 12px 6px 10px',
+                        fontSize: 11,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                        borderRight: 'none',
+                        borderTopRightRadius: 0,
+                        borderBottomRightRadius: 0,
+                      }}
                     >
                       <span style={{ fontSize: 13 }}>{c.flag}</span>
                       {c.name}
-                      <span style={{ fontSize: 9, color: 'var(--muted)', marginLeft: 2 }}>{c.artistCount}</span>
+                      <span style={{ fontSize: 9, color: 'var(--muted)', marginLeft: 2 }}>
+                        {c.artistCount}
+                      </span>
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); toggleFavCountry(c.code); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavCountry(c.code);
+                      }}
                       style={{
-                        padding: '6px 6px', fontSize: 12, cursor: 'pointer',
+                        padding: '6px 6px',
+                        fontSize: 12,
+                        cursor: 'pointer',
                         background: isActive ? 'var(--accent-a15)' : 'transparent',
                         border: `1px solid ${isActive ? 'var(--gold)' : 'var(--border)'}`,
-                        borderLeft: 'none', borderTopLeftRadius: 0, borderBottomLeftRadius: 0,
+                        borderLeft: 'none',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
                         // 0.3 알파 회색은 3.5:1 이라 켜져 있는지조차 안 보였다.
                         // 꺼진 상태여도 누를 수 있는 버튼이면 보여야 한다.
                         color: isFav ? 'var(--gold)' : 'var(--faint)',
@@ -665,15 +863,49 @@ const Photographers = ({ onAuthOpen }) => {
           </div>
 
           {/* Price Range Filter */}
-          <div style={{ marginBottom: 16, border: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg2)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+          <div
+            style={{
+              marginBottom: 16,
+              border: '1px solid var(--border)',
+              padding: '16px 20px',
+              background: 'var(--bg2)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.15em',
+                  textTransform: 'uppercase',
+                }}
+              >
                 {filterLabelsForLang.priceRange}
               </div>
               {(minPrice || maxPrice) && (
                 <button
-                  onClick={() => { setMinPrice(''); setMaxPrice(''); }}
-                  style={{ fontSize: 10, color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '3px 10px', cursor: 'pointer', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}
+                  onClick={() => {
+                    setMinPrice('');
+                    setMaxPrice('');
+                  }}
+                  style={{
+                    fontSize: 10,
+                    color: 'var(--muted)',
+                    background: 'transparent',
+                    border: '1px solid var(--border)',
+                    padding: '3px 10px',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-serif)',
+                    letterSpacing: '0.05em',
+                  }}
                 >
                   {filterLabelsForLang.all} ✕
                 </button>
@@ -682,40 +914,66 @@ const Photographers = ({ onAuthOpen }) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>{filterLabelsForLang.minPrice}</label>
+                <label
+                  style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}
+                >
+                  {filterLabelsForLang.minPrice}
+                </label>
                 <input
                   type="number"
                   value={minPrice}
-                  onChange={e => setMinPrice(e.target.value)}
+                  onChange={(e) => setMinPrice(e.target.value)}
                   placeholder="₩0"
                   min="0"
                   max="2000000"
                   style={{
-                    padding: '10px', fontSize: 12, fontFamily: 'var(--font-sans)', background: 'var(--bg)',
-                    border: '1px solid var(--border)', color: 'var(--text)', outline: 'none',
+                    padding: '10px',
+                    fontSize: 12,
+                    fontFamily: 'var(--font-sans)',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    outline: 'none',
                     transition: 'border-color var(--ease)',
                   }}
-                  onFocus={e => { e.target.style.borderColor = 'var(--gold-border)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--gold-border)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                  }}
                 />
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>{filterLabelsForLang.maxPrice}</label>
+                <label
+                  style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}
+                >
+                  {filterLabelsForLang.maxPrice}
+                </label>
                 <input
                   type="number"
                   value={maxPrice}
-                  onChange={e => setMaxPrice(e.target.value)}
+                  onChange={(e) => setMaxPrice(e.target.value)}
                   placeholder="₩2,000,000"
                   min="0"
                   max="2000000"
                   style={{
-                    padding: '10px', fontSize: 12, fontFamily: 'var(--font-sans)', background: 'var(--bg)',
-                    border: '1px solid var(--border)', color: 'var(--text)', outline: 'none',
+                    padding: '10px',
+                    fontSize: 12,
+                    fontFamily: 'var(--font-sans)',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)',
+                    outline: 'none',
                     transition: 'border-color var(--ease)',
                   }}
-                  onFocus={e => { e.target.style.borderColor = 'var(--gold-border)'; }}
-                  onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = 'var(--gold-border)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = 'var(--border)';
+                  }}
                 />
               </div>
             </div>
@@ -726,11 +984,20 @@ const Photographers = ({ onAuthOpen }) => {
 
         {/* Genre Filter */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>
+          <div
+            style={{
+              fontSize: 11,
+              color: 'var(--gold)',
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase',
+              marginBottom: 12,
+            }}
+          >
             {lang === 'ko' ? '장르' : lang === 'ja' ? 'ジャンル' : lang === 'zh' ? '流派' : 'Genre'}
           </div>
           <div className="filters">
-            {ALL_TAG_KEYS.map(key => (
+            {ALL_TAG_KEYS.map((key) => (
               <button
                 key={key}
                 className={`filter-btn ${activeFilter === key ? 'active' : ''}`}
@@ -743,33 +1010,110 @@ const Photographers = ({ onAuthOpen }) => {
         </div>
 
         {/* 촬영 도시 — 선택된 국가의 포트폴리오 태그 도시만 표시 */}
-        <div style={{ marginBottom: 16, border: '1px solid var(--border)', padding: '16px 20px', background: 'var(--bg2)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.15em', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            marginBottom: 16,
+            border: '1px solid var(--border)',
+            padding: '16px 20px',
+            background: 'var(--bg2)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 12,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--gold)',
+                fontFamily: 'var(--font-serif)',
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase',
+              }}
+            >
               {filterLabelsForLang.city}
             </div>
             {activeLocation !== 'all' && (
               <button
                 onClick={() => setActiveLocation('all')}
-                style={{ fontSize: 10, color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', padding: '3px 10px', cursor: 'pointer', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}
+                style={{
+                  fontSize: 10,
+                  color: 'var(--muted)',
+                  background: 'transparent',
+                  border: '1px solid var(--border)',
+                  padding: '3px 10px',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.05em',
+                }}
               >
                 {filterLabelsForLang.all} ✕
               </button>
             )}
           </div>
           {selectedCountry === 'all' ? (
-            <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.03em', padding: '8px 0' }}>
-              {lang === 'ko' ? '위에서 촬영 국가를 선택하면 도시가 표시됩니다' : lang === 'ja' ? '上で撮影国を選択すると都市が表示されます' : lang === 'zh' ? '请先在上方选择拍摄国家' : 'Select a country above to see cities'}
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-serif)',
+                letterSpacing: '0.03em',
+                padding: '8px 0',
+              }}
+            >
+              {lang === 'ko'
+                ? '위에서 촬영 국가를 선택하면 도시가 표시됩니다'
+                : lang === 'ja'
+                  ? '上で撮影国を選択すると都市が表示されます'
+                  : lang === 'zh'
+                    ? '请先在上方选择拍摄国家'
+                    : 'Select a country above to see cities'}
             </div>
           ) : citiesForCountry.length === 0 ? (
-            <div style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.03em', padding: '8px 0' }}>
-              {lang === 'ko' ? '이 국가에 등록된 도시가 없습니다' : lang === 'ja' ? 'この国に登録された都市はありません' : lang === 'zh' ? '该国家暂无注册城市' : 'No cities registered in this country'}
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-serif)',
+                letterSpacing: '0.03em',
+                padding: '8px 0',
+              }}
+            >
+              {lang === 'ko'
+                ? '이 국가에 등록된 도시가 없습니다'
+                : lang === 'ja'
+                  ? 'この国に登録された都市はありません'
+                  : lang === 'zh'
+                    ? '该国家暂无注册城市'
+                    : 'No cities registered in this country'}
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }} className="filters">
-              <FilterBtn id="all" label={filterLabelsForLang.all} active={activeLocation === 'all'} onClick={() => setActiveLocation('all')} />
-              {citiesForCountry.map(loc => (
-                <FilterBtn key={loc.id} id={loc.id} label={loc.nameI18n?.[lang] ?? loc.ko}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                overflowX: 'auto',
+                paddingBottom: 4,
+                WebkitOverflowScrolling: 'touch',
+              }}
+              className="filters"
+            >
+              <FilterBtn
+                id="all"
+                label={filterLabelsForLang.all}
+                active={activeLocation === 'all'}
+                onClick={() => setActiveLocation('all')}
+              />
+              {citiesForCountry.map((loc) => (
+                <FilterBtn
+                  key={loc.id}
+                  id={loc.id}
+                  label={loc.nameI18n?.[lang] ?? loc.ko}
                   active={activeLocation === loc.id}
                   onClick={() => setActiveLocation(activeLocation === loc.id ? 'all' : loc.id)}
                 />
@@ -779,16 +1123,32 @@ const Photographers = ({ onAuthOpen }) => {
         </div>
 
         {/* 작가 유형 필터 — 사진 작가와 영상 작가는 고객이 찾는 것이 다르다 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', marginRight: 8 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 16,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              color: 'var(--muted)',
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '0.1em',
+              marginRight: 8,
+            }}
+          >
             {lang === 'ko' ? '작가 유형' : 'Artist type'}
           </span>
           {[
-            { id: 'all',          ko: '전체',      en: 'All',   icon: '' },
-            { id: 'photographer', ko: '사진',      en: 'Photo', icon: '📸' },
-            { id: 'videographer', ko: '영상',      en: 'Video', icon: '🎬' },
-            { id: 'both',         ko: '사진·영상', en: 'Both',  icon: '📸🎬' },
-          ].map(o => (
+            { id: 'all', ko: '전체', en: 'All', icon: '' },
+            { id: 'photographer', ko: '사진', en: 'Photo', icon: '📸' },
+            { id: 'videographer', ko: '영상', en: 'Video', icon: '🎬' },
+            { id: 'both', ko: '사진·영상', en: 'Both', icon: '📸🎬' },
+          ].map((o) => (
             <button
               key={o.id}
               className={`filter-btn ${activeArtistType === o.id ? 'active' : ''}`}
@@ -801,9 +1161,27 @@ const Photographers = ({ onAuthOpen }) => {
         </div>
 
         {/* 언어 필터 */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 40, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.1em', marginRight: 8 }}>{filterLabelsForLang.language}</span>
-          {languages.map(l => (
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 40,
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 11,
+              color: 'var(--muted)',
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '0.1em',
+              marginRight: 8,
+            }}
+          >
+            {filterLabelsForLang.language}
+          </span>
+          {languages.map((l) => (
             <button
               key={l}
               className={`filter-btn ${activeLanguage === l ? 'active' : ''}`}
@@ -816,25 +1194,67 @@ const Photographers = ({ onAuthOpen }) => {
         </div>
 
         {/* Expanded Tags/Conditions Filter */}
-        <div style={{
-          display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap', alignItems: 'center',
-          padding: '14px 20px', border: '1px solid var(--border)', background: 'var(--bg2)',
-        }}>
-          <span style={{ fontSize: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.12em', textTransform: 'uppercase', marginRight: 4, flexShrink: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            marginBottom: 24,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            padding: '14px 20px',
+            border: '1px solid var(--border)',
+            background: 'var(--bg2)',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 10,
+              color: 'var(--gold)',
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              marginRight: 4,
+              flexShrink: 0,
+            }}
+          >
             ✦ {filterLabelsForLang.tags}
           </span>
-          {SNAP_FILTER_KEYS.map(key => {
+          {SNAP_FILTER_KEYS.map((key) => {
             const active = activeSnapFilters.has(key);
             const label = SNAP_FILTER_LABELS[key]?.[lang] || SNAP_FILTER_LABELS[key]?.en || key;
-            const icon = key === 'traditional_costume' ? '👘' : key === 'dress_rental' ? '👗' : key === 'suit_rental' ? '🤵' : key === 'other_costume' ? '🎭' : key === 'props' ? '🎪' : key === 'hmu' ? '💄' : key === 'golden_hour' ? '🌅' : key === 'instant_booking' ? '⚡' : key === 'photo_tour' ? '📸' : '✨';
+            const icon =
+              key === 'traditional_costume'
+                ? '👘'
+                : key === 'dress_rental'
+                  ? '👗'
+                  : key === 'suit_rental'
+                    ? '🤵'
+                    : key === 'other_costume'
+                      ? '🎭'
+                      : key === 'props'
+                        ? '🎪'
+                        : key === 'hmu'
+                          ? '💄'
+                          : key === 'golden_hour'
+                            ? '🌅'
+                            : key === 'instant_booking'
+                              ? '⚡'
+                              : key === 'photo_tour'
+                                ? '📸'
+                                : '✨';
             return (
               <button
                 key={key}
                 onClick={() => toggleSnapFilter(key)}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  padding: '5px 12px', fontSize: 11, cursor: 'pointer',
-                  fontFamily: 'var(--font-serif)', letterSpacing: '0.03em',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '5px 12px',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.03em',
                   background: active ? 'var(--accent-a10)' : 'transparent',
                   border: `1px solid ${active ? 'var(--gold)' : 'var(--border)'}`,
                   color: active ? 'var(--gold)' : 'var(--muted)',
@@ -851,30 +1271,59 @@ const Photographers = ({ onAuthOpen }) => {
           <button
             onClick={() => navigate('/contact', { state: { subject: 'custom_request' } })}
             style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 12px', fontSize: 11, cursor: 'pointer',
-              fontFamily: 'var(--font-serif)', letterSpacing: '0.03em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              padding: '5px 12px',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '0.03em',
               background: 'transparent',
               border: '1px dashed var(--border)',
               color: 'var(--muted)',
               transition: 'all 0.2s ease',
             }}
-            onMouseEnter={e => { e.target.style.borderColor = 'var(--gold)'; e.target.style.color = 'var(--gold)'; }}
-            onMouseLeave={e => { e.target.style.borderColor = 'var(--border)'; e.target.style.color = 'var(--muted)'; }}
+            onMouseEnter={(e) => {
+              e.target.style.borderColor = 'var(--gold)';
+              e.target.style.color = 'var(--gold)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.borderColor = 'var(--border)';
+              e.target.style.color = 'var(--muted)';
+            }}
           >
             <span style={{ fontSize: 12 }}>💬</span>
-            {lang === 'ko' ? '원하는 조건이 없나요?' : lang === 'ja' ? 'お探しの条件がない？' : lang === 'zh' ? '没有想要的条件？' : 'Missing a filter?'}
+            {lang === 'ko'
+              ? '원하는 조건이 없나요?'
+              : lang === 'ja'
+                ? 'お探しの条件がない？'
+                : lang === 'zh'
+                  ? '没有想要的条件？'
+                  : 'Missing a filter?'}
           </button>
           {activeSnapFilters.size > 0 && (
             <button
               onClick={() => setActiveSnapFilters(new Set())}
               style={{
-                fontSize: 10, color: 'var(--muted)', background: 'transparent',
-                border: '1px solid var(--border)', padding: '4px 10px', cursor: 'pointer',
-                fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
+                fontSize: 10,
+                color: 'var(--muted)',
+                background: 'transparent',
+                border: '1px solid var(--border)',
+                padding: '4px 10px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-serif)',
+                letterSpacing: '0.05em',
               }}
             >
-              {lang === 'ko' ? '초기화' : lang === 'ja' ? 'リセット' : lang === 'zh' ? '重置' : 'Clear'} ✕
+              {lang === 'ko'
+                ? '초기화'
+                : lang === 'ja'
+                  ? 'リセット'
+                  : lang === 'zh'
+                    ? '重置'
+                    : 'Clear'}{' '}
+              ✕
             </button>
           )}
         </div>
@@ -885,12 +1334,22 @@ const Photographers = ({ onAuthOpen }) => {
             <button
               onClick={resetAllFilters}
               style={{
-                padding: '10px 20px', fontSize: 11, fontFamily: 'var(--font-serif)', letterSpacing: '0.1em',
-                background: 'transparent', border: '1px solid var(--gold)', color: 'var(--gold)',
-                cursor: 'pointer', transition: 'all 0.2s ease',
+                padding: '10px 20px',
+                fontSize: 11,
+                fontFamily: 'var(--font-serif)',
+                letterSpacing: '0.1em',
+                background: 'transparent',
+                border: '1px solid var(--gold)',
+                color: 'var(--gold)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
               }}
-              onMouseEnter={e => { e.target.style.background = 'var(--accent-a10)'; }}
-              onMouseLeave={e => { e.target.style.background = 'transparent'; }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'var(--accent-a10)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+              }}
             >
               {filterLabelsForLang.resetFilters}
             </button>
@@ -898,17 +1357,49 @@ const Photographers = ({ onAuthOpen }) => {
             {/* Active Filters Display */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {selectedCountry !== 'all' && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
-                  {countriesList.find(c => c.code === selectedCountry)?.flag} {countriesList.find(c => c.code === selectedCountry)?.name}
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 8px',
+                    background: 'var(--accent-a15)',
+                    border: '1px solid var(--gold)',
+                    color: 'var(--gold)',
+                    borderRadius: 4,
+                    fontFamily: 'var(--font-serif)',
+                  }}
+                >
+                  {countriesList.find((c) => c.code === selectedCountry)?.flag}{' '}
+                  {countriesList.find((c) => c.code === selectedCountry)?.name}
                 </span>
               )}
               {selectedCity !== 'all' && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
-                  {citiesForCountry.find(c => c.id === selectedCity)?.nameI18n?.[lang] ?? citiesForCountry.find(c => c.id === selectedCity)?.ko}
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 8px',
+                    background: 'var(--accent-a15)',
+                    border: '1px solid var(--gold)',
+                    color: 'var(--gold)',
+                    borderRadius: 4,
+                    fontFamily: 'var(--font-serif)',
+                  }}
+                >
+                  {citiesForCountry.find((c) => c.id === selectedCity)?.nameI18n?.[lang] ??
+                    citiesForCountry.find((c) => c.id === selectedCity)?.ko}
                 </span>
               )}
               {(minPrice || maxPrice) && (
-                <span style={{ fontSize: 10, padding: '4px 8px', background: 'var(--accent-a15)', border: '1px solid var(--gold)', color: 'var(--gold)', borderRadius: 4, fontFamily: 'var(--font-serif)' }}>
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '4px 8px',
+                    background: 'var(--accent-a15)',
+                    border: '1px solid var(--gold)',
+                    color: 'var(--gold)',
+                    borderRadius: 4,
+                    fontFamily: 'var(--font-serif)',
+                  }}
+                >
                   ₩ {minPrice || '0'} ~ {maxPrice || '2M'}
                 </span>
               )}
@@ -917,52 +1408,116 @@ const Photographers = ({ onAuthOpen }) => {
         )}
 
         {/* Result Count + Artist Name Search */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32, gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.05em', flexShrink: 0 }}>
-            {sorted.length}{t('home.locationCount')}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 32,
+            gap: 16,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div
+            style={{ fontSize: 12, color: 'var(--muted)', letterSpacing: '0.05em', flexShrink: 0 }}
+          >
+            {sorted.length}
+            {t('home.locationCount')}
             {activeLocation !== 'all' && (
-              <span style={{ marginLeft: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
-                — {(() => { const loc = allLocs.find(l => l.id === activeLocation); return loc?.nameI18n?.[lang] ?? loc?.ko ?? activeLocation; })()}
+              <span
+                style={{ marginLeft: 10, color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}
+              >
+                —{' '}
+                {(() => {
+                  const loc = allLocs.find((l) => l.id === activeLocation);
+                  return loc?.nameI18n?.[lang] ?? loc?.ko ?? activeLocation;
+                })()}
               </span>
             )}
           </div>
           <div style={{ position: 'relative', width: '100%', maxWidth: 260 }}>
-            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: 'var(--muted)', pointerEvents: 'none' }}>🔍</span>
+            <span
+              style={{
+                position: 'absolute',
+                left: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 13,
+                color: 'var(--muted)',
+                pointerEvents: 'none',
+              }}
+            >
+              🔍
+            </span>
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder={lang === 'ko' ? '작가명 검색...' : lang === 'ja' ? '作家名で検索...' : lang === 'zh' ? '搜索摄影师...' : 'Search artist...'}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={
+                lang === 'ko'
+                  ? '작가명 검색...'
+                  : lang === 'ja'
+                    ? '作家名で検索...'
+                    : lang === 'zh'
+                      ? '搜索摄影师...'
+                      : 'Search artist...'
+              }
               style={{
-                width: '100%', padding: '8px 32px 8px 30px', fontSize: 12,
-                background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--text)',
-                fontFamily: 'var(--font-sans)', letterSpacing: '0.03em', outline: 'none',
+                width: '100%',
+                padding: '8px 32px 8px 30px',
+                fontSize: 12,
+                background: 'var(--bg2)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                fontFamily: 'var(--font-sans)',
+                letterSpacing: '0.03em',
+                outline: 'none',
                 transition: 'border-color var(--ease)',
               }}
-              onFocus={e => { e.target.style.borderColor = 'var(--gold-border)'; }}
-              onBlur={e => { e.target.style.borderColor = 'var(--border)'; }}
+              onFocus={(e) => {
+                e.target.style.borderColor = 'var(--gold-border)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = 'var(--border)';
+              }}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 style={{
-                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                  background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer',
-                  fontSize: 12, padding: '2px',
+                  position: 'absolute',
+                  right: 8,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--muted)',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  padding: '2px',
                 }}
-              >✕</button>
+              >
+                ✕
+              </button>
             )}
           </div>
 
           {/* Sort Dropdown — compact, below search */}
           <select
             value={sortBy}
-            onChange={e => setSortBy(e.target.value)}
+            onChange={(e) => setSortBy(e.target.value)}
             style={{
-              padding: '6px 24px 6px 10px', fontSize: 11, fontFamily: 'var(--font-sans)',
-              background: 'var(--bg2)', border: '1px solid var(--border)', color: 'var(--muted)',
-              cursor: 'pointer', outline: 'none', letterSpacing: '0.03em',
-              transition: 'border-color var(--ease)', flexShrink: 0,
+              padding: '6px 24px 6px 10px',
+              fontSize: 11,
+              fontFamily: 'var(--font-sans)',
+              background: 'var(--bg2)',
+              border: '1px solid var(--border)',
+              color: 'var(--muted)',
+              cursor: 'pointer',
+              outline: 'none',
+              letterSpacing: '0.03em',
+              transition: 'border-color var(--ease)',
+              flexShrink: 0,
               appearance: 'auto',
             }}
           >
@@ -999,7 +1554,14 @@ const Photographers = ({ onAuthOpen }) => {
           return visibleList.length > 0 ? (
             <>
               <div className="photo-grid">
-                {visibleList.map(p => <PhotographerCard key={p.id} p={p} onClick={handleCardClick} blurred={!isLoggedIn} />)}
+                {visibleList.map((p) => (
+                  <PhotographerCard
+                    key={p.id}
+                    p={p}
+                    onClick={handleCardClick}
+                    blurred={!isLoggedIn}
+                  />
+                ))}
               </div>
 
               {/* Infinite scroll sentinel */}
@@ -1007,57 +1569,146 @@ const Photographers = ({ onAuthOpen }) => {
 
               {/* Loading indicator for infinite scroll */}
               {isLoadingMore && isLoggedIn && (
-                <div style={{
-                  marginTop: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                }}>
-                  <div style={{
-                    width: '32px', height: '32px', borderRadius: '50%',
-                    border: '2px solid var(--accent-a20)', borderTopColor: 'var(--gold)',
-                    animation: 'spin 0.8s linear infinite',
-                  }} />
-                  <span style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em' }}>
-                    {lang === 'ko' ? '더 불러오는 중...' : lang === 'ja' ? '読み込み中...' : lang === 'zh' ? '加载中...' : 'Loading...'}
+                <div
+                  style={{
+                    marginTop: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      border: '2px solid var(--accent-a20)',
+                      borderTopColor: 'var(--gold)',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: 'var(--muted)',
+                      fontFamily: 'var(--font-serif)',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {lang === 'ko'
+                      ? '더 불러오는 중...'
+                      : lang === 'ja'
+                        ? '読み込み中...'
+                        : lang === 'zh'
+                          ? '加载中...'
+                          : 'Loading...'}
                   </span>
                 </div>
               )}
 
               {/* End of list message */}
-              {isLoggedIn && displayedCount >= sorted.length && sorted.length > PHOTOGRAPHERS_PER_PAGE && (
-                <div style={{
-                  marginTop: 40, textAlign: 'center', padding: '24px', fontSize: 12,
-                  color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em',
-                }}>
-                  {lang === 'ko' ? '모든 작가를 확인했습니다' : lang === 'ja' ? 'すべてのアーティストを確認しました' : lang === 'zh' ? '已显示所有摄影师' : 'All photographers loaded'}
-                </div>
-              )}
+              {isLoggedIn &&
+                displayedCount >= sorted.length &&
+                sorted.length > PHOTOGRAPHERS_PER_PAGE && (
+                  <div
+                    style={{
+                      marginTop: 40,
+                      textAlign: 'center',
+                      padding: '24px',
+                      fontSize: 12,
+                      color: 'var(--muted)',
+                      fontFamily: 'var(--font-serif)',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    {lang === 'ko'
+                      ? '모든 작가를 확인했습니다'
+                      : lang === 'ja'
+                        ? 'すべてのアーティストを確認しました'
+                        : lang === 'zh'
+                          ? '已显示所有摄影师'
+                          : 'All photographers loaded'}
+                  </div>
+                )}
 
               {/* 비로그인 시 로그인 유도 배너 */}
               {hasLoginPrompt && (
                 <div
                   onClick={() => onAuthOpen?.('login')}
                   style={{
-                    marginTop: 40, padding: '36px 24px', textAlign: 'center', cursor: 'pointer',
-                    background: 'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)',
+                    marginTop: 40,
+                    padding: '36px 24px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    background:
+                      'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)',
                     border: '1px solid var(--gold-border)',
                     transition: 'all 0.3s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--gold)'; e.currentTarget.style.background = 'var(--accent-a06)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--gold-border)'; e.currentTarget.style.background = 'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)'; }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--gold)';
+                    e.currentTarget.style.background = 'var(--accent-a06)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--gold-border)';
+                    e.currentTarget.style.background =
+                      'linear-gradient(180deg, transparent 0%, var(--accent-a04) 50%, var(--accent-a08) 100%)';
+                  }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 10 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--gold)',
+                      fontFamily: 'var(--font-serif)',
+                      letterSpacing: '0.2em',
+                      textTransform: 'uppercase',
+                      marginBottom: 10,
+                    }}
+                  >
                     {filterLabelsForLang.loginRequired}
                   </div>
-                  <div style={{ fontSize: 14, color: 'var(--text)', fontFamily: 'var(--font-serif)', letterSpacing: '0.05em', marginBottom: 12 }}>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: 'var(--text)',
+                      fontFamily: 'var(--font-serif)',
+                      letterSpacing: '0.05em',
+                      marginBottom: 12,
+                    }}
+                  >
                     {filterLabelsForLang.loginToSeeMore}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    +{sorted.length - MAX_PREVIEW}{lang === 'ko' ? '명의 작가가 더 있습니다' : lang === 'ja' ? '名の作家がいます' : lang === 'zh' ? '位摄影师' : ' more artists available'}
+                    +{sorted.length - MAX_PREVIEW}
+                    {lang === 'ko'
+                      ? '명의 작가가 더 있습니다'
+                      : lang === 'ja'
+                        ? '名の作家がいます'
+                        : lang === 'zh'
+                          ? '位摄影师'
+                          : ' more artists available'}
                   </div>
-                  <button style={{
-                    marginTop: 16, padding: '12px 32px', background: 'var(--gold)', color: 'var(--on-accent)',
-                    border: 'none', fontFamily: 'var(--font-serif)', fontSize: 12, letterSpacing: '0.1em', cursor: 'pointer',
-                  }}>
-                    {lang === 'ko' ? '로그인하기' : lang === 'ja' ? 'ログイン' : lang === 'zh' ? '登录' : 'Log In'}
+                  <button
+                    style={{
+                      marginTop: 16,
+                      padding: '12px 32px',
+                      background: 'var(--gold)',
+                      color: 'var(--on-accent)',
+                      border: 'none',
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 12,
+                      letterSpacing: '0.1em',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {lang === 'ko'
+                      ? '로그인하기'
+                      : lang === 'ja'
+                        ? 'ログイン'
+                        : lang === 'zh'
+                          ? '登录'
+                          : 'Log In'}
                   </button>
                 </div>
               )}
@@ -1075,14 +1726,28 @@ const Photographers = ({ onAuthOpen }) => {
                 <div style={{ fontSize: 13 }}>불러오는 중…</div>
               ) : photographersSource.length === 0 ? (
                 <>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 14,
+                      letterSpacing: '0.1em',
+                      marginBottom: 8,
+                    }}
+                  >
                     아직 등록된 작가가 없습니다
                   </div>
                   <div style={{ fontSize: 13 }}>첫 번째 작가로 등록해보세요.</div>
                 </>
               ) : (
                 <>
-                  <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, letterSpacing: '0.1em', marginBottom: 8 }}>
+                  <div
+                    style={{
+                      fontFamily: 'var(--font-serif)',
+                      fontSize: 14,
+                      letterSpacing: '0.1em',
+                      marginBottom: 8,
+                    }}
+                  >
                     {t('photographers.noResults')}
                   </div>
                   <div style={{ fontSize: 13 }}>{t('photographers.changeFilter')}</div>

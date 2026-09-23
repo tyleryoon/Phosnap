@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 import { computeSlot, buildShootWindow } from './scheduling';
 import { calculateBookingCommissions } from './commission';
 
-const SUPABASE_URL      = import.meta.env.VITE_SUPABASE_URL      || '';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 let _client = null;
@@ -23,7 +23,7 @@ export const getSupabase = async () => {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true,   // OAuth 콜백 처리
+      detectSessionInUrl: true, // OAuth 콜백 처리
     },
   });
   return _client;
@@ -39,7 +39,7 @@ export const getSupabase = async () => {
  */
 export const toE164KR = (phone) => {
   const digits = phone.replace(/\D/g, '');
-  if (phone.startsWith('+')) return phone;          // 이미 E.164
+  if (phone.startsWith('+')) return phone; // 이미 E.164
   if (digits.startsWith('82')) return `+${digits}`; // 82로 시작
   if (digits.startsWith('0')) return `+82${digits.slice(1)}`; // 0xx → +82xx
   return `+82${digits}`;
@@ -103,7 +103,7 @@ export const signUp = async ({ email, password, name, role }) => {
     email,
     password,
     options: {
-      data: { full_name: name, role },   // user_metadata
+      data: { full_name: name, role }, // user_metadata
     },
   });
   return { data, error };
@@ -142,7 +142,9 @@ export const signOut = async () => {
 export const getSession = async () => {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   return session;
 };
 
@@ -228,7 +230,10 @@ export const switchUserRole = async (role) => {
   // 2. profiles 테이블도 동기화
   const userId = data?.user?.id;
   if (userId) {
-    await sb.from('profiles').update({ role, updated_at: new Date().toISOString() }).eq('id', userId);
+    await sb
+      .from('profiles')
+      .update({ role, updated_at: new Date().toISOString() })
+      .eq('id', userId);
   }
   return { data, error };
 };
@@ -294,10 +299,9 @@ export const addUserRole = async (userId, role) => {
   //   error: null 을 돌려줬다. 호출부는 성공으로 알고 넘어가는데
   //   실제로는 역할이 등록되지 않은 상태였다.
   //   그 localStorage 값이 나중에 권한 검사를 통과시키는 열쇠가 됐다.
-  const { error } = await sb.from('user_roles').upsert(
-    { user_id: userId, role, status },
-    { onConflict: 'user_id,role' }
-  );
+  const { error } = await sb
+    .from('user_roles')
+    .upsert({ user_id: userId, role, status }, { onConflict: 'user_id,role' });
   if (error) console.error('[addUserRole] 역할 등록 실패:', role, error);
   return { error };
 };
@@ -317,7 +321,7 @@ export const addUserRole = async (userId, role) => {
  */
 export const getUserRolesWithFallback = async (userId) => {
   const roles = await getUserRoles(userId);
-  const names = roles.map(r => r.role).filter(Boolean);
+  const names = roles.map((r) => r.role).filter(Boolean);
   return names.length > 0 ? [...new Set(names)] : ['customer'];
 };
 
@@ -327,11 +331,10 @@ export const getUserRolesWithFallback = async (userId) => {
  */
 export const getRoleStatus = async (userId, role) => {
   const roles = await getUserRoles(userId);
-  const aliases = (role === 'vendor' || role === 'dress_vendor')
-    ? ['vendor', 'dress_vendor']
-    : [role];
-  const hit = roles.find(r => aliases.includes(r.role));
-  return hit ? (hit.status || 'active') : null;
+  const aliases =
+    role === 'vendor' || role === 'dress_vendor' ? ['vendor', 'dress_vendor'] : [role];
+  const hit = roles.find((r) => aliases.includes(r.role));
+  return hit ? hit.status || 'active' : null;
 };
 
 /**
@@ -356,7 +359,7 @@ export const canOwnProviderRecord = async (userId, role) => {
  */
 export const getUserRolesWithStatus = async (userId) => {
   const roles = await getUserRoles(userId);
-  return roles.map(r => ({ role: r.role, status: r.status || 'active' }));
+  return roles.map((r) => ({ role: r.role, status: r.status || 'active' }));
 };
 
 // 관리자 승인 함수는 파일 하단(FIX_25 절)으로 옮겼다.
@@ -435,7 +438,7 @@ export const ensureArtistRecord = async (userId, info = {}) => {
 
   const isHmk = artistType === 'hmk';
   const table = isHmk ? 'stylists' : 'photographers';
-  const kind  = isHmk ? 'stylist' : 'photographer';
+  const kind = isHmk ? 'stylist' : 'photographer';
 
   // 이미 있으면 그대로 사용
   const { data: existing, error: findErr } = await sb
@@ -459,37 +462,43 @@ export const ensureArtistRecord = async (userId, info = {}) => {
   const neededRole = isHmk ? 'stylist' : 'artist';
   const allowed = await canOwnProviderRecord(userId, neededRole);
   if (!allowed) {
-    console.warn(`[ensureArtistRecord] ${neededRole} 역할이 없어 ${table} 레코드를 만들지 않는다.`, userId);
+    console.warn(
+      `[ensureArtistRecord] ${neededRole} 역할이 없어 ${table} 레코드를 만들지 않는다.`,
+      userId
+    );
     return {
       data: null,
-      error: { message: `${neededRole} 역할이 없어 공개 레코드를 만들 수 없습니다.`, code: 'ROLE_REQUIRED' },
+      error: {
+        message: `${neededRole} 역할이 없어 공개 레코드를 만들 수 없습니다.`,
+        code: 'ROLE_REQUIRED',
+      },
       kind,
     };
   }
 
   const row = isHmk
     ? {
-        user_id:          userId,
-        name_ko:          nativeName || '이름 미설정',
-        name_en:          englishName || null,
-        specialty:        'both',
+        user_id: userId,
+        name_ko: nativeName || '이름 미설정',
+        name_en: englishName || null,
+        specialty: 'both',
         instagram,
         portfolio_images: portfolioUrls,
         // 헤메도 자체 의상을 가질 수 있다 (FIX_33).
         // 작가에게만 묻던 질문이라 헤메 값은 여기까지 오지 못했다.
-        dress_self:       dressSelf,
-        is_active:        false,   // 필수 정보 입력 전까지 비노출
+        dress_self: dressSelf,
+        is_active: false, // 필수 정보 입력 전까지 비노출
       }
     : {
-        user_id:      userId,
-        name:         englishName || nativeName || 'Unnamed',
-        name_ko:      nativeName || null,
-        artist_type:  artistType,
-        hmk_self:     hmkSelf,
-        dress_self:   dressSelf,
-        portfolio:    portfolioUrls.map(url => ({ url, caption: '' })),
-        languages:    ['KO'],
-        is_active:    false,       // 필수 정보 입력 전까지 비노출
+        user_id: userId,
+        name: englishName || nativeName || 'Unnamed',
+        name_ko: nativeName || null,
+        artist_type: artistType,
+        hmk_self: hmkSelf,
+        dress_self: dressSelf,
+        portfolio: portfolioUrls.map((url) => ({ url, caption: '' })),
+        languages: ['KO'],
+        is_active: false, // 필수 정보 입력 전까지 비노출
       };
 
   const { data, error } = await sb.from(table).insert(row).select().maybeSingle();
@@ -502,11 +511,17 @@ export const getMyArtistRecord = async (userId) => {
   if (!sb || !userId) return { data: null, error: null, kind: null };
 
   const { data: photog } = await sb
-    .from('photographers').select('*').eq('user_id', userId).maybeSingle();
+    .from('photographers')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
   if (photog) return { data: photog, error: null, kind: 'photographer' };
 
   const { data: stylist } = await sb
-    .from('stylists').select('*').eq('user_id', userId).maybeSingle();
+    .from('stylists')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
   if (stylist) return { data: stylist, error: null, kind: 'stylist' };
 
   return { data: null, error: null, kind: null };
@@ -526,10 +541,18 @@ export const getMyArtistRecord = async (userId) => {
  * @returns {{ success, bookingId, error, duplicate }}
  */
 export const confirmPayment = async ({
-  paymentKey, orderId, amount,
-  photographerName, photographerLegacyId,
-  date, time, packageName,
-  stylistPrice, dressPrice, lang, note,
+  paymentKey,
+  orderId,
+  amount,
+  photographerName,
+  photographerLegacyId,
+  date,
+  time,
+  packageName,
+  stylistPrice,
+  dressPrice,
+  lang,
+  note,
 }) => {
   const sb = await getSupabase();
   // reached: 서버가 실제로 판단을 내렸는가.
@@ -538,7 +561,9 @@ export const confirmPayment = async ({
   if (!sb) return { success: false, reached: false, error: 'Supabase 연결 실패' };
 
   // 현재 세션 토큰 가져오기
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.access_token) {
     return { success: false, reached: false, code: 'NO_SESSION', error: 'Authentication required' };
   }
@@ -550,16 +575,22 @@ export const confirmPayment = async ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-        'apikey': SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({
-        paymentKey, orderId, amount: Number(amount),
-        photographerName, photographerLegacyId,
-        date, time, packageName,
+        paymentKey,
+        orderId,
+        amount: Number(amount),
+        photographerName,
+        photographerLegacyId,
+        date,
+        time,
+        packageName,
         stylistPrice: Number(stylistPrice || 0),
         dressPrice: Number(dressPrice || 0),
-        lang, note,
+        lang,
+        note,
       }),
     });
 
@@ -572,7 +603,9 @@ export const confirmPayment = async ({
     } catch {
       // JSON 이 아니면 게이트웨이 오류다. 서버 판단이 아니다.
       return {
-        success: false, reached: false, status: res.status,
+        success: false,
+        reached: false,
+        status: res.status,
         error: `서버 응답을 읽지 못했습니다 (HTTP ${res.status})`,
       };
     }
@@ -598,7 +631,9 @@ export const cancelPaymentServer = async (bookingId, reason = '') => {
   const sb = await getSupabase();
   if (!sb) return { success: false, error: 'Supabase 연결 실패' };
 
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.access_token) {
     return { success: false, error: 'Authentication required' };
   }
@@ -610,8 +645,8 @@ export const cancelPaymentServer = async (bookingId, reason = '') => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
-        'apikey': SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+        apikey: SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ bookingId, reason }),
     });
@@ -621,14 +656,23 @@ export const cancelPaymentServer = async (bookingId, reason = '') => {
     // **시도조차 되지 않은** 상태라서, 사람이 손으로 처리해야 한다.
     if (res.status === 404) {
       console.error('[cancelPaymentServer] cancel-payment 함수가 배포되어 있지 않습니다.');
-      return { success: false, reached: false, status: 404, error: '환불 기능이 배포되지 않았습니다' };
+      return {
+        success: false,
+        reached: false,
+        status: 404,
+        error: '환불 기능이 배포되지 않았습니다',
+      };
     }
     let data = null;
     try {
       data = await res.json();
     } catch {
-      return { success: false, reached: false, status: res.status,
-               error: `서버 응답을 읽지 못했습니다 (HTTP ${res.status})` };
+      return {
+        success: false,
+        reached: false,
+        status: res.status,
+        error: `서버 응답을 읽지 못했습니다 (HTTP ${res.status})`,
+      };
     }
     return { ...data, reached: true, status: res.status };
   } catch (err) {
@@ -661,31 +705,31 @@ export const createBooking = async (booking) => {
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
 
   const payload = {
-    customer_id:              booking.customer_id,
-    photographer_id:          booking.photographer_id || null,
-    photographer_name:        booking.photographer_name || null,
-    photographer_legacy_id:   booking.photographer_legacy_id || null,
-    date:                     booking.date,
-    time:                     booking.time,
-    package_name:             booking.package_name,
-    package_price:            Number(booking.package_price) || 0,
-    total_price:              Number(booking.total_price)   || 0,
-    stylist_price:            Number(booking.stylist_price) || 0,
-    stylist_name:             booking.stylist_name || null,
-    stylist_service:          booking.stylist_service || null,
-    dress_name:               booking.dress_name || null,
-    dress_size:               booking.dress_size || null,
-    dress_price:              Number(booking.dress_price) || 0,
+    customer_id: booking.customer_id,
+    photographer_id: booking.photographer_id || null,
+    photographer_name: booking.photographer_name || null,
+    photographer_legacy_id: booking.photographer_legacy_id || null,
+    date: booking.date,
+    time: booking.time,
+    package_name: booking.package_name,
+    package_price: Number(booking.package_price) || 0,
+    total_price: Number(booking.total_price) || 0,
+    stylist_price: Number(booking.stylist_price) || 0,
+    stylist_name: booking.stylist_name || null,
+    stylist_service: booking.stylist_service || null,
+    dress_name: booking.dress_name || null,
+    dress_size: booking.dress_size || null,
+    dress_price: Number(booking.dress_price) || 0,
     // 장소 금액. 예전엔 이 줄이 없어서 고객이 낸 장소 비용이
     // total_price 에만 섞여 들어가고 항목으로는 사라졌다.
     // bookings 에는 venue_name 컬럼이 없으므로 이름은 note 와 라인 아이템에 남긴다.
-    venue_price:              Number(booking.venue_price) || 0,
-    toss_order_id:            booking.toss_order_id || null,
-    toss_payment_key:         booking.toss_payment_key || null,
-    paid_at:                  booking.toss_payment_key ? new Date().toISOString() : null,
-    status:                   'pending',   // 결제 완료, 작가 확정 대기
-    lang:                     booking.lang || 'ko',
-    note:                     booking.note || null,
+    venue_price: Number(booking.venue_price) || 0,
+    toss_order_id: booking.toss_order_id || null,
+    toss_payment_key: booking.toss_payment_key || null,
+    paid_at: booking.toss_payment_key ? new Date().toISOString() : null,
+    status: 'pending', // 결제 완료, 작가 확정 대기
+    lang: booking.lang || 'ko',
+    note: booking.note || null,
   };
 
   // 고객 이름을 스냅샷으로 남긴다.
@@ -694,17 +738,17 @@ export const createBooking = async (booking) => {
   if (!payload.customer_name) {
     const s = await getSession();
     payload.customer_name =
-      booking.customer_name
-      || s?.user?.user_metadata?.name
-      || s?.user?.user_metadata?.full_name
-      || (s?.user?.email ? s.user.email.split('@')[0] : null);
+      booking.customer_name ||
+      s?.user?.user_metadata?.name ||
+      s?.user?.user_metadata?.full_name ||
+      (s?.user?.email ? s.user.email.split('@')[0] : null);
   }
 
   // ── 촬영 시간대 ────────────────────────────────────────────────────
   const shoot = buildShootWindow(booking.date, booking.time, booking.hours || 2);
   if (shoot) {
     payload.shoot_start_at = shoot.start.toISOString();
-    payload.shoot_end_at   = shoot.end.toISOString();
+    payload.shoot_end_at = shoot.end.toISOString();
   }
 
   // ── 참여자별 라인 아이템 ───────────────────────────────────────────
@@ -717,32 +761,53 @@ export const createBooking = async (booking) => {
   // 공급자 id 를 모르면 라인 아이템으로는 못 넣는다(정산 대상이 없다).
   // 그래도 무엇을 팔았는지는 note 에 남겨서 사람이 추적할 수 있게 한다.
   const legacyExtras = [
-    { label: '헤메',   name: booking.stylist_name, detail: booking.stylist_service, price: Number(booking.stylist_price) || 0 },
-    { label: '의상',   name: booking.dress_name,   detail: booking.dress_size,      price: Number(booking.dress_price)   || 0 },
-    { label: '장소',   name: booking.venue_name,   detail: null,                    price: Number(booking.venue_price)   || 0 },
-  ].filter(x => x.name || x.price > 0);
+    {
+      label: '헤메',
+      name: booking.stylist_name,
+      detail: booking.stylist_service,
+      price: Number(booking.stylist_price) || 0,
+    },
+    {
+      label: '의상',
+      name: booking.dress_name,
+      detail: booking.dress_size,
+      price: Number(booking.dress_price) || 0,
+    },
+    {
+      label: '장소',
+      name: booking.venue_name,
+      detail: null,
+      price: Number(booking.venue_price) || 0,
+    },
+  ].filter((x) => x.name || x.price > 0);
 
   const hasItems = Array.isArray(booking.items) && booking.items.length > 0;
 
   if (!hasItems && legacyExtras.length) {
     const memo = legacyExtras
-      .map(x => `${x.label}: ${x.name || '(이름 없음)'}${x.detail ? ` / ${x.detail}` : ''} ₩${x.price.toLocaleString()}`)
+      .map(
+        (x) =>
+          `${x.label}: ${x.name || '(이름 없음)'}${x.detail ? ` / ${x.detail}` : ''} ₩${x.price.toLocaleString()}`
+      )
       .join('\n');
     payload.note = [payload.note, '[항목 복원 필요 — 결제 초안 없음]', memo]
-      .filter(Boolean).join('\n');
+      .filter(Boolean)
+      .join('\n');
     console.warn('[createBooking] 라인 아이템 없이 저장합니다. note 에 남겼습니다:\n' + memo);
   }
 
   const rawItems = hasItems
     ? booking.items
-    : [{
-        providerType: 'photographer',
-        providerId:   booking.photographer_id,
-        providerName: booking.photographer_name,
-        itemName:     booking.package_name,
-        price:        Number(booking.package_price) || 0,
-        timing:       'shoot',
-      }].filter(i => i.providerId);
+    : [
+        {
+          providerType: 'photographer',
+          providerId: booking.photographer_id,
+          providerName: booking.photographer_name,
+          itemName: booking.package_name,
+          price: Number(booking.package_price) || 0,
+          timing: 'shoot',
+        },
+      ].filter((i) => i.providerId);
 
   // 각 공급자의 실제 소유자(auth uid)를 붙인다.
   // 콜라보 인원을 사람 기준으로 세야 한 사람이 여러 역할을 겸할 때
@@ -750,14 +815,10 @@ export const createBooking = async (booking) => {
   const withOwners = await attachProviderOwners(sb, rawItems);
 
   const priced = calculateBookingCommissions(withOwners);
-  payload.collab_count     = priced.collabCount;
+  payload.collab_count = priced.collabCount;
   payload.commission_total = priced.commissionTotal;
 
-  const { data, error } = await sb
-    .from('bookings')
-    .insert([payload])
-    .select()
-    .single();
+  const { data, error } = await sb.from('bookings').insert([payload]).select().single();
 
   if (error || !data) return { data, error };
 
@@ -767,38 +828,38 @@ export const createBooking = async (booking) => {
   const itemRows = priced.items.map((it) => {
     const slot = shoot
       ? computeSlot({
-          timing:          it.timing || 'shoot',
-          shootStart:      shoot.start,
-          shootEnd:        shoot.end,
+          timing: it.timing || 'shoot',
+          shootStart: shoot.start,
+          shootEnd: shoot.end,
           durationMinutes: it.durationMinutes,
-          offsetMinutes:   it.offsetMinutes,
+          offsetMinutes: it.offsetMinutes,
         })
       : null;
     return {
-      booking_id:        data.id,
-      provider_type:     it.providerType,
+      booking_id: data.id,
+      provider_type: it.providerType,
       // 요율 기준. provider_type 과 다를 수 있다 — 작가 자체 헤메가 그 경우다.
       // 나중에 정산을 재계산할 때 무슨 요율을 썼는지 알아야 한다.
-      rate_type:         it.rateType || it.providerType,
-      provider_id:       it.providerId,
-      provider_name:     it.providerName || null,
-      item_id:           it.itemId || null,
-      item_name:         it.itemName || '항목',
-      item_option:       it.itemOption || null,
-      quantity:          it.quantity || 1,
-      price:             Number(it.price) || 0,
-      timing:            it.timing || 'shoot',
+      rate_type: it.rateType || it.providerType,
+      provider_id: it.providerId,
+      provider_name: it.providerName || null,
+      item_id: it.itemId || null,
+      item_name: it.itemName || '항목',
+      item_option: it.itemOption || null,
+      quantity: it.quantity || 1,
+      price: Number(it.price) || 0,
+      timing: it.timing || 'shoot',
       // 소요·버퍼를 같이 남긴다. 이게 없으면 촬영 시간이 바뀌었을 때
       // 점유 구간을 다시 계산할 수가 없다 (FIX_38).
-      duration_minutes:  it.durationMinutes ?? null,
-      offset_minutes:    it.offsetMinutes ?? null,
-      start_at:          slot ? (slot.busyStart ?? slot.start).toISOString() : null,
-      end_at:            slot ? (slot.busyEnd   ?? slot.end).toISOString()   : null,
-      commission_rate:   it.rate,
+      duration_minutes: it.durationMinutes ?? null,
+      offset_minutes: it.offsetMinutes ?? null,
+      start_at: slot ? (slot.busyStart ?? slot.start).toISOString() : null,
+      end_at: slot ? (slot.busyEnd ?? slot.end).toISOString() : null,
+      commission_rate: it.rate,
       commission_amount: it.commission,
-      payout_amount:     it.payout,
-      collab_count:      priced.collabCount,
-      status:            'pending',
+      payout_amount: it.payout,
+      collab_count: priced.collabCount,
+      status: 'pending',
     };
   });
 
@@ -838,10 +899,9 @@ export const createBooking = async (booking) => {
   // 아무에게도 발송되지 않았다. 이후 클라이언트에서 직접 넣도록 고쳤지만
   // notifications 의 INSERT 정책이 user_id = auth.uid() 라 고객이
   // 공급자에게 알림을 넣는 것 자체가 42501 로 막힌다.
-  sb.rpc('notify_new_booking', { p_booking: data.id })
-    .then(({ error: nErr }) => {
-      if (nErr) console.error('[createBooking] 공급자 알림 실패:', nErr);
-    });
+  sb.rpc('notify_new_booking', { p_booking: data.id }).then(({ error: nErr }) => {
+    if (nErr) console.error('[createBooking] 공급자 알림 실패:', nErr);
+  });
 
   return { data, error };
 };
@@ -863,18 +923,23 @@ const attachProviderOwners = async (sb, items = []) => {
   }
 
   const owners = new Map();
-  await Promise.all([...byTable.entries()].map(async ([table, ids]) => {
-    const { data, error } = await sb.from(table).select('id, user_id').in('id', [...ids]);
-    if (error) {
-      // 소유자를 못 찾으면 provider_id 로 대체 계산된다.
-      // 인원이 실제보다 많게 잡힐 수는 있어도 예약은 진행돼야 한다.
-      console.error('[attachProviderOwners] 소유자 조회 실패:', table, error);
-      return;
-    }
-    for (const row of data || []) owners.set(`${table}:${row.id}`, row.user_id);
-  }));
+  await Promise.all(
+    [...byTable.entries()].map(async ([table, ids]) => {
+      const { data, error } = await sb
+        .from(table)
+        .select('id, user_id')
+        .in('id', [...ids]);
+      if (error) {
+        // 소유자를 못 찾으면 provider_id 로 대체 계산된다.
+        // 인원이 실제보다 많게 잡힐 수는 있어도 예약은 진행돼야 한다.
+        console.error('[attachProviderOwners] 소유자 조회 실패:', table, error);
+        return;
+      }
+      for (const row of data || []) owners.set(`${table}:${row.id}`, row.user_id);
+    })
+  );
 
-  return items.map(it => ({
+  return items.map((it) => ({
     ...it,
     ownerId: owners.get(`${PROVIDER_TABLE[it.providerType]}:${it.providerId}`) || null,
   }));
@@ -883,17 +948,17 @@ const attachProviderOwners = async (sb, items = []) => {
 /** provider_type → 대시보드 경로 */
 const PROVIDER_LINK = {
   photographer: '/artist/dashboard',
-  stylist:      '/stylist/dashboard',
-  dress:        '/vendor/dashboard',
-  venue:        '/vendor/dashboard',
+  stylist: '/stylist/dashboard',
+  dress: '/vendor/dashboard',
+  venue: '/vendor/dashboard',
 };
 
 /** provider_id(공개 레코드 ID) → user_id(auth uid) 로 변환 */
 const PROVIDER_TABLE = {
   photographer: 'photographers',
-  stylist:      'stylists',
-  dress:        'dress_vendors',
-  venue:        'venue_vendors',
+  stylist: 'stylists',
+  dress: 'dress_vendors',
+  venue: 'venue_vendors',
 };
 
 /**
@@ -902,7 +967,10 @@ const PROVIDER_TABLE = {
  * 알림은 auth uid 기준으로 저장되는데 아이템에 담긴 것은 공개 레코드 ID라
  * 유형별 테이블을 거쳐 user_id 를 찾아야 한다.
  */
-export const notifyBookingProviders = async (items = [], { title, body, type, link, bookingId }) => {
+export const notifyBookingProviders = async (
+  items = [],
+  { title, body, type, link, bookingId }
+) => {
   const sb = await getSupabase();
   if (!sb) return;
 
@@ -913,26 +981,33 @@ export const notifyBookingProviders = async (items = [], { title, body, type, li
     targets.set(`${it.providerType}:${it.providerId}`, it);
   }
 
-  await Promise.all([...targets.values()].map(async (it) => {
-    const { data: row, error } = await sb
-      .from(PROVIDER_TABLE[it.providerType])
-      .select('user_id')
-      .eq('id', it.providerId)
-      .maybeSingle();
+  await Promise.all(
+    [...targets.values()].map(async (it) => {
+      const { data: row, error } = await sb
+        .from(PROVIDER_TABLE[it.providerType])
+        .select('user_id')
+        .eq('id', it.providerId)
+        .maybeSingle();
 
-    if (error || !row?.user_id) {
-      console.error('[notifyBookingProviders] 대상 조회 실패:', it.providerType, it.providerId, error);
-      return;
-    }
+      if (error || !row?.user_id) {
+        console.error(
+          '[notifyBookingProviders] 대상 조회 실패:',
+          it.providerType,
+          it.providerId,
+          error
+        );
+        return;
+      }
 
-    return sendNotificationTo(row.user_id, {
-      type,
-      title,
-      body,
-      link: link || PROVIDER_LINK[it.providerType] || '/',
-      metadata: { bookingId, providerType: it.providerType },
-    });
-  }));
+      return sendNotificationTo(row.user_id, {
+        type,
+        title,
+        body,
+        link: link || PROVIDER_LINK[it.providerType] || '/',
+        metadata: { bookingId, providerType: it.providerType },
+      });
+    })
+  );
 };
 
 /** 예약 1건의 아이템 목록 */
@@ -981,13 +1056,15 @@ export const getProviderBusyBlocks = async (providerType, providerId, date) => {
   if (error) console.error('[getProviderBusyBlocks] 조회 실패:', error);
 
   return {
-    data: (data || []).map(r => ({
-      providerId: r.provider_id,
-      itemId:     r.item_id,
-      start:      r.start_at ? new Date(r.start_at) : null,
-      end:        r.end_at   ? new Date(r.end_at)   : null,
-      timing:     r.timing,
-    })).filter(b => b.start && b.end),
+    data: (data || [])
+      .map((r) => ({
+        providerId: r.provider_id,
+        itemId: r.item_id,
+        start: r.start_at ? new Date(r.start_at) : null,
+        end: r.end_at ? new Date(r.end_at) : null,
+        timing: r.timing,
+      }))
+      .filter((b) => b.start && b.end),
     error,
   };
 };
@@ -1058,7 +1135,7 @@ export const rejectBooking = async (bookingId, reason = '') => {
 
   const { data, error } = await sb.rpc('reject_booking', {
     p_booking: bookingId,
-    p_reason:  reason || '',
+    p_reason: reason || '',
   });
   if (error) console.error('[rejectBooking] 거절 실패:', error);
   return { data, error };
@@ -1070,7 +1147,8 @@ export const getPendingBookings = async (photographerId) => {
   if (!sb || !photographerId) return { data: [], error: null };
   // 예약은 photographer_id(UUID) 로 저장된다. 예전에는
   // photographer_legacy_id 로 조회해 작가가 예약 요청을 볼 수 없었다.
-  const { data, error } = await sb.from('bookings')
+  const { data, error } = await sb
+    .from('bookings')
     .select('*')
     .eq('status', 'pending')
     .eq('photographer_id', photographerId)
@@ -1082,7 +1160,8 @@ export const getPendingBookings = async (photographerId) => {
 export const getArtistBookings = async (photographerId) => {
   const sb = await getSupabase();
   if (!sb || !photographerId) return { data: [], error: null };
-  const { data, error } = await sb.from('bookings')
+  const { data, error } = await sb
+    .from('bookings')
     .select('*')
     .eq('photographer_id', photographerId)
     .order('date', { ascending: true });
@@ -1099,9 +1178,9 @@ export const cancelBooking = async (bookingId) => {
   const { data, error } = await sb
     .from('bookings')
     .update({
-      status:       'cancelled',
+      status: 'cancelled',
       cancelled_at: new Date().toISOString(),
-      updated_at:   new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq('id', bookingId)
     .select()
@@ -1120,7 +1199,7 @@ export const requestReschedule = async (bookingId, message) => {
     .from('bookings')
     .update({
       reschedule_request: message,
-      updated_at:         new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq('id', bookingId)
     .select()
@@ -1143,25 +1222,23 @@ export const requestReschedule = async (bookingId, message) => {
 export const submitReview = async (review) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
 
   const payload = {
     photographer_id: review.photographer_id,
-    booking_id:      review.booking_id || null,
-    customer_id:     session.user.id,
-    rating:          review.rating,
-    text:            review.text || '',
+    booking_id: review.booking_id || null,
+    customer_id: session.user.id,
+    rating: review.rating,
+    text: review.text || '',
     // ⚠ Privacy: full_name = 활동명/업체명 (display name), NOT 실명(real_name). Safe for customer display.
-    author_name:     review.author_name || session.user.user_metadata?.full_name || 'Anonymous',
-    lang:            review.lang || 'ko',
+    author_name: review.author_name || session.user.user_metadata?.full_name || 'Anonymous',
+    lang: review.lang || 'ko',
   };
 
-  const { data, error } = await sb
-    .from('reviews')
-    .insert([payload])
-    .select()
-    .single();
+  const { data, error } = await sb.from('reviews').insert([payload]).select().single();
 
   return { data, error };
 };
@@ -1206,11 +1283,7 @@ export const getReviewByBookingId = async (bookingId) => {
 export const createDressVendor = async (vendor) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb
-    .from('dress_vendors')
-    .insert([vendor])
-    .select()
-    .single();
+  const { data, error } = await sb.from('dress_vendors').insert([vendor]).select().single();
   return { data, error };
 };
 
@@ -1232,26 +1305,35 @@ export const ensureVendorRecord = async (userId, info = {}) => {
   if (!sb || !userId) return { data: null, error: null };
 
   const { data: existing, error: findErr } = await sb
-    .from('dress_vendors').select('*').eq('user_id', userId).maybeSingle();
+    .from('dress_vendors')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
   if (findErr) return { data: null, error: findErr };
   if (existing) return { data: existing, error: null };
 
   const { nameKo = '', nameEn = '', vendorType = 'costume' } = info;
-  const { data, error } = await sb.from('dress_vendors').insert({
-    user_id:     userId,
-    name:        nameKo || nameEn || '이름 미설정',
-    name_ko:     nameKo || null,
-    name_en:     nameEn || null,
-    vendor_type: vendorType,
-    is_active:   false,   // 업체명·소개 입력 전까지 비노출
-  }).select().maybeSingle();
+  const { data, error } = await sb
+    .from('dress_vendors')
+    .insert({
+      user_id: userId,
+      name: nameKo || nameEn || '이름 미설정',
+      name_ko: nameKo || null,
+      name_en: nameEn || null,
+      vendor_type: vendorType,
+      is_active: false, // 업체명·소개 입력 전까지 비노출
+    })
+    .select()
+    .maybeSingle();
   return { data, error };
 };
 
 export const getMyVendorProfile = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: null };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { data: null, error: null };
   const { data, error } = await sb
     .from('dress_vendors')
@@ -1300,11 +1382,7 @@ export const getVendorDresses = async (vendorId) => {
 export const addVendorDress = async (dress) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb
-    .from('dress_items')
-    .insert([dress])
-    .select()
-    .single();
+  const { data, error } = await sb.from('dress_items').insert([dress]).select().single();
   return { data, error };
 };
 
@@ -1361,7 +1439,8 @@ export const declineBookingItem = async (itemId, reason = '') => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb.rpc('decline_booking_item', {
-    p_item: itemId, p_reason: reason || '',
+    p_item: itemId,
+    p_reason: reason || '',
   });
   if (error) return { data: null, error };
   if (data && data.ok === false) return { data, error: { message: data.message } };
@@ -1389,10 +1468,9 @@ export const getActiveLocations = async () => {
     console.error('[getActiveLocations] 조회 실패:', error);
     return { data: [], error };
   }
-  const ids = [...new Set((data || []).map(r => r.location_id).filter(Boolean))];
+  const ids = [...new Set((data || []).map((r) => r.location_id).filter(Boolean))];
   return { data: ids.sort(), error: null };
 };
-
 
 /**
  * "이 시간에 가능한 공급자" 를 한 번에 가져온다.
@@ -1425,9 +1503,9 @@ export const getAvailableProviders = async ({ locationId, date, time, hours = 2 
 
   const { data, error } = await sb.rpc('available_providers', {
     p_location: locationId || null,
-    p_date:     date,
-    p_start:    time.length === 5 ? `${time}:00` : time,
-    p_hours:    Number(hours) || 2,
+    p_date: date,
+    p_start: time.length === 5 ? `${time}:00` : time,
+    p_hours: Number(hours) || 2,
   });
 
   if (error) {
@@ -1465,7 +1543,7 @@ export const getListingStatus = async (kind, id) => {
   if (!sb || !kind || !id) return { data: null, error: null };
   const { data, error } = await sb.rpc('provider_listing_status', {
     p_kind: kind,
-    p_id:   id,
+    p_id: id,
   });
   if (error) return { data: null, error };
   return { data, error: null };
@@ -1506,7 +1584,8 @@ export const addStylistDress = async (stylistId, dress) => {
 export const setStylistDressSelf = async (stylistId, on) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('stylists')
+  const { data, error } = await sb
+    .from('stylists')
     .update({ dress_self: !!on })
     .eq('id', stylistId)
     .select('id');
@@ -1572,8 +1651,8 @@ export const getProviderBookings = async (providerType, providerId) => {
     } else {
       byBooking.set(booking.id, {
         ...booking,
-        myItems:  [item],
-        myTotal:  Number(item.price) || 0,
+        myItems: [item],
+        myTotal: Number(item.price) || 0,
         myPayout: Number(item.payout_amount) || 0,
         myStatus: item.status,
       });
@@ -1593,7 +1672,9 @@ export const getProviderBookings = async (providerType, providerId) => {
 export const getPackages = async (photographerId, type) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  let q = sb.from('packages').select('*')
+  let q = sb
+    .from('packages')
+    .select('*')
     .eq('photographer_id', photographerId)
     .order('sort_order', { ascending: true });
   if (type) q = q.eq('type', type);
@@ -1605,8 +1686,7 @@ export const getPackages = async (photographerId, type) => {
 export const createPackage = async (pkg) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('packages')
-    .insert([pkg]).select().single();
+  const { data, error } = await sb.from('packages').insert([pkg]).select().single();
   return { data, error };
 };
 
@@ -1614,9 +1694,12 @@ export const createPackage = async (pkg) => {
 export const updatePackage = async (pkgId, updates) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('packages')
+  const { data, error } = await sb
+    .from('packages')
     .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq('id', pkgId).select().single();
+    .eq('id', pkgId)
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -1635,26 +1718,26 @@ export const deletePackage = async (pkgId) => {
  */
 export const fromPackageRow = (row) => {
   const base = {
-    id:        row.id,
-    name:      row.name || '',
-    desc:      row.description || '',
-    price:     row.price ?? '',
-    images:    row.images || [],
+    id: row.id,
+    name: row.name || '',
+    desc: row.description || '',
+    price: row.price ?? '',
+    images: row.images || [],
     regionIds: row.regions || [],
-    coverIdx:  0,
-    type:      row.type,
+    coverIdx: 0,
+    type: row.type,
   };
   if (row.type === 'snap') {
     const h = row.duration_hours;
-    base.duration    = h === 0.5 ? '30분' : `${Number(h) % 1 === 0 ? Number(h) : h}시간`;
+    base.duration = h === 0.5 ? '30분' : `${Number(h) % 1 === 0 ? Number(h) : h}시간`;
     base.editedCount = row.edit_count ?? '';
   }
   if (row.type === 'tour') {
     base.durationMin = row.duration_min ?? '';
-    base.spots       = row.spots || [];
+    base.spots = row.spots || [];
   }
   if (row.type === 'costume') {
-    base.gender   = row.gender === 'male' ? '남성' : row.gender === 'female' ? '여성' : '공용';
+    base.gender = row.gender === 'male' ? '남성' : row.gender === 'female' ? '여성' : '공용';
     base.category = row.category || '한복';
   }
   return base;
@@ -1669,26 +1752,26 @@ const toPackageRow = (photographerId, item, type, sortOrder) => {
   const row = {
     photographer_id: photographerId,
     type,
-    name:        (item.name || '').trim() || '(이름 없음)',
+    name: (item.name || '').trim() || '(이름 없음)',
     description: item.desc || item.description || '',
-    price:       num(item.price),
-    images:      item.images || [],
-    regions:     item.regionIds || [],
-    sort_order:  sortOrder,
-    is_active:   true,
-    updated_at:  new Date().toISOString(),
+    price: num(item.price),
+    images: item.images || [],
+    regions: item.regionIds || [],
+    sort_order: sortOrder,
+    is_active: true,
+    updated_at: new Date().toISOString(),
   };
   if (type === 'snap') {
     row.duration_hours = parseFloat(String(item.duration || '1').replace(/[^0-9.]/g, '')) || 1;
-    row.edit_count     = num(item.editedCount);
+    row.edit_count = num(item.editedCount);
   }
   if (type === 'tour') {
     row.duration_min = num(item.durationMin) || null;
-    row.spots        = item.spots || [];
+    row.spots = item.spots || [];
   }
   if (type === 'costume') {
     const g = item.gender === '남성' ? 'male' : item.gender === '여성' ? 'female' : 'unisex';
-    row.gender   = g;
+    row.gender = g;
     row.category = item.category || null;
   }
   return row;
@@ -1710,8 +1793,11 @@ export const replacePackages = async (photographerId, type, items = []) => {
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
   if (!photographerId) return { error: { message: 'photographerId 없음' } };
 
-  const { error: delErr } = await sb.from('packages')
-    .delete().eq('photographer_id', photographerId).eq('type', type);
+  const { error: delErr } = await sb
+    .from('packages')
+    .delete()
+    .eq('photographer_id', photographerId)
+    .eq('type', type);
   if (delErr) return { error: delErr };
 
   if (!items.length) return { data: [], error: null };
@@ -1753,7 +1839,7 @@ export const getScheduleMonth = (photographerId, year, month) =>
 export const upsertScheduleDate = (photographerId, date, { dayOff, slots, blocked }) =>
   upsertProviderScheduleDate('photographer', photographerId, date, {
     dayOff: dayOff ?? false,
-    ...(slots   !== undefined ? { slots }   : {}),
+    ...(slots !== undefined ? { slots } : {}),
     ...(blocked !== undefined ? { blocked } : {}),
   });
 
@@ -1761,7 +1847,7 @@ export const upsertScheduleDate = (photographerId, date, { dayOff, slots, blocke
 export const upsertScheduleBatch = async (photographerId, entries) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const payloads = entries.map(e => ({
+  const payloads = entries.map((e) => ({
     provider_type: 'photographer',
     provider_id: photographerId,
     date: e.date,
@@ -1769,7 +1855,8 @@ export const upsertScheduleBatch = async (photographerId, entries) => {
     slots: e.slots || [],
     blocked: e.blocked || [],
   }));
-  const { data, error } = await sb.from('provider_schedules')
+  const { data, error } = await sb
+    .from('provider_schedules')
     .upsert(payloads, { onConflict: 'provider_type,provider_id,date' })
     .select();
   if (error) console.error('[upsertScheduleBatch] 저장 실패:', error);
@@ -1793,7 +1880,8 @@ export const upsertDefaultSlots = (photographerId, defaultSlots) =>
 export const getBookedSlots = async (photographerId, date) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('bookings')
+  const { data, error } = await sb
+    .from('bookings')
     .select('time, status')
     .eq('photographer_id', photographerId)
     .eq('date', date)
@@ -1811,14 +1899,15 @@ export const getBookedSlots = async (photographerId, date) => {
 export const getBookedDatesInRange = async (photographerId, from, to) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('bookings')
+  const { data, error } = await sb
+    .from('bookings')
     .select('date')
     .eq('photographer_id', photographerId)
     .gte('date', from)
     .lte('date', to)
     .in('status', ['pending', 'confirmed']);
   if (error) console.error('[getBookedDatesInRange] 조회 실패:', error);
-  return { data: [...new Set((data || []).map(r => r.date))], error };
+  return { data: [...new Set((data || []).map((r) => r.date))], error };
 };
 
 // ─── 48시간 자동 만료 (Edge Function 호출용) ────────────────────────
@@ -1840,9 +1929,12 @@ export const expireStaleBookings = async () => {
 export const getStylistProfile = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: null };
-  const { data: { user } } = await sb.auth.getUser();
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
   if (!user) return { data: null, error: { message: 'Not authenticated' } };
-  const { data, error } = await sb.from('stylists')
+  const { data, error } = await sb
+    .from('stylists')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle();
@@ -1853,16 +1945,17 @@ export const getStylistProfile = async () => {
 export const updateStylistProfile = async (stylistId, updates) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('stylists')
+  const { data, error } = await sb
+    .from('stylists')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', stylistId)
-    .select().single();
+    .select()
+    .single();
   return { data, error };
 };
 
 /** Get stylist's bookings (by stylist name match in bookings table) */
-export const getStylistBookings = async (stylistId) =>
-  getProviderBookings('stylist', stylistId);
+export const getStylistBookings = async (stylistId) => getProviderBookings('stylist', stylistId);
 
 // ─── 활동 지역 (작가 · 헤메 · 벤더 공용) ─────────────────────────────
 //
@@ -1882,7 +1975,7 @@ export const getProviderLocations = async (providerType, providerId) => {
     .eq('provider_id', providerId)
     .eq('is_active', true);
   if (error) console.error('[getProviderLocations] 조회 실패:', error);
-  return { data: (data || []).map(r => r.location_id), error };
+  return { data: (data || []).map((r) => r.location_id), error };
 };
 
 /**
@@ -1895,10 +1988,16 @@ export const getProviderLocations = async (providerType, providerId) => {
 export const addProviderLocation = async (providerType, providerId, locationId) => {
   const sb = await getSupabase();
   if (!sb || !providerId || !locationId) return { error: null };
-  const { error } = await sb.from('provider_locations')
+  const { error } = await sb
+    .from('provider_locations')
     .upsert(
-      { provider_type: providerType, provider_id: providerId, location_id: locationId, is_active: true },
-      { onConflict: 'provider_type,provider_id,location_id' },
+      {
+        provider_type: providerType,
+        provider_id: providerId,
+        location_id: locationId,
+        is_active: true,
+      },
+      { onConflict: 'provider_type,provider_id,location_id' }
     );
   if (error) console.error('[addProviderLocation] 저장 실패:', error);
   return { error };
@@ -1924,11 +2023,11 @@ export const setProviderLocations = async (providerType, providerId, locations) 
     if (!id) continue;
     rows.set(id, {
       provider_type: providerType,
-      provider_id:   providerId,
-      location_id:   id,
-      period_start:  (typeof l === 'string' ? null : l.periodStart) || null,
-      period_end:    (typeof l === 'string' ? null : l.periodEnd)   || null,
-      is_active:     true,
+      provider_id: providerId,
+      location_id: id,
+      period_start: (typeof l === 'string' ? null : l.periodStart) || null,
+      period_end: (typeof l === 'string' ? null : l.periodEnd) || null,
+      is_active: true,
     });
   }
   const want = [...rows.keys()];
@@ -1940,19 +2039,27 @@ export const setProviderLocations = async (providerType, providerId, locations) 
   // 지운 순간과 넣는 순간 사이에 고객이 조회하면 이 사람이 어느
   // 지역에도 없는 상태로 보인다.
   if (want.length) {
-    const { error } = await sb.from('provider_locations')
+    const { error } = await sb
+      .from('provider_locations')
       .upsert([...rows.values()], { onConflict: 'provider_type,provider_id,location_id' });
-    if (error) { console.error('[setProviderLocations] 저장 실패:', error); return { error }; }
+    if (error) {
+      console.error('[setProviderLocations] 저장 실패:', error);
+      return { error };
+    }
   }
 
-  const toRemove = have.filter(id => !rows.has(id));
+  const toRemove = have.filter((id) => !rows.has(id));
   if (toRemove.length) {
-    const { error } = await sb.from('provider_locations')
+    const { error } = await sb
+      .from('provider_locations')
       .delete()
       .eq('provider_type', providerType)
       .eq('provider_id', providerId)
       .in('location_id', toRemove);
-    if (error) { console.error('[setProviderLocations] 삭제 실패:', error); return { error }; }
+    if (error) {
+      console.error('[setProviderLocations] 삭제 실패:', error);
+      return { error };
+    }
   }
 
   return { data: want, error: null };
@@ -1980,16 +2087,20 @@ export const getProviderDefaults = async (providerType, providerId) => {
   return { data, error };
 };
 
-export const upsertProviderDefaults = async (providerType, providerId, { defaultSlots, weeklyOff }) => {
+export const upsertProviderDefaults = async (
+  providerType,
+  providerId,
+  { defaultSlots, weeklyOff }
+) => {
   const sb = await getSupabase();
   if (!sb || !providerId) return { error: { message: 'Supabase 연결 실패' } };
   const payload = {
     provider_type: providerType,
-    provider_id:   providerId,
-    updated_at:    new Date().toISOString(),
+    provider_id: providerId,
+    updated_at: new Date().toISOString(),
   };
   if (defaultSlots) payload.default_slots = defaultSlots;
-  if (weeklyOff)    payload.weekly_off    = weeklyOff;
+  if (weeklyOff) payload.weekly_off = weeklyOff;
 
   const { data, error } = await sb
     .from('provider_defaults')
@@ -2006,7 +2117,7 @@ export const getProviderScheduleMonth = async (providerType, providerId, year, m
   if (!sb || !providerId) return { data: [], error: null };
   const pad = (n) => String(n).padStart(2, '0');
   const from = `${year}-${pad(month)}-01`;
-  const to   = `${year}-${pad(month)}-${new Date(year, month, 0).getDate()}`;
+  const to = `${year}-${pad(month)}-${new Date(year, month, 0).getDate()}`;
 
   const { data, error } = await sb
     .from('provider_schedules')
@@ -2026,12 +2137,12 @@ export const upsertProviderScheduleDate = async (providerType, providerId, date,
   if (!sb || !providerId || !date) return { error: { message: '잘못된 요청' } };
   const payload = {
     provider_type: providerType,
-    provider_id:   providerId,
+    provider_id: providerId,
     date,
-    ...(patch.dayOff  !== undefined ? { day_off: patch.dayOff }  : {}),
-    ...(patch.slots   !== undefined ? { slots:   patch.slots }   : {}),
+    ...(patch.dayOff !== undefined ? { day_off: patch.dayOff } : {}),
+    ...(patch.slots !== undefined ? { slots: patch.slots } : {}),
     ...(patch.blocked !== undefined ? { blocked: patch.blocked } : {}),
-    ...(patch.note    !== undefined ? { note:    patch.note }    : {}),
+    ...(patch.note !== undefined ? { note: patch.note } : {}),
   };
   const { data, error } = await sb
     .from('provider_schedules')
@@ -2053,16 +2164,20 @@ export const upsertProviderScheduleDate = async (providerType, providerId, date,
  *   skipped — 예약이 있어 닫지 못한 날짜
  *   holiday — 정기 휴무 요일이라 열지 않은 날짜
  */
-export const bulkSetSchedule = async (providerType, providerId, { from, to, open, slots = null }) => {
+export const bulkSetSchedule = async (
+  providerType,
+  providerId,
+  { from, to, open, slots = null }
+) => {
   const sb = await getSupabase();
   if (!sb || !providerId) return { error: { message: 'Supabase 연결 실패' } };
 
   const { data, error } = await sb.rpc('bulk_set_schedule', {
-    p_type:  providerType,
-    p_id:    providerId,
-    p_from:  from,
-    p_to:    to,
-    p_open:  open,
+    p_type: providerType,
+    p_id: providerId,
+    p_from: from,
+    p_to: to,
+    p_open: open,
     p_slots: slots,
   });
   if (error) console.error('[bulkSetSchedule] 일괄 설정 실패:', error);
@@ -2086,7 +2201,7 @@ export const resolveProviderSlots = (daySchedule, defaults, date = null) => {
 
   const base = (daySchedule?.slots?.length ? daySchedule.slots : defaults?.default_slots) || [];
   const blocked = new Set(daySchedule?.blocked || []);
-  return base.filter(s => !blocked.has(s));
+  return base.filter((s) => !blocked.has(s));
 };
 
 /**
@@ -2117,14 +2232,16 @@ export const getMyProviderRefs = async () => {
   if (!uid) return { data: [], error: null };
 
   const refs = [];
-  await Promise.all(Object.entries(PROVIDER_TABLE).map(async ([type, table]) => {
-    const { data, error } = await sb.from(table).select('id').eq('user_id', uid);
-    if (error) {
-      console.error('[getMyProviderRefs] 조회 실패:', table, error);
-      return;
-    }
-    for (const row of data || []) refs.push({ providerType: type, providerId: row.id });
-  }));
+  await Promise.all(
+    Object.entries(PROVIDER_TABLE).map(async ([type, table]) => {
+      const { data, error } = await sb.from(table).select('id').eq('user_id', uid);
+      if (error) {
+        console.error('[getMyProviderRefs] 조회 실패:', table, error);
+        return;
+      }
+      for (const row of data || []) refs.push({ providerType: type, providerId: row.id });
+    })
+  );
 
   return { data: refs, error: null };
 };
@@ -2141,7 +2258,7 @@ export const getMyProviderBookings = async () => {
   if (!refs.length) return { data: [], error: null };
 
   const results = await Promise.all(
-    refs.map(r => getProviderBookings(r.providerType, r.providerId)),
+    refs.map((r) => getProviderBookings(r.providerType, r.providerId))
   );
 
   const merged = new Map();
@@ -2150,7 +2267,7 @@ export const getMyProviderBookings = async () => {
       const cur = merged.get(bk.id);
       if (cur) {
         cur.myItems.push(...bk.myItems);
-        cur.myTotal  += bk.myTotal;
+        cur.myTotal += bk.myTotal;
         cur.myPayout += bk.myPayout;
       } else {
         merged.set(bk.id, { ...bk, myItems: [...bk.myItems] });
@@ -2169,7 +2286,8 @@ export const getMyProviderBookings = async () => {
 export const getStylistServices = async (stylistId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('stylist_services')
+  const { data, error } = await sb
+    .from('stylist_services')
     .select('*')
     .eq('stylist_id', stylistId)
     .eq('is_active', true)
@@ -2181,8 +2299,7 @@ export const getStylistServices = async (stylistId) => {
 export const createStylistService = async (serviceData) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('stylist_services')
-    .insert([serviceData]).select().single();
+  const { data, error } = await sb.from('stylist_services').insert([serviceData]).select().single();
   return { data, error };
 };
 
@@ -2190,10 +2307,12 @@ export const createStylistService = async (serviceData) => {
 export const updateStylistService = async (serviceId, updates) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('stylist_services')
+  const { data, error } = await sb
+    .from('stylist_services')
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq('id', serviceId)
-    .select().single();
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -2201,7 +2320,8 @@ export const updateStylistService = async (serviceId, updates) => {
 export const deleteStylistService = async (serviceId) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { error } = await sb.from('stylist_services')
+  const { error } = await sb
+    .from('stylist_services')
     .update({ is_active: false, updated_at: new Date().toISOString() })
     .eq('id', serviceId);
   return { error };
@@ -2219,7 +2339,9 @@ export const getDressItems = async ({ vendorId, locationId, category } = {}) => 
   // 그건 그 헤메를 선택했을 때만 보여야 하는데, 여기서 같이 가져오면
   // 헤메를 고르지 않아도 목록에 뜨고, 고른 뒤에는 두 번 뜬다.
   // (실제로 "웨딩 드레스 (A라인)" 이 두 줄로 나왔다)
-  let q = sb.from('dress_items').select('*, dress_vendors(id, name_ko, location_id)')
+  let q = sb
+    .from('dress_items')
+    .select('*, dress_vendors(id, name_ko, location_id)')
     .eq('is_available', true)
     .not('vendor_id', 'is', null);
   if (vendorId) q = q.eq('vendor_id', vendorId);
@@ -2241,9 +2363,10 @@ export const getBookedDresses = async (date) => {
   // "웨딩드레스"라고 이름 붙이면 한쪽이 예약될 때 다른 쪽까지 막혔다.
   // 이제 item_id 로 정확히 판정한다.
   const from = new Date(`${date}T00:00:00`);
-  const to   = new Date(`${date}T23:59:59`);
+  const to = new Date(`${date}T23:59:59`);
 
-  const { data, error } = await sb.from('booking_items')
+  const { data, error } = await sb
+    .from('booking_items')
     .select('item_id, item_option, quantity, provider_id')
     .eq('provider_type', 'dress')
     .in('status', ['pending', 'confirmed', 'completed'])
@@ -2253,9 +2376,9 @@ export const getBookedDresses = async (date) => {
   if (error) console.error('[getBookedDresses] 조회 실패:', error);
 
   return {
-    data: (data || []).map(r => ({
-      itemId:   r.item_id,
-      size:     r.item_option,
+    data: (data || []).map((r) => ({
+      itemId: r.item_id,
+      size: r.item_option,
       quantity: r.quantity || 1,
       vendorId: r.provider_id,
     })),
@@ -2269,9 +2392,7 @@ export const getBookedDresses = async (date) => {
 export const getStylists = async (locationId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  let q = sb.from('stylists')
-    .select('*, stylist_services(*)')
-    .eq('is_active', true);
+  let q = sb.from('stylists').select('*, stylist_services(*)').eq('is_active', true);
   if (locationId) q = q.eq('location_id', locationId);
   q = q.order('rating', { ascending: false });
   const { data, error } = await q;
@@ -2284,7 +2405,8 @@ export const getStylists = async (locationId) => {
 export const deliverPhotos = async (bookingId, { deliveryUrl, deliveryMemo }) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('bookings')
+  const { data, error } = await sb
+    .from('bookings')
     .update({
       delivery_url: deliveryUrl,
       delivery_memo: deliveryMemo || null,
@@ -2292,15 +2414,16 @@ export const deliverPhotos = async (bookingId, { deliveryUrl, deliveryMemo }) =>
       status: 'delivered',
     })
     .eq('id', bookingId)
-    .select().single();
+    .select()
+    .single();
 
   if (!error && data) {
     // 사진 전달 알림 (앱 내). `_customers` 테이블은 존재하지 않는다.
     sendNotificationTo(data.customer_id, {
-      type:  'photos_delivered',
+      type: 'photos_delivered',
       title: '사진이 전달되었습니다',
-      body:  `${data.photographer_name || '작가'} · ${data.date}`,
-      link:  '/my',
+      body: `${data.photographer_name || '작가'} · ${data.date}`,
+      link: '/my',
       metadata: { bookingId: data.id, deliveryUrl },
     }).catch(() => {});
   }
@@ -2321,55 +2444,63 @@ export const toPhotographerCard = (row) => {
   if (!row) return null;
   return {
     ...row,
-    id:            row.id,
-    name:          row.name || row.name_ko || 'Unnamed',
-    nameKo:        row.name_ko || row.name || '',
-    price:         row.price_from ?? 0,
-    rating:        row.rating ?? 0,
-    reviews:       row.reviews_count ?? 0,
-    location:      row.location_id || '',
+    id: row.id,
+    name: row.name || row.name_ko || 'Unnamed',
+    nameKo: row.name_ko || row.name || '',
+    price: row.price_from ?? 0,
+    rating: row.rating ?? 0,
+    reviews: row.reviews_count ?? 0,
+    location: row.location_id || '',
     locationNames: row.location_names || {},
-    languages:     row.languages || [],
-    tags:          row.tags || [],
-    img:           row.img || null,
-    portfolio:     Array.isArray(row.portfolio) ? row.portfolio : [],
-    packages:      Array.isArray(row.packages) ? row.packages : [],
+    languages: row.languages || [],
+    tags: row.tags || [],
+    img: row.img || null,
+    portfolio: Array.isArray(row.portfolio) ? row.portfolio : [],
+    packages: Array.isArray(row.packages) ? row.packages : [],
     featuredPortfolio: Array.isArray(row.portfolio) ? row.portfolio.slice(0, 5) : [],
-    hmkAvailable:  row.hmk_available ?? false,
+    hmkAvailable: row.hmk_available ?? false,
     // DB 는 snake_case, 화면 코드는 camelCase 를 쓴다.
     // 별칭을 안 만들면 p.dressSelf 가 영원히 undefined 라
     // "작가 자체 의상" 분기가 한 번도 타지 않는다.
-    artistType:    row.artist_type || 'photographer',
-    dressSelf:     row.dress_self ?? false,
+    artistType: row.artist_type || 'photographer',
+    dressSelf: row.dress_self ?? false,
     // 자체 헤어메이크업 여부. 메뉴 자체는 packages(type='hmk') 에 있다.
     // profiles.hmk_options 에 두면 고객이 못 읽는다 — profiles 는 본인만
     // 조회 가능하다. FIX_29 에서 packages 로 옮겼다.
-    hmkSelf:       row.hmk_self ?? false,
-    countryCode:   row.country_code || 'KR',
-    city:          row.city || '',
+    hmkSelf: row.hmk_self ?? false,
+    countryCode: row.country_code || 'KR',
+    city: row.city || '',
   };
 };
 
 /** 작가 유형 표시 정보 */
 export const ARTIST_TYPES = {
-  photographer: { icon: '📸',   ko: '사진',      en: 'Photo' },
-  videographer: { icon: '🎬',   ko: '영상',      en: 'Video' },
-  both:         { icon: '📸🎬', ko: '사진·영상', en: 'Photo & Video' },
-  hmk:          { icon: '💄',   ko: '헤어메이크업', en: 'Hair & Makeup' },
+  photographer: { icon: '📸', ko: '사진', en: 'Photo' },
+  videographer: { icon: '🎬', ko: '영상', en: 'Video' },
+  both: { icon: '📸🎬', ko: '사진·영상', en: 'Photo & Video' },
+  hmk: { icon: '💄', ko: '헤어메이크업', en: 'Hair & Makeup' },
 };
 
 /** Fetch photographers with filters (replaces client-side filtering) */
 export const fetchPhotographers = async ({
-  countryCode, city, genre, language, tags,
+  countryCode,
+  city,
+  genre,
+  language,
+  tags,
   artistType,
-  minPrice, maxPrice, minRating,
-  sortBy, search, limit = 50, offset = 0
+  minPrice,
+  maxPrice,
+  minRating,
+  sortBy,
+  search,
+  limit = 50,
+  offset = 0,
 } = {}) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
 
-  let q = sb.from('photographers').select('*', { count: 'exact' })
-    .eq('is_active', true);
+  let q = sb.from('photographers').select('*', { count: 'exact' }).eq('is_active', true);
 
   if (countryCode) q = q.eq('country_code', countryCode);
   if (city) q = q.eq('city', city);
@@ -2387,11 +2518,20 @@ export const fetchPhotographers = async ({
 
   // Sort
   switch (sortBy) {
-    case 'rating': q = q.order('rating', { ascending: false }); break;
-    case 'priceLow': q = q.order('price_from', { ascending: true }); break;
-    case 'priceHigh': q = q.order('price_from', { ascending: false }); break;
-    case 'newest': q = q.order('created_at', { ascending: false }); break;
-    default: q = q.order('reviews_count', { ascending: false }); // popular
+    case 'rating':
+      q = q.order('rating', { ascending: false });
+      break;
+    case 'priceLow':
+      q = q.order('price_from', { ascending: true });
+      break;
+    case 'priceHigh':
+      q = q.order('price_from', { ascending: false });
+      break;
+    case 'newest':
+      q = q.order('created_at', { ascending: false });
+      break;
+    default:
+      q = q.order('reviews_count', { ascending: false }); // popular
   }
 
   q = q.range(offset, offset + limit - 1);
@@ -2408,7 +2548,8 @@ export const fetchPhotographer = async (idOrLegacy) => {
   const isUuid = typeof idOrLegacy === 'string' && idOrLegacy.includes('-');
   // photographers 테이블에는 legacy_id 컬럼이 없으므로 UUID 조회만 지원한다.
   if (!isUuid) return { data: null, error: null };
-  const { data, error } = await sb.from('photographers')
+  const { data, error } = await sb
+    .from('photographers')
     .select('*')
     .eq('id', idOrLegacy)
     .maybeSingle();
@@ -2419,11 +2560,12 @@ export const fetchPhotographer = async (idOrLegacy) => {
 export const fetchFeaturedPhotographers = async (limit = 6) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('photographers')
+  const { data, error } = await sb
+    .from('photographers')
     .select('*')
     .eq('is_active', true)
     .order('rating', { ascending: false })
-    .order('reviews_count', { ascending: false })   // 컬럼명은 reviews_count
+    .order('reviews_count', { ascending: false }) // 컬럼명은 reviews_count
     .limit(limit);
   return { data: (data || []).map(toPhotographerCard), error };
 };
@@ -2432,16 +2574,25 @@ export const fetchFeaturedPhotographers = async (limit = 6) => {
 export const saveWaitlistEntry = async (email, name, lang) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('waitlist')
+  const { data, error } = await sb
+    .from('waitlist')
     .upsert({ email, name, lang }, { onConflict: 'email' })
-    .select().single();
+    .select()
+    .single();
   return { data, error };
 };
 
 // ─── Email Notification Helper ─────────────────────────────────────
 
 /** Send email notification via Edge Function */
-export const sendNotification = async ({ type, bookingId, recipientEmail, recipientName, lang = 'ko', data = {} }) => {
+export const sendNotification = async ({
+  type,
+  bookingId,
+  recipientEmail,
+  recipientName,
+  lang = 'ko',
+  data = {},
+}) => {
   const sb = await getSupabase();
   if (!sb) return { error: 'Supabase 연결 실패' };
   try {
@@ -2460,34 +2611,48 @@ export const sendNotification = async ({ type, bookingId, recipientEmail, recipi
 export const submitPackageReview = async (review) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
-  const { data, error } = await sb.from('package_reviews').insert([{
-    booking_id: review.booking_id,
-    package_id: review.package_id || null,
-    photographer_id: review.photographer_id,
-    customer_id: session.user.id,
-    rating: review.rating,
-    title: review.title || '',
-    body: review.body || '',
-  }]).select().single();
+  const { data, error } = await sb
+    .from('package_reviews')
+    .insert([
+      {
+        booking_id: review.booking_id,
+        package_id: review.package_id || null,
+        photographer_id: review.photographer_id,
+        customer_id: session.user.id,
+        rating: review.rating,
+        title: review.title || '',
+        body: review.body || '',
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
 export const getPackageReviewByBookingId = async (bookingId) => {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data } = await sb.from('package_reviews')
-    .select('*').eq('booking_id', bookingId).maybeSingle();
+  const { data } = await sb
+    .from('package_reviews')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
   return data;
 };
 
 export const getPackageReviews = async (photographerId, limit = 50) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('package_reviews')
-    .select('*').eq('photographer_id', photographerId)
-    .order('created_at', { ascending: false }).limit(limit);
+  const { data, error } = await sb
+    .from('package_reviews')
+    .select('*')
+    .eq('photographer_id', photographerId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
   return { data: data || [], error };
 };
 
@@ -2496,34 +2661,48 @@ export const getPackageReviews = async (photographerId, limit = 50) => {
 export const submitPhotographerReview = async (review) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
-  const { data, error } = await sb.from('photographer_reviews').insert([{
-    booking_id: review.booking_id,
-    photographer_id: review.photographer_id,
-    customer_id: session.user.id,
-    rating: review.rating,
-    title: review.title || '',
-    body: review.body || '',
-    tags: review.tags || [],
-  }]).select().single();
+  const { data, error } = await sb
+    .from('photographer_reviews')
+    .insert([
+      {
+        booking_id: review.booking_id,
+        photographer_id: review.photographer_id,
+        customer_id: session.user.id,
+        rating: review.rating,
+        title: review.title || '',
+        body: review.body || '',
+        tags: review.tags || [],
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
 export const getPhotographerReviewByBookingId = async (bookingId) => {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data } = await sb.from('photographer_reviews')
-    .select('*').eq('booking_id', bookingId).maybeSingle();
+  const { data } = await sb
+    .from('photographer_reviews')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
   return data;
 };
 
 export const getPhotographerReviewsV2 = async (photographerId, limit = 50) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('photographer_reviews')
-    .select('*').eq('photographer_id', photographerId)
-    .order('created_at', { ascending: false }).limit(limit);
+  const { data, error } = await sb
+    .from('photographer_reviews')
+    .select('*')
+    .eq('photographer_id', photographerId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
   return { data: data || [], error };
 };
 
@@ -2533,16 +2712,23 @@ export const getReviewStats = async (photographerId) => {
   if (!sb) return null;
   try {
     const [pkg, art] = await Promise.all([
-      sb.from('package_reviews').select('rating', { count: 'exact' }).eq('photographer_id', photographerId),
-      sb.from('photographer_reviews').select('rating', { count: 'exact' }).eq('photographer_id', photographerId),
+      sb
+        .from('package_reviews')
+        .select('rating', { count: 'exact' })
+        .eq('photographer_id', photographerId),
+      sb
+        .from('photographer_reviews')
+        .select('rating', { count: 'exact' })
+        .eq('photographer_id', photographerId),
     ]);
     const pkgRows = pkg.data || [];
     const artRows = art.data || [];
     const totalCount = (pkg.count || pkgRows.length) + (art.count || artRows.length);
-    const allRatings = [...pkgRows, ...artRows].map(r => r.rating);
-    const avgRating = allRatings.length > 0
-      ? Math.round((allRatings.reduce((a, b) => a + b, 0) / allRatings.length) * 10) / 10
-      : null;
+    const allRatings = [...pkgRows, ...artRows].map((r) => r.rating);
+    const avgRating =
+      allRatings.length > 0
+        ? Math.round((allRatings.reduce((a, b) => a + b, 0) / allRatings.length) * 10) / 10
+        : null;
     return { count: totalCount, rating: avgRating };
   } catch {
     return null;
@@ -2555,15 +2741,24 @@ export const getReviewStats = async (photographerId) => {
 export const submitReviewReply = async ({ reviewId, reviewType, body }) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
-  const { data, error } = await sb.from('review_replies').upsert({
-    review_id: reviewId,
-    review_type: reviewType,
-    photographer_id: session.user.id,
-    body,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'review_id,review_type' }).select().single();
+  const { data, error } = await sb
+    .from('review_replies')
+    .upsert(
+      {
+        review_id: reviewId,
+        review_type: reviewType,
+        photographer_id: session.user.id,
+        body,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'review_id,review_type' }
+    )
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -2571,8 +2766,10 @@ export const submitReviewReply = async ({ reviewId, reviewType, body }) => {
 export const getReviewRepliesByPhotographer = async (photographerId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('review_replies')
-    .select('*').eq('photographer_id', photographerId)
+  const { data, error } = await sb
+    .from('review_replies')
+    .select('*')
+    .eq('photographer_id', photographerId)
     .order('created_at', { ascending: false });
   return { data: data || [], error };
 };
@@ -2582,7 +2779,8 @@ export const getReviewReplies = async (reviewIds, reviewType) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
   if (!reviewIds?.length) return { data: [], error: null };
-  const { data, error } = await sb.from('review_replies')
+  const { data, error } = await sb
+    .from('review_replies')
     .select('*')
     .in('review_id', reviewIds)
     .eq('review_type', reviewType);
@@ -2622,7 +2820,8 @@ export const getVenueVendors = async (locationId) => {
 export const getVenueItemsByLocation = async (locationId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  let q = sb.from('venue_items')
+  let q = sb
+    .from('venue_items')
     .select('*, venue_vendors!inner(id, name_ko, location_id, is_active)')
     .eq('venue_vendors.is_active', true);
   if (locationId) q = q.eq('venue_vendors.location_id', locationId);
@@ -2635,7 +2834,8 @@ export const getVenueItemsByLocation = async (locationId) => {
 export const getStylistById = async (id) => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('stylists')
+  const { data, error } = await sb
+    .from('stylists')
     .select('*, stylist_services(*)')
     .eq('id', id)
     .maybeSingle();
@@ -2647,7 +2847,8 @@ export const getStylistById = async (id) => {
 export const getDressVendorById = async (id) => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('dress_vendors')
+  const { data, error } = await sb
+    .from('dress_vendors')
     .select('*, dress_items(*)')
     .eq('id', id)
     .maybeSingle();
@@ -2661,11 +2862,7 @@ export const getDressVendorById = async (id) => {
 export const getVenueVendorById = async (id) => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: null };
-  const { data, error } = await sb
-    .from('venue_vendors')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
+  const { data, error } = await sb.from('venue_vendors').select('*').eq('id', id).maybeSingle();
   return { data, error };
 };
 
@@ -2675,7 +2872,9 @@ export const getVenueVendorById = async (id) => {
 export const getMyVenueVendorProfile = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: null };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { data: null, error: null };
   const { data, error } = await sb
     .from('venue_vendors')
@@ -2711,10 +2910,10 @@ export const ensureVenueVendor = async (info = {}) => {
   // 그러면 지역 필터에 영원히 걸리지 않아 고객에게 보이지 않는다.
   // 여기서 직접 의상 벤더 레코드를 찾아 승계한다.
   let seed = {
-    name:          info.name || info.nameKo,
-    locationId:    info.locationId,
+    name: info.name || info.nameKo,
+    locationId: info.locationId,
     locationNames: info.locationNames,
-    bio:           info.bio,
+    bio: info.bio,
   };
   if (!seed.locationId || !seed.name) {
     const { data: dv, error: dvErr } = await sb
@@ -2725,10 +2924,10 @@ export const ensureVenueVendor = async (info = {}) => {
     if (dvErr) console.error('[ensureVenueVendor] 의상 벤더 조회 실패:', dvErr);
     if (dv) {
       seed = {
-        name:          seed.name          || dv.name_ko || dv.name,
-        locationId:    seed.locationId    || dv.location_id,
+        name: seed.name || dv.name_ko || dv.name,
+        locationId: seed.locationId || dv.location_id,
         locationNames: seed.locationNames || dv.location_names,
-        bio:           seed.bio           || dv.intro,
+        bio: seed.bio || dv.intro,
       };
     }
   }
@@ -2739,7 +2938,7 @@ export const ensureVenueVendor = async (info = {}) => {
     // 레코드는 있는데 지역이 비어 있으면 채운다
     if (!existing.location_id && seed.locationId) {
       const { data: fixed, error: fixErr } = await updateVenueVendorProfile(existing.id, {
-        location_id:    seed.locationId,
+        location_id: seed.locationId,
         location_names: seed.locationNames || existing.location_names || {},
       });
       if (fixErr) console.error('[ensureVenueVendor] 지역 보정 실패:', fixErr);
@@ -2749,21 +2948,23 @@ export const ensureVenueVendor = async (info = {}) => {
   }
 
   return createVenueVendor({
-    name:           seed.name || '장소 대여',
-    name_i18n:      info.nameI18n || {},
-    bio:            seed.bio || '',
-    location_id:    seed.locationId || null,
+    name: seed.name || '장소 대여',
+    name_i18n: info.nameI18n || {},
+    bio: seed.bio || '',
+    location_id: seed.locationId || null,
     location_names: seed.locationNames || {},
-    categories:     info.categories || [],
-    img:            info.img || null,
-    is_active:      false,   // 아이템을 등록해야 고객에게 노출된다
+    categories: info.categories || [],
+    img: info.img || null,
+    is_active: false, // 아이템을 등록해야 고객에게 노출된다
   });
 };
 
 export const createVenueVendor = async (data) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
 
   const payload = {
@@ -2822,11 +3023,7 @@ export const addVenueItem = async (vendorId, item) => {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
-  const { data, error } = await sb
-    .from('venue_items')
-    .insert([payload])
-    .select()
-    .single();
+  const { data, error } = await sb.from('venue_items').insert([payload]).select().single();
   return { data, error };
 };
 
@@ -2880,16 +3077,27 @@ export const getVenueVendorBookings = async (vendorId) => {
 export const getOrCreateChatRoom = async (bookingId, photographerId) => {
   const sb = await getSupabase();
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { data: null, error: { message: 'Auth required' } };
-  const { data: existing } = await sb.from('chat_rooms')
-    .select('*').eq('booking_id', bookingId).maybeSingle();
+  const { data: existing } = await sb
+    .from('chat_rooms')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle();
   if (existing) return { data: existing, error: null };
-  const { data, error } = await sb.from('chat_rooms').insert([{
-    booking_id: bookingId,
-    photographer_id: photographerId,
-    customer_id: session.user.id,
-  }]).select().single();
+  const { data, error } = await sb
+    .from('chat_rooms')
+    .insert([
+      {
+        booking_id: bookingId,
+        photographer_id: photographerId,
+        customer_id: session.user.id,
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -2897,7 +3105,8 @@ export const getOrCreateChatRoom = async (bookingId, photographerId) => {
 export const getMyChatRooms = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('chat_rooms')
+  const { data, error } = await sb
+    .from('chat_rooms')
     .select('*, messages(content, created_at, sender_id)')
     .order('created_at', { ascending: false });
   return { data: data || [], error };
@@ -2907,8 +3116,10 @@ export const getMyChatRooms = async () => {
 export const getChatMessages = async (roomId, limit = 100) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('messages')
-    .select('*').eq('room_id', roomId)
+  const { data, error } = await sb
+    .from('messages')
+    .select('*')
+    .eq('room_id', roomId)
     .order('created_at', { ascending: true })
     .limit(limit);
   return { data: data || [], error };
@@ -2932,7 +3143,7 @@ export const sendChatMessage = async (roomId, content) => {
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
 
   const { data, error } = await sb.rpc('send_chat_message', {
-    p_room:    roomId,
+    p_room: roomId,
     p_content: content,
   });
   if (error) console.error('[sendChatMessage] 전송 실패:', error);
@@ -2943,9 +3154,12 @@ export const sendChatMessage = async (roomId, content) => {
 export const markMessagesRead = async (roomId) => {
   const sb = await getSupabase();
   if (!sb) return;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return;
-  await sb.from('messages')
+  await sb
+    .from('messages')
     .update({ read_at: new Date().toISOString() })
     .eq('room_id', roomId)
     .neq('sender_id', session.user.id)
@@ -2956,13 +3170,18 @@ export const markMessagesRead = async (roomId) => {
 export const subscribeChatMessages = async (roomId, callback) => {
   const sb = await getSupabase();
   if (!sb) return null;
-  return sb.channel(`room-${roomId}`)
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'messages',
-      filter: `room_id=eq.${roomId}`,
-    }, (payload) => callback(payload.new))
+  return sb
+    .channel(`room-${roomId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `room_id=eq.${roomId}`,
+      },
+      (payload) => callback(payload.new)
+    )
     .subscribe();
 };
 
@@ -2980,18 +3199,26 @@ export const unsubscribeChat = async (channel) => {
 export const submitVendorReview = async (review) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
-  const { data, error } = await sb.from('vendor_reviews').insert([{
-    booking_id: review.booking_id,
-    customer_id: session.user.id,
-    vendor_type: review.vendor_type,
-    vendor_id: review.vendor_id || null,
-    photographer_id: review.photographer_id || null,
-    rating: review.rating,
-    tags: review.tags || [],
-    body: review.body || '',
-  }]).select().single();
+  const { data, error } = await sb
+    .from('vendor_reviews')
+    .insert([
+      {
+        booking_id: review.booking_id,
+        customer_id: session.user.id,
+        vendor_type: review.vendor_type,
+        vendor_id: review.vendor_id || null,
+        photographer_id: review.photographer_id || null,
+        rating: review.rating,
+        tags: review.tags || [],
+        body: review.body || '',
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -2999,7 +3226,8 @@ export const submitVendorReview = async (review) => {
 export const getVendorReviewsByType = async (vendorType, vendorId = null) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  let query = sb.from('vendor_reviews')
+  let query = sb
+    .from('vendor_reviews')
     .select('*')
     .eq('vendor_type', vendorType)
     .eq('is_visible', true)
@@ -3013,8 +3241,7 @@ export const getVendorReviewsByType = async (vendorType, vendorId = null) => {
 export const getVendorReviewsByBooking = async (bookingId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('vendor_reviews')
-    .select('*').eq('booking_id', bookingId);
+  const { data, error } = await sb.from('vendor_reviews').select('*').eq('booking_id', bookingId);
   return { data: data || [], error };
 };
 
@@ -3022,7 +3249,8 @@ export const getVendorReviewsByBooking = async (bookingId) => {
 export const getVendorReviewStats = async (vendorType, vendorId = null) => {
   const sb = await getSupabase();
   if (!sb) return { avg: 0, count: 0 };
-  let query = sb.from('vendor_reviews')
+  let query = sb
+    .from('vendor_reviews')
     .select('rating')
     .eq('vendor_type', vendorType)
     .eq('is_visible', true);
@@ -3040,14 +3268,23 @@ export const getVendorReviewStats = async (vendorType, vendorId = null) => {
 export const submitVendorReviewReply = async ({ reviewId, body }) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Authentication required' } };
-  const { data, error } = await sb.from('vendor_review_replies').upsert({
-    review_id: reviewId,
-    vendor_id: session.user.id,
-    body,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'review_id' }).select().single();
+  const { data, error } = await sb
+    .from('vendor_review_replies')
+    .upsert(
+      {
+        review_id: reviewId,
+        vendor_id: session.user.id,
+        body,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'review_id' }
+    )
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -3055,8 +3292,10 @@ export const submitVendorReviewReply = async ({ reviewId, body }) => {
 export const getVendorReviewRepliesByVendor = async (vendorId) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data, error } = await sb.from('vendor_review_replies')
-    .select('*').eq('vendor_id', vendorId)
+  const { data, error } = await sb
+    .from('vendor_review_replies')
+    .select('*')
+    .eq('vendor_id', vendorId)
     .order('created_at', { ascending: false });
   return { data: data || [], error };
 };
@@ -3066,7 +3305,8 @@ export const getVendorReviewReplies = async (reviewIds) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
   if (!reviewIds?.length) return { data: [], error: null };
-  const { data, error } = await sb.from('vendor_review_replies')
+  const { data, error } = await sb
+    .from('vendor_review_replies')
     .select('*')
     .in('review_id', reviewIds);
   return { data: data || [], error };
@@ -3078,7 +3318,9 @@ export const getVendorReviewReplies = async (reviewIds) => {
 export const uploadAvatar = async (file) => {
   const sb = await getSupabase();
   if (!sb) return { url: null, error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { url: null, error: { message: 'Auth required' } };
   const userId = session.user.id;
   const ext = file.name?.split('.').pop() || 'jpg';
@@ -3098,9 +3340,15 @@ export const uploadAvatar = async (file) => {
 export const getAvatarUrl = async () => {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return null;
-  const { data } = await sb.from('profiles').select('avatar_url').eq('id', session.user.id).maybeSingle();
+  const { data } = await sb
+    .from('profiles')
+    .select('avatar_url')
+    .eq('id', session.user.id)
+    .maybeSingle();
   return data?.avatar_url || null;
 };
 
@@ -3110,11 +3358,14 @@ export const getAvatarUrl = async () => {
 export const getMyNotifications = async (limit = 30) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { data: [], error: null };
   // RLS 가 막아주긴 하지만, 정책이 바뀌어도 남의 알림이 새지 않도록
   // 쿼리에서도 명시적으로 본인 것만 조회한다.
-  const { data, error } = await sb.from('notifications')
+  const { data, error } = await sb
+    .from('notifications')
     .select('*')
     .eq('user_id', session.user.id)
     .order('created_at', { ascending: false })
@@ -3126,9 +3377,12 @@ export const getMyNotifications = async (limit = 30) => {
 export const getUnreadNotificationCount = async () => {
   const sb = await getSupabase();
   if (!sb) return 0;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return 0;
-  const { count } = await sb.from('notifications')
+  const { count } = await sb
+    .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', session.user.id)
     .is('read_at', null);
@@ -3140,7 +3394,8 @@ export const markNotificationRead = async (notificationId) => {
   const sb = await getSupabase();
   if (!sb) return;
   // 실제 컬럼은 read_at 이다 (기존 코드는 없는 is_read 를 갱신했다).
-  await sb.from('notifications')
+  await sb
+    .from('notifications')
     .update({ read_at: new Date().toISOString() })
     .eq('id', notificationId);
 };
@@ -3149,35 +3404,69 @@ export const markNotificationRead = async (notificationId) => {
 export const markAllNotificationsRead = async () => {
   const sb = await getSupabase();
   if (!sb) return;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return;
-  await sb.from('notifications')
+  await sb
+    .from('notifications')
     .update({ read_at: new Date().toISOString() })
     .eq('user_id', session.user.id)
     .is('read_at', null);
 };
 
 /** 알림 생성 (자기 자신에게) */
-export const createNotification = async ({ type = 'info', title, body = '', link = '', metadata = {} }) => {
+export const createNotification = async ({
+  type = 'info',
+  title,
+  body = '',
+  link = '',
+  metadata = {},
+}) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return { error: { message: 'Auth required' } };
-  const { data, error } = await sb.from('notifications').insert([{
-    user_id: session.user.id,
-    type, title, body, link, metadata,
-  }]).select().single();
+  const { data, error } = await sb
+    .from('notifications')
+    .insert([
+      {
+        user_id: session.user.id,
+        type,
+        title,
+        body,
+        link,
+        metadata,
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
 /** 다른 사용자에게 알림 전송 (서비스용) */
-export const sendNotificationTo = async (userId, { type = 'info', title, body = '', link = '', metadata = {} }) => {
+export const sendNotificationTo = async (
+  userId,
+  { type = 'info', title, body = '', link = '', metadata = {} }
+) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('notifications').insert([{
-    user_id: userId,
-    type, title, body, link, metadata,
-  }]).select().single();
+  const { data, error } = await sb
+    .from('notifications')
+    .insert([
+      {
+        user_id: userId,
+        type,
+        title,
+        body,
+        link,
+        metadata,
+      },
+    ])
+    .select()
+    .single();
   return { data, error };
 };
 
@@ -3200,7 +3489,9 @@ export const sendNotificationTo = async (userId, { type = 'info', title, body = 
 export const subscribeNotifications = async (callback) => {
   const sb = await getSupabase();
   if (!sb) return null;
-  const { data: { session } } = await sb.auth.getSession();
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
   if (!session?.user) return null;
 
   const name = `notifications-${session.user.id}`;
@@ -3208,13 +3499,18 @@ export const subscribeNotifications = async (callback) => {
     if (ch.topic === `realtime:${name}`) await sb.removeChannel(ch);
   }
 
-  return sb.channel(name)
-    .on('postgres_changes', {
-      event: 'INSERT',
-      schema: 'public',
-      table: 'notifications',
-      filter: `user_id=eq.${session.user.id}`,
-    }, (payload) => callback(payload.new))
+  return sb
+    .channel(name)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${session.user.id}`,
+      },
+      (payload) => callback(payload.new)
+    )
     .subscribe();
 };
 
@@ -3264,7 +3560,9 @@ export const rejectRole = async (userId, role, reason) => {
   const trimmed = (reason || '').trim();
   if (!trimmed) return { data: null, error: { message: '반려 사유를 입력해주세요' } };
   const { data, error } = await sb.rpc('reject_role', {
-    p_user: userId, p_role: role, p_reason: trimmed,
+    p_user: userId,
+    p_role: role,
+    p_reason: trimmed,
   });
   if (error) return { data: null, error };
   return { data, error: null };
@@ -3304,7 +3602,13 @@ export const reapplyRole = async (role, note) => {
  */
 export const getAdminAttention = async () => {
   const sb = await getSupabase();
-  const zero = { pending_roles: 0, reapplied: 0, open_inquiries: 0, failed_emails: 0, stale_bookings: 0 };
+  const zero = {
+    pending_roles: 0,
+    reapplied: 0,
+    open_inquiries: 0,
+    failed_emails: 0,
+    stale_bookings: 0,
+  };
   if (!sb) return { data: zero, error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb.rpc('admin_attention');
   if (error) {
@@ -3322,13 +3626,13 @@ export const getAdminAttention = async () => {
 
 export const INQUIRY_CATEGORIES = [
   { value: 'role_change', ko: '작가 유형 변경', desc: '사진 ↔ 영상 ↔ 사진+영상 등' },
-  { value: 'account',     ko: '계정 · 개인정보', desc: '로그인, 정보 수정, 탈퇴' },
-  { value: 'booking',     ko: '예약 · 일정',    desc: '예약 확정, 변경, 스케줄' },
-  { value: 'payment',     ko: '결제 · 환불',    desc: '결제 오류, 환불 요청' },
-  { value: 'settlement',  ko: '정산 · 수수료',  desc: '정산 금액, 입금일' },
-  { value: 'bug',         ko: '오류 신고',      desc: '화면이 안 뜨거나 버튼이 안 될 때' },
-  { value: 'suggestion',  ko: '개선 제안',      desc: '있으면 좋겠는 기능' },
-  { value: 'other',       ko: '기타',          desc: '위에 없는 문의' },
+  { value: 'account', ko: '계정 · 개인정보', desc: '로그인, 정보 수정, 탈퇴' },
+  { value: 'booking', ko: '예약 · 일정', desc: '예약 확정, 변경, 스케줄' },
+  { value: 'payment', ko: '결제 · 환불', desc: '결제 오류, 환불 요청' },
+  { value: 'settlement', ko: '정산 · 수수료', desc: '정산 금액, 입금일' },
+  { value: 'bug', ko: '오류 신고', desc: '화면이 안 뜨거나 버튼이 안 될 때' },
+  { value: 'suggestion', ko: '개선 제안', desc: '있으면 좋겠는 기능' },
+  { value: 'other', ko: '기타', desc: '위에 없는 문의' },
 ];
 
 /** 문의 접수 */
@@ -3337,8 +3641,8 @@ export const submitInquiry = async ({ category, subject, body }) => {
   if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
   const { data, error } = await sb.rpc('submit_inquiry', {
     p_category: category,
-    p_subject:  (subject || '').trim(),
-    p_body:     (body || '').trim(),
+    p_subject: (subject || '').trim(),
+    p_body: (body || '').trim(),
   });
   if (error) return { data: null, error };
   return { data, error: null };
@@ -3407,12 +3711,14 @@ export const getProvidersClosedOn = async (providerType, providerIds, date) => {
 
   try {
     const [schedRes, defRes] = await Promise.all([
-      sb.from('provider_schedules')
+      sb
+        .from('provider_schedules')
         .select('provider_id, day_off, slots')
         .eq('provider_type', providerType)
         .in('provider_id', ids)
         .eq('date', date),
-      sb.from('provider_defaults')
+      sb
+        .from('provider_defaults')
         .select('provider_id, default_slots, weekly_off')
         .eq('provider_type', providerType)
         .in('provider_id', ids),
@@ -3422,18 +3728,23 @@ export const getProvidersClosedOn = async (providerType, providerIds, date) => {
     // 확실하지 않은데 막아버리면 멀쩡한 공급자가 사라진다.
     // 다만 조용히 넘어가지는 않는다 — 로그는 남긴다.
     if (schedRes.error) console.error('[getProvidersClosedOn] 일정 조회 실패:', schedRes.error);
-    if (defRes.error)   console.error('[getProvidersClosedOn] 기본값 조회 실패:', defRes.error);
-    if (schedRes.error || defRes.error) return { data: closed, error: schedRes.error || defRes.error };
+    if (defRes.error) console.error('[getProvidersClosedOn] 기본값 조회 실패:', defRes.error);
+    if (schedRes.error || defRes.error)
+      return { data: closed, error: schedRes.error || defRes.error };
 
     const byDay = {};
-    (schedRes.data || []).forEach(r => { byDay[r.provider_id] = r; });
+    (schedRes.data || []).forEach((r) => {
+      byDay[r.provider_id] = r;
+    });
     const byDefault = {};
-    (defRes.data || []).forEach(r => { byDefault[r.provider_id] = r; });
+    (defRes.data || []).forEach((r) => {
+      byDefault[r.provider_id] = r;
+    });
 
     const d = new Date(`${date}T00:00:00`);
     const dow = Number.isNaN(d.getTime()) ? null : d.getDay();
 
-    ids.forEach(id => {
+    ids.forEach((id) => {
       const row = byDay[id];
       if (row) {
         // 그 날짜에 레코드가 있으면 그게 우선이다.
@@ -3472,21 +3783,25 @@ export const getPlatformStats = async () => {
   try {
     const [artistsRes, bookingsRes, pkgRevRes, phRevRes] = await Promise.all([
       sb.from('photographers').select('location_id').eq('is_active', true),
-      sb.from('bookings').select('id', { count: 'exact', head: true }).in('status', ['completed', 'delivered']),
+      sb
+        .from('bookings')
+        .select('id', { count: 'exact', head: true })
+        .in('status', ['completed', 'delivered']),
       sb.from('package_reviews').select('rating'),
       sb.from('photographer_reviews').select('rating'),
     ]);
 
     const rows = artistsRes.data || [];
     const artists = artistsRes.error ? null : rows.length;
-    const cities  = artistsRes.error ? null
-      : new Set(rows.map(r => r.location_id).filter(Boolean)).size;
+    const cities = artistsRes.error
+      ? null
+      : new Set(rows.map((r) => r.location_id).filter(Boolean)).size;
     const sessions = bookingsRes.error ? null : (bookingsRes.count ?? null);
 
     const ratings = [
-      ...((pkgRevRes.data || []).map(r => r.rating)),
-      ...((phRevRes.data || []).map(r => r.rating)),
-    ].filter(n => typeof n === 'number' && n > 0);
+      ...(pkgRevRes.data || []).map((r) => r.rating),
+      ...(phRevRes.data || []).map((r) => r.rating),
+    ].filter((n) => typeof n === 'number' && n > 0);
     const rating = ratings.length
       ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(2)
       : null;

@@ -305,7 +305,7 @@ const Modal = ({ onClose, children }) => (
         padding: '40px 36px',
         position: 'relative',
       }}
-      onClick={e => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
     >
       <Corners />
       {children}
@@ -316,15 +316,21 @@ const Modal = ({ onClose, children }) => (
 /** 아이템의 실제 작업 시각을 사람이 읽는 형태로 */
 const fmtSlot = (item) => {
   if (!item?.start_at) return '';
-  const hm = (v) => new Date(v).toLocaleTimeString('ko-KR', {
-    hour: '2-digit', minute: '2-digit', hour12: false,
-  });
+  const hm = (v) =>
+    new Date(v).toLocaleTimeString('ko-KR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   // 의상은 하루 단위 점유라 시각을 보여줄 이유가 없다
   if (item.timing === 'day') return '';
   const base = `${hm(item.start_at)} ~ ${hm(item.end_at)}`;
-  const tag = item.timing === 'during' ? ' · 촬영 중 합류'
-            : item.timing === 'full'   ? ' · 촬영 종료까지 동행'
-            : '';
+  const tag =
+    item.timing === 'during'
+      ? ' · 촬영 중 합류'
+      : item.timing === 'full'
+        ? ' · 촬영 종료까지 동행'
+        : '';
   return base + tag;
 };
 
@@ -358,7 +364,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
     }
   }, [stylistId]);
 
-  const getStatusColor = status => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed':
         return 'var(--success)';
@@ -373,7 +379,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
     }
   };
 
-  const getStatusLabel = status => {
+  const getStatusLabel = (status) => {
     const statusMap = {
       confirmed: t.confirmed,
       pending: t.pending,
@@ -393,7 +399,7 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
 
   return (
     <div style={{ display: 'grid', gap: 24, padding: '24px 0' }}>
-      {bookings.map(booking => (
+      {bookings.map((booking) => (
         <div
           key={booking.id}
           style={{
@@ -404,9 +410,13 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
           }}
         >
           <Corners />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}
+          >
             <div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.customer}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                {t.customer}
+              </div>
               <div style={{ color: 'var(--text)', fontWeight: 500 }}>
                 {booking.customer_name || 'N/A'}
               </div>
@@ -415,7 +425,8 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
               {/* booking_date 라는 컬럼은 없다. 예전에는 Invalid Date 가 떴다. */}
               <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.date}</div>
               <div style={{ color: 'var(--text)', fontWeight: 500 }}>
-                {booking.date || '-'}{booking.time ? ` · ${booking.time}` : ''}
+                {booking.date || '-'}
+                {booking.time ? ` · ${booking.time}` : ''}
               </div>
             </div>
           </div>
@@ -424,12 +435,21 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
               예전에는 카드에 시술명도 시각도 금액도 없었다. */}
           {(booking.myItems || []).length > 0 && (
             <div style={{ marginBottom: 16, border: '1px solid var(--border)', padding: 16 }}>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>{t.myWork}</div>
-              {booking.myItems.map(item => (
-                <div key={item.id} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-                  gap: 12, marginBottom: 8, flexWrap: 'wrap',
-                }}>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 10 }}>
+                {t.myWork}
+              </div>
+              {booking.myItems.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'baseline',
+                    gap: 12,
+                    marginBottom: 8,
+                    flexWrap: 'wrap',
+                  }}
+                >
                   <div>
                     <div style={{ color: 'var(--text)', fontWeight: 500 }}>
                       {item.item_name}
@@ -457,14 +477,19 @@ const BookingsTab = ({ t, stylistId, stylistName }) => {
               ))}
               {booking.collab_count > 1 && (
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 10 }}>
-                  {t.collab} {booking.collab_count}{t.people}
+                  {t.collab} {booking.collab_count}
+                  {t.people}
                 </div>
               )}
             </div>
           )}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}
+          >
             <div>
-              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.photographer}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                {t.photographer}
+              </div>
               <div style={{ color: 'var(--text)', fontWeight: 500 }}>
                 {booking.photographer_name || t.noPhotographer}
               </div>
@@ -511,13 +536,27 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '', fulfillment: ['byOwner'], deposit: 0, deliveryFee: 0 });
+  const [form, setForm] = useState({
+    nameKo: '',
+    nameEn: '',
+    price: '',
+    size: 'M',
+    stock: '1',
+    color: '',
+    description: '',
+    fulfillment: ['byOwner'],
+    deposit: 0,
+    deliveryFee: 0,
+  });
 
   // 자체 의상 보유 여부와 등록된 의상을 읽어온다.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!stylistId) { setLoading(false); return; }
+      if (!stylistId) {
+        setLoading(false);
+        return;
+      }
       try {
         const { getStylistDresses } = await import('../lib/supabase');
         const { data, error } = await getStylistDresses(stylistId);
@@ -537,7 +576,9 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [stylistId, stylistProfile?.dress_self]);
 
   // 의상 대여 활성화 — stylists.dress_self 를 켠다.
@@ -567,25 +608,42 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
     setErrorMsg('');
     try {
       const { addStylistDress } = await import('../lib/supabase');
-      const sizes = form.size.split(',').map(s => s.trim()).filter(Boolean);
+      const sizes = form.size
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       const { data, error } = await addStylistDress(stylistId, {
-        name_ko:    form.nameKo.trim(),
-        name_en:    form.nameEn.trim() || null,
-        category:   'traditional',
-        price:      parseInt(String(form.price).replace(/[^0-9]/g, ''), 10) || 0,
+        name_ko: form.nameKo.trim(),
+        name_en: form.nameEn.trim() || null,
+        category: 'traditional',
+        price: parseInt(String(form.price).replace(/[^0-9]/g, ''), 10) || 0,
         sizes,
-        size_stock: sizes.reduce((acc, sz) => ({ ...acc, [sz]: parseInt(form.stock, 10) || 0 }), {}),
-        color:      form.color.trim() || null,
+        size_stock: sizes.reduce(
+          (acc, sz) => ({ ...acc, [sz]: parseInt(form.stock, 10) || 0 }),
+          {}
+        ),
+        color: form.color.trim() || null,
         description: form.description.trim() || null,
         // 주인이 들고 가는 옷에는 보증금이 없다. 픽업·배송을 켜야 받는다.
-        fulfillment:  form.fulfillment?.length ? form.fulfillment : ['byOwner'],
-        deposit:      form.fulfillment?.some(m => m !== 'byOwner') ? (form.deposit ?? 0) : 0,
+        fulfillment: form.fulfillment?.length ? form.fulfillment : ['byOwner'],
+        deposit: form.fulfillment?.some((m) => m !== 'byOwner') ? (form.deposit ?? 0) : 0,
         delivery_fee: form.fulfillment?.includes('delivery') ? (form.deliveryFee ?? 0) : 0,
       });
       if (error) throw error;
-      setItems(prev => [...prev, data]);
+      setItems((prev) => [...prev, data]);
       setModalOpen(false);
-      setForm({ nameKo: '', nameEn: '', price: '', size: 'M', stock: '1', color: '', description: '', fulfillment: ['byOwner'], deposit: 0, deliveryFee: 0 });
+      setForm({
+        nameKo: '',
+        nameEn: '',
+        price: '',
+        size: 'M',
+        stock: '1',
+        color: '',
+        description: '',
+        fulfillment: ['byOwner'],
+        deposit: 0,
+        deliveryFee: 0,
+      });
     } catch (e) {
       console.error('[StylistDashboard] 의상 등록 실패:', e);
       setErrorMsg(e?.message || t.error);
@@ -599,7 +657,7 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
       const { deleteVendorDress } = await import('../lib/supabase');
       const { error } = await deleteVendorDress(id);
       if (error) throw error;
-      setItems(prev => prev.filter(x => x.id !== id));
+      setItems((prev) => prev.filter((x) => x.id !== id));
     } catch (e) {
       console.error('[StylistDashboard] 의상 삭제 실패:', e);
       setErrorMsg(e?.message || t.error);
@@ -608,8 +666,13 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
 
   const label = { display: 'block', fontSize: 13, color: 'var(--muted)', marginBottom: 6 };
   const input = {
-    width: '100%', padding: '10px 12px', background: 'var(--bg)', color: 'var(--text)',
-    border: '1px solid var(--gold-dim)', boxSizing: 'border-box', fontSize: 14,
+    width: '100%',
+    padding: '10px 12px',
+    background: 'var(--bg)',
+    color: 'var(--text)',
+    border: '1px solid var(--gold-dim)',
+    boxSizing: 'border-box',
+    fontSize: 14,
   };
 
   if (loading) return <div style={{ color: 'var(--muted)', padding: 32 }}>…</div>;
@@ -617,18 +680,33 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
   if (!enabled) {
     return (
       <div style={{ padding: '32px 0', maxWidth: 560 }}>
-        <div style={{ border: '1px solid var(--gold-border)', padding: '28px 24px', position: 'relative' }}>
+        <div
+          style={{
+            border: '1px solid var(--gold-border)',
+            padding: '28px 24px',
+            position: 'relative',
+          }}
+        >
           <Corners />
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 16, marginBottom: 10 }}>
             의상 대여도 함께 하시나요?
           </div>
           <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.7, marginBottom: 20 }}>
-            헤어메이크업과 함께 한복·드레스를 대여하신다면 활성화해주세요.
-            고객이 촬영을 예약할 때 의상 단계에서 회원님의 의상을 선택할 수 있습니다.
-            활동 지역과 연락처는 프로필 정보를 그대로 사용합니다.
+            헤어메이크업과 함께 한복·드레스를 대여하신다면 활성화해주세요. 고객이 촬영을 예약할 때
+            의상 단계에서 회원님의 의상을 선택할 수 있습니다. 활동 지역과 연락처는 프로필 정보를
+            그대로 사용합니다.
           </p>
           {errorMsg && (
-            <div style={{ padding: '10px 14px', marginBottom: 14, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
+            <div
+              style={{
+                padding: '10px 14px',
+                marginBottom: 14,
+                border: '1px solid rgba(232,80,80,0.3)',
+                background: 'rgba(232,80,80,0.06)',
+                color: 'var(--danger)',
+                fontSize: 13,
+              }}
+            >
               {errorMsg}
             </div>
           )}
@@ -636,9 +714,14 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             onClick={handleEnable}
             disabled={saving}
             style={{
-              padding: '12px 28px', background: 'var(--gold)', color: 'var(--bg)',
-              border: 'none', cursor: saving ? 'default' : 'pointer', fontWeight: 600,
-              fontSize: 14, opacity: saving ? 0.6 : 1,
+              padding: '12px 28px',
+              background: 'var(--gold)',
+              color: 'var(--bg)',
+              border: 'none',
+              cursor: saving ? 'default' : 'pointer',
+              fontWeight: 600,
+              fontSize: 14,
+              opacity: saving ? 0.6 : 1,
             }}
           >
             {saving ? t.saving : '의상 대여 활성화'}
@@ -653,15 +736,30 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
       <button
         onClick={() => setModalOpen(true)}
         style={{
-          marginBottom: 24, padding: '12px 24px', background: 'var(--gold)',
-          color: 'var(--bg)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 14,
+          marginBottom: 24,
+          padding: '12px 24px',
+          background: 'var(--gold)',
+          color: 'var(--bg)',
+          border: 'none',
+          cursor: 'pointer',
+          fontWeight: 600,
+          fontSize: 14,
         }}
       >
         의상 추가
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: 16,
+            border: '1px solid rgba(232,80,80,0.3)',
+            background: 'rgba(232,80,80,0.06)',
+            color: 'var(--danger)',
+            fontSize: 13,
+          }}
+        >
           {errorMsg}
         </div>
       )}
@@ -670,12 +768,24 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
         <div style={{ color: 'var(--muted)', padding: 32 }}>등록된 의상이 없습니다</div>
       ) : (
         <div style={{ display: 'grid', gap: 16 }}>
-          {items.map(it => (
-            <div key={it.id} style={{ border: '1px solid var(--border)', padding: '18px 20px', display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          {items.map((it) => (
+            <div
+              key={it.id}
+              style={{
+                border: '1px solid var(--border)',
+                padding: '18px 20px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+              }}
+            >
               <div>
-                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, marginBottom: 6 }}>{it.name_ko}</div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontSize: 15, marginBottom: 6 }}>
+                  {it.name_ko}
+                </div>
                 <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-                  {(it.sizes || []).join(', ')}{it.color ? ` · ${it.color}` : ''}
+                  {(it.sizes || []).join(', ')}
+                  {it.color ? ` · ${it.color}` : ''}
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -684,7 +794,14 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
                 </div>
                 <button
                   onClick={() => handleDelete(it.id)}
-                  style={{ fontSize: 12, color: 'var(--danger)', background: 'transparent', border: '1px solid rgba(232,80,80,0.25)', padding: '4px 10px', cursor: 'pointer' }}
+                  style={{
+                    fontSize: 12,
+                    color: 'var(--danger)',
+                    background: 'transparent',
+                    border: '1px solid rgba(232,80,80,0.25)',
+                    padding: '4px 10px',
+                    cursor: 'pointer',
+                  }}
                 >
                   {t.delete}
                 </button>
@@ -696,47 +813,83 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
 
       {modalOpen && (
         <Modal onClose={() => setModalOpen(false)}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 22 }}>의상 추가</div>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 17, marginBottom: 22 }}>
+            의상 추가
+          </div>
           <div style={{ display: 'grid', gap: 14 }}>
             <div>
               <label style={label}>의상명 (한글) *</label>
-              <input style={input} value={form.nameKo} onChange={e => setForm({ ...form, nameKo: e.target.value })} />
+              <input
+                style={input}
+                value={form.nameKo}
+                onChange={(e) => setForm({ ...form, nameKo: e.target.value })}
+              />
             </div>
             <div>
               <label style={label}>의상명 (영문)</label>
-              <input style={input} value={form.nameEn} onChange={e => setForm({ ...form, nameEn: e.target.value })} />
+              <input
+                style={input}
+                value={form.nameEn}
+                onChange={(e) => setForm({ ...form, nameEn: e.target.value })}
+              />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={label}>가격 (원) *</label>
-                <input style={input} type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+                <input
+                  style={input}
+                  type="number"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                />
               </div>
               <div>
                 <label style={label}>색상</label>
-                <input style={input} value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
+                <input
+                  style={input}
+                  value={form.color}
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
+                />
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
                 <label style={label}>사이즈 (쉼표로 구분)</label>
-                <input style={input} value={form.size} onChange={e => setForm({ ...form, size: e.target.value })} />
+                <input
+                  style={input}
+                  value={form.size}
+                  onChange={(e) => setForm({ ...form, size: e.target.value })}
+                />
               </div>
               <div>
                 <label style={label}>사이즈별 수량</label>
-                <input style={input} type="number" value={form.stock} onChange={e => setForm({ ...form, stock: e.target.value })} />
+                <input
+                  style={input}
+                  type="number"
+                  value={form.stock}
+                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
+                />
               </div>
             </div>
             <div>
               <label style={label}>{t.description}</label>
-              <textarea style={{ ...input, minHeight: 80, resize: 'vertical' }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+              <textarea
+                style={{ ...input, minHeight: 80, resize: 'vertical' }}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
             </div>
 
             {/* 수령 방식 · 보증금. 현장에 들고 가면 옷이 손을 떠나지
                 않으므로 보증금이 없다 (FIX_43). */}
             <div style={{ marginTop: 20 }}>
               <DressFulfillment
-                value={{ fulfillment: form.fulfillment, deposit: form.deposit, deliveryFee: form.deliveryFee }}
-                onChange={next => setForm({ ...form, ...next })}
+                value={{
+                  fulfillment: form.fulfillment,
+                  deposit: form.deposit,
+                  deliveryFee: form.deliveryFee,
+                }}
+                onChange={(next) => setForm({ ...form, ...next })}
                 allowByOwner
                 lang={lang}
               />
@@ -749,13 +902,29 @@ const DressRentalTab = ({ t, lang, stylistProfile }) => {
             <button
               onClick={handleAddItem}
               disabled={saving}
-              style={{ flex: 1, padding: '12px', background: 'var(--gold)', color: 'var(--bg)', border: 'none', cursor: 'pointer', fontWeight: 600, opacity: saving ? 0.6 : 1 }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: 'var(--gold)',
+                color: 'var(--bg)',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 600,
+                opacity: saving ? 0.6 : 1,
+              }}
             >
               {saving ? t.saving : t.save}
             </button>
             <button
               onClick={() => setModalOpen(false)}
-              style={{ flex: 1, padding: '12px', background: 'transparent', color: 'var(--muted)', border: '1px solid var(--border)', cursor: 'pointer' }}
+              style={{
+                flex: 1,
+                padding: '12px',
+                background: 'transparent',
+                color: 'var(--muted)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
             >
               {t.cancel}
             </button>
@@ -841,29 +1010,26 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
       // 컬럼명은 name_ko / duration_minutes 다.
       // name / duration 으로 보내면 42703 으로 저장이 실패한다.
       const payload = {
-        name_ko:          formData.serviceName,
-        price:            parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10) || 0,
+        name_ko: formData.serviceName,
+        price: parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10) || 0,
         duration_minutes: parseInt(formData.duration, 10) || 60,
-        description:      formData.description || '',
-        stylist_id:       stylistId,
+        description: formData.description || '',
+        stylist_id: stylistId,
         // 예약 시 점유 구간을 계산하는 값들.
         // 이게 없으면 모든 시술이 "촬영 전 완료"로 취급돼
         // 헤어변형과 종일 동행을 등록할 수 없다.
-        timing:           formData.timing || 'before',
-        offset_minutes:   Math.max(0, parseInt(formData.offsetMinutes, 10) || 0),
-        max_hours:        formData.timing === 'full' && formData.maxHours
-                            ? Number(formData.maxHours)
-                            : null,
-        travel_fee:       parseInt(String(formData.travelFee).replace(/[^0-9]/g, ''), 10) || 0,
+        timing: formData.timing || 'before',
+        offset_minutes: Math.max(0, parseInt(formData.offsetMinutes, 10) || 0),
+        max_hours:
+          formData.timing === 'full' && formData.maxHours ? Number(formData.maxHours) : null,
+        travel_fee: parseInt(String(formData.travelFee).replace(/[^0-9]/g, ''), 10) || 0,
       };
 
       let nextServices;
       if (editingService) {
         const { error } = await updateStylistService(editingService.id, payload);
         if (error) throw error;
-        nextServices = services.map(s =>
-          s.id === editingService.id ? { ...s, ...payload } : s
-        );
+        nextServices = services.map((s) => (s.id === editingService.id ? { ...s, ...payload } : s));
       } else {
         // 반환값은 { data, error } 객체다. 예전에는 이걸 그대로 목록에 넣어
         // 렌더링 시 화면이 멈췄다.
@@ -889,7 +1055,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
     try {
       const { deleteStylistService } = await import('../lib/supabase');
       await deleteStylistService(serviceId);
-      setServices(services.filter(s => s.id !== serviceId));
+      setServices(services.filter((s) => s.id !== serviceId));
       localStorage.setItem(`services_${stylistId}`, JSON.stringify(services));
     } catch (error) {
       console.error('[StylistDashboard] 서비스 삭제 실패:', error);
@@ -922,7 +1088,16 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
       </button>
 
       {errorMsg && (
-        <div style={{ padding: '12px 16px', marginBottom: 16, border: '1px solid rgba(232,80,80,0.3)', background: 'rgba(232,80,80,0.06)', color: 'var(--danger)', fontSize: 13 }}>
+        <div
+          style={{
+            padding: '12px 16px',
+            marginBottom: 16,
+            border: '1px solid rgba(232,80,80,0.3)',
+            background: 'rgba(232,80,80,0.06)',
+            color: 'var(--danger)',
+            fontSize: 13,
+          }}
+        >
           {errorMsg}
         </div>
       )}
@@ -931,7 +1106,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
         <div style={{ color: 'var(--muted)', padding: 32 }}>{t.noServices}</div>
       ) : (
         <div style={{ display: 'grid', gap: 24 }}>
-          {services.map(service => (
+          {services.map((service) => (
             <div
               key={service.id}
               style={{
@@ -957,28 +1132,47 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                   {service.description}
                 </p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 16,
+                  marginBottom: 16,
+                }}
+              >
                 <div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.price}</div>
-                  <div style={{ color: 'var(--gold)', fontWeight: 600 }}>₩{Number(service.price ?? 0).toLocaleString('ko-KR')}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                    {t.price}
+                  </div>
+                  <div style={{ color: 'var(--gold)', fontWeight: 600 }}>
+                    ₩{Number(service.price ?? 0).toLocaleString('ko-KR')}
+                  </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.duration}</div>
-                  <div style={{ color: 'var(--text)' }}>{service.duration_minutes ?? service.duration}분</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                    {t.duration}
+                  </div>
+                  <div style={{ color: 'var(--text)' }}>
+                    {service.duration_minutes ?? service.duration}분
+                  </div>
                 </div>
               </div>
               {/* 시술 시점 — 고객에게 안내되는 내용이라 목록에서도 확인할 수 있어야 한다 */}
               <div style={{ marginBottom: 16 }}>
-                <span style={{
-                  display: 'inline-block',
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  color: 'var(--accent-a50)',
-                  border: '1px solid var(--accent-a30)',
-                }}>
-                  {service.timing === 'during' ? t.timingDuring
-                    : service.timing === 'full' ? t.timingFull
-                    : t.timingBefore}
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    color: 'var(--accent-a50)',
+                    border: '1px solid var(--accent-a30)',
+                  }}
+                >
+                  {service.timing === 'during'
+                    ? t.timingDuring
+                    : service.timing === 'full'
+                      ? t.timingFull
+                      : t.timingBefore}
                   {service.timing === 'full' && service.max_hours
                     ? ` · ~${service.max_hours}h`
                     : ''}
@@ -1038,7 +1232,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
               type="text"
               placeholder={t.serviceName}
               value={formData.serviceName}
-              onChange={e => setFormData({ ...formData, serviceName: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
               style={{
                 padding: 12,
                 background: 'var(--bg)',
@@ -1052,7 +1246,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
               type="number"
               placeholder={t.price}
               value={formData.price}
-              onChange={e => setFormData({ ...formData, price: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               style={{
                 padding: 12,
                 background: 'var(--bg)',
@@ -1066,7 +1260,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
               type="number"
               placeholder={t.duration}
               value={formData.duration}
-              onChange={e => setFormData({ ...formData, duration: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
               style={{
                 padding: 12,
                 background: 'var(--bg)',
@@ -1087,22 +1281,27 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                 {[
                   { key: 'before', label: t.timingBefore, desc: t.timingBeforeDesc },
                   { key: 'during', label: t.timingDuring, desc: t.timingDuringDesc },
-                  { key: 'full',   label: t.timingFull,   desc: t.timingFullDesc },
-                ].map(opt => {
+                  { key: 'full', label: t.timingFull, desc: t.timingFullDesc },
+                ].map((opt) => {
                   const on = formData.timing === opt.key;
                   return (
                     <button
                       key={opt.key}
                       type="button"
-                      onClick={() => setFormData(f => ({
-                        ...f,
-                        timing: opt.key,
-                        // 동행은 이미 현장이라 이동 버퍼가 없다.
-                        // 기본값을 옮겨주지 않으면 "이동 30분"이 그대로 남는다.
-                        offsetMinutes: opt.key === 'during' ? '30'
-                                     : opt.key === 'full'   ? '0'
-                                     : f.offsetMinutes,
-                      }))}
+                      onClick={() =>
+                        setFormData((f) => ({
+                          ...f,
+                          timing: opt.key,
+                          // 동행은 이미 현장이라 이동 버퍼가 없다.
+                          // 기본값을 옮겨주지 않으면 "이동 30분"이 그대로 남는다.
+                          offsetMinutes:
+                            opt.key === 'during'
+                              ? '30'
+                              : opt.key === 'full'
+                                ? '0'
+                                : f.offsetMinutes,
+                        }))
+                      }
                       style={{
                         textAlign: 'left',
                         padding: 12,
@@ -1114,7 +1313,9 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                       }}
                     >
                       <div style={{ fontSize: 14, marginBottom: 4 }}>{opt.label}</div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>{opt.desc}</div>
+                      <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+                        {opt.desc}
+                      </div>
                     </button>
                   );
                 })}
@@ -1130,7 +1331,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                 type="number"
                 min="0"
                 value={formData.offsetMinutes}
-                onChange={e => setFormData({ ...formData, offsetMinutes: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, offsetMinutes: e.target.value })}
                 style={{
                   padding: 12,
                   width: '100%',
@@ -1150,13 +1351,15 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
             {/* 종일 동행 전용 — 감당 가능한 최대 촬영 길이 */}
             {formData.timing === 'full' && (
               <div>
-                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>{t.maxHours}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                  {t.maxHours}
+                </div>
                 <input
                   type="number"
                   min="1"
                   step="0.5"
                   value={formData.maxHours}
-                  onChange={e => setFormData({ ...formData, maxHours: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, maxHours: e.target.value })}
                   style={{
                     padding: 12,
                     width: '100%',
@@ -1168,7 +1371,9 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                     fontSize: 14,
                   }}
                 />
-                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>{t.maxHoursHint}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                  {t.maxHoursHint}
+                </div>
               </div>
             )}
 
@@ -1178,7 +1383,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                 type="number"
                 placeholder={t.travelFee}
                 value={formData.travelFee}
-                onChange={e => setFormData({ ...formData, travelFee: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, travelFee: e.target.value })}
                 style={{
                   padding: 12,
                   background: 'var(--bg)',
@@ -1191,20 +1396,24 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
             )}
 
             {/* 실제로 몇 시에 묶이는지 바로 보여준다 */}
-            <div style={{ padding: 12, background: 'var(--bg)', border: '1px dashed var(--border)' }}>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>{t.slotPreview}</div>
+            <div
+              style={{ padding: 12, background: 'var(--bg)', border: '1px dashed var(--border)' }}
+            >
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 6 }}>
+                {t.slotPreview}
+              </div>
               {(() => {
                 const slot = computeSlot({
                   timing: formData.timing,
                   shootStart: new Date('2026-01-01T16:00:00'),
-                  shootEnd:   new Date('2026-01-01T19:00:00'),
+                  shootEnd: new Date('2026-01-01T19:00:00'),
                   durationMinutes: parseInt(formData.duration, 10) || 60,
-                  offsetMinutes:   parseInt(formData.offsetMinutes, 10) || 0,
+                  offsetMinutes: parseInt(formData.offsetMinutes, 10) || 0,
                 });
                 if (!slot) return null;
-                const hm = d => d.toTimeString().slice(0, 5);
-                const same = hm(slot.busyStart) === hm(slot.start)
-                          && hm(slot.busyEnd)   === hm(slot.end);
+                const hm = (d) => d.toTimeString().slice(0, 5);
+                const same =
+                  hm(slot.busyStart) === hm(slot.start) && hm(slot.busyEnd) === hm(slot.end);
                 return (
                   <>
                     <div style={{ fontSize: 14, color: 'var(--text)' }}>
@@ -1212,7 +1421,8 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                     </div>
                     {!same && (
                       <div style={{ fontSize: 12, color: 'var(--accent-a50)', marginTop: 4 }}>
-                        {lang === 'ko' ? '일정 점유' : 'Blocked'} {hm(slot.busyStart)} ~ {hm(slot.busyEnd)}
+                        {lang === 'ko' ? '일정 점유' : 'Blocked'} {hm(slot.busyStart)} ~{' '}
+                        {hm(slot.busyEnd)}
                       </div>
                     )}
                   </>
@@ -1223,7 +1433,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
             <textarea
               placeholder={t.description}
               value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               style={{
                 padding: 12,
                 background: 'var(--bg)',
@@ -1299,11 +1509,13 @@ const ProfileEditTab = ({ t, stylistId }) => {
             specialty: data.specialty || '',
             phone: data.phone || '',
             instagram: data.instagram || '',
-            location: data.location_id ? {
-              countryCode: data.country_code || 'KR',
-              city: data.city || '',
-              locationId: data.location_id,
-            } : null,
+            location: data.location_id
+              ? {
+                  countryCode: data.country_code || 'KR',
+                  city: data.city || '',
+                  locationId: data.location_id,
+                }
+              : null,
             portfolioImages: data.portfolio_images || [],
           });
         }
@@ -1377,7 +1589,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
           <input
             type="text"
             value={profile.displayName}
-            onChange={e => setProfile({ ...profile, displayName: e.target.value })}
+            onChange={(e) => setProfile({ ...profile, displayName: e.target.value })}
             style={{
               width: '100%',
               padding: 12,
@@ -1405,7 +1617,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
           </label>
           <textarea
             value={profile.specialty}
-            onChange={e => setProfile({ ...profile, specialty: e.target.value })}
+            onChange={(e) => setProfile({ ...profile, specialty: e.target.value })}
             style={{
               width: '100%',
               padding: 12,
@@ -1436,7 +1648,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
           <input
             type="tel"
             value={profile.phone}
-            onChange={e => setProfile({ ...profile, phone: e.target.value })}
+            onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
             style={{
               width: '100%',
               padding: 12,
@@ -1466,7 +1678,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
             type="text"
             placeholder="@username"
             value={profile.instagram}
-            onChange={e => setProfile({ ...profile, instagram: e.target.value })}
+            onChange={(e) => setProfile({ ...profile, instagram: e.target.value })}
             style={{
               width: '100%',
               padding: 12,
@@ -1494,7 +1706,7 @@ const ProfileEditTab = ({ t, stylistId }) => {
           </label>
           <LocationPicker
             value={profile.location}
-            onChange={location => setProfile({ ...profile, location })}
+            onChange={(location) => setProfile({ ...profile, location })}
             lang={lang}
           />
         </div>
@@ -1523,7 +1735,14 @@ const ProfileEditTab = ({ t, stylistId }) => {
           {t.portfolioImages}
         </div>
         {profile.portfolioImages.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: 12,
+              marginBottom: 16,
+            }}
+          >
             {profile.portfolioImages.map((img, idx) => (
               <div
                 key={idx}
@@ -1644,7 +1863,10 @@ export default function StylistDashboard() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!user?.id) { setStylistLoading(false); return; }
+      if (!user?.id) {
+        setStylistLoading(false);
+        return;
+      }
       try {
         const { ensureArtistRecord } = await import('../lib/supabase');
         const { data } = await ensureArtistRecord(user.id, {
@@ -1661,7 +1883,9 @@ export default function StylistDashboard() {
         if (!cancelled) setStylistLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [user?.id]);
 
   // Load stylist reviews + avatar on mount
@@ -1740,14 +1964,23 @@ export default function StylistDashboard() {
           {/* 고객에게 어떻게 보이는지 확인. 공급자가 자기 노출 상태를
               알 방법이 없었다. */}
           {stylistId && (
-            <Link to={`/stylist/${stylistId}`} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 14,
-              padding: '9px 18px', border: '1px solid var(--border)',
-              color: 'var(--muted)', fontFamily: 'var(--font-serif)',
-              fontSize: 12, letterSpacing: '0.08em', textDecoration: 'none',
-            }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--gold-border)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+            <Link
+              to={`/stylist/${stylistId}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                marginTop: 14,
+                padding: '9px 18px',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-serif)',
+                fontSize: 12,
+                letterSpacing: '0.08em',
+                textDecoration: 'none',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--gold-border)')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
             >
               👁 고객에게 보이는 내 페이지 →
             </Link>
@@ -1769,7 +2002,7 @@ export default function StylistDashboard() {
             { id: 'dressRental', label: '의상 대여' },
             { id: 'profileEdit', label: t.profileEdit },
             { id: 'reviews', label: t.reviews },
-          ].map(tab => (
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -1798,50 +2031,77 @@ export default function StylistDashboard() {
             작가가 수락하면 자기 항목까지 확정돼 있었다 (FIX_40). */}
         <PendingItems onChanged={() => window.location.reload()} />
 
-        {activeTab === 'bookings' && <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />}
+        {activeTab === 'bookings' && (
+          <BookingsTab t={t} stylistId={stylistId} stylistName={stylistName} />
+        )}
         {/* 이 컴포넌트는 useLanguage() 를 `language` 로 받는다.
             lang={lang} 로 넘기면 ReferenceError 로 탭 전체가 크래시한다. */}
-        {activeTab === 'serviceMenu' && <ServiceMenuTab t={t} lang={language} stylistId={stylistId} />}
+        {activeTab === 'serviceMenu' && (
+          <ServiceMenuTab t={t} lang={language} stylistId={stylistId} />
+        )}
         {activeTab === 'schedule' && (
           <ScheduleManager providerType="stylist" providerId={stylistId} lang={language} />
         )}
-        {activeTab === 'dressRental' && <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />}
+        {activeTab === 'dressRental' && (
+          <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />
+        )}
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 
         {/* Reviews Tab */}
         {activeTab === 'reviews' && (
           <div>
-            <div style={{
-              marginBottom: '2rem',
-              display: 'flex',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-            }}>
-              <div style={{ fontSize: 11, color: 'var(--gold)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 8 }}>
+            <div
+              style={{
+                marginBottom: '2rem',
+                display: 'flex',
+                gap: '1rem',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.08em',
+                  marginBottom: 8,
+                }}
+              >
                 {t.reviewSummary}
               </div>
             </div>
 
             {/* Reviews Card */}
-            <div style={{
-              border: '1px solid var(--gold-dim)',
-              padding: '1.5rem',
-              backgroundColor: 'var(--bg2)',
-              position: 'relative',
-            }}>
-              <div style={{
-                position: 'absolute',
-                top: -12,
-                left: 16,
-                background: 'var(--bg)',
-                padding: '4px 12px',
-                fontSize: 12,
-                color: 'var(--gold)',
-                fontFamily: 'var(--font-serif)',
-                letterSpacing: '0.06em',
-              }}>
-                💇 {language === 'ko' ? '헤어메이크업' : language === 'ja' ? 'ヘアメイク' : language === 'zh' ? '造型师' : 'Hair & Makeup'}
+            <div
+              style={{
+                border: '1px solid var(--gold-dim)',
+                padding: '1.5rem',
+                backgroundColor: 'var(--bg2)',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -12,
+                  left: 16,
+                  background: 'var(--bg)',
+                  padding: '4px 12px',
+                  fontSize: 12,
+                  color: 'var(--gold)',
+                  fontFamily: 'var(--font-serif)',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                💇{' '}
+                {language === 'ko'
+                  ? '헤어메이크업'
+                  : language === 'ja'
+                    ? 'ヘアメイク'
+                    : language === 'zh'
+                      ? '造型师'
+                      : 'Hair & Makeup'}
               </div>
 
               {(() => {
@@ -1849,46 +2109,58 @@ export default function StylistDashboard() {
 
                 return (
                   <div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      gap: '0.5rem',
-                      marginBottom: '1.5rem',
-                      marginTop: '0.5rem',
-                    }}>
-                      <div style={{
-                        fontSize: 28,
-                        color: 'var(--gold)',
-                        fontWeight: 'bold',
-                      }}>
-                        {'★'.repeat(Math.round(avg))}{'☆'.repeat(5 - Math.round(avg))}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'baseline',
+                        gap: '0.5rem',
+                        marginBottom: '1.5rem',
+                        marginTop: '0.5rem',
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: 28,
+                          color: 'var(--gold)',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {'★'.repeat(Math.round(avg))}
+                        {'☆'.repeat(5 - Math.round(avg))}
                       </div>
-                      <div style={{
-                        fontSize: 14,
-                        color: 'var(--text)',
-                      }}>
-                        {avg.toFixed(1)} ({count}{language === 'ko' ? '건' : language === 'ja' ? '件' : ''})
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: 'var(--text)',
+                        }}
+                      >
+                        {avg.toFixed(1)} ({count}
+                        {language === 'ko' ? '건' : language === 'ja' ? '件' : ''})
                       </div>
                     </div>
 
                     {reviews.length === 0 ? (
-                      <div style={{
-                        textAlign: 'center',
-                        padding: '2rem 1rem',
-                        color: 'var(--muted)',
-                        fontSize: 13,
-                      }}>
+                      <div
+                        style={{
+                          textAlign: 'center',
+                          padding: '2rem 1rem',
+                          color: 'var(--muted)',
+                          fontSize: 13,
+                        }}
+                      >
                         {t.noReviews}
                       </div>
                     ) : (
-                      <div style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '1.5rem',
-                        maxHeight: '600px',
-                        overflowY: 'auto',
-                        paddingRight: '0.5rem',
-                      }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '1.5rem',
+                          maxHeight: '600px',
+                          overflowY: 'auto',
+                          paddingRight: '0.5rem',
+                        }}
+                      >
                         {reviews.map((review) => {
                           const formattedReview = formatReview(review, language);
                           return (
@@ -1901,36 +2173,44 @@ export default function StylistDashboard() {
                                 paddingBottom: '0.5rem',
                               }}
                             >
-                              <div style={{
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'flex-start',
-                                marginBottom: '0.5rem',
-                                gap: '0.5rem',
-                              }}>
-                                <div style={{
-                                  fontSize: 13,
-                                  color: 'var(--gold)',
-                                  fontWeight: 'bold',
-                                  letterSpacing: '0.02em',
-                                }}>
+                              <div
+                                style={{
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
+                                  alignItems: 'flex-start',
+                                  marginBottom: '0.5rem',
+                                  gap: '0.5rem',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    color: 'var(--gold)',
+                                    fontWeight: 'bold',
+                                    letterSpacing: '0.02em',
+                                  }}
+                                >
                                   {formattedReview.formattedStars}
                                 </div>
-                                <div style={{
-                                  fontSize: 11,
-                                  color: 'var(--muted)',
-                                }}>
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: 'var(--muted)',
+                                  }}
+                                >
                                   {formattedReview.dateStr}
                                 </div>
                               </div>
 
                               {review.tags && review.tags.length > 0 && (
-                                <div style={{
-                                  display: 'flex',
-                                  flexWrap: 'wrap',
-                                  gap: '0.4rem',
-                                  marginBottom: '0.5rem',
-                                }}>
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    flexWrap: 'wrap',
+                                    gap: '0.4rem',
+                                    marginBottom: '0.5rem',
+                                  }}
+                                >
                                   {review.tags.map((tag) => (
                                     <span
                                       key={tag}
@@ -1951,12 +2231,14 @@ export default function StylistDashboard() {
                               )}
 
                               {review.text && (
-                                <div style={{
-                                  fontSize: 12,
-                                  color: 'var(--text)',
-                                  lineHeight: 1.5,
-                                  fontStyle: 'italic',
-                                }}>
+                                <div
+                                  style={{
+                                    fontSize: 12,
+                                    color: 'var(--text)',
+                                    lineHeight: 1.5,
+                                    fontStyle: 'italic',
+                                  }}
+                                >
                                   "{review.text}"
                                 </div>
                               )}
@@ -1964,16 +2246,29 @@ export default function StylistDashboard() {
                               {/* 원본 리뷰 바로가기 */}
                               {review.photographerId && (
                                 <button
-                                  onClick={() => navigate(`/photographer/${review.photographerId}?tab=reviews`)}
+                                  onClick={() =>
+                                    navigate(`/photographer/${review.photographerId}?tab=reviews`)
+                                  }
                                   style={{
-                                    marginTop: 10, padding: '5px 12px',
-                                    background: 'transparent', border: '1px solid var(--border)',
-                                    color: 'var(--gold)', fontSize: 10,
-                                    fontFamily: 'var(--font-serif)', letterSpacing: '0.04em',
-                                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4,
+                                    marginTop: 10,
+                                    padding: '5px 12px',
+                                    background: 'transparent',
+                                    border: '1px solid var(--border)',
+                                    color: 'var(--gold)',
+                                    fontSize: 10,
+                                    fontFamily: 'var(--font-serif)',
+                                    letterSpacing: '0.04em',
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
                                   }}
                                 >
-                                  {language === 'ko' ? '📄 원본 리뷰 보기' : language === 'ja' ? '📄 元レビューを見る' : '📄 View Original Review'}
+                                  {language === 'ko'
+                                    ? '📄 원본 리뷰 보기'
+                                    : language === 'ja'
+                                      ? '📄 元レビューを見る'
+                                      : '📄 View Original Review'}
                                 </button>
                               )}
                             </div>
@@ -1987,24 +2282,30 @@ export default function StylistDashboard() {
             </div>
 
             {reviews.length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                padding: '3rem 2rem',
-                backgroundColor: 'var(--bg2)',
-                border: '1px dashed var(--border)',
-                marginTop: '2rem',
-              }}>
-                <div style={{
-                  fontSize: 14,
-                  color: 'var(--muted)',
-                  marginBottom: '0.5rem',
-                }}>
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '3rem 2rem',
+                  backgroundColor: 'var(--bg2)',
+                  border: '1px dashed var(--border)',
+                  marginTop: '2rem',
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: 'var(--muted)',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   {t.noReviewsReceived}
                 </div>
-                <div style={{
-                  fontSize: 11,
-                  color: 'var(--muted)',
-                }}>
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'var(--muted)',
+                  }}
+                >
                   {t.reviewsAppear}
                 </div>
               </div>

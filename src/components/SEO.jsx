@@ -32,7 +32,8 @@ import { useEffect } from 'react';
 
 const SITE_NAME = 'Phosnap';
 const SITE_URL = 'https://phosnap.com';
-const DEFAULT_DESCRIPTION = 'Global snap photography & video booking platform. Book professional photographers in Seoul, Kyoto, Paris, Bali and more.';
+const DEFAULT_DESCRIPTION =
+  'Global snap photography & video booking platform. Book professional photographers in Seoul, Kyoto, Paris, Bali and more.';
 const DEFAULT_IMAGE = '/og-default.svg';
 
 const OG_LOCALE = { ko: 'ko_KR', ja: 'ja_JP', zh: 'zh_CN', en: 'en_US' };
@@ -182,11 +183,13 @@ export const ProfileSEO = ({ photographer, lang }) => {
           '@type': 'PostalAddress',
           addressLocality: photographer.locationNames?.en || photographer.location,
         },
-        aggregateRating: photographer.rating ? {
-          '@type': 'AggregateRating',
-          ratingValue: photographer.rating,
-          reviewCount: photographer.reviews,
-        } : undefined,
+        aggregateRating: photographer.rating
+          ? {
+              '@type': 'AggregateRating',
+              ratingValue: photographer.rating,
+              reviewCount: photographer.reviews,
+            }
+          : undefined,
       }}
     />
   );
@@ -206,5 +209,7 @@ export const ExploreSEO = ({ lang }) => {
     ja: '国内・海外の人気撮影スポットを探索し、各都市のプロフォトグラファーを見つけましょう。',
     zh: '探索全球热门拍摄地点，找到每个城市的专业摄影师。',
   };
-  return <SEO title={titles[lang] || titles.en} description={descs[lang] || descs.en} lang={lang} />;
+  return (
+    <SEO title={titles[lang] || titles.en} description={descs[lang] || descs.en} lang={lang} />
+  );
 };

@@ -20,18 +20,18 @@ window.__BUILD__ = { commit: __BUILD_COMMIT__, time: __BUILD_TIME__ };
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-        <LanguageProvider>
-          <CurrencyProvider>
-            <AuthProvider>
-              {/* 담은 구성은 화면 밖에 둔다 — 탭을 옮겨도 살아 있어야 한다 */}
-              <CartProvider>
-                <BrowserRouter>
-                  <App />
-                </BrowserRouter>
-              </CartProvider>
-            </AuthProvider>
-          </CurrencyProvider>
-        </LanguageProvider>
+      <LanguageProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            {/* 담은 구성은 화면 밖에 둔다 — 탭을 옮겨도 살아 있어야 한다 */}
+            <CartProvider>
+              <BrowserRouter>
+                <App />
+              </BrowserRouter>
+            </CartProvider>
+          </AuthProvider>
+        </CurrencyProvider>
+      </LanguageProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
