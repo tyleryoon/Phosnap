@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Corners from '../components/Corners';
 import Footer from '../components/Footer';
+import SEO from '../components/SEO';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const CONTACT_ENDPOINT = import.meta.env.VITE_FORMSPREE_CONTACT_ID
@@ -134,6 +135,13 @@ const Contact = () => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
+      {/* 푸터에서 '고객센터' 로 걸린 공개 페이지다 — 제목이 없으면
+          검색 결과에도 탭에도 홈 제목이 뜬다. */}
+      <SEO
+        title={c.title}
+        description="Phosnap 예약·촬영·정산에 대한 문의를 남겨주세요. 영업일 기준 1~2일 안에 답변드립니다."
+        lang={lang}
+      />
       <div style={{ maxWidth: 960, margin: '0 auto', padding: '60px 24px 80px' }}>
 
         <div className="section-label">{c.label}</div>

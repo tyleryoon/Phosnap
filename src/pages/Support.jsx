@@ -101,6 +101,9 @@ const Support = ({ onAuthOpen }) => {
   if (!isLoggedIn) {
     return (
       <div className="page-enter" style={{ paddingTop: 160, textAlign: 'center', minHeight: '60vh' }}>
+        {/* 로그인 화면에도 제목은 있어야 한다. 없으면 탭에 홈 제목이 뜬다.
+            내용은 계정에 묶인 문의라 색인하지 않는다. */}
+        <SEO title="1:1 문의" description="Phosnap 1:1 문의와 답변 내역." noIndex />
         <div style={{
           fontFamily: 'var(--font-serif)', fontSize: 20,
           letterSpacing: '0.1em', marginBottom: 12,
@@ -124,10 +127,7 @@ const Support = ({ onAuthOpen }) => {
 
   return (
     <div className="page-enter" style={{ paddingTop: 100 }}>
-      <SEO
-        title="고객센터"
-        description="Phosnap 예약·취소·환불에 대한 자주 묻는 질문과 1:1 문의. 촬영 전후로 궁금한 점을 여기서 해결하세요."
-      />
+      <SEO title="1:1 문의" description="Phosnap 1:1 문의와 답변 내역." noIndex />
       <div className="section" style={{ maxWidth: 760, margin: '0 auto' }}>
 
         <div style={{ marginBottom: 36 }}>
