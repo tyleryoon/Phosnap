@@ -1721,7 +1721,24 @@ export const replacePackages = async (photographerId, type, items = []) => {
   return { data: data || [], error };
 };
 
-// ─── Artist Schedules (스케줄 CRUD) ─────────────────────────────────
+// ─── 작가 스케줄 (provider_* 로 위임) ────────────────────────────────
+//
+// FIX_19 에서 작가·헤메·벤더 스케줄을 provider_schedules /
+// provider_defaults 하나로 합쳤다. 그런데 **읽고 쓰는 쪽이 갈라져 있었다.**
+//
+//   작가 대시보드 · 예약 화면        → artist_schedules / artist_defaults
+//   헤메 · 벤더 · available_providers → provider_*
+//
+// FIX_19 의 이관은 한 번 돌고 끝이라, 그 뒤로 작가가 일정을 저장하면
+// 옛 테이블에만 쌓였다. 결과: 예약 화면의 dbDefaultSlots 가 null 이 되어
+// resolveDateStatus 가 전부 'unknown' 을 돌려주고 — **달력에 색 원이
+// 하나도 안 뜨고 예약 가능한 날짜가 사라진다.** 같은 이유로 그 작가는
+// 장바구니 조회(available_providers)에도 나타나지 않는다.
+//
+// 호출부 네 군데를 고치는 대신 여기 다섯 함수를 새 테이블로 돌린다.
+// 시그니처와 반환 모양은 그대로라 ArtistSchedule.jsx · Booking.jsx 는
+// 손대지 않는다. 두 테이블 모두 date / slots / blocked / day_off /
+// default_slots 로 컬럼 이름이 같아 변환도 필요 없다.
 
 /**
  * 작가의 특정 월 스케줄 조회
@@ -1729,77 +1746,43 @@ export const replacePackages = async (photographerId, type, items = []) => {
  * @param {number} year
  * @param {number} month — 1~12
  */
-export const getScheduleMonth = async (photographerId, year, month) => {
-  const sb = await getSupabase();
-  if (!sb) return { data: [], error: null };
-  const startDate = `${year}-${String(month).padStart(2,'0')}-01`;
-  const endDate = new Date(year, month, 0).toISOString().split('T')[0]; // last day
-  const { data, error } = await sb.from('artist_schedules').select('*')
-    .eq('photographer_id', photographerId)
-    .gte('date', startDate)
-    .lte('date', endDate)
-    .order('date');
-  return { data: data || [], error };
-};
+export const getScheduleMonth = (photographerId, year, month) =>
+  getProviderScheduleMonth('photographer', photographerId, year, month);
 
 /** 날짜별 스케줄 upsert (차단 슬롯, 휴무 등) */
-export const upsertScheduleDate = async (photographerId, date, { dayOff, slots, blocked }) => {
-  const sb = await getSupabase();
-  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const payload = {
-    photographer_id: photographerId,
-    date,
-    day_off: dayOff ?? false,
-    updated_at: new Date().toISOString(),
-  };
-  if (slots !== undefined) payload.slots = slots;
-  if (blocked !== undefined) payload.blocked = blocked;
-  const { data, error } = await sb.from('artist_schedules')
-    .upsert(payload, { onConflict: 'photographer_id,date' })
-    .select().single();
-  return { data, error };
-};
+export const upsertScheduleDate = (photographerId, date, { dayOff, slots, blocked }) =>
+  upsertProviderScheduleDate('photographer', photographerId, date, {
+    dayOff: dayOff ?? false,
+    ...(slots   !== undefined ? { slots }   : {}),
+    ...(blocked !== undefined ? { blocked } : {}),
+  });
 
 /** 여러 날짜 일괄 upsert (범위 열기) */
 export const upsertScheduleBatch = async (photographerId, entries) => {
   const sb = await getSupabase();
   if (!sb) return { error: { message: 'Supabase 연결 실패' } };
   const payloads = entries.map(e => ({
-    photographer_id: photographerId,
+    provider_type: 'photographer',
+    provider_id: photographerId,
     date: e.date,
     day_off: e.dayOff ?? false,
     slots: e.slots || [],
     blocked: e.blocked || [],
-    updated_at: new Date().toISOString(),
   }));
-  const { data, error } = await sb.from('artist_schedules')
-    .upsert(payloads, { onConflict: 'photographer_id,date' })
+  const { data, error } = await sb.from('provider_schedules')
+    .upsert(payloads, { onConflict: 'provider_type,provider_id,date' })
     .select();
+  if (error) console.error('[upsertScheduleBatch] 저장 실패:', error);
   return { data, error };
 };
 
-/** 기본 운영 시간 조회 */
-export const getDefaultSlots = async (photographerId) => {
-  const sb = await getSupabase();
-  if (!sb) return { data: null, error: null };
-  const { data, error } = await sb.from('artist_defaults').select('*')
-    .eq('photographer_id', photographerId).maybeSingle();
-  return { data, error };
-};
+/** 기본 운영 시간 조회 — 호출부는 data.default_slots 만 본다 */
+export const getDefaultSlots = (photographerId) =>
+  getProviderDefaults('photographer', photographerId);
 
 /** 기본 운영 시간 upsert */
-export const upsertDefaultSlots = async (photographerId, defaultSlots) => {
-  const sb = await getSupabase();
-  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
-  const { data, error } = await sb.from('artist_defaults')
-    .upsert({
-      photographer_id: photographerId,
-      default_slots: defaultSlots,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'photographer_id' })
-    .select().single();
-  return { data, error };
-};
+export const upsertDefaultSlots = (photographerId, defaultSlots) =>
+  upsertProviderDefaults('photographer', photographerId, { defaultSlots });
 
 // ─── Booking Conflict Check ─────────────────────────────────────────
 
@@ -1816,6 +1799,26 @@ export const getBookedSlots = async (photographerId, date) => {
     .eq('date', date)
     .in('status', ['pending', 'confirmed']);
   return { data: data || [], error };
+};
+
+/**
+ * 기간 안에서 이미 예약이 잡힌 날짜들.
+ *
+ * 일괄 클로즈가 이 날짜를 덮으면 고객은 예약을 들고 있는데 작가
+ * 일정에는 없는 상태가 된다 — 촬영 당일 아무도 안 나온다.
+ * bulk_set_schedule RPC 가 서버에서 지키는 규칙과 같다.
+ */
+export const getBookedDatesInRange = async (photographerId, from, to) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const { data, error } = await sb.from('bookings')
+    .select('date')
+    .eq('photographer_id', photographerId)
+    .gte('date', from)
+    .lte('date', to)
+    .in('status', ['pending', 'confirmed']);
+  if (error) console.error('[getBookedDatesInRange] 조회 실패:', error);
+  return { data: [...new Set((data || []).map(r => r.date))], error };
 };
 
 // ─── 48시간 자동 만료 (Edge Function 호출용) ────────────────────────

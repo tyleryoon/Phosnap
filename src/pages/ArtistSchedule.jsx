@@ -40,6 +40,7 @@ import {
   upsertScheduleBatch,
   getDefaultSlots,
   upsertDefaultSlots,
+  getBookedDatesInRange,
 } from '../lib/supabase';
 import {
   getInstancesByPhotographer,
@@ -1156,7 +1157,7 @@ const ArtistSchedule = () => {
     showSaved(`${rangeStart} ~ ${rangeEnd} ${selectedStr} 오픈 완료 ✓`);
   };
 
-  const handleCloseRange = () => {
+  const handleCloseRange = async () => {
     if (!rangeStart || !rangeEnd || rangeStart > rangeEnd) return;
     // 선택된 요일만 클로즈 대상
     const allDays = [0,1,2,3,4,5,6];
@@ -1166,12 +1167,44 @@ const ArtistSchedule = () => {
     // 즉시 캘린더 상태 반영
     const updated = getSchedule('photographer', artistId);
     setSchedule({ ...updated });
+
+    // ── Supabase 동기화 ──────────────────────────────────────────────
+    //
+    // 오픈(handleApplyRange)은 DB 에 쓰는데 클로즈는 localStorage 에만
+    // 썼다. 작가 화면에서는 닫힌 것처럼 보이는데 고객 예약 화면은
+    // provider_schedules 를 읽으므로 **그 날짜가 계속 열려 있었다.**
+    //
+    // ⚠ 이미 예약이 잡힌 날짜는 닫지 않는다. 닫아버리면 고객은 예약을
+    //   들고 있는데 작가 일정에는 없는 상태가 되어 촬영 당일 아무도
+    //   나오지 않는다. (bulk_set_schedule RPC 가 지키는 규칙과 같다)
+    let skipped = [];
+    if (dbConnected && dbPhotographerId) {
+      const { data: booked } = await getBookedDatesInRange(dbPhotographerId, rangeStart, rangeEnd);
+      const bookedSet = new Set(booked || []);
+      const entries = [];
+      let cur = new Date(rangeStart);
+      const end = new Date(rangeEnd);
+      while (cur <= end) {
+        const dateStr = cur.toISOString().split('T')[0];
+        if (!exclude.includes(String(cur.getDay()))) {
+          if (bookedSet.has(dateStr)) skipped.push(dateStr);
+          else entries.push({ date: dateStr, dayOff: true, slots: [], blocked: [] });
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      if (entries.length) await upsertScheduleBatch(dbPhotographerId, entries);
+    }
+
     const d = new Date(rangeStart);
     setCalYear(d.getFullYear());
     setCalMonth(d.getMonth());
     const dayLabels = ['일','월','화','수','목','금','토'];
     const selectedLabels = selectedDays.map(d => dayLabels[d]).join(', ');
-    showSaved(`${rangeStart} ~ ${rangeEnd} [${selectedLabels}] 일괄 클로즈 완료 ✓`);
+    showSaved(
+      skipped.length
+        ? `${rangeStart} ~ ${rangeEnd} [${selectedLabels}] 클로즈 — 예약이 있는 ${skipped.length}일은 그대로 두었습니다`
+        : `${rangeStart} ~ ${rangeEnd} [${selectedLabels}] 일괄 클로즈 완료 ✓`,
+    );
   };
 
   // ── 상시 오픈 (오늘 ~ 2100-12-31) ──

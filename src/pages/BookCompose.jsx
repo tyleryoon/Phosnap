@@ -590,7 +590,13 @@ const BookCompose = () => {
     if (k === 'venue') {
       const v = (result.venues || []).find((x) => String(x.id) === id);
       if (!v) return setPickMiss('그 장소는 이 시간에 예약할 수 없습니다.');
-      return pick('venue', { id: v.id, name: v.name, price: v.price, vendorId: v.vendor_id, locationIds: v.location_ids || [] });
+      return pick('venue', {
+        id: v.id,
+        name: v.name,
+        price: v.price,
+        vendorId: v.vendor_id,
+        locationIds: v.location_ids || [],
+      });
     }
     if (k === 'photographer') {
       const a = (result.photographers || []).find((x) => String(x.id) === id);
@@ -925,7 +931,7 @@ const BookCompose = () => {
                               ? drop('stylist')
                               : pick('stylist', {
                                   locationIds: s.location_ids || [],
-                stylistId: s.stylist_id,
+                                  stylistId: s.stylist_id,
                                   serviceId: s.service_id,
                                   name: s.name_ko,
                                   service: s.service_name,
@@ -1184,8 +1190,11 @@ const BookCompose = () => {
                 {deposit > 0 && (
                   <div
                     style={{
-                      display: 'flex', justifyContent: 'space-between',
-                      padding: '0 0 14px', fontSize: 12, color: 'var(--muted)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      padding: '0 0 14px',
+                      fontSize: 12,
+                      color: 'var(--muted)',
                     }}
                   >
                     <span>보증금 (반환)</span>
@@ -1198,14 +1207,17 @@ const BookCompose = () => {
                 {locMismatch && (
                   <div
                     style={{
-                      border: '1px solid var(--danger)', background: 'var(--bg)',
-                      padding: '10px 12px', marginBottom: 12,
-                      fontSize: 11.5, lineHeight: 1.7, color: 'var(--text)',
+                      border: '1px solid var(--danger)',
+                      background: 'var(--bg)',
+                      padding: '10px 12px',
+                      marginBottom: 12,
+                      fontSize: 11.5,
+                      lineHeight: 1.7,
+                      color: 'var(--text)',
                     }}
                   >
-                    담은 것들의 활동 지역이 서로 맞지 않습니다. 한 촬영에
-                    서로 다른 지역의 사람과 장소를 부를 수는 없습니다.
-                    하나를 빼거나 지역을 정해 다시 찾아보세요.
+                    담은 것들의 활동 지역이 서로 맞지 않습니다. 한 촬영에 서로 다른 지역의 사람과
+                    장소를 부를 수는 없습니다. 하나를 빼거나 지역을 정해 다시 찾아보세요.
                   </div>
                 )}
 

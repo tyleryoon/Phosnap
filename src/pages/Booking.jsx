@@ -1281,7 +1281,7 @@ const Booking = () => {
 
                 {loadError && (
                   <div style={{
-                    border: '1px solid #e85d5d', background: 'var(--bg2)',
+                    border: '1px solid var(--danger)', background: 'var(--bg2)',
                     padding: '14px 18px', marginBottom: 16, fontSize: 13, color: 'var(--danger)',
                   }}>
                     헤어메이크업·의상·장소 정보를 불러오지 못했습니다 — {loadError}
@@ -1293,7 +1293,7 @@ const Booking = () => {
                 )}
                 {scheduleError && (
                   <div style={{
-                    border: '1px solid #e85d5d', background: 'var(--bg2)',
+                    border: '1px solid var(--danger)', background: 'var(--bg2)',
                     padding: '14px 18px', marginBottom: 16, fontSize: 13, color: 'var(--danger)',
                   }}>
                     일정을 불러오지 못했습니다 — {scheduleError}
@@ -1347,9 +1347,9 @@ const Booking = () => {
                             width: 4, height: 4, borderRadius: '50%',
                             background: selected
                               ? 'var(--text)'
-                              : status === 'open'    ? '#22c55e'
+                              : status === 'open'    ? 'var(--success)'
                               : status === 'partial' ? 'var(--accent-deep)'
-                              : status === 'full'    ? '#e85d5d'
+                              : status === 'full'    ? 'var(--danger)'
                               : 'transparent',
                           }} />
                         )}
@@ -2169,7 +2169,7 @@ const Booking = () => {
                   {/* 비주얼 타임라인 */}
                   <div style={{ position: 'relative', paddingLeft: 24 }}>
                     {/* 세로 라인 */}
-                    <div style={{ position: 'absolute', left: 7, top: 4, bottom: 4, width: 2, background: 'linear-gradient(to bottom, #4caf50, var(--gold), #e85d5d)' }} />
+                    <div style={{ position: 'absolute', left: 7, top: 4, bottom: 4, width: 2, background: 'linear-gradient(to bottom, var(--success), var(--gold), var(--danger))' }} />
 
                     {[
                       {
