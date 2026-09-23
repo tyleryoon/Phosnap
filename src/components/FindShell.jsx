@@ -27,8 +27,12 @@ const fmt = (n) => (n === null || n === undefined ? null : `₩${Number(n).toLoc
 const HOURS = [2, 3, 4, 8];
 
 const inputStyle = {
-  padding: '9px 11px', background: 'var(--bg)', color: 'var(--text)',
-  border: '1px solid var(--border)', fontSize: 12.5, fontFamily: 'inherit',
+  padding: '9px 11px',
+  background: 'var(--bg)',
+  color: 'var(--text)',
+  border: '1px solid var(--border)',
+  fontSize: 12.5,
+  fontFamily: 'inherit',
 };
 
 // ── 카드 ──────────────────────────────────────────────────────────────
@@ -44,56 +48,74 @@ const Card = ({ item, onOpen, onPick, canPick, t }) => {
   return (
     <div
       style={{
-        display: 'flex', flexDirection: 'column',
-        border: '1px solid var(--border)', background: 'var(--bg2)',
-        borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        border: '1px solid var(--border)',
+        background: 'var(--bg2)',
+        borderRadius: 'var(--radius-lg)',
+        overflow: 'hidden',
       }}
     >
-    <button
-      type="button"
-      onClick={onOpen}
-      style={{
-        display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
-        border: 'none', background: 'transparent',
-        padding: 0, color: 'var(--text)', fontFamily: 'inherit',
-      }}
-    >
-      <div style={{ aspectRatio: '4 / 3', background: 'var(--bg)', overflow: 'hidden' }}>
-        {item.image && !err ? (
-          <img
-            src={item.image} alt={item.name || ''} loading="lazy"
-            onError={() => setErr(true)}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        ) : (
-          <div style={{
-            width: '100%', height: '100%', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            color: 'var(--muted)', fontSize: 11,
-          }}>
-            {t('find.noPhoto')}
-          </div>
-        )}
-      </div>
-      <div style={{ padding: '12px 14px 14px' }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>
-          {/* 이름이 없으면 비워두지 않고 그렇다고 말한다. 빈칸은 버그를 숨긴다. */}
-          {item.name || <span style={{ color: 'var(--muted)' }}>{t('find.noName')}</span>}
+      <button
+        type="button"
+        onClick={onOpen}
+        style={{
+          display: 'block',
+          width: '100%',
+          textAlign: 'left',
+          cursor: 'pointer',
+          border: 'none',
+          background: 'transparent',
+          padding: 0,
+          color: 'var(--text)',
+          fontFamily: 'inherit',
+        }}
+      >
+        <div style={{ aspectRatio: '4 / 3', background: 'var(--bg)', overflow: 'hidden' }}>
+          {item.image && !err ? (
+            <img
+              src={item.image}
+              alt={item.name || ''}
+              loading="lazy"
+              onError={() => setErr(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--muted)',
+                fontSize: 11,
+              }}
+            >
+              {t('find.noPhoto')}
+            </div>
+          )}
         </div>
-        {sub && (
-          <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 5, lineHeight: 1.5 }}>
-            {sub}
+        <div style={{ padding: '12px 14px 14px' }}>
+          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>
+            {/* 이름이 없으면 비워두지 않고 그렇다고 말한다. 빈칸은 버그를 숨긴다. */}
+            {item.name || <span style={{ color: 'var(--muted)' }}>{t('find.noName')}</span>}
           </div>
-        )}
-        {price && (
-          <div style={{ fontSize: 12, color: 'var(--gold)', marginTop: 8 }}>
-            {price}{item.byPerson ? ` ${t('find.from')}` : ''}
-            {/* per_session 같은 DB 값을 그대로 내보내고 있었다. 사람 말로 바꾼다. */}
-            {item.priceUnit ? ` / ${enumLabel(t, 'priceUnit', item.priceUnit)}` : ''}
-          </div>
-        )}
-      </div>
-    </button>
+          {sub && (
+            <div style={{ fontSize: 11.5, color: 'var(--muted)', marginTop: 5, lineHeight: 1.5 }}>
+              {sub}
+            </div>
+          )}
+          {price && (
+            <div style={{ fontSize: 12, color: 'var(--gold)', marginTop: 8 }}>
+              {price}
+              {item.byPerson ? ` ${t('find.from')}` : ''}
+              {/* per_session 같은 DB 값을 그대로 내보내고 있었다. 사람 말로 바꾼다. */}
+              {item.priceUnit ? ` / ${enumLabel(t, 'priceUnit', item.priceUnit)}` : ''}
+            </div>
+          )}
+        </div>
+      </button>
 
       {/* 담기.
           날짜·시각을 안 골랐으면 '그 시간에 가능한지' 를 판정할 수 없다.
@@ -105,12 +127,16 @@ const Card = ({ item, onOpen, onPick, canPick, t }) => {
         disabled={!canPick}
         title={canPick ? undefined : t('find.pickNeedsTime')}
         style={{
-          margin: '0 14px 14px', padding: '10px 0',
+          margin: '0 14px 14px',
+          padding: '10px 0',
           cursor: canPick ? 'pointer' : 'not-allowed',
-          border: 'none', borderRadius: 'var(--radius)',
+          border: 'none',
+          borderRadius: 'var(--radius)',
           background: canPick ? 'var(--ink)' : 'var(--ink-a08)',
           color: canPick ? 'var(--on-ink)' : 'var(--muted)',
-          fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit',
+          fontSize: 12.5,
+          fontWeight: 600,
+          fontFamily: 'inherit',
         }}
       >
         {canPick ? t('find.pick') : t('find.pickNeedsTime')}
@@ -183,16 +209,27 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
 
   useEffect(() => {
     let dead = false;
-    getActiveLocations().then(({ data }) => { if (!dead) setLocations(data || []); });
-    return () => { dead = true; };
+    getActiveLocations().then(({ data }) => {
+      if (!dead) setLocations(data || []);
+    });
+    return () => {
+      dead = true;
+    };
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const { data, anchored: a, error: e } = await findProviders({
-      kind, locationId: locationId || null,
-      date: date || null, time: time || null, hours,
+    const {
+      data,
+      anchored: a,
+      error: e,
+    } = await findProviders({
+      kind,
+      locationId: locationId || null,
+      date: date || null,
+      time: time || null,
+      hours,
     });
     setLoading(false);
     if (e) {
@@ -206,7 +243,9 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
     setAnchored(a);
   }, [kind, locationId, date, time, hours]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   // 조건을 주소에 남긴다 — 새로고침·공유해도 같은 화면이 나오게
   useEffect(() => {
@@ -255,9 +294,14 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
       <SEO title={title} description={description} />
 
       <div style={{ maxWidth: 1180, margin: '0 auto', padding: '130px 24px 60px' }}>
-        <h1 style={{
-          fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 400, margin: 0,
-        }}>
+        <h1
+          style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 26,
+            fontWeight: 400,
+            margin: 0,
+          }}
+        >
           {title}
         </h1>
         <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 10, lineHeight: 1.7 }}>
@@ -265,50 +309,98 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
         </p>
 
         {/* ── 조건 ── */}
-        <div style={{
-          display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end',
-          marginTop: 26, paddingBottom: 22, borderBottom: '1px solid var(--border)',
-        }}>
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 10,
+            alignItems: 'flex-end',
+            marginTop: 26,
+            paddingBottom: 22,
+            borderBottom: '1px solid var(--border)',
+          }}
+        >
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.region')}</span>
-            <select value={locationId} onChange={e => setLocationId(e.target.value)} style={inputStyle}>
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+              {t('find.region')}
+            </span>
+            <select
+              value={locationId}
+              onChange={(e) => setLocationId(e.target.value)}
+              style={inputStyle}
+            >
               <option value="">{t('find.allRegions')}</option>
               {/* getActiveLocations 는 id 문자열 배열을 준다.
                   예전엔 여기서 l.id / l.name_ko 를 읽어 전부 undefined 가 됐고,
                   지역 선택이 통째로 죽어 있었다. (React key 경고의 정체) */}
-              {locations.map(id => (
-                <option key={id} value={id}>{locationLabel(id, lang)}</option>
+              {locations.map((id) => (
+                <option key={id} value={id}>
+                  {locationLabel(id, lang)}
+                </option>
               ))}
             </select>
           </label>
 
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.dateOpt')}</span>
-            <input type="date" value={date} min={todayStr}
-              onChange={e => setDate(e.target.value)} style={inputStyle} />
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+              {t('find.dateOpt')}
+            </span>
+            <input
+              type="date"
+              value={date}
+              min={todayStr}
+              onChange={(e) => setDate(e.target.value)}
+              style={inputStyle}
+            />
           </label>
 
           <label style={{ display: 'grid', gap: 5 }}>
-            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.timeOpt')}</span>
-            <input type="time" value={time} step={1800}
-              onChange={e => setTime(e.target.value)} style={inputStyle} />
+            <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+              {t('find.timeOpt')}
+            </span>
+            <input
+              type="time"
+              value={time}
+              step={1800}
+              onChange={(e) => setTime(e.target.value)}
+              style={inputStyle}
+            />
           </label>
 
           {date && time && (
             <label style={{ display: 'grid', gap: 5 }}>
-              <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>{t('find.duration')}</span>
-              <select value={hours} onChange={e => setHours(Number(e.target.value))} style={inputStyle}>
-                {HOURS.map(h => <option key={h} value={h}>{h}{t('find.hourSuffix')}</option>)}
+              <span style={{ fontSize: 10.5, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+                {t('find.duration')}
+              </span>
+              <select
+                value={hours}
+                onChange={(e) => setHours(Number(e.target.value))}
+                style={inputStyle}
+              >
+                {HOURS.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                    {t('find.hourSuffix')}
+                  </option>
+                ))}
               </select>
             </label>
           )}
 
           {(date || time) && (
-            <button type="button" onClick={() => { setDate(''); setTime(''); }}
+            <button
+              type="button"
+              onClick={() => {
+                setDate('');
+                setTime('');
+              }}
               style={{
-                ...inputStyle, cursor: 'pointer', color: 'var(--muted)',
+                ...inputStyle,
+                cursor: 'pointer',
+                color: 'var(--muted)',
                 background: 'transparent',
-              }}>
+              }}
+            >
               {t('find.clearDate')}
             </button>
           )}
@@ -323,23 +415,40 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
         )}
 
         {/* ── 상태 줄 ── */}
-        <div style={{
-          marginTop: 20, display: 'flex', justifyContent: 'space-between',
-          alignItems: 'center', gap: 12, flexWrap: 'wrap',
-        }}>
+        <div
+          style={{
+            marginTop: 20,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-            {loading ? t('find.loading')
-              : error ? ''
-              : anchored
-                ? `${date} ${time} ${t('find.anchorFrom')} ${hours}${t('find.hourSuffix')} · ${items.length}`
-                : `${t('find.total')} ${items.length}`}
+            {loading
+              ? t('find.loading')
+              : error
+                ? ''
+                : anchored
+                  ? `${date} ${time} ${t('find.anchorFrom')} ${hours}${t('find.hourSuffix')} · ${items.length}`
+                  : `${t('find.total')} ${items.length}`}
           </div>
           {!loading && !error && items.length > 0 && (
-            <button type="button" onClick={goBook} style={{
-              padding: '10px 18px', border: 'none', background: 'var(--gold)',
-              color: 'var(--on-accent)', fontSize: 12, letterSpacing: '0.1em',
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}>
+            <button
+              type="button"
+              onClick={goBook}
+              style={{
+                padding: '10px 18px',
+                border: 'none',
+                background: 'var(--gold)',
+                color: 'var(--on-accent)',
+                fontSize: 12,
+                letterSpacing: '0.1em',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
               {t('find.goBook')}
             </button>
           )}
@@ -347,35 +456,59 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
 
         {/* ── 목록 ── */}
         {error ? (
-          <div style={{
-            marginTop: 28, padding: '22px 24px', border: '1px solid var(--gold-border)',
-            background: 'var(--bg2)',
-          }}>
-            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>{t('find.loadFail')}</div>
+          <div
+            style={{
+              marginTop: 28,
+              padding: '22px 24px',
+              border: '1px solid var(--gold-border)',
+              background: 'var(--bg2)',
+            }}
+          >
+            <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14 }}>
+              {t('find.loadFail')}
+            </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.7 }}>
               {error}
             </div>
-            <button type="button" onClick={load} style={{
-              marginTop: 14, padding: '8px 16px', border: '1px solid var(--border)',
-              background: 'transparent', color: 'var(--gold)', fontSize: 12,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}>
+            <button
+              type="button"
+              onClick={load}
+              style={{
+                marginTop: 14,
+                padding: '8px 16px',
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--gold)',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
               {t('find.retry')}
             </button>
           </div>
         ) : loading ? null : items.length === 0 ? (
-          <div style={{
-            marginTop: 40, textAlign: 'center', color: 'var(--muted)',
-            fontSize: 13, lineHeight: 1.8,
-          }}>
-            {anchored ? t('find.emptyAnchored') : (emptyHint || t('find.empty'))}
+          <div
+            style={{
+              marginTop: 40,
+              textAlign: 'center',
+              color: 'var(--muted)',
+              fontSize: 13,
+              lineHeight: 1.8,
+            }}
+          >
+            {anchored ? t('find.emptyAnchored') : emptyHint || t('find.empty')}
           </div>
         ) : (
-          <div style={{
-            marginTop: 28, display: 'grid', gap: 18,
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-          }}>
-            {items.map(it => (
+          <div
+            style={{
+              marginTop: 28,
+              display: 'grid',
+              gap: 18,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+            }}
+          >
+            {items.map((it) => (
               <Card
                 key={`${it.kind}-${it.id}`}
                 item={it}
@@ -390,16 +523,21 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
       </div>
 
       {detail && (
-        <ProviderDetailModal
-          kind={detail.kind}
-          data={detail.raw}
-          onClose={() => setDetail(null)}
-        >
-          <button type="button" onClick={goBook} style={{
-            padding: '11px 20px', border: 'none', background: 'var(--gold)',
-            color: 'var(--on-accent)', fontSize: 12, letterSpacing: '0.1em',
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>
+        <ProviderDetailModal kind={detail.kind} data={detail.raw} onClose={() => setDetail(null)}>
+          <button
+            type="button"
+            onClick={goBook}
+            style={{
+              padding: '11px 20px',
+              border: 'none',
+              background: 'var(--gold)',
+              color: 'var(--on-accent)',
+              fontSize: 12,
+              letterSpacing: '0.1em',
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
             {t('find.bookThis')}
           </button>
         </ProviderDetailModal>

@@ -246,7 +246,18 @@ const BookCompose = () => {
     setItems: setCartRaw,
     anchor: cartAnchor,
     setAnchor: setCartAnchor,
+    count: cartCount,
   } = useCart();
+
+  // 담은 게 있으면 목록을 접고 구성부터 보여준다.
+  //
+  // 찾기 탭에서 고르고 온 고객에게 목록을 다시 펼쳐 보이면, 방금 담은 게
+  // 화면 구석의 사이드바로 밀린다. 지금 확인해야 할 건 '무엇을 담았나'
+  // 이지 '또 뭐가 있나' 가 아니다. 더 담고 싶으면 그때 펼친다.
+  const [showList, setShowList] = useState(false);
+  const listOpen = cartCount === 0 || showList;
+  // 조건 입력칸도 같은 이유로 접는다
+  const [showAnchor, setShowAnchor] = useState(false);
 
   // 자체 의상이 주인과 함께 빠졌을 때 그 사실을 알린다.
   // 말없이 사라지면 고객은 자기가 뭘 잘못 눌렀는지 모른다.
@@ -530,20 +541,29 @@ const BookCompose = () => {
       const s = allStylists.find((x) => String(x.service_id) === id);
       if (!s) return setPickMiss('그 시술은 이 시간에 가능하지 않습니다.');
       return pick('stylist', {
-        stylistId: s.stylist_id, serviceId: s.service_id,
-        name: s.name_ko, service: s.service_name, price: s.price,
-        timing: s.timing, durationMinutes: s.duration_minutes,
-        offsetMinutes: s.offset_minutes, dressSelf: s.dress_self,
+        stylistId: s.stylist_id,
+        serviceId: s.service_id,
+        name: s.name_ko,
+        service: s.service_name,
+        price: s.price,
+        timing: s.timing,
+        durationMinutes: s.duration_minutes,
+        offsetMinutes: s.offset_minutes,
+        dressSelf: s.dress_self,
       });
     }
     if (k === 'dress') {
       const d = allDresses.find((x) => String(x.id) === id);
       if (!d) return setPickMiss('그 의상은 이 시간에 대여할 수 없습니다.');
       return pick('dress', {
-        id: d.id, name: d.name_ko, price: d.price,
+        id: d.id,
+        name: d.name_ko,
+        price: d.price,
         size: (d.sizes || [])[0] || null,
-        stylistId: d.stylist_id || null, vendorId: d.vendor_id || null,
-        artistId: null, ownerStylistId: null,
+        stylistId: d.stylist_id || null,
+        vendorId: d.vendor_id || null,
+        artistId: null,
+        ownerStylistId: null,
       });
     }
     if (k === 'venue') {
@@ -562,9 +582,27 @@ const BookCompose = () => {
   return (
     <div className="page-enter" style={{ paddingTop: 92 }}>
       <div className="section" style={{ maxWidth: 1200 }}>
-        {/* ══════════ 앵커 ══════════ */}
+        {/* ══════════ 앵커 ══════════
+            담은 게 있으면 접는다. 조건은 이미 정해졌고, 지금 확인할 건
+            무엇을 담았는지다. 조건 줄(아래 '2026-10-15 · 14:00 ~ …')에
+            요약이 있으니 바꾸고 싶으면 '조건 바꾸기' 로 다시 편다. */}
+        {cartCount > 0 && !showAnchor && (
+          <button
+            type="button"
+            onClick={() => setShowAnchor(true)}
+            style={{
+              marginBottom: 20, padding: '9px 16px', cursor: 'pointer',
+              border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+              background: 'transparent', color: 'var(--muted)',
+              fontSize: 12.5, fontFamily: 'inherit',
+            }}
+          >
+            조건 바꾸기
+          </button>
+        )}
         <div
           style={{
+            display: cartCount > 0 && !showAnchor ? 'none' : 'block',
             border: '1px solid var(--gold-border)',
             background: 'var(--gold-dim)',
             padding: '24px 26px',
@@ -742,20 +780,37 @@ const BookCompose = () => {
             >
               <div style={{ fontSize: 13, color: 'var(--muted)', fontFamily: 'var(--font-serif)' }}>
                 {date} · {hhmm(result.shootStart)} ~ {hhmm(result.shootEnd)}
-                {locationId ? ` · ${locationId}` : ' · 전 지역'}
+                {/* 지역을 원시 id 로 내보내고 있었다 — 'seoul' 이 그대로 찍혔다 */}
+                {locationId ? ` · ${locationLabel(locationId, lang)}` : ' · 전 지역'}
               </div>
+
+              {/* 담은 게 있는데 목록이 접혀 있으면, 더 고를 수 있다는 걸 알려준다 */}
+              {cartCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowList((v) => !v)}
+                  style={{
+                    padding: '9px 16px', cursor: 'pointer',
+                    border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                    background: 'transparent', color: 'var(--text)',
+                    fontSize: 12.5, fontFamily: 'inherit',
+                  }}
+                >
+                  {listOpen ? '목록 접기' : '+ 더 담기'}
+                </button>
+              )}
             </div>
 
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0,1fr) 300px',
+                gridTemplateColumns: listOpen ? 'minmax(0,1fr) 300px' : 'minmax(0,1fr)',
                 gap: 24,
                 alignItems: 'start',
               }}
               className="compose-layout"
             >
-              <div>
+              <div style={{ display: listOpen ? 'block' : 'none' }}>
                 {/* 탭 */}
                 <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
                   {TABS.map((t) => {
@@ -972,10 +1027,15 @@ const BookCompose = () => {
                       type="button"
                       onClick={() => setPickMiss(null)}
                       style={{
-                        display: 'block', marginTop: 6, padding: 0,
-                        background: 'transparent', border: 'none',
-                        color: 'var(--muted)', fontSize: 11,
-                        textDecoration: 'underline', cursor: 'pointer',
+                        display: 'block',
+                        marginTop: 6,
+                        padding: 0,
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--muted)',
+                        fontSize: 11,
+                        textDecoration: 'underline',
+                        cursor: 'pointer',
                         fontFamily: 'inherit',
                       }}
                     >
