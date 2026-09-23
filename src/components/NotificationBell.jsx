@@ -3,6 +3,7 @@
  * Supabase Realtime으로 새 알림 실시간 수신
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { BellIcon } from './Icons';
 import {
   getMyNotifications,
   getUnreadNotificationCount,
@@ -122,14 +123,15 @@ const NotificationBell = () => {
         style={{
           background: 'transparent', border: 'none', cursor: 'pointer',
           padding: '6px 8px', position: 'relative',
-          color: 'var(--muted)', fontSize: 18,
+          color: 'var(--muted)',
+          display: 'flex', alignItems: 'center',
           transition: 'color 0.2s',
         }}
         onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gold)'}
         onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}
         title={lang === 'ko' ? '알림' : 'Notifications'}
       >
-        🔔
+        <BellIcon />
         {unreadCount > 0 && (
           <span style={{
             position: 'absolute', top: 2, right: 2,
