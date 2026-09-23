@@ -980,6 +980,33 @@ const ArtistSchedule = () => {
             saveFailed = syncErr.message;
           }
 
+          // ── 활동 지역 전부를 provider_locations 로 ────────────────────
+          //
+          // 여기서는 메인 활동지 하나만 photographers.location_id 로
+          // 넘겼다. 작가가 '활동 지역' 탭에 서울·부산·교토를 적어도
+          // 고객 조회(available_providers)는 메인 한 곳만 봤다 —
+          // 나머지 도시의 촬영에는 아예 나타나지 않았다.
+          //
+          // OFF 로 꺼둔 지역은 빼고, 출장 지역은 기간을 함께 넘긴다.
+          // 서버의 provider_in_location 이 촬영 날짜로 그 기간을 본다.
+          const activeLocs = (updated.locations || [])
+            .filter(l => l.regionId && l.active !== false)
+            .map(l => ({
+              locationId:  l.regionId,
+              periodStart: l.isMain ? null : (l.period?.start || null),
+              periodEnd:   l.isMain ? null : (l.period?.end   || null),
+            }));
+          if (activeLocs.length) {
+            const { setProviderLocations } = await import('../lib/supabase');
+            const { error: locErr } = await setProviderLocations(
+              'photographer', dbPhotographerId, activeLocs,
+            );
+            if (locErr) {
+              console.error('[ArtistSchedule] 활동 지역 동기화 실패:', locErr);
+              saveFailed = locErr.message;
+            }
+          }
+
           // packages 테이블에도 반영한다. load() 가 이 테이블에서 읽으므로
           // 여기에 쓰지 않으면 저장한 상품이 새로고침 후 사라진다.
           const { replacePackages } = await import('../lib/supabase');

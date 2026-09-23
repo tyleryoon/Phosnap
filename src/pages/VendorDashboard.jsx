@@ -5,6 +5,7 @@ import DressCard from '../components/DressCard';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationPicker from '../components/LocationPicker';
+import ProviderLocations from '../components/ProviderLocations';
 import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt } from '../data/photographers';
@@ -606,6 +607,17 @@ function VendorDashboard() {
             }),
             vendor_type: selectedVendorTypes.join(','),
           }));
+          // 대표 지역을 활동 지역 목록에도 넣는다. 안 넣으면 지역을
+          // 바꿔도 provider_locations 에는 옛 지역만 남아, 옮겨간 도시의
+          // 촬영 검색에서 이 업체의 아이템이 빠진다.
+          const baseLoc = pf.location?.locationId
+            || (typeof pf.location === 'string' ? pf.location : null);
+          const provId = activeDashboard === 'venue' ? venueVendorId : vendorProfile.id;
+          if (baseLoc && provId) {
+            const { addProviderLocation } = await import('../lib/supabase');
+            await addProviderLocation(activeDashboard === 'venue' ? 'venue' : 'dress', provId, baseLoc);
+          }
+
           setProfileSaveStatus('saved');
           setShowSavePopup(true);
           setTimeout(() => setShowSavePopup(false), 2500);
@@ -2107,6 +2119,19 @@ function VendorDashboard() {
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '0.4rem' }}>
                   이 지역에서 촬영하는 고객에게 아이템이 노출됩니다.
                 </p>
+
+                {/* 한 곳만 적을 수 있던 것을 여러 곳으로. 서울·부산 둘 다
+                    배송·픽업이 되는 업체가 부산 촬영 검색에서 빠지던 문제. */}
+                <div style={{ marginTop: '1.5rem', borderTop: '1px solid var(--border)', paddingTop: '1.25rem' }}>
+                  <ProviderLocations
+                    providerType={activeDashboard === 'venue' ? 'venue' : 'dress'}
+                    providerId={activeDashboard === 'venue' ? venueVendorId : vendorProfile?.id}
+                    baseLocationId={profileForm.location?.locationId
+                      || (typeof profileForm.location === 'string' ? profileForm.location : null)
+                      || null}
+                    lang={lang}
+                  />
+                </div>
               </div>
 
               <div style={{ marginBottom: '1.5rem' }}>

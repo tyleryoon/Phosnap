@@ -5,6 +5,7 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LocationPicker from '../components/LocationPicker';
+import ProviderLocations from '../components/ProviderLocations';
 import ListingStatus from '../components/ListingStatus';
 import PendingItems from '../components/PendingItems';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
@@ -1324,6 +1325,14 @@ const ProfileEditTab = ({ t, stylistId }) => {
       });
       if (error) throw new Error(error.message);
 
+      // 대표 지역은 활동 지역 목록에도 들어가야 한다. 이게 없으면
+      // 대표 지역을 바꿔도 provider_locations 에는 옛 지역만 남아
+      // 옮겨간 도시의 촬영 검색에 안 나온다.
+      if (profile.location?.locationId) {
+        const { addProviderLocation } = await import('../lib/supabase');
+        await addProviderLocation('stylist', stylistId, profile.location.locationId);
+      }
+
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(null), 3000);
     } catch (error) {
@@ -1470,6 +1479,17 @@ const ProfileEditTab = ({ t, stylistId }) => {
           <LocationPicker
             value={profile.location}
             onChange={location => setProfile({ ...profile, location })}
+            lang={lang}
+          />
+        </div>
+
+        {/* 활동 지역 — 대표 지역 외에 더 뛰는 도시를 여기서 더한다.
+            여기 없는 지역의 촬영에는 검색 결과에 나오지 않는다. */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 24 }}>
+          <ProviderLocations
+            providerType="stylist"
+            providerId={stylistId}
+            baseLocationId={profile.location?.locationId || null}
             lang={lang}
           />
         </div>

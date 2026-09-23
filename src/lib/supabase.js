@@ -1864,6 +1864,100 @@ export const updateStylistProfile = async (stylistId, updates) => {
 export const getStylistBookings = async (stylistId) =>
   getProviderBookings('stylist', stylistId);
 
+// ─── 활동 지역 (작가 · 헤메 · 벤더 공용) ─────────────────────────────
+//
+// 한 사람이 서울·부산·교토에서 활동할 수 있다. 예전에는 테이블마다
+// location_id 한 칸뿐이라 나머지 지역에서는 아예 검색에 안 나왔다.
+// FIX_43 의 provider_locations 가 그걸 푼다. 장바구니의 지역 교차
+// 검증(lib/cart.js)도 이 목록을 교집합으로 본다.
+
+/** 활동 지역 id 목록. 없으면 빈 배열 */
+export const getProviderLocations = async (providerType, providerId) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('provider_locations')
+    .select('location_id')
+    .eq('provider_type', providerType)
+    .eq('provider_id', providerId)
+    .eq('is_active', true);
+  if (error) console.error('[getProviderLocations] 조회 실패:', error);
+  return { data: (data || []).map(r => r.location_id), error };
+};
+
+/**
+ * 지역 한 곳을 활동 지역에 넣는다 (이미 있으면 그대로).
+ *
+ * 프로필의 대표 지역을 저장할 때 같이 부른다. 안 부르면 대표 지역을
+ * 바꿔도 provider_locations 에는 옛 지역만 남아, 옮겨간 도시의 촬영
+ * 검색에 안 나온다.
+ */
+export const addProviderLocation = async (providerType, providerId, locationId) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId || !locationId) return { error: null };
+  const { error } = await sb.from('provider_locations')
+    .upsert(
+      { provider_type: providerType, provider_id: providerId, location_id: locationId, is_active: true },
+      { onConflict: 'provider_type,provider_id,location_id' },
+    );
+  if (error) console.error('[addProviderLocation] 저장 실패:', error);
+  return { error };
+};
+
+/**
+ * 활동 지역을 이 목록과 같게 맞춘다.
+ *
+ * 통째로 지우고 다시 넣지 않는다. 지우는 순간과 넣는 순간 사이에
+ * 고객이 조회하면 그 사람이 어느 지역에도 없는 상태로 보인다.
+ * 빠진 것만 지우고 새것만 넣는다.
+ */
+export const setProviderLocations = async (providerType, providerId, locations) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { error: { message: 'Supabase 연결 실패' } };
+
+  // 문자열 id 또는 { locationId, periodStart, periodEnd } 를 받는다.
+  // 작가는 출장 지역에 기간이 붙는다 — 그 기간에만 그 도시에서 잡힌다
+  // (provider_in_location 이 서버에서 날짜를 본다). 기간이 없으면 상시.
+  const rows = new Map();
+  for (const l of locations || []) {
+    const id = typeof l === 'string' ? l : l?.locationId;
+    if (!id) continue;
+    rows.set(id, {
+      provider_type: providerType,
+      provider_id:   providerId,
+      location_id:   id,
+      period_start:  (typeof l === 'string' ? null : l.periodStart) || null,
+      period_end:    (typeof l === 'string' ? null : l.periodEnd)   || null,
+      is_active:     true,
+    });
+  }
+  const want = [...rows.keys()];
+
+  const { data: have, error: readErr } = await getProviderLocations(providerType, providerId);
+  if (readErr) return { error: readErr };
+
+  // upsert 로 기간까지 갱신한다. 통째로 지우고 다시 넣지 않는다 —
+  // 지운 순간과 넣는 순간 사이에 고객이 조회하면 이 사람이 어느
+  // 지역에도 없는 상태로 보인다.
+  if (want.length) {
+    const { error } = await sb.from('provider_locations')
+      .upsert([...rows.values()], { onConflict: 'provider_type,provider_id,location_id' });
+    if (error) { console.error('[setProviderLocations] 저장 실패:', error); return { error }; }
+  }
+
+  const toRemove = have.filter(id => !rows.has(id));
+  if (toRemove.length) {
+    const { error } = await sb.from('provider_locations')
+      .delete()
+      .eq('provider_type', providerType)
+      .eq('provider_id', providerId)
+      .in('location_id', toRemove);
+    if (error) { console.error('[setProviderLocations] 삭제 실패:', error); return { error }; }
+  }
+
+  return { data: want, error: null };
+};
+
 // ─── 공통 스케줄 (작가 · 헤메 · 벤더) ────────────────────────────────
 //
 // 예전에는 역할마다 저장 방식이 달랐다.
