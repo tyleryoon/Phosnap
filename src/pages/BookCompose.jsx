@@ -116,6 +116,12 @@ const hhmm = (iso) => {
   });
 };
 
+/** 지금 시각 'HH:MM'. 오늘 촬영에서 지난 시각을 거르는 데 쓴다. */
+const nowHHMM = () => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -245,6 +251,10 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
 //
 // 사람으로 묶고, 그 사람이 파는 옵션을 안에서 고르게 한다.
 const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDetail }) => {
+  // 이 사람의 옵션이 담겨 있으면 펼친 채로 시작한다.
+  const hasPicked = person.services.some((s) => s.service_id === pickedServiceId);
+  const [open, setOpen] = useState(hasPicked);
+
   // 목록에서도 실제로 낼 값을 보여준다. 시간당 동행비는 촬영 길이를
   // 곱해야 하므로, 안 곱하면 목록과 합계가 달라진다.
   const charge = (s) =>
@@ -256,53 +266,85 @@ const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDe
       shootHours,
     });
 
-  const from = Math.min(...person.services.map((s) => s.price || 0).filter((n) => n > 0));
+  const prices = person.services.map((s) => charge(s).total).filter((n) => n > 0);
+  const from = prices.length ? Math.min(...prices) : 0;
+
+  // 동행 되는 사람인지 한 줄로 알려준다 — 목록에서 가장 먼저 보는 정보다.
+  const canAccompany = person.services.some((s) => isAccompany(s.timing));
 
   return (
     <div
       style={{
-        border: `1px solid ${person.services.some((s) => s.service_id === pickedServiceId) ? 'var(--gold)' : 'var(--border)'}`,
+        border: `1px solid ${hasPicked ? 'var(--gold)' : 'var(--border)'}`,
         background: 'var(--bg2)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
       }}
     >
-      {person.img ? (
-        <img
-          src={person.img}
-          alt={person.name}
-          style={{ width: '100%', height: 150, objectFit: 'cover' }}
-        />
-      ) : (
+      {/* 접힌 상태 — 사진 · 이름 · 시작가. 한 화면에 많이 들어가야 한다. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex',
+          gap: 10,
+          alignItems: 'center',
+          padding: 10,
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          textAlign: 'left',
+          width: '100%',
+        }}
+      >
         <div
           style={{
-            height: 60,
-            background: 'var(--bg)',
+            width: 52,
+            height: 52,
+            flexShrink: 0,
+            background: person.img ? `url(${person.img}) center/cover` : 'var(--bg)',
+            border: '1px solid var(--border)',
+          }}
+        />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              fontFamily: 'var(--font-serif)',
+              fontSize: 13.5,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {person.name}
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+            {from > 0 ? `${fmt(from)}~` : '가격 문의'}
+          </div>
+          <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 1 }}>
+            옵션 {person.services.length}
+            {canAccompany ? ' · 동행 가능' : ''}
+          </div>
+        </div>
+        <span style={{ color: 'var(--muted)', fontSize: 11, flexShrink: 0 }}>
+          {open ? '−' : '+'}
+        </span>
+      </button>
+
+      {/* 펼친 상태 — 이 사람이 파는 옵션. 시점이 곧 '동행 여부' 다. */}
+      {open && (
+        <div
+          style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--muted)',
-            fontSize: 11,
+            flexDirection: 'column',
+            gap: 6,
+            padding: '0 10px 10px',
           }}
         >
-          사진 없음
-        </div>
-      )}
-
-      <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, marginBottom: 4 }}>
-          {person.name}
-        </div>
-        <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>
-          {person.specialty || '헤어메이크업'}
-          {Number.isFinite(from) && from > 0 ? ` · ${fmt(from)}~` : ''}
-        </div>
-
-        {/* 이 사람이 파는 옵션. 시점이 곧 '동행 여부' 다. */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
           {person.services.map((s) => {
             const on = s.service_id === pickedServiceId;
+            const c = charge(s);
             return (
               <button
                 key={s.service_id}
@@ -310,7 +352,7 @@ const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDe
                 onClick={() => (on ? onDrop() : onPick(s))}
                 style={{
                   textAlign: 'left',
-                  padding: '9px 10px',
+                  padding: '8px 10px',
                   cursor: 'pointer',
                   fontSize: 12,
                   border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}`,
@@ -320,9 +362,7 @@ const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDe
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <span>{s.service_name}</span>
-                  <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>
-                    {fmt(charge(s).total)}
-                  </span>
+                  <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>{fmt(c.total)}</span>
                 </div>
                 <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
                   {s.__fromArtist
@@ -330,42 +370,37 @@ const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDe
                     : `${TIMING_LABEL[s.timing] || s.timing} · ${hhmm(s.busy_from)}~${hhmm(s.busy_to)}`}
                 </div>
                 {/* 동행값은 시술값에 섞지 않는다. 왜 그 값인지 보여야 납득이 된다. */}
-                {charge(s).accompany > 0 &&
-                  (() => {
-                    const c = charge(s);
-                    return (
-                      <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
-                        시술 {fmt(c.service)} + 동행{' '}
-                        {c.unit === 'hour' && c.hours > 0
-                          ? `${fmt(c.rate)}/시간 × ${c.hours}시간 = ${fmt(c.accompany)}`
-                          : fmt(c.accompany)}
-                      </div>
-                    );
-                  })()}
+                {c.accompany > 0 && (
+                  <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
+                    시술 {fmt(c.service)} + 동행{' '}
+                    {c.unit === 'hour' && c.hours > 0
+                      ? `${fmt(c.rate)}/시간 × ${c.hours}시간 = ${fmt(c.accompany)}`
+                      : fmt(c.accompany)}
+                  </div>
+                )}
               </button>
             );
           })}
-        </div>
 
-        {onDetail && (
-          <button
-            type="button"
-            onClick={onDetail}
-            style={{
-              marginTop: 10,
-              padding: '7px 0',
-              cursor: 'pointer',
-              fontSize: 11,
-              border: '1px solid var(--border)',
-              background: 'transparent',
-              color: 'var(--muted)',
-              fontFamily: 'var(--font-serif)',
-            }}
-          >
-            상세
-          </button>
-        )}
-      </div>
+          {onDetail && (
+            <button
+              type="button"
+              onClick={onDetail}
+              style={{
+                padding: '6px 0',
+                cursor: 'pointer',
+                fontSize: 11,
+                border: '1px solid var(--border)',
+                background: 'transparent',
+                color: 'var(--muted)',
+                fontFamily: 'var(--font-serif)',
+              }}
+            >
+              상세
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -384,8 +419,22 @@ const BookCompose = () => {
 
   // ── 앵커 ──
   const [locationId, setLocationId] = useState(() => urlParams.get('loc') || '');
-  const [date, setDate] = useState(() => urlParams.get('date') || '');
-  const [time, setTime] = useState(() => urlParams.get('time') || '');
+  // 지난 날짜는 받지 않는다.
+  //
+  // 날짜 칸에 min 을 걸어뒀지만 그건 달력 UI 의 힌트일 뿐이다. 주소로
+  // ?date=2020-01-01 을 주면 그대로 통과해 2020년 촬영을 구성할 수 있었다
+  // (작가 4명·의상 7·장소 3이 뜨고 담기 버튼도 살아 있었다).
+  const [date, setDate] = useState(() => {
+    const d = urlParams.get('date') || '';
+    return d && d < todayStr() ? '' : d;
+  });
+  const [time, setTime] = useState(() => {
+    const d = urlParams.get('date') || '';
+    const t = urlParams.get('time') || '';
+    // 오늘인데 이미 지난 시각이면 고른 것으로 치지 않는다
+    if (d === todayStr() && t && t <= nowHHMM()) return '';
+    return t;
+  });
   const [hours, setHours] = useState(() => {
     const h = Number(urlParams.get('hours'));
     return [2, 3, 4, 8].includes(h) ? h : 2;
@@ -421,7 +470,11 @@ const BookCompose = () => {
   // 찾기 탭에서 고르고 온 고객에게 목록을 다시 펼쳐 보이면, 방금 담은 게
   // 화면 구석의 사이드바로 밀린다. 지금 확인해야 할 건 '무엇을 담았나'
   // 이지 '또 뭐가 있나' 가 아니다. 더 담고 싶으면 그때 펼친다.
-  const [showList, setShowList] = useState(false);
+  // 여기서 직접 고르는 중이면 접지 않는다. 예전에는 조건이
+  // `cartCount === 0 || showList` 였다 — 작가를 하나 담는 순간 목록이
+  // 통째로 사라져서, 이어서 헤메를 고르려면 '+ 더 담기' 를 찾아
+  // 눌러야 했다. 담았는데 화면이 비면 잘못 누른 줄 안다.
+  const [showList, setShowList] = useState(() => !urlParams.get('pick'));
   const listOpen = cartCount === 0 || showList;
   // 조건 입력칸도 같은 이유로 접는다
   const [showAnchor, setShowAnchor] = useState(false);
@@ -625,7 +678,28 @@ const BookCompose = () => {
   }, [search, urlParams, date, time]);
 
   // ── 담기 ──
-  const pick = (key, value) => setCart((c) => ({ ...c, [key]: value }));
+  // 담으면 다음으로 안내한다.
+  //
+  // 예전에는 담아도 아무 일이 없었다. 고객은 골라놓고 "이제 뭘 하지" 에서
+  // 멈췄다 — 다음 탭은 직접 찾아 눌러야 했고, 그게 선택인지 필수인지도
+  // 알 수 없었다. 아직 안 담은 칸 중 다음 것으로 옮겨준다.
+  //
+  // 이미 담은 칸은 건너뛴다. 되돌아가 바꾸고 싶으면 탭을 직접 누르면 된다.
+  const ORDER = ['photographer', 'stylist', 'dress', 'venue'];
+  const goNextEmpty = (justPicked, nextCart) => {
+    const from = ORDER.indexOf(justPicked);
+    const next = ORDER.slice(from + 1).find((k) => !nextCart[k]);
+    if (next) setTab(next);
+  };
+
+  const pick = (key, value) =>
+    setCart((c) => {
+      const next = { ...c, [key]: value };
+      // setState 안에서 다른 setState 를 부르지 않는다 — updater 는 순수해야
+      // 하고 React 가 두 번 부를 수 있다. 다음 틱으로 미룬다.
+      queueMicrotask(() => goNextEmpty(key, next));
+      return next;
+    });
   const drop = (key) => setCart((c) => ({ ...c, [key]: null }));
 
   const pickPhotographer = async (a) => {
@@ -684,20 +758,52 @@ const BookCompose = () => {
   // 담은 것들의 활동 지역이 서로 맞는가 (전 지역으로 볼 때 실제로 일한다)
   const locMismatch = useMemo(() => locationConflict(cart), [cart]);
 
+  // ── 나 자신은 목록에서 뺀다 ──────────────────────────────────────────
+  //
+  // 헤메로 로그인한 채 예약 화면을 열면 **자기 시술이 그대로 떴다.**
+  // 자기를 담으면 그 시간에 자기와 자기가 겹치는 예약이 만들어지고,
+  // 정산은 자기가 자기에게 돈을 내는 꼴이 된다.
+  //
+  // 페이지를 통째로 막지는 않는다 — 헤메도 고객으로서 자기 촬영을
+  // 예약할 수 있어야 한다. 막아야 하는 건 '자기 자신을 부르는 것' 뿐이다.
+  const [myIds, setMyIds] = useState(() => new Set());
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      const { getMyProviderRefs } = await import('../lib/supabase');
+      const { data } = await getMyProviderRefs();
+      if (!dead) setMyIds(new Set((data || []).map((r) => r.providerId)));
+    })();
+    return () => {
+      dead = true;
+    };
+  }, []);
+
+  const notMine = useCallback((id) => !id || !myIds.has(id), [myIds]);
+
   // 의상은 세 곳에서 온다 — 벤더 · 담은 헤메 · 담은 작가.
   // 고객 입장에서는 그날 현장에 오는 사람이 가진 옷이 전부 선택지다.
   const allDresses = useMemo(
     () =>
-      [...(result?.dresses || []), ...stylistDresses, ...artistDresses].filter(
-        (d, i, arr) => arr.findIndex((x) => x.id === d.id) === i
-      ),
-    [result, stylistDresses, artistDresses]
+      [...(result?.dresses || []), ...stylistDresses, ...artistDresses]
+        .filter((d, i, arr) => arr.findIndex((x) => x.id === d.id) === i)
+        .filter((d) => notMine(d.vendor_id) && notMine(d.stylist_id)),
+    [result, stylistDresses, artistDresses, notMine]
+  );
+
+  const allPhotographers = useMemo(
+    () => (result?.photographers || []).filter((a) => notMine(a.id)),
+    [result, notMine]
+  );
+  const allVenues = useMemo(
+    () => (result?.venues || []).filter((v) => notMine(v.vendor_id)),
+    [result, notMine]
   );
 
   // 헤메도 두 곳 — 독립 헤메 · 담은 작가의 자체 헤메
   const allStylists = useMemo(
-    () => [...(result?.stylists || []), ...artistHmk],
-    [result, artistHmk]
+    () => [...(result?.stylists || []), ...artistHmk].filter((s) => notMine(s.stylist_id)),
+    [result, artistHmk, notMine]
   );
 
   // 동행을 원하는가. 이걸 먼저 정해야 그 사람이 그 시간에 되는지가 정해진다.
@@ -733,10 +839,10 @@ const BookCompose = () => {
   // ── 목록 ──
   const list =
     {
-      photographer: result?.photographers || [],
+      photographer: allPhotographers,
       stylist: allStylists,
       dress: allDresses,
-      venue: result?.venues || [],
+      venue: allVenues,
     }[tab] || [];
 
   // ── 찾기 탭에서 '담기' 로 넘어온 항목을 담는다 ──
@@ -933,11 +1039,21 @@ const BookCompose = () => {
                 시작 시각
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {TIME_OPTIONS.map((t) => (
-                  <Pill key={t} active={time === t} onClick={() => setTime(t)}>
-                    {t}
-                  </Pill>
-                ))}
+                {/* 오늘이면 이미 지난 시각은 잠근다. 예전에는 오후 4시에도
+                    오늘 09:00 을 고를 수 있었고 작가 3명이 그대로 떴다. */}
+                {TIME_OPTIONS.map((t) => {
+                  const past = date === todayStr() && t <= nowHHMM();
+                  return (
+                    <Pill
+                      key={t}
+                      active={time === t}
+                      disabled={past}
+                      onClick={() => !past && setTime(t)}
+                    >
+                      {t}
+                    </Pill>
+                  );
+                })}
               </div>
             </div>
 
@@ -1055,10 +1171,10 @@ const BookCompose = () => {
                 <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
                   {TABS.map((t) => {
                     const n = {
-                      photographer: result.photographers?.length || 0,
+                      photographer: allPhotographers.length,
                       stylist: allStylists.length,
                       dress: allDresses.length,
-                      venue: result.venues?.length || 0,
+                      venue: allVenues.length,
                     }[t.key];
                     return (
                       <Pill key={t.key} active={tab === t.key} onClick={() => setTab(t.key)}>
@@ -1117,7 +1233,12 @@ const BookCompose = () => {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+                      // 헤메는 카드가 접혀 있어 한 줄에 더 들어간다.
+                      // 누구를 부를지 고르려면 한눈에 여럿이 보여야 한다.
+                      gridTemplateColumns:
+                        tab === 'stylist'
+                          ? 'repeat(auto-fill, minmax(180px, 1fr))'
+                          : 'repeat(auto-fill, minmax(220px, 1fr))',
                       gap: 16,
                     }}
                   >

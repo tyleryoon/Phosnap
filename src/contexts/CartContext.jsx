@@ -43,9 +43,19 @@ const load = () => {
       localStorage.removeItem(KEY);
       return { anchor: null, items: EMPTY_ITEMS };
     }
+    // 읽을 때도 규칙을 한 번 태운다.
+    //
+    // 담기·빼기는 setItems 를 지나므로 normalizeCart 가 도는데, 저장된
+    // 것을 읽는 이 길만 빠져 있었다. 그래서 주인 없는 자체 의상이
+    // 살아남는다 — "주인이 현장에 들고 감" 인데 그 주인을 아무도 부르지
+    // 않은 상태로 합계에 계속 더해진다. 아무도 안 가져오는 옷에 돈을 낸다.
+    //
+    // 정상 흐름에서는 저장 시점에 이미 정규화돼 있지만, 다른 탭에서
+    // 고쳤거나 규칙이 바뀐 뒤의 옛 장바구니는 그렇지 않다. 들어오는
+    // 길이 하나 더 있으면 언젠가 새기 때문에 여기서도 태운다.
     return {
       anchor: saved?.anchor || null,
-      items: { ...EMPTY_ITEMS, ...(saved?.items || {}) },
+      items: normalizeCart({ ...EMPTY_ITEMS, ...(saved?.items || {}) }),
     };
   } catch {
     // 사생활 모드 등으로 접근 자체가 막힐 수 있다. 빈 장바구니로 시작한다.
