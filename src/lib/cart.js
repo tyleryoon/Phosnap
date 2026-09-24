@@ -44,14 +44,30 @@ export const isAccompany = (timing) => timing === 'during' || timing === 'full';
 /**
  * 담은 헤메의 요금 내역.
  *
- * before 에 동행비가 실려 와도 받지 않는다. 서버(FIX_47)도 0 으로
- * 내려보내지만, 옛 장바구니에 남아 있던 값이 되살아나면 안 된다.
+ * 동행비 단위 (FIX_48)
+ *   flat  건당 정액 — 머무는 시간이 시술 길이로 고정인 '촬영 중 합류'
+ *   hour  시간당    — 촬영 길이만큼 함께 있는 '종일 동행'
+ *
+ * 촬영 길이는 담을 때 항목에 같이 넣어둔다(shootHours). 앵커를 바꾸면
+ * 장바구니가 비워지므로 값이 어긋날 일이 없고, 합계를 내는 쪽이 앵커를
+ * 따로 들고 다니지 않아도 된다.
+ *
+ * before 에 동행비가 실려 와도 받지 않는다. 서버도 0 으로 내려보내지만,
+ * 옛 장바구니에 남아 있던 값이 되살아나면 안 된다.
  */
 export const stylistCharges = (stylist) => {
-  if (!stylist) return { service: 0, accompany: 0, total: 0 };
+  if (!stylist) return { service: 0, accompany: 0, total: 0, unit: 'flat', rate: 0, hours: 0 };
+
   const service = stylist.price || 0;
-  const accompany = isAccompany(stylist.timing) ? stylist.accompanyFee || 0 : 0;
-  return { service, accompany, total: service + accompany };
+  const unit = stylist.accompanyUnit === 'hour' ? 'hour' : 'flat';
+  const rate = isAccompany(stylist.timing) ? stylist.accompanyFee || 0 : 0;
+
+  // 시간을 모르면 곱하지 않는다. 0 을 곱해 공짜로 만드는 것보다
+  // 정액으로 한 번 받는 쪽이 덜 틀린다.
+  const hours = Number(stylist.shootHours) > 0 ? Number(stylist.shootHours) : 0;
+  const accompany = unit === 'hour' && hours > 0 ? rate * hours : rate;
+
+  return { service, accompany, total: service + accompany, unit, rate, hours };
 };
 
 // ─── 의상 수령 방식 · 보증금 · 배송비 ──────────────────────────────────

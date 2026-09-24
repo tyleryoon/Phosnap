@@ -51,7 +51,13 @@ const i18n = {
     joinAfterHint: '촬영이 시작되고 몇 분 뒤에 도착하면 되는지',
     maxHours: '감당 가능한 최대 촬영 시간',
     accompanyFee: '현장 동행 추가 요금 (원)',
-    accompanyFeeDesc: '시술비와 따로 받습니다. 고객에게는 “시술 120,000 + 동행 50,000” 으로 보입니다.',
+    accompanyFeeDesc:
+      '시술비와 따로 받습니다. 고객에게는 “시술 120,000 + 동행 50,000” 으로 보입니다.',
+    accompanyUnit: '동행비 단위',
+    accompanyUnitFlat: '건당 정액',
+    accompanyUnitHour: '시간당',
+    accompanyUnitHint:
+      '종일 동행은 촬영 길이만큼 함께 있으므로 시간당이 맞습니다. 촬영 중 합류는 머무는 시간이 고정이라 정액이 맞습니다.',
     maxHoursHint: '이보다 긴 촬영에는 이 메뉴가 노출되지 않습니다',
     travelFee: '출장비 (선택)',
     slotPreview: '촬영이 16:00~19:00 이라면',
@@ -120,6 +126,10 @@ const i18n = {
     maxHours: 'Longest shoot you can cover',
     accompanyFee: 'On-site accompaniment fee',
     accompanyFeeDesc: 'Charged separately from the service price.',
+    accompanyUnit: 'Fee unit',
+    accompanyUnitFlat: 'Flat',
+    accompanyUnitHour: 'Per hour',
+    accompanyUnitHint: 'Per hour suits all-day accompaniment; flat suits a fixed mid-shoot visit.',
     maxHoursHint: 'This menu is hidden for shoots longer than this',
     travelFee: 'Travel fee (optional)',
     slotPreview: 'If the shoot runs 16:00–19:00',
@@ -188,6 +198,10 @@ const i18n = {
     maxHours: '対応可能な最長撮影時間',
     accompanyFee: '現場同行の追加料金',
     accompanyFeeDesc: '施術料金とは別にいただきます。',
+    accompanyUnit: '同行料金の単位',
+    accompanyUnitFlat: '定額',
+    accompanyUnitHour: '時間当たり',
+    accompanyUnitHint: '終日同行は時間当たりが適しています。',
     maxHoursHint: 'これより長い撮影ではこのメニューは表示されません',
     travelFee: '出張費（任意）',
     slotPreview: '撮影が16:00〜19:00の場合',
@@ -258,6 +272,10 @@ const i18n = {
     maxHours: '可承接的最长拍摄时间',
     accompanyFee: '现场陪同附加费用',
     accompanyFeeDesc: '与服务费分开收取。',
+    accompanyUnit: '陪同费单位',
+    accompanyUnitFlat: '固定金额',
+    accompanyUnitHour: '按小时',
+    accompanyUnitHint: '全天陪同适合按小时计费。',
     maxHoursHint: '超过此时长的拍摄不会显示此项目',
     travelFee: '出差费（可选）',
     slotPreview: '若拍摄为 16:00–19:00',
@@ -961,6 +979,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
     offsetMinutes: '30',
     maxHours: '',
     accompanyFee: '',
+    accompanyUnit: 'flat',
     travelFee: '',
   };
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -998,6 +1017,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
         offsetMinutes: String(service.offset_minutes ?? 30),
         maxHours: service.max_hours != null ? String(service.max_hours) : '',
         accompanyFee: service.accompany_fee ? String(service.accompany_fee) : '',
+        accompanyUnit: service.accompany_fee_unit === 'hour' ? 'hour' : 'flat',
         travelFee: service.travel_fee ? String(service.travel_fee) : '',
       });
     } else {
@@ -1039,6 +1059,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
           formData.timing === 'before'
             ? 0
             : parseInt(String(formData.accompanyFee).replace(/[^0-9]/g, ''), 10) || 0,
+        accompany_fee_unit: formData.accompanyUnit === 'hour' ? 'hour' : 'flat',
       };
 
       let nextServices;
@@ -1193,7 +1214,9 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                     ? ` · ~${service.max_hours}h`
                     : ''}
                   {service.timing !== 'before' && service.accompany_fee
-                    ? ` · 동행 +₩${Number(service.accompany_fee).toLocaleString('ko-KR')}`
+                    ? ` · 동행 +₩${Number(service.accompany_fee).toLocaleString('ko-KR')}${
+                        service.accompany_fee_unit === 'hour' ? '/시간' : ''
+                      }`
                     : ''}
                 </span>
               </div>
@@ -1311,6 +1334,10 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                         setFormData((f) => ({
                           ...f,
                           timing: opt.key,
+                          // 종일 동행은 촬영 길이만큼 붙어 있으므로 시간당이,
+                          // 촬영 중 합류는 머무는 시간이 고정이라 정액이 기본이다.
+                          // (바꾸고 싶으면 아래에서 고르면 된다)
+                          accompanyUnit: opt.key === 'full' ? 'hour' : 'flat',
                           // 동행은 이미 현장이라 이동 버퍼가 없다.
                           // 기본값을 옮겨주지 않으면 "이동 30분"이 그대로 남는다.
                           offsetMinutes:
@@ -1424,6 +1451,42 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                 />
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                   {t.accompanyFeeDesc}
+                </div>
+
+                {/* 단위. 종일 동행은 촬영 길이만큼 붙어 있으므로 시간당이
+                    맞고, 촬영 중 합류는 머무는 시간이 시술 길이로 고정이라
+                    정액이 맞다. 기본값만 그렇게 두고 선택은 헤메가 한다. */}
+                <div style={{ fontSize: 12, color: 'var(--muted)', margin: '12px 0 6px' }}>
+                  {t.accompanyUnit}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[
+                    { key: 'flat', label: t.accompanyUnitFlat },
+                    { key: 'hour', label: t.accompanyUnitHour },
+                  ].map((u) => {
+                    const on = (formData.accompanyUnit || 'flat') === u.key;
+                    return (
+                      <button
+                        key={u.key}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, accompanyUnit: u.key })}
+                        style={{
+                          padding: '8px 14px',
+                          fontSize: 13,
+                          cursor: 'pointer',
+                          background: on ? 'var(--accent-a10)' : 'transparent',
+                          border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`,
+                          color: on ? 'var(--text)' : 'var(--muted)',
+                          fontFamily: 'var(--font-body)',
+                        }}
+                      >
+                        {u.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                  {t.accompanyUnitHint}
                 </div>
               </div>
             )}

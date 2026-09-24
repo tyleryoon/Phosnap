@@ -244,7 +244,18 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
 // 부를까" 인데 화면은 시술을 나열하고 있었다.
 //
 // 사람으로 묶고, 그 사람이 파는 옵션을 안에서 고르게 한다.
-const StylistCard = ({ person, pickedServiceId, onPick, onDrop, onDetail }) => {
+const StylistCard = ({ person, pickedServiceId, shootHours, onPick, onDrop, onDetail }) => {
+  // 목록에서도 실제로 낼 값을 보여준다. 시간당 동행비는 촬영 길이를
+  // 곱해야 하므로, 안 곱하면 목록과 합계가 달라진다.
+  const charge = (s) =>
+    stylistCharges({
+      price: s.price,
+      timing: s.timing,
+      accompanyFee: s.accompany_fee,
+      accompanyUnit: s.accompany_fee_unit,
+      shootHours,
+    });
+
   const from = Math.min(...person.services.map((s) => s.price || 0).filter((n) => n > 0));
 
   return (
@@ -310,7 +321,7 @@ const StylistCard = ({ person, pickedServiceId, onPick, onDrop, onDetail }) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <span>{s.service_name}</span>
                   <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>
-                    {fmt((s.price || 0) + (isAccompany(s.timing) ? s.accompany_fee || 0 : 0))}
+                    {fmt(charge(s).total)}
                   </span>
                 </div>
                 <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
@@ -318,12 +329,19 @@ const StylistCard = ({ person, pickedServiceId, onPick, onDrop, onDetail }) => {
                     ? `${s.__fromArtist} 작가님이 직접 진행`
                     : `${TIMING_LABEL[s.timing] || s.timing} · ${hhmm(s.busy_from)}~${hhmm(s.busy_to)}`}
                 </div>
-                {/* 동행값은 시술값에 섞지 않는다. 왜 비싼지 보여야 납득이 된다. */}
-                {isAccompany(s.timing) && (s.accompany_fee || 0) > 0 && (
-                  <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
-                    시술 {fmt(s.price)} + 동행 {fmt(s.accompany_fee)}
-                  </div>
-                )}
+                {/* 동행값은 시술값에 섞지 않는다. 왜 그 값인지 보여야 납득이 된다. */}
+                {charge(s).accompany > 0 &&
+                  (() => {
+                    const c = charge(s);
+                    return (
+                      <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
+                        시술 {fmt(c.service)} + 동행{' '}
+                        {c.unit === 'hour' && c.hours > 0
+                          ? `${fmt(c.rate)}/시간 × ${c.hours}시간 = ${fmt(c.accompany)}`
+                          : fmt(c.accompany)}
+                      </div>
+                    );
+                  })()}
               </button>
             );
           })}
@@ -1128,6 +1146,7 @@ const BookCompose = () => {
                           key={p.id}
                           person={p}
                           pickedServiceId={cart.stylist?.serviceId || null}
+                          shootHours={hours}
                           onDrop={() => drop('stylist')}
                           onDetail={() => setDetail({ kind: 'service', data: p.services[0] })}
                           onPick={(s) =>
@@ -1139,6 +1158,11 @@ const BookCompose = () => {
                               service: s.service_name,
                               price: s.price,
                               accompanyFee: s.accompany_fee || 0,
+                              accompanyUnit: s.accompany_fee_unit || 'flat',
+                              // 시간당 동행비는 촬영 길이를 곱한다. 담을 때
+                              // 같이 넣어두면 합계를 내는 쪽이 앵커를 따로
+                              // 들고 다니지 않아도 된다.
+                              shootHours: hours,
                               timing: s.timing,
                               durationMinutes: s.duration_minutes,
                               offsetMinutes: s.offset_minutes,
@@ -1361,7 +1385,11 @@ const BookCompose = () => {
                             {/* 헤메는 왜 그 값인지 한 줄로 풀어준다 */}
                             {t.key === 'stylist' && stylistFee.accompany > 0 && (
                               <div style={{ fontSize: 10.5, color: 'var(--muted)' }}>
-                                시술 {fmt(stylistFee.service)} + 동행 {fmt(stylistFee.accompany)}
+                                시술 {fmt(stylistFee.service)} + 동행{' '}
+                                {stylistFee.unit === 'hour' && stylistFee.hours > 0
+                                  ? `${fmt(stylistFee.rate)}/시간 × ${stylistFee.hours}시간`
+                                  : ''}{' '}
+                                {fmt(stylistFee.accompany)}
                               </div>
                             )}
                             <button
