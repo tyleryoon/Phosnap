@@ -913,6 +913,10 @@ const ArtistSchedule = () => {
 
   // ── 로드 (Supabase 우선, localStorage fallback) ──
   const load = useCallback(async () => {
+    // DB 에서 읽은 기본 운영 시간. 아래에서 setSchedule 할 때 쓴다.
+    // localStorage 값이 DB 를 덮어쓰지 않게 하려고 여기 둔다.
+    let dbDefaultSlots = null;
+
     // 항상 localStorage fallback 초기화
     initSchedules();
     initProfiles();
@@ -1002,9 +1006,19 @@ const ArtistSchedule = () => {
               });
             }
             // 기본 시간 로드
+            //
+            // 예전에는 draftDefault(편집용 초안)에만 넣었다. 화면이 켜짐/
+            // 꺼짐을 칠할 때 보는 건 schedule.defaultSlots(localStorage)라
+            // **DB 값이 화면에 전혀 반영되지 않았다.** 실제로 DB 에는
+            // 10·11·13~17시 일곱 개만 열려 있는데 화면은 00:00~24:00
+            // 스물다섯 개가 전부 꺼진 회색으로 똑같이 보였다. 작가는
+            // 자기 운영 시간이 뭔지 화면에서 알 수가 없다.
+            //
+            // DB 가 정본이다. 둘 다 맞춘다.
             const { data: defaults } = await getDefaultSlots(photog.id);
-            if (defaults?.default_slots) {
+            if (defaults?.default_slots?.length) {
               setDraftDefault(defaults.default_slots);
+              dbDefaultSlots = defaults.default_slots;
             }
           }
         }
@@ -1035,7 +1049,13 @@ const ArtistSchedule = () => {
       return;
     }
     const s = getSchedule('photographer', artistId);
-    setSchedule(s);
+    // DB 에서 읽어둔 기본 운영 시간이 있으면 그게 정본이다.
+    //
+    // 여기서 localStorage 값으로 통째로 덮어쓰고 있었다. 위에서 DB 값을
+    // 넣어도 이 줄이 지웠다. 그래서 DB 에는 10·11·13~17시 일곱 개만
+    // 열려 있는데 화면은 00:00~24:00 스물다섯 개가 전부 꺼진 회색으로
+    // 똑같이 보였다 — 작가가 자기 운영 시간을 화면에서 알 수 없었다.
+    setSchedule(dbDefaultSlots?.length ? { ...s, defaultSlots: dbDefaultSlots } : s);
     if (!dbConnected) {
       setDraftDefault(s.defaultSlots ?? INITIAL_DEFAULT_HOURS);
     }
