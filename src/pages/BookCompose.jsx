@@ -67,6 +67,33 @@ const TABS = [
   { key: 'dress', label: '의상' },
   { key: 'venue', label: '장소' },
 ];
+// ─── 헤메 시술 시점 ────────────────────────────────────────────────────
+//
+// 헤메가 시술을 등록할 때 정한다. 고객은 그 중에서 고른다.
+//
+//   before  촬영 전에 시술을 끝낸다 — 현장에 남지 않는다
+//   during  촬영 중에 합류한다
+//   full    촬영이 끝날 때까지 동행한다
+//
+// 같은 사람이라도 시점마다 실제로 일하는 구간이 다르다. 10시 촬영이면
+// before 는 08~10시, full 은 09~12시다. 그래서 '동행을 원하는가' 가
+// 먼저 정해져야 그 사람이 그 시간에 되는지 판단할 수 있다.
+const TIMING_LABEL = {
+  before: '촬영 전 시술만',
+  during: '촬영 중 합류',
+  full: '촬영 종료까지 동행',
+};
+
+// 동행 필터. '동행' 은 현장에 함께 있는 것 — during 과 full 둘 다다.
+const WITH_ME = [
+  { key: 'all', label: '전체' },
+  { key: 'before', label: '촬영 전 시술만' },
+  { key: 'accompany', label: '현장 동행' },
+];
+
+const matchesWithMe = (timing, mode) =>
+  mode === 'all' ? true : mode === 'before' ? timing === 'before' : timing !== 'before';
+
 // 담은 구성 규칙은 lib/cart.js 로 옮겼다 — 전역 장바구니도 같은 규칙을 쓴다.
 import { normalizeCart, locationConflict, dressCharges } from '../lib/cart';
 import { FULFILLMENT_LABELS } from '../components/DressFulfillment';
@@ -203,6 +230,115 @@ const Card = ({ title, subtitle, price, note, image, picked, onDetail, onToggle 
     </div>
   </div>
 );
+
+// ─── 헤메 카드 (사람 단위) ─────────────────────────────────────────────
+//
+// 예전에는 시술 한 건이 카드 한 장이었다. 헤메 3명이 시술을 세 개씩
+// 올려두면 목록에 같은 사람이 아홉 번 나왔다. 고객이 보는 건 "누구를
+// 부를까" 인데 화면은 시술을 나열하고 있었다.
+//
+// 사람으로 묶고, 그 사람이 파는 옵션을 안에서 고르게 한다.
+const StylistCard = ({ person, pickedServiceId, onPick, onDrop, onDetail }) => {
+  const from = Math.min(...person.services.map((s) => s.price || 0).filter((n) => n > 0));
+
+  return (
+    <div
+      style={{
+        border: `1px solid ${person.services.some((s) => s.service_id === pickedServiceId) ? 'var(--gold)' : 'var(--border)'}`,
+        background: 'var(--bg2)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
+      {person.img ? (
+        <img
+          src={person.img}
+          alt={person.name}
+          style={{ width: '100%', height: 150, objectFit: 'cover' }}
+        />
+      ) : (
+        <div
+          style={{
+            height: 60,
+            background: 'var(--bg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--muted)',
+            fontSize: 11,
+          }}
+        >
+          사진 없음
+        </div>
+      )}
+
+      <div style={{ padding: '14px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ fontFamily: 'var(--font-serif)', fontSize: 14, marginBottom: 4 }}>
+          {person.name}
+        </div>
+        <div style={{ fontSize: 11.5, color: 'var(--muted)', marginBottom: 10 }}>
+          {person.specialty || '헤어메이크업'}
+          {Number.isFinite(from) && from > 0 ? ` · ${fmt(from)}~` : ''}
+        </div>
+
+        {/* 이 사람이 파는 옵션. 시점이 곧 '동행 여부' 다. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
+          {person.services.map((s) => {
+            const on = s.service_id === pickedServiceId;
+            return (
+              <button
+                key={s.service_id}
+                type="button"
+                onClick={() => (on ? onDrop() : onPick(s))}
+                style={{
+                  textAlign: 'left',
+                  padding: '9px 10px',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  border: `1px solid ${on ? 'var(--gold)' : 'var(--border)'}`,
+                  background: on ? 'var(--accent-a10)' : 'transparent',
+                  color: 'var(--text)',
+                }}
+              >
+                <div
+                  style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}
+                >
+                  <span>{s.service_name}</span>
+                  <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>{fmt(s.price)}</span>
+                </div>
+                <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
+                  {s.__fromArtist
+                    ? `${s.__fromArtist} 작가님이 직접 진행`
+                    : `${TIMING_LABEL[s.timing] || s.timing} · ${hhmm(s.busy_from)}~${hhmm(s.busy_to)}`}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {onDetail && (
+          <button
+            type="button"
+            onClick={onDetail}
+            style={{
+              marginTop: 10,
+              padding: '7px 0',
+              cursor: 'pointer',
+              fontSize: 11,
+              border: '1px solid var(--border)',
+              background: 'transparent',
+              color: 'var(--muted)',
+              fontFamily: 'var(--font-serif)',
+            }}
+          >
+            상세
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── 본체 ───────────────────────────────────────────────────────────────
 
@@ -530,6 +666,36 @@ const BookCompose = () => {
     () => [...(result?.stylists || []), ...artistHmk],
     [result, artistHmk]
   );
+
+  // 동행을 원하는가. 이걸 먼저 정해야 그 사람이 그 시간에 되는지가 정해진다.
+  const [withMe, setWithMe] = useState('all');
+
+  // 시술을 사람으로 묶는다. 목록은 "누구를 부를까" 이지 시술 나열이 아니다.
+  const stylistPeople = useMemo(() => {
+    const byPerson = new Map();
+    for (const s of allStylists) {
+      if (!matchesWithMe(s.timing, withMe)) continue;
+      const id = s.stylist_id || `svc:${s.service_id}`;
+      if (!byPerson.has(id)) {
+        byPerson.set(id, {
+          id,
+          name: s.name_ko || s.display_name || '이름 없음',
+          specialty: s.specialty || null,
+          img: s.portfolio_images?.[0] || null,
+          locationIds: s.location_ids || [],
+          dressSelf: s.dress_self,
+          services: [],
+        });
+      }
+      byPerson.get(id).services.push(s);
+    }
+    // 같은 사람 안에서는 촬영 전 → 합류 → 동행 순으로 읽히게 둔다
+    const order = { before: 0, during: 1, full: 2 };
+    for (const p of byPerson.values()) {
+      p.services.sort((a, b) => (order[a.timing] ?? 9) - (order[b.timing] ?? 9));
+    }
+    return [...byPerson.values()];
+  }, [allStylists, withMe]);
 
   // ── 목록 ──
   const list =
@@ -870,8 +1036,33 @@ const BookCompose = () => {
                   })}
                 </div>
 
-                {/* 목록 */}
-                {list.length === 0 ? (
+                {/* 동행을 원하는지 먼저 묻는다.
+                    같은 사람이라도 촬영 전 시술과 종일 동행은 일하는 시간이
+                    달라서, 이게 정해져야 그 시간에 되는지 판단할 수 있다. */}
+                {tab === 'stylist' && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 8 }}>
+                      현장에 함께 있어주길 원하세요?
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {WITH_ME.map((w) => (
+                        <Pill
+                          key={w.key}
+                          active={withMe === w.key}
+                          onClick={() => setWithMe(w.key)}
+                        >
+                          {w.label}
+                        </Pill>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 목록.
+                    헤메는 사람 단위로 묶고 동행 필터를 거치므로, 걸러낸
+                    결과가 비었는지를 봐야 한다. 시술 개수로 재면 필터에
+                    다 걸러진 상태에서도 빈 화면 안내가 안 뜬다. */}
+                {(tab === 'stylist' ? stylistPeople.length : list.length) === 0 ? (
                   <div
                     style={{
                       border: '1px solid var(--border)',
@@ -917,35 +1108,26 @@ const BookCompose = () => {
                       ))}
 
                     {tab === 'stylist' &&
-                      list.map((s) => (
-                        <Card
-                          key={s.service_id}
-                          title={s.service_name}
-                          subtitle={`${s.name_ko} · ${s.specialty || ''}`}
-                          note={
-                            s.__fromArtist
-                              ? `${s.__fromArtist} 작가님이 직접 진행`
-                              : `${hhmm(s.busy_from)} ~ ${hhmm(s.busy_to)} 묶임`
-                          }
-                          price={s.price}
-                          image={s.portfolio_images?.[0] || null}
-                          picked={cart.stylist?.serviceId === s.service_id}
-                          onDetail={() => setDetail({ kind: 'service', data: s })}
-                          onToggle={() =>
-                            cart.stylist?.serviceId === s.service_id
-                              ? drop('stylist')
-                              : pick('stylist', {
-                                  locationIds: s.location_ids || [],
-                                  stylistId: s.stylist_id,
-                                  serviceId: s.service_id,
-                                  name: s.name_ko,
-                                  service: s.service_name,
-                                  price: s.price,
-                                  timing: s.timing,
-                                  durationMinutes: s.duration_minutes,
-                                  offsetMinutes: s.offset_minutes,
-                                  dressSelf: s.dress_self,
-                                })
+                      stylistPeople.map((p) => (
+                        <StylistCard
+                          key={p.id}
+                          person={p}
+                          pickedServiceId={cart.stylist?.serviceId || null}
+                          onDrop={() => drop('stylist')}
+                          onDetail={() => setDetail({ kind: 'service', data: p.services[0] })}
+                          onPick={(s) =>
+                            pick('stylist', {
+                              locationIds: s.location_ids || [],
+                              stylistId: s.stylist_id,
+                              serviceId: s.service_id,
+                              name: s.name_ko,
+                              service: s.service_name,
+                              price: s.price,
+                              timing: s.timing,
+                              durationMinutes: s.duration_minutes,
+                              offsetMinutes: s.offset_minutes,
+                              dressSelf: s.dress_self,
+                            })
                           }
                         />
                       ))}
