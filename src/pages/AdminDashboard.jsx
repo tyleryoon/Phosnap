@@ -874,11 +874,14 @@ const AdminDashboard = () => {
             outline: 'none',
           }}
         >
+          {/* role_* 키를 쓴다. translate 는 없는 키를 그대로 돌려주므로
+              'artist' / 'vendor' 를 부르면 목록에는 '벤더' 라고 한글로
+              나오는데 필터에는 영문 키가 그대로 떴다. */}
           <option value="all">{translate('all')}</option>
-          <option value="customer">{translate('customer')}</option>
-          <option value="artist">{translate('artist')}</option>
-          <option value="vendor">{translate('vendor')}</option>
-          <option value="admin">{translate('admin')}</option>
+          <option value="customer">{translate('role_customer')}</option>
+          <option value="artist">{translate('role_artist')}</option>
+          <option value="vendor">{translate('role_vendor')}</option>
+          <option value="admin">{translate('role_admin')}</option>
         </select>
       </div>
 
