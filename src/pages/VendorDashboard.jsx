@@ -1057,6 +1057,50 @@ function VendorDashboard() {
     });
   }, [dresses, activeDashboard]);
 
+  // ── 장소 통계는 venue_items 에서 센다 ────────────────────────────────
+  //
+  // 위 dashboardDresses 는 dress_items 를 거른다. 그런데 장소는 다른
+  // 표(venue_items)에 있어서 장소 대시보드의 통계 카드가 **늘 0** 이었다.
+  // 바로 아래 목록에는 "등록된 장소 1곳" 이 떠 있는데 위에서는 0 이라고
+  // 하니, 벤더는 자기 장소가 등록된 건지 아닌지 알 수가 없다.
+  const [venueStats, setVenueStats] = useState({ total: 0, available: 0 });
+  useEffect(() => {
+    let dead = false;
+    (async () => {
+      if (activeDashboard !== 'venue' || !venueVendorId) return;
+      const { getSupabase } = await import('../lib/supabase');
+      const sb = await getSupabase();
+      if (!sb) return;
+      const { data, error } = await sb
+        .from('venue_items')
+        .select('id, is_available')
+        .eq('vendor_id', venueVendorId);
+      if (error) {
+        console.error('[VendorDashboard] 장소 통계 조회 실패:', error);
+        return;
+      }
+      if (dead) return;
+      setVenueStats({
+        total: (data || []).length,
+        available: (data || []).filter((v) => v.is_available !== false).length,
+      });
+    })();
+    return () => {
+      dead = true;
+    };
+  }, [activeDashboard, venueVendorId, saveStatus]);
+
+  // 통계 카드가 쓰는 값. 의상은 dress_items, 장소는 venue_items 에서 온다.
+  const itemTotal = activeDashboard === 'venue' ? venueStats.total : dashboardDresses.length;
+  const itemAvailable =
+    activeDashboard === 'venue'
+      ? venueStats.available
+      : dashboardDresses.filter((d) => {
+          const inv = sizeInventory[d.id];
+          if (!inv) return availability[d.id];
+          return Object.values(inv).some((s) => (s.total || 0) - (s.rented || 0) > 0);
+        }).length;
+
   const validateAddForm = () => {
     const errors = {};
     if (!formData.nameKo || !formData.nameKo.trim()) {
@@ -1071,6 +1115,12 @@ function VendorDashboard() {
     }
     if (!imageFile && !imagePreview) {
       errors.image = '최소 하나의 이미지를 업로드해야 합니다';
+    }
+    // 가격을 비우면 고객 화면에 ₩0 으로 뜬다. 무료로 읽히고 그대로
+    // 담기면 합계에도 0 이 더해진다. 값을 못 정했으면 등록을 미루는 게
+    // 맞지, 0 원짜리를 내걸 일은 없다.
+    if (!(parseInt(String(formData.price).replace(/[^0-9]/g, ''), 10) > 0)) {
+      errors.price = '대여 가격을 입력해주세요 (비우면 고객에게 ₩0 으로 보입니다)';
     }
     setAddFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1199,6 +1249,9 @@ function VendorDashboard() {
     }
     if (!imageFile && !imagePreview && !editTarget?.image) {
       errors.image = '최소 하나의 이미지를 업로드해야 합니다';
+    }
+    if (!(parseInt(String(editForm.price).replace(/[^0-9]/g, ''), 10) > 0)) {
+      errors.price = '대여 가격을 입력해주세요 (비우면 고객에게 ₩0 으로 보입니다)';
     }
     setEditFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -1782,11 +1835,11 @@ function VendorDashboard() {
                 style={{
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
-                  color: dashboardDresses.length === 0 ? 'var(--muted)' : 'var(--gold)',
+                  color: itemTotal === 0 ? 'var(--muted)' : 'var(--gold)',
                   margin: 0,
                 }}
               >
-                {dashboardDresses.length}
+                {itemTotal}
               </p>
             </div>
             <div
@@ -1812,23 +1865,13 @@ function VendorDashboard() {
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
                   color:
-                    dashboardDresses.filter((d) => {
-                      const inv = sizeInventory[d.id];
-                      if (!inv) return availability[d.id];
-                      return Object.values(inv).some((s) => (s.total || 0) - (s.rented || 0) > 0);
-                    }).length === 0
+                    itemAvailable === 0
                       ? 'var(--muted)'
                       : 'var(--gold)',
                   margin: 0,
                 }}
               >
-                {
-                  dashboardDresses.filter((d) => {
-                    const inv = sizeInventory[d.id];
-                    if (!inv) return availability[d.id];
-                    return Object.values(inv).some((s) => (s.total || 0) - (s.rented || 0) > 0);
-                  }).length
-                }
+                {itemAvailable}
               </p>
             </div>
             <div
@@ -5444,10 +5487,17 @@ function VendorDashboard() {
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
+                    border: addFormErrors.price
+                      ? '1px solid var(--danger)'
+                      : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
+                {addFormErrors.price && (
+                  <p style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '0.35rem' }}>
+                    {addFormErrors.price}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -6010,10 +6060,15 @@ function VendorDashboard() {
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: '1px solid var(--gold-dim)',
+                    border: editFormErrors.price ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
+                {editFormErrors.price && (
+                  <p style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: '0.35rem' }}>
+                    {editFormErrors.price}
+                  </p>
+                )}
               </div>
 
               <div>
