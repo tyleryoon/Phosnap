@@ -19,7 +19,7 @@ const translations = {
     tree: '나무',
     forest: '숲',
     totalSaved: '총 절약',
-    totalBookings: '총 예약',
+    totalBookings: '의상 대여한 촬영',
     withRental: '대여 포함',
     ecoGuidance: '디지털 사진만 수령하고 인쇄물을 줄이면 지수가 올라갑니다. 친환경 옵션을 선택할수록 포인트가 적립됩니다.',
 
@@ -45,7 +45,7 @@ const translations = {
     tree: 'Tree',
     forest: 'Forest',
     totalSaved: 'Total Saved',
-    totalBookings: 'Total Bookings',
+    totalBookings: 'Shoots with rental',
     withRental: 'with rental',
     ecoGuidance: 'Your score grows when you choose digital photos instead of prints, and by selecting eco-friendly options. Each sustainable choice earns you points.',
 
@@ -70,7 +70,7 @@ const translations = {
     tree: '木',
     forest: '森',
     totalSaved: '合計節約',
-    totalBookings: '合計予約',
+    totalBookings: 'レンタルした撮影',
     withRental: 'レンタル含む',
 
     platformTitle: 'Phosnapとの環境への貢献',
@@ -94,7 +94,7 @@ const translations = {
     tree: '树',
     forest: '森林',
     totalSaved: '总计节省',
-    totalBookings: '总预约',
+    totalBookings: '含租赁的拍摄',
     withRental: '含租赁',
 
     platformTitle: 'Phosnap的环保贡献',

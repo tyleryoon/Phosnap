@@ -401,7 +401,9 @@ const CustomerDashboard = () => {
                     position: 'relative',
                   }}
                 >
-                  <span style={{ fontSize: '1rem' }}>{tab.icon}</span>
+                  {/* 이모지를 뺐다. 여덟 개가 세로로 늘어서면 라벨보다
+                      그림이 먼저 읽혀 오히려 훑기 어렵다. 글자만으로
+                      충분히 구분된다 — 홈·예약 내역·즐겨찾기처럼. */}
                   {tab.label}
                   {hasBadge && (
                     <span style={{
@@ -1328,8 +1330,23 @@ const CustomerDashboard = () => {
                 { label: lang === 'ko' ? '상태' : 'Status', value: m.statuses[detailBooking.status], color: statusColors[detailBooking.status] },
                 { label: lang === 'ko' ? '상품' : 'Package', value: detailBooking.pkg },
                 { label: lang === 'ko' ? '결제 금액' : 'Amount', value: `₩${fmt(detailBooking.amount)}` },
-                { label: lang === 'ko' ? '결제일' : 'Paid At', value: detailBooking.paidAt || '—' },
-                { label: lang === 'ko' ? '예약 ID' : 'Booking ID', value: detailBooking.id },
+                // 결제 전이면 '결제일' 칸 자체를 안 보여준다. '—' 는
+                // 고객에게 "빈칸인데 왜 있지" 로만 읽힌다.
+                ...(detailBooking.paidAt
+                  ? [{ label: lang === 'ko' ? '결제일' : 'Paid At', value: detailBooking.paidAt }]
+                  : []),
+                // 예약번호는 앞 8자리만.
+                //
+                // 예전에는 uuid 36자리를 통째로 보여줬다
+                // (dd9db33d-7688-4866-9ca6-27152f8c40db). 고객에게 아무
+                // 의미가 없고, 문의할 때 옮겨 적다 틀리기 딱 좋다.
+                // 앞자리만으로도 상담원이 찾기에 충분하다.
+                {
+                  label: lang === 'ko' ? '예약번호' : 'Booking No.',
+                  value: String(detailBooking.id || '')
+                    .slice(0, 8)
+                    .toUpperCase(),
+                },
               ].map((item, i) => (
                 <div key={i}>
                   <div style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-serif)', letterSpacing: '0.08em', marginBottom: 4 }}>{item.label}</div>
