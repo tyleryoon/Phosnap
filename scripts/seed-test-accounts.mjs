@@ -31,8 +31,12 @@
 //   로그인은 정상적으로 된다.
 //
 // 사진에 대해
-//   picsum.photos 를 쓴다. seed 기반이라 같은 계정은 늘 같은 사진이 나오고,
-//   별도 업로드가 필요 없다. 실제 작가 사진이 아님이 분명하다.
+//   작가 포트폴리오·아바타는 picsum.photos 를 쓴다. seed 기반이라 같은
+//   계정은 늘 같은 사진이 나오고, 별도 업로드가 필요 없다.
+//
+//   의상·장소는 다르다. picsum 은 무작위라 "남성 정장" 에 카페 테이블이
+//   붙는다 — 가짜로 보이는 게 아니라 고장난 데이터로 보인다. 예약 화면에서
+//   제품 사진은 고객이 고르는 근거이므로 분류에 맞는 사진을 쓴다(photo()).
 
 const URL   = process.env.SUPABASE_URL;
 const KEY   = process.env.SUPABASE_SERVICE_KEY;
@@ -93,6 +97,38 @@ const SLOTS = ['09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','
 
 const img = (seed, w = 900, h = 700) =>
   `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
+
+// ── 제품 사진은 분류에 맞아야 한다 ──────────────────────────────────────
+//
+// picsum 은 무작위다. seed 를 주면 늘 같은 사진이 나오지만 **그 사진이
+// 무엇인지는 아무도 모른다.** 그래서 "남성 정장" 에 카페 테이블,
+// "웨딩 드레스" 에 산딸기가 붙었다. 가짜로 보이는 게 아니라 고장난
+// 데이터로 보인다 — 예약 화면에서 제품 사진은 고객이 고르는 근거다.
+//
+// 작가 포트폴리오·아바타는 picsum 그대로 둔다. 무엇을 넣어도 "이 작가가
+// 찍은 사진" 이 되지 않고, 고르는 근거로 쓰이지도 않는다.
+//
+// 아래 id 는 전부 실제로 200 + image/* 응답을 확인한 것이다.
+const PHOTOS = {
+  hanbok: ['1711887540798-9d7d720e5319', '1703437876552-f054cd8e8b88', '1698880754311-64351d62db07',
+           '1506480932912-dbbe35e3e516', '1588676907230-020a495f4cc9', '1627630228445-942830cb4982'],
+  dress:  ['1591604466107-ec97de577aff', '1549488497-94b52bddac5d', '1622277430358-f4d134452e2e',
+           '1532454781337-fc3edff34f91', '1579583764988-3e08c6132d2a', '1550005809-91ad75fb315f'],
+  suit:   ['1617127365659-c47fa864d8bc', '1600091166971-7f9faad6c1e2', '1522968439036-e6338d0ed84f',
+           '1598808503746-f34c53b9323e', '1619533394727-57d522857f89', '1592878897400-43fb1f1cc324'],
+  kimono: ['1630168343149-9448f0a606ea', '1686397139911-e4c7ff26eb3c', '1608451994760-ea44a25e80a0',
+           '1570503929936-544ba0b1c8f7', '1586434722766-b46308f072ed', '1600566493196-43294a462893'],
+  hanok:  ['1647168585205-e56ebb24a669', '1618237600880-fb9d72e98393', '1712651070716-3ee47e717581',
+           '1619193099934-3cbd46f6f02f', '1597554031118-c5852b661724', '1609764180801-03501ad3af02'],
+  studio: ['1627917932033-74123f070958', '1718876302125-857ddada8d4e', '1718876393903-be984c74f8a3',
+           '1643783618238-cf60bed60ab9', '1558423039-2d4b02e50953', '1718876331083-95db24a9f335'],
+};
+
+/** 분류에 맞는 사진. n 으로 돌려써서 목록이 같은 사진으로 도배되지 않게 한다. */
+const photo = (kind, n = 0, w = 900) => {
+  const set = PHOTOS[kind] || PHOTOS.studio;
+  return `https://images.unsplash.com/photo-${set[n % set.length]}?w=${w}&q=80`;
+};
 
 // ── 조합을 골고루 섞는다 ────────────────────────────────────────────────
 // 같은 값만 나오면 "자체 헤메 있는 작가" 같은 경우를 못 본다.
@@ -321,8 +357,8 @@ const seedOne = async (kind, i) => {
         price: 70000 + k * 30000,
         sizes: ['S', 'M', 'L'],
         size_stock: { S: 1, M: 2, L: 1 },
-        images: [img(`hnm${n}-dress-${k}`)],
-        image_url: img(`hnm${n}-dress-${k}`),
+        images: [photo(k === 0 ? 'hanbok' : 'dress', n)],
+        image_url: photo(k === 0 ? 'hanbok' : 'dress', n),
         is_available: true,
       })));
     }
@@ -358,8 +394,8 @@ const seedOne = async (kind, i) => {
         sizes: ['S', 'M', 'L'],
         size_stock: { S: 2, M: 3, L: 2 },
         color: ['아이보리', '네이비', '블랙'][k],
-        images: [0, 1, 2].map(q => img(`vendor${n}-d${k}-${q}`)),
-        image_url: img(`vendor${n}-d${k}-0`),
+        images: [photo(['hanbok', 'dress', 'suit'][k], n)],
+        image_url: photo(['hanbok', 'dress', 'suit'][k], n),
         description: '촬영 당일 대여. 세탁비 포함.',
         is_available: true,
       })));
@@ -386,7 +422,7 @@ const seedOne = async (kind, i) => {
         capacity: 6 + k * 4,
         price: 120000 + k * 60000 + (i % 3) * 10000,
         price_unit: 'per_session',
-        images: [0, 1, 2, 3].map(q => ({ url: img(`venue${n}-${k}-${q}`) })),
+        images: [{ url: photo(k === 0 ? 'hanok' : 'studio', n, 1200) }],
         description: '자연광이 좋은 공간입니다.',
         amenities: ['parking', 'dressing', 'restroom', 'aircon'].slice(0, 2 + (i % 3)),
         is_available: true,
