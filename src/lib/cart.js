@@ -27,6 +27,33 @@ export const normalizeCart = (c) => {
   return c;
 };
 
+// ─── 헤메 요금 (시술비 + 동행비) ───────────────────────────────────────
+//
+// 현장에 함께 있어주는 값은 시술값에 섞지 않고 따로 받는다 (FIX_47).
+//
+//   before  촬영 전에 끝내고 현장에 남지 않는다 → 동행비 없음
+//   during  촬영 중 합류 → 동행비
+//   full    종료까지 동행 → 동행비
+//
+// 섞어두면 고객은 왜 비싼지 모르고, 헤메는 동행만 값을 조정할 수 없다.
+// 화면이 아니라 여기서 판단한다 — 돈이 걸린 규칙이라 검사가 있어야 한다.
+
+/** 이 시술이 현장에 남는가 */
+export const isAccompany = (timing) => timing === 'during' || timing === 'full';
+
+/**
+ * 담은 헤메의 요금 내역.
+ *
+ * before 에 동행비가 실려 와도 받지 않는다. 서버(FIX_47)도 0 으로
+ * 내려보내지만, 옛 장바구니에 남아 있던 값이 되살아나면 안 된다.
+ */
+export const stylistCharges = (stylist) => {
+  if (!stylist) return { service: 0, accompany: 0, total: 0 };
+  const service = stylist.price || 0;
+  const accompany = isAccompany(stylist.timing) ? stylist.accompanyFee || 0 : 0;
+  return { service, accompany, total: service + accompany };
+};
+
 // ─── 의상 수령 방식 · 보증금 · 배송비 ──────────────────────────────────
 //
 // 옷이 주인 손을 떠나는지로 갈린다.

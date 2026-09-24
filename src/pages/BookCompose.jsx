@@ -95,7 +95,13 @@ const matchesWithMe = (timing, mode) =>
   mode === 'all' ? true : mode === 'before' ? timing === 'before' : timing !== 'before';
 
 // 담은 구성 규칙은 lib/cart.js 로 옮겼다 — 전역 장바구니도 같은 규칙을 쓴다.
-import { normalizeCart, locationConflict, dressCharges } from '../lib/cart';
+import {
+  normalizeCart,
+  locationConflict,
+  dressCharges,
+  stylistCharges,
+  isAccompany,
+} from '../lib/cart';
 import { FULFILLMENT_LABELS } from '../components/DressFulfillment';
 
 const fmt = (n) => `₩${Number(n || 0).toLocaleString('ko-KR')}`;
@@ -301,17 +307,23 @@ const StylistCard = ({ person, pickedServiceId, onPick, onDrop, onDetail }) => {
                   color: 'var(--text)',
                 }}
               >
-                <div
-                  style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}
-                >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                   <span>{s.service_name}</span>
-                  <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>{fmt(s.price)}</span>
+                  <span style={{ color: 'var(--gold)', whiteSpace: 'nowrap' }}>
+                    {fmt((s.price || 0) + (isAccompany(s.timing) ? s.accompany_fee || 0 : 0))}
+                  </span>
                 </div>
                 <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 3 }}>
                   {s.__fromArtist
                     ? `${s.__fromArtist} 작가님이 직접 진행`
                     : `${TIMING_LABEL[s.timing] || s.timing} · ${hhmm(s.busy_from)}~${hhmm(s.busy_to)}`}
                 </div>
+                {/* 동행값은 시술값에 섞지 않는다. 왜 비싼지 보여야 납득이 된다. */}
+                {isAccompany(s.timing) && (s.accompany_fee || 0) > 0 && (
+                  <div style={{ fontSize: 10.5, color: 'var(--muted)', marginTop: 2 }}>
+                    시술 {fmt(s.price)} + 동행 {fmt(s.accompany_fee)}
+                  </div>
+                )}
               </button>
             );
           })}
@@ -623,13 +635,16 @@ const BookCompose = () => {
   // 무엇이든 하나는 담아야 진행할 수 있다.
   const hasAny = !!(cart.photographer || cart.stylist || cart.dress || cart.venue);
 
+  // 헤메는 시술비와 동행비가 나뉘어 있다 (FIX_47). 합계에는 둘 다 들어간다.
+  const stylistFee = useMemo(() => stylistCharges(cart.stylist), [cart.stylist]);
+
   const itemsTotal = useMemo(
     () =>
       (cart.photographer?.pkg?.price || 0) +
-      (cart.stylist?.price || 0) +
+      stylistFee.total +
       (cart.dress?.price || 0) +
       (cart.venue?.price || 0),
-    [cart]
+    [cart, stylistFee]
   );
 
   // ── 의상 수령 방식 · 보증금 · 배송비 ───────────────────────────────
@@ -1123,6 +1138,7 @@ const BookCompose = () => {
                               name: s.name_ko,
                               service: s.service_name,
                               price: s.price,
+                              accompanyFee: s.accompany_fee || 0,
                               timing: s.timing,
                               durationMinutes: s.duration_minutes,
                               offsetMinutes: s.offset_minutes,
@@ -1334,8 +1350,20 @@ const BookCompose = () => {
                               <div style={{ color: 'var(--muted)', fontSize: 11 }}>{v.service}</div>
                             )}
                             <div style={{ color: 'var(--gold)', fontSize: 12 }}>
-                              {fmt(t.key === 'photographer' ? v.pkg?.price : v.price)}
+                              {fmt(
+                                t.key === 'photographer'
+                                  ? v.pkg?.price
+                                  : t.key === 'stylist'
+                                    ? stylistCharges(v).total
+                                    : v.price
+                              )}
                             </div>
+                            {/* 헤메는 왜 그 값인지 한 줄로 풀어준다 */}
+                            {t.key === 'stylist' && stylistFee.accompany > 0 && (
+                              <div style={{ fontSize: 10.5, color: 'var(--muted)' }}>
+                                시술 {fmt(stylistFee.service)} + 동행 {fmt(stylistFee.accompany)}
+                              </div>
+                            )}
                             <button
                               type="button"
                               onClick={() => drop(t.key)}

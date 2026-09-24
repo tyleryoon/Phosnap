@@ -7,7 +7,13 @@
 // 서울·부산 둘 다 뛰는 헤메가 부산 촬영에서 사라진다. 양쪽을 다 잡아둔다.
 
 import assert from 'node:assert/strict';
-import { commonLocations, dressCharges, locationConflict, normalizeCart } from './cart.js';
+import {
+  commonLocations,
+  dressCharges,
+  locationConflict,
+  normalizeCart,
+  stylistCharges,
+} from './cart.js';
 
 const S = (ids) => ({ locationIds: ids });
 
@@ -133,6 +139,36 @@ assert.deepEqual(
   dressCharges(null),
   { methods: [], method: null, deposit: 0, deliveryFee: 0 },
   '의상을 안 담았으면 받을 돈이 없다',
+);
+
+// ── 헤메 시술비 · 동행비 ─────────────────────────────────────────────
+// 동행값을 시술값에 섞지 않는다. 섞이면 고객은 왜 비싼지 모르고,
+// 촬영 전 시술에까지 동행비가 붙으면 안 받을 돈을 받는다.
+
+assert.deepEqual(
+  stylistCharges({ price: 120000, timing: 'before', accompanyFee: 50000 }),
+  { service: 120000, accompany: 0, total: 120000 },
+  '촬영 전 시술은 현장에 남지 않으므로 동행비가 없다',
+);
+assert.deepEqual(
+  stylistCharges({ price: 120000, timing: 'during', accompanyFee: 50000 }),
+  { service: 120000, accompany: 50000, total: 170000 },
+  '촬영 중 합류는 동행비를 받는다',
+);
+assert.deepEqual(
+  stylistCharges({ price: 200000, timing: 'full', accompanyFee: 80000 }),
+  { service: 200000, accompany: 80000, total: 280000 },
+  '종일 동행도 동행비를 받는다',
+);
+assert.deepEqual(
+  stylistCharges({ price: 90000, timing: 'full' }),
+  { service: 90000, accompany: 0, total: 90000 },
+  '동행비를 안 정했으면 0 이다 — 없는 돈을 지어내지 않는다',
+);
+assert.deepEqual(
+  stylistCharges(null),
+  { service: 0, accompany: 0, total: 0 },
+  '헤메를 안 담았으면 받을 돈이 없다',
 );
 
 console.log('cart.check: 통과');

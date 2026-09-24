@@ -50,6 +50,8 @@ const i18n = {
     joinAfter: '촬영 시작 후 합류 시점 (분)',
     joinAfterHint: '촬영이 시작되고 몇 분 뒤에 도착하면 되는지',
     maxHours: '감당 가능한 최대 촬영 시간',
+    accompanyFee: '현장 동행 추가 요금 (원)',
+    accompanyFeeDesc: '시술비와 따로 받습니다. 고객에게는 “시술 120,000 + 동행 50,000” 으로 보입니다.',
     maxHoursHint: '이보다 긴 촬영에는 이 메뉴가 노출되지 않습니다',
     travelFee: '출장비 (선택)',
     slotPreview: '촬영이 16:00~19:00 이라면',
@@ -116,6 +118,8 @@ const i18n = {
     joinAfter: 'Joins after shoot starts (min)',
     joinAfterHint: 'How long after the shoot begins you arrive',
     maxHours: 'Longest shoot you can cover',
+    accompanyFee: 'On-site accompaniment fee',
+    accompanyFeeDesc: 'Charged separately from the service price.',
     maxHoursHint: 'This menu is hidden for shoots longer than this',
     travelFee: 'Travel fee (optional)',
     slotPreview: 'If the shoot runs 16:00–19:00',
@@ -182,6 +186,8 @@ const i18n = {
     joinAfter: '撮影開始後の合流時間（分）',
     joinAfterHint: '撮影開始から何分後に到着するか',
     maxHours: '対応可能な最長撮影時間',
+    accompanyFee: '現場同行の追加料金',
+    accompanyFeeDesc: '施術料金とは別にいただきます。',
     maxHoursHint: 'これより長い撮影ではこのメニューは表示されません',
     travelFee: '出張費（任意）',
     slotPreview: '撮影が16:00〜19:00の場合',
@@ -250,6 +256,8 @@ const i18n = {
     joinAfter: '拍摄开始后加入时间（分钟）',
     joinAfterHint: '拍摄开始后多久到达',
     maxHours: '可承接的最长拍摄时间',
+    accompanyFee: '现场陪同附加费用',
+    accompanyFeeDesc: '与服务费分开收取。',
     maxHoursHint: '超过此时长的拍摄不会显示此项目',
     travelFee: '出差费（可选）',
     slotPreview: '若拍摄为 16:00–19:00',
@@ -952,6 +960,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
     timing: 'before',
     offsetMinutes: '30',
     maxHours: '',
+    accompanyFee: '',
     travelFee: '',
   };
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -988,6 +997,7 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
         timing: service.timing ?? 'before',
         offsetMinutes: String(service.offset_minutes ?? 30),
         maxHours: service.max_hours != null ? String(service.max_hours) : '',
+        accompanyFee: service.accompany_fee ? String(service.accompany_fee) : '',
         travelFee: service.travel_fee ? String(service.travel_fee) : '',
       });
     } else {
@@ -1023,6 +1033,12 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
         max_hours:
           formData.timing === 'full' && formData.maxHours ? Number(formData.maxHours) : null,
         travel_fee: parseInt(String(formData.travelFee).replace(/[^0-9]/g, ''), 10) || 0,
+        // 동행비는 현장에 남는 시술에만 붙는다. 촬영 전 시술에 값이
+        // 남아 있으면 안 받을 돈을 받게 된다 (FIX_47).
+        accompany_fee:
+          formData.timing === 'before'
+            ? 0
+            : parseInt(String(formData.accompanyFee).replace(/[^0-9]/g, ''), 10) || 0,
       };
 
       let nextServices;
@@ -1175,6 +1191,9 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                       : t.timingBefore}
                   {service.timing === 'full' && service.max_hours
                     ? ` · ~${service.max_hours}h`
+                    : ''}
+                  {service.timing !== 'before' && service.accompany_fee
+                    ? ` · 동행 +₩${Number(service.accompany_fee).toLocaleString('ko-KR')}`
                     : ''}
                 </span>
               </div>
@@ -1373,6 +1392,38 @@ const ServiceMenuTab = ({ t, lang, stylistId }) => {
                 />
                 <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
                   {t.maxHoursHint}
+                </div>
+              </div>
+            )}
+
+            {/* 현장에 남는 시술만 동행비를 받는다.
+                촬영 전 시술은 손님을 넘기고 돌아가므로 묻지 않는다. */}
+            {formData.timing !== 'before' && (
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 4 }}>
+                  {t.accompanyFee}
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  step="10000"
+                  inputMode="numeric"
+                  placeholder="0"
+                  value={formData.accompanyFee}
+                  onChange={(e) => setFormData({ ...formData, accompanyFee: e.target.value })}
+                  style={{
+                    padding: 12,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    background: 'var(--bg)',
+                    color: 'var(--text)',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'var(--font-body)',
+                    fontSize: 14,
+                  }}
+                />
+                <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
+                  {t.accompanyFeeDesc}
                 </div>
               </div>
             )}
