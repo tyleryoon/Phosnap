@@ -3,6 +3,15 @@ import Corners from '../components/Corners';
 import Footer from '../components/Footer';
 import { useLanguage } from '../contexts/LanguageContext';
 import SEO from '../components/SEO';
+import { ARTIST_COMMISSION_STEPS, COMMISSION_TIERS } from '../lib/commission';
+
+const LOW = Math.round(COMMISSION_TIERS.early_access.rate * 100);
+const HIGH = Math.round(ARTIST_COMMISSION_STEPS[0].rate * 100);
+const STEP_LOW = Math.round(ARTIST_COMMISSION_STEPS[ARTIST_COMMISSION_STEPS.length - 1].rate * 100);
+/** 통계 칸용 — 얼리엑세스를 뺀 일반 요율 범위 */
+const FEE_RANGE_TEXT = `${STEP_LOW}~${HIGH}%`;
+/** 설명문용 — 얼리엑세스를 포함한 전체 범위 */
+const FEE_FULL_RANGE = `${LOW}~${HIGH}%`;
 
 // ─── For Artists Page ──────────────────────────────────────────────────
 
@@ -33,10 +42,10 @@ const ForArtists = ({ onAuthOpen }) => {
     zh: '摄影师专区',
   };
   const seoDescs = {
-    ko: 'Phosnap 작가 커뮤니티에 참여하여 수익을 창출하고 클라이언트와 직접 연결되세요. 수수료 10~20%, 투명한 정산 시스템.',
-    en: 'Join Phosnap photographer community. Earn money, connect with clients directly. Commission 10–20%, transparent settlement system.',
-    ja: 'Phosnap 写真家コミュニティに参加。直接クライアントと繋がり、収入を増やしましょう。手数料10〜20%、透明な精算システム。',
-    zh: '加入Phosnap摄影师社区。直接与客户联系，增加收入。佣金10~20%，透明清晰的结算系统。',
+    ko: `Phosnap 작가 커뮤니티에 참여하여 수익을 창출하고 클라이언트와 직접 연결되세요. 수수료 ${FEE_FULL_RANGE}, 투명한 정산 시스템.`,
+    en: `Join Phosnap photographer community. Earn money, connect with clients directly. Commission ${FEE_FULL_RANGE}, transparent settlement system.`,
+    ja: `Phosnap 写真家コミュニティに参加。直接クライアントと繋がり、収入を増やしましょう。手数料${FEE_FULL_RANGE}、透明な精算システム。`,
+    zh: `加入Phosnap摄影师社区。直接与客户联系，增加收入。佣金${FEE_FULL_RANGE}，透明清晰的结算系统。`,
   };
 
   return (
@@ -66,7 +75,10 @@ const ForArtists = ({ onAuthOpen }) => {
         {[
           { num: '2,400+', labelKey: 'forartists.statArtists' },
           { num: '48',     labelKey: 'forartists.statCities' },
-          { num: '8~15%', labelKey: 'forartists.statFee' },
+          // 숫자는 commission.js 가 정본. 여기엔 '8~15%' 라고 적혀 있었는데
+          // 실제 요율은 11~18% 였다. 가입 전에 본 숫자가 정산 때 달라지면
+          // 그건 오타가 아니라 약속을 어긴 것이다.
+          { num: FEE_RANGE_TEXT, labelKey: 'forartists.statFee' },
           { num: '4.93',   labelKey: 'forartists.statRating' },
         ].map(s => (
           <div key={s.labelKey} className="stat-item">

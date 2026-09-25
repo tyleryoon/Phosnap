@@ -8,6 +8,15 @@ import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
+  ARTIST_COMMISSION_STEPS,
+  COMMISSION_TIERS,
+  COMMISSION_CAP,
+  EARLY_ACCESS_DURATION_MONTHS,
+} from '../lib/commission';
+
+/** 0.18 → '18%'. 소수 요율을 화면 문구로. */
+const pct = (rate) => `${Math.round(rate * 100)}%`;
+import {
   getArtistBookings,
   getPendingBookings,
   approveBooking,
@@ -473,7 +482,17 @@ const ArtistDashboard = () => {
     return { completed: completed.length, confirmed: confirmed.length, pending: pending.length, monthDone: monthDone.length, revenue, monthRev };
   })();
 
-  const completedCount = profile?.completed_bookings ?? stats.completed;
+  // 누적 완료 건수.
+  //
+  // 예전에는 profiles.completed_bookings 를 먼저 봤다. 그런데 그 컬럼을
+  // 올려주는 코드가 어디에도 없다 — 트리거는 '값이 바뀌면 배지를 다시
+  // 매긴다' 일 뿐, 값 자체는 아무도 안 올린다. ?? 는 0 을 통과시키므로
+  // 언제까지나 0 이 이겼다. 화면에는 '이번달 완료 1건' 과 '누적 완료 0건'
+  // 이 나란히 떴다.
+  //
+  // 실제 예약을 세는 쪽을 기본으로 쓰고, 이관 등으로 컬럼이 더 크면
+  // 그쪽을 존중한다.
+  const completedCount = Math.max(stats.completed, profile?.completed_bookings ?? 0);
   const artistData = PHOTOGRAPHERS.find(p => p.id === artistLegacyId);
   const artistRating = profile?.avg_rating ?? artistData?.rating ?? 5.0;
   const badge = getBadge(completedCount, artistRating);
@@ -989,10 +1008,12 @@ const ArtistDashboard = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
                       {[
-                        { symbol: '✦', label: 'Rising', range: '0~29건', color: 'var(--muted)', perks: '기본 프로필 노출, 예약 수신, 수수료 20%' },
-                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: 'var(--info)', perks: '검색 우선 노출, 배지 표시, 수수료 15%' },
-                        { symbol: '✦✦✦', label: 'Premier', range: '100~299건', color: 'var(--gold)', perks: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
-                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: 'var(--grade-4)', perks: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
+                        // 수수료는 등급이 아니라 완료 건수로 정해진다(commission.js).
+                        // 여기에 따로 적어두면 정책이 바뀔 때마다 또 어긋난다.
+                        { symbol: '✦', label: 'Rising', range: '0~29건', color: 'var(--muted)', perks: '기본 프로필 노출, 예약 수신' },
+                        { symbol: '✦✦', label: 'Established', range: '30~99건', color: 'var(--info)', perks: '검색 우선 노출, 배지 표시' },
+                        { symbol: '✦✦✦', label: 'Premier', range: '100~299건', color: 'var(--gold)', perks: '홈 추천 등록, 즉시예약 활성화' },
+                        { symbol: '✦✦✦✦', label: 'Elite', range: '300건+', color: 'var(--grade-4)', perks: '최우선 노출, 전용 매니저 배정' },
                       ].map(tier => (
                         <div key={tier.label} style={{
                           padding: '12px 14px', border: `1px solid ${badge.label === tier.label ? tier.color + '55' : 'var(--border)'}`,
@@ -1014,15 +1035,37 @@ const ArtistDashboard = () => {
                       수수료 정책
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.8, padding: '12px 16px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)' }}>
+                      {/* 이 숫자들은 commission.js 에서 온다. 예전에는 여기에
+                          20% / 30건 15% / 100건 12% / 얼리 6개월 이라고 박아뒀는데
+                          실제 정산은 18% / 15건 14% / 50건 11% / 얼리 12개월 이었다.
+                          정책을 완화하면서 화면을 안 고친 것이다. 작가가 보는 수수료와
+                          실제로 떼는 수수료가 다르면 그건 버그가 아니라 사고다. */}
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>기본 수수료: 20%</span> — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
+                        <span style={{ color: 'var(--gold)', fontFamily: 'var(--font-serif)' }}>
+                          기본 수수료: {pct(ARTIST_COMMISSION_STEPS[0].rate)}
+                        </span>{' '}
+                        — 고객 결제 금액에서 플랫폼 수수료가 차감됩니다.
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'var(--info)' }}>30건 이상:</span> 수수료 15% |{' '}
-                        <span style={{ color: 'var(--gold)' }}>100건 이상:</span> 수수료 12%
+                        {ARTIST_COMMISSION_STEPS.slice(1).map((s, i) => (
+                          <span key={s.minCompleted}>
+                            {i > 0 && ' | '}
+                            <span style={{ color: i === 0 ? 'var(--info)' : 'var(--gold)' }}>
+                              {s.minCompleted}건 이상:
+                            </span>{' '}
+                            수수료 {pct(s.rate)}
+                          </span>
+                        ))}
                       </div>
                       <div style={{ marginBottom: 6 }}>
-                        <span style={{ color: 'var(--accent-a50)' }}>얼리억세스 작가:</span> 론칭 초기 가입 시 수수료 10% 고정 (6개월)
+                        <span style={{ color: 'var(--accent-a50)' }}>얼리억세스 작가:</span> 론칭
+                        초기 가입 시 수수료 {pct(COMMISSION_TIERS.early_access.rate)} 고정 (
+                        {EARLY_ACCESS_DURATION_MONTHS}개월)
+                      </div>
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ color: 'var(--success)' }}>건당 상한:</span> 한 건에서 떼는
+                        수수료는 {COMMISSION_CAP.toLocaleString()}원을 넘지 않습니다. 고액
+                        촬영일수록 실효 요율이 내려갑니다.
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                         정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 5~7일 내 등록 계좌로 자동 입금

@@ -80,6 +80,17 @@ import {
 } from '../data/collabo';
 import { WORLD_COUNTRIES, WORLD_CITIES } from '../data/worldCities';
 import {
+  ARTIST_COMMISSION_STEPS,
+  COMMISSION_TIERS,
+  EARLY_ACCESS_DURATION_MONTHS,
+} from '../lib/commission';
+
+// 수수료 안내 문구는 commission.js 한 곳에서 만든다.
+// 화면마다 숫자를 적어두면 정책이 바뀔 때 한두 곳이 꼭 남는다 —
+// 실제로 대시보드·스케줄·모집 페이지가 서로 다른 수수료를 말하고 있었다.
+const FEE_RANGE_TEXT = `${Math.round(ARTIST_COMMISSION_STEPS[ARTIST_COMMISSION_STEPS.length - 1].rate * 100)}~${Math.round(ARTIST_COMMISSION_STEPS[0].rate * 100)}%`;
+const EARLY_FEE_TEXT = `${Math.round(COMMISSION_TIERS.early_access.rate * 100)}%`;
+import {
   initSalesData,
   getTotalRevenue,
   getTotalNetRevenue,
@@ -8427,7 +8438,8 @@ const ArtistSchedule = () => {
             {
               step: '02',
               title: 'Phosnap 수수료 차감',
-              desc: '등급별 플랫폼 수수료 차감 (Rising 20% ~ Elite 12%, 얼리억세스 작가 10% 고정 · 6개월)',
+              // 수수료는 등급이 아니라 완료 건수로 정해진다. 숫자는 commission.js 가 정본.
+              desc: `완료 건수별 플랫폼 수수료 차감 (${FEE_RANGE_TEXT}, 얼리억세스 작가 ${EARLY_FEE_TEXT} 고정 · ${EARLY_ACCESS_DURATION_MONTHS}개월)`,
             },
             {
               step: '03',
@@ -9778,8 +9790,7 @@ const ArtistSchedule = () => {
           {COLLABO_RULES.maxProposalsPerMonth}회 (연속일 = 1회)
           <br />· 동일 작가 재요청: {COLLABO_RULES.cooldownSamePerson}일 쿨타임 · 거절·미응답 시
           차감 없음 · {COLLABO_RULES.autoExpireDays}일 미응답 자동 만료
-          <br />· 수수료: 등급별 차등 (Rising 20% → Elite 12%) · 콜라보 촬영 시 할인 적용 (18% →
-          10%)
+          <br />· 수수료: 완료 건수별 차등 ({FEE_RANGE_TEXT}) · 콜라보 촬영 시 할인 적용
         </div>
 
         {/* 서브 탭 */}
