@@ -2707,23 +2707,29 @@ export const getCollaboCandidates = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
 
-  const [{ data: photogs }, { data: stylists }] = await Promise.all([
+  // 컬럼 이름은 두 테이블이 다르다. photographers 는 name/name_ko,
+  // stylists 는 name_ko/name_en 이고 img 가 아니라 portfolio_images 다.
+  // 없는 컬럼을 하나라도 넣으면 PostgREST 가 쿼리 전체를 400 으로 막는다.
+  const [photoRes, stylistRes] = await Promise.all([
     sb
       .from('photographers')
-      .select('id, name, name_en, location_id, artist_type, img, rating, languages, is_active')
+      .select('id, name, name_ko, location_id, artist_type, img, rating, languages, is_active')
       .eq('is_active', true),
     sb
       .from('stylists')
-      .select('id, name_ko, name_en, location_id, img, is_active')
+      .select('id, name_ko, name_en, location_id, portfolio_images, rating, is_active')
       .eq('is_active', true),
   ]);
+
+  if (photoRes.error) console.error('[getCollaboCandidates] 작가 조회 실패:', photoRes.error);
+  if (stylistRes.error) console.error('[getCollaboCandidates] 헤메 조회 실패:', stylistRes.error);
 
   // 화면은 한 목록으로 다룬다. 타입만 구분해 붙여준다.
   const asPhotographer = (p) => ({
     providerType: 'photographer',
     id: p.id,
-    name: p.name,
-    nameEn: p.name_en,
+    name: p.name || p.name_ko,
+    nameEn: p.name,
     locationId: p.location_id,
     artistType: p.artist_type || 'photographer',
     img: p.img,
@@ -2736,15 +2742,20 @@ export const getCollaboCandidates = async () => {
     name: s.name_ko,
     nameEn: s.name_en,
     locationId: s.location_id,
-    artistType: 'hmk',
-    img: s.img,
-    rating: null,
+    // COLLABO_MATRIX 는 헤메를 'hmua' 로 쓴다. 'hmk' 로 넣으면
+    // 짝 맞추기에서 전부 걸러져 목록에 한 명도 안 나온다.
+    artistType: 'hmua',
+    img: (s.portfolio_images || [])[0] || null,
+    rating: s.rating,
     languages: [],
   });
 
   return {
-    data: [...(photogs || []).map(asPhotographer), ...(stylists || []).map(asStylist)],
-    error: null,
+    data: [
+      ...(photoRes.data || []).map(asPhotographer),
+      ...(stylistRes.data || []).map(asStylist),
+    ],
+    error: photoRes.error || stylistRes.error || null,
   };
 };
 

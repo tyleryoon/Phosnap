@@ -905,6 +905,13 @@ const ArtistSchedule = () => {
   const [snapImages, setSnapImages] = useState({}); // {snapIdx: [urls]}
   const [paymentDraft, setPaymentDraft] = useState(null);
 
+  // ── Supabase 연동 상태 ──
+  // 콜라보 로더가 dbPhotographerId 를 쓰므로 그보다 먼저 선언해야 한다.
+  // const 는 TDZ 가 있어서, 아래에 두면 'Cannot access before initialization'
+  // 으로 화면이 통째로 죽는다.
+  const [dbConnected, setDbConnected] = useState(false);
+  const [dbPhotographerId, setDbPhotographerId] = useState(null); // Supabase photographer UUID
+
   // ── 콜라보 상태 ──
   const [collaboReceived, setCollaboReceived] = useState([]);
   const [collaboSent, setCollaboSent] = useState([]);
@@ -923,9 +930,8 @@ const ArtistSchedule = () => {
   // 콜라보 데이터 로드
   const loadCollabo = useCallback(async () => {
     if (!dbPhotographerId) return;
-    const { expireCollaboProposals, getCollaboProposals, getCollaboCandidates } = await import(
-      '../lib/supabase'
-    );
+    const { expireCollaboProposals, getCollaboProposals, getCollaboCandidates } =
+      await import('../lib/supabase');
     // 7일 미응답 만료. 크론이 없어서 화면이 열릴 때 한 번 돌린다.
     await expireCollaboProposals();
     const [{ data: props }, { data: cands }] = await Promise.all([
@@ -935,9 +941,7 @@ const ArtistSchedule = () => {
     setCollaboProposals(props || []);
     // 나 자신은 상대 목록에서 뺀다.
     setCollaboCandidates(
-      (cands || []).filter(
-        (c) => !(c.providerType === 'photographer' && c.id === dbPhotographerId)
-      )
+      (cands || []).filter((c) => !(c.providerType === 'photographer' && c.id === dbPhotographerId))
     );
     setCollaboReceived(
       (props || []).filter((p) => p.to_id === dbPhotographerId && p.status === 'pending')
@@ -945,9 +949,7 @@ const ArtistSchedule = () => {
     setCollaboSent((props || []).filter((p) => p.from_id === dbPhotographerId));
   }, [dbPhotographerId]);
 
-  // ── Supabase 연동 상태 ──
-  const [dbConnected, setDbConnected] = useState(false);
-  const [dbPhotographerId, setDbPhotographerId] = useState(null); // Supabase photographer UUID
+  // (dbConnected / dbPhotographerId 는 콜라보 로더보다 먼저 필요해서 위로 옮겼다)
 
   // ── 로드 (Supabase 우선, localStorage fallback) ──
   const load = useCallback(async () => {
@@ -9364,10 +9366,7 @@ const ArtistSchedule = () => {
     const sameTypeMonthUsed = sent.filter(
       (p) => p.is_same_type && new Date(p.created_at) >= startOfMonth
     ).length;
-    const sameTypeMonthLeft = Math.max(
-      0,
-      COLLABO_RULES.maxSameTypePerMonth - sameTypeMonthUsed
-    );
+    const sameTypeMonthLeft = Math.max(0, COLLABO_RULES.maxSameTypePerMonth - sameTypeMonthUsed);
 
     // 내 작가 데이터 + 등급 계산
     //
@@ -10651,12 +10650,7 @@ const ArtistSchedule = () => {
                       {remaining}회
                     </span>{' '}
                     / 월 {COLLABO_RULES.maxProposalsPerMonth}회
-                    {sameType && (
-                      <span>
-                        {' '}
-                        · 동종 남은 횟수: {sameTypeMonthLeft}회
-                      </span>
-                    )}
+                    {sameType && <span> · 동종 남은 횟수: {sameTypeMonthLeft}회</span>}
                   </div>
 
                   <div style={{ display: 'flex', gap: 12 }}>
