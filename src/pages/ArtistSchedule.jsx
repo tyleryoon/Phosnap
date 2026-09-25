@@ -79,6 +79,19 @@ import {
   expireOldProposals,
 } from '../data/collabo';
 import { WORLD_COUNTRIES, WORLD_CITIES } from '../data/worldCities';
+import { getLocationById } from '../data/locationUtils';
+import { LOCATIONS_DOMESTIC, LOCATIONS_OVERSEAS } from '../data/locations';
+
+/** 지역 id 로 표시 이름 찾기.
+ *
+ *  getLocationById 는 PHOTOGRAPHERS 시드로 만든 레지스트리를 보기 때문에
+ *  아직 작가가 한 명도 없는 지역은 못 찾는다. 그러면 화면에 'seoul' 이
+ *  그대로 나온다. 정적 목록을 먼저 보고 없으면 레지스트리로 넘어간다.
+ */
+const LOCATION_NAMES = new Map(
+  [...LOCATIONS_DOMESTIC, ...LOCATIONS_OVERSEAS].map((l) => [l.id, l])
+);
+const locationMeta = (id) => LOCATION_NAMES.get(id) || getLocationById(id) || null;
 import {
   ARTIST_COMMISSION_STEPS,
   COMMISSION_TIERS,
@@ -927,6 +940,10 @@ const ArtistSchedule = () => {
     // DB 에서 읽은 기본 운영 시간. 아래에서 setSchedule 할 때 쓴다.
     // localStorage 값이 DB 를 덮어쓰지 않게 하려고 여기 둔다.
     let dbDefaultSlots = null;
+    // 아래 활동 지역 조회에서 쓴다. state 는 이번 실행에 반영되지 않으므로
+    // 지역 변수로 들고 내려간다.
+    let dbPhotogId = null;
+    let dbMainLocationId = null;
 
     // 항상 localStorage fallback 초기화
     initSchedules();
@@ -944,7 +961,7 @@ const ArtistSchedule = () => {
         if (session?.user) {
           let { data: photog } = await sb
             .from('photographers')
-            .select('id')
+            .select('id, location_id')
             .eq('user_id', session.user.id)
             .maybeSingle();
 
@@ -968,6 +985,8 @@ const ArtistSchedule = () => {
           }
 
           if (photog?.id) {
+            dbPhotogId = photog.id;
+            dbMainLocationId = photog.location_id || null;
             setArtistId(photog.id);
             try {
               sessionStorage.setItem('phosnap_artist_id', String(photog.id));
@@ -1073,15 +1092,56 @@ const ArtistSchedule = () => {
     // 2주 이상 미로그인 체크 → 자동 노출 OFF
     const wasAutoOff = checkInactiveAutoOff('photographer', artistId);
     const loadedProfile = getProfile('photographer', artistId);
-    setProfileState(
-      loadedProfile || {
-        locations: [],
-        portfolio: [],
-        paymentInfo: {},
-        tours: [],
-        hmk: { selfAvailable: false, note: '', menus: [] },
+    const baseProfile = loadedProfile || {
+      locations: [],
+      portfolio: [],
+      paymentInfo: {},
+      tours: [],
+      hmk: { selfAvailable: false, note: '', menus: [] },
+    };
+
+    // ── 활동 지역은 DB 가 정본이다 ──
+    //
+    // 이 화면은 지금까지 활동 지역을 provider_locations 에 **쓰기만** 하고
+    // 읽지는 않았다. 읽기는 localStorage 프로필 하나였다.
+    //
+    // 그런데 DB 조회가 성공하면 artistId 가 Supabase UUID 로 바뀐다.
+    // localStorage 에 쌓여 있는 키는 legacy 정수(_1, _27 …)라 UUID 키로는
+    // 늘 빈 프로필이 잡혔다. 그래서 DB 에 location_id='seoul' 이 멀쩡히
+    // 있는 작가에게도 '⚠ 메인 활동지를 지정해주세요' 가 떴고, 다른 기기로
+    // 로그인하면 활동 지역이 통째로 사라졌다.
+    //
+    // DB 에서 읽은 지역이 있으면 그걸 쓴다. 기간·노출 토글 같은 세부는
+    // 아직 provider_locations 에 컬럼이 없어 localStorage 쪽을 살려 둔다.
+    if (dbPhotogId) {
+      try {
+        const { getProviderLocations } = await import('../lib/supabase');
+        const { data: dbLocIds } = await getProviderLocations('photographer', dbPhotogId);
+        const mainId = dbMainLocationId || dbLocIds?.[0] || null;
+        const ids = [...new Set([...(mainId ? [mainId] : []), ...(dbLocIds || [])])];
+
+        if (ids.length) {
+          const bySaved = new Map((baseProfile.locations || []).map((l) => [l.regionId || l.id, l]));
+          baseProfile.locations = ids.map((id) => {
+            const saved = bySaved.get(id);
+            const meta = locationMeta(id);
+            return {
+              // 기간·노출 등 화면에서만 쓰는 값은 저장돼 있던 걸 유지한다.
+              ...(saved || { active: true, period: null }),
+              id: saved?.id || id,
+              regionId: id,
+              name: saved?.name || meta?.name || id,
+              nameEn: saved?.nameEn || meta?.nameEn || id,
+              isMain: id === mainId,
+            };
+          });
+        }
+      } catch (e) {
+        console.error('[ArtistSchedule] 활동 지역 조회 실패:', e);
       }
-    );
+    }
+
+    setProfileState(baseProfile);
     if (wasAutoOff) {
       showSaved(
         '⚠ 2주 이상 미로그인으로 전체 활동 지역이 노출 OFF 처리되었습니다. 활동 지역 탭에서 다시 ON 해주세요.'
