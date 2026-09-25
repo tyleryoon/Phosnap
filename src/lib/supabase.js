@@ -2694,6 +2694,45 @@ export const getPhotographerReviewByBookingId = async (bookingId) => {
   return data;
 };
 
+/**
+ * 내가 쓴 리뷰 — 고객 마이페이지의 '내가 작성한 리뷰' 탭.
+ * 작가 이름은 여기서 조인하지 않는다. 그 화면은 이미 내 예약 목록을
+ * 들고 있고 리뷰는 booking_id 로 1:1 이라, 화면에서 붙이면 된다.
+ */
+export const getMyReviews = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
+  if (!session?.user) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('photographer_reviews')
+    .select('*')
+    .eq('customer_id', session.user.id)
+    .order('created_at', { ascending: false });
+  return { data: data || [], error };
+};
+
+/**
+ * 내 리뷰 삭제. booking_id 가 UNIQUE 라, 지워야 그 예약에 다시 쓸 수 있다.
+ * customer_id 조건을 여기서도 건다 — RLS 가 막아주지만 한 겹 더.
+ */
+export const deleteMyReview = async (reviewId) => {
+  const sb = await getSupabase();
+  if (!sb) return { error: { message: 'Supabase 연결 실패' } };
+  const {
+    data: { session },
+  } = await sb.auth.getSession();
+  if (!session?.user) return { error: { message: 'Authentication required' } };
+  const { error } = await sb
+    .from('photographer_reviews')
+    .delete()
+    .eq('id', reviewId)
+    .eq('customer_id', session.user.id);
+  return { error };
+};
+
 export const getPhotographerReviewsV2 = async (photographerId, limit = 50) => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };

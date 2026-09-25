@@ -1,160 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { analyzeImageStyle, matchPhotographersByStyle } from '../lib/styleAnalysis';
+
+// 이 파일에는 MOCK_STYLES({ 1: …, 2: … })와 분석 함수 사본이 들어 있었다.
+// 키가 정수 1·2 라서 UUID 를 쓰는 실제 작가와는 하나도 맞지 않았고,
+// 매칭은 언제나 빈 배열을 돌려줬다 — 고객에겐 '비슷한 작가 없음' 으로 보였다.
+// 진짜 분석은 lib/styleAnalysis.js 에 이미 있었다. 사본을 지우고 그걸 쓴다.
 
 /**
- * Mock styles for photographers (pre-computed)
- */
-const MOCK_STYLES = {
-  1: {
-    brightness: 72,
-    saturation: 55,
-    contrast: 45,
-    warmth: 25,
-    style: 'warm',
-    dominantColors: ['#E8C4A0', '#8B6F4E', '#D4A76A', '#F5E6D3', '#2C1810'],
-  },
-  2: {
-    brightness: 45,
-    saturation: 62,
-    contrast: 68,
-    warmth: -15,
-    style: 'moody',
-    dominantColors: ['#2C3E50', '#1A1A2E', '#4A6741', '#8B7355', '#D4C5B0'],
-  },
-};
-
-/**
- * Analyze image style
- * Returns brightness, saturation, contrast, warmth, dominant colors
- */
-export async function analyzeImageStyle(imageUrl) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 100;
-        canvas.height = 100;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, 100, 100);
-
-        const imageData = ctx.getImageData(0, 0, 100, 100);
-        const data = imageData.data;
-
-        // Calculate metrics
-        let totalR = 0, totalG = 0, totalB = 0, totalBrightness = 0;
-        const colorMap = {};
-
-        for (let i = 0; i < data.length; i += 4) {
-          const r = data[i];
-          const g = data[i + 1];
-          const b = data[i + 2];
-
-          totalR += r;
-          totalG += g;
-          totalB += b;
-
-          const brightness = (r + g + b) / 3;
-          totalBrightness += brightness;
-
-          // Store color frequency
-          const colorKey = `${Math.round(r / 10)}${Math.round(g / 10)}${Math.round(b / 10)}`;
-          colorMap[colorKey] = (colorMap[colorKey] || 0) + 1;
-        }
-
-        const pixelCount = data.length / 4;
-        const avgR = Math.round(totalR / pixelCount);
-        const avgG = Math.round(totalG / pixelCount);
-        const avgB = Math.round(totalB / pixelCount);
-        const brightness = Math.round((totalBrightness / pixelCount) / 255 * 100);
-
-        // Extract dominant colors
-        const sortedColors = Object.entries(colorMap)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5)
-          .map(([key]) => {
-            const r = parseInt(key.substring(0, 2)) * 10;
-            const g = parseInt(key.substring(2, 4)) * 10;
-            const b = parseInt(key.substring(4, 6)) * 10;
-            return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-          });
-
-        // Calculate saturation and warmth
-        const max = Math.max(avgR, avgG, avgB);
-        const min = Math.min(avgR, avgG, avgB);
-        const saturation = max === 0 ? 0 : Math.round(((max - min) / max) * 100);
-
-        const warmth = avgR - avgB;
-
-        // Determine style based on brightness and saturation
-        let style = 'balanced';
-        if (brightness > 70) style = 'bright';
-        else if (brightness < 40) style = 'moody';
-        else if (warmth > 20) style = 'warm';
-        else if (warmth < -20) style = 'cool';
-
-        const contrast = Math.max(...[
-          Math.abs(avgR - avgG),
-          Math.abs(avgG - avgB),
-          Math.abs(avgR - avgB),
-        ]);
-
-        resolve({
-          brightness,
-          saturation,
-          contrast: Math.round((contrast / 255) * 100),
-          warmth: Math.round(warmth / 255 * 100),
-          style,
-          dominantColors: sortedColors.length > 0 ? sortedColors : ['#8B8B8B'],
-        });
-      } catch (error) {
-        reject(error);
-      }
-    };
-    img.onerror = () => {
-      reject(new Error('Failed to load image'));
-    };
-    img.src = imageUrl;
-  });
-}
-
-/**
- * Calculate similarity score between two style profiles
- */
-function calculateStyleSimilarity(style1, style2) {
-  const brightnessDiff = Math.abs(style1.brightness - style2.brightness);
-  const saturationDiff = Math.abs(style1.saturation - style2.saturation);
-  const contrastDiff = Math.abs(style1.contrast - style2.contrast);
-  const warmthDiff = Math.abs(style1.warmth - style2.warmth);
-
-  const maxDiff = (100 + 100 + 100 + 100) / 4;
-  const totalDiff = (brightnessDiff + saturationDiff + contrastDiff + warmthDiff) / 4;
-  const similarity = Math.max(0, 100 - (totalDiff / maxDiff) * 100);
-
-  return Math.round(similarity);
-}
-
-/**
- * Match photographers by style
- */
-export function matchPhotographersByStyle(refStyle, photographers) {
-  if (!photographers || !photographers.length) {
-    return [];
-  }
-
-  return photographers
-    .filter((p) => p.id && MOCK_STYLES[p.id])
-    .map((photographer) => {
-      const photoStyle = MOCK_STYLES[photographer.id];
-      const similarity = calculateStyleSimilarity(refStyle, photoStyle);
-      return { ...photographer, similarity, photoStyle };
-    })
-    .sort((a, b) => b.similarity - a.similarity);
-}
-
-/**
- * StyleMatcher Component
+ * 스타일 매칭 — 참고 사진을 올리면 분위기가 비슷한 작가를 찾아준다.
  */
 const StyleMatcher = ({ photographers, onMatch }) => {
   const { lang } = useLanguage();
@@ -306,16 +160,41 @@ const StyleMatcher = ({ photographers, onMatch }) => {
     }
   };
 
-  const handleFindMatches = () => {
-    if (!imageStyle || !photographers) {
-      return;
-    }
+  const handleFindMatches = async () => {
+    if (!uploadedImage || !photographers?.length) return;
 
-    const results = matchPhotographersByStyle(imageStyle, photographers);
-    setMatchResults(results);
+    setIsAnalyzing(true);
+    try {
+      // lib 쪽은 portfolioThumbnails 를 본다. 작가 객체가 들고 있는 건
+      // portfolio([{url}]) 와 대표 이미지 img 라서 여기서 맞춰준다.
+      const withThumbs = photographers.map((p) => ({
+        ...p,
+        portfolioThumbnails: [
+          ...(p.portfolio || []).map((x) => x?.url || x),
+          p.img,
+        ]
+          .filter(Boolean)
+          .slice(0, 3),
+      }));
 
-    if (onMatch) {
-      onMatch(results);
+      const raw = await matchPhotographersByStyle(uploadedImage, withThumbs);
+      // 한 장도 분석하지 못한 작가는 0점으로 떨어진다. 0점을 '가장 안 닮음'
+      // 으로 줄 세우면 분석 실패가 취향 차이처럼 보인다. 아예 뺀다.
+      const results = raw
+        .filter((r) => r.similarityScore > 0)
+        .map((r) => ({
+          ...r.photographer,
+          similarity: r.similarityScore,
+          profileImage: r.photographer.profileImage || r.photographer.img,
+        }));
+
+      setMatchResults(results);
+      if (onMatch) onMatch(results);
+    } catch (e) {
+      console.error('[StyleMatcher] 매칭 실패:', e);
+      setMatchResults([]);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 

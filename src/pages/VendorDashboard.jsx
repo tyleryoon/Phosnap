@@ -35,213 +35,6 @@ import ScheduleManager from '../components/ScheduleManager';
 import VenueItemsManager from '../components/VenueItemsManager';
 import ReferralCard from '../components/ReferralCard';
 
-const MOCK_BOOKINGS = [
-  {
-    id: 'b1',
-    date: '2026-04-15',
-    hours: '09:00-13:00',
-    rentalType: 'half_am',
-    customer: 'K**',
-    itemName: '클래식 여성 한복',
-    size: 'M',
-    status: 'confirmed',
-    confirmType: 'instant',
-    vendorType: 'costume',
-  },
-  {
-    id: 'b2',
-    date: '2026-04-18',
-    hours: '14:00-18:00',
-    rentalType: 'half_pm',
-    customer: 'T**',
-    itemName: 'A라인 웨딩드레스',
-    size: 'S',
-    status: 'pending',
-    vendorType: 'costume',
-  },
-  {
-    id: 'b3',
-    date: '2026-04-12',
-    hours: '10:00-18:00',
-    rentalType: 'full',
-    customer: 'P**',
-    itemName: '남성 턱시도',
-    size: 'L',
-    status: 'completed',
-    confirmType: 'manual',
-    vendorType: 'costume',
-  },
-  {
-    id: 'b4',
-    date: '2026-04-20',
-    hours: '전일',
-    rentalType: 'full',
-    customer: 'L**',
-    itemName: '여성 기모노',
-    size: 'Free',
-    status: 'confirmed',
-    confirmType: 'manual',
-    vendorType: 'costume',
-  },
-  {
-    id: 'b5',
-    date: '2026-04-22',
-    hours: '09:00-12:00',
-    rentalType: 'half_am',
-    customer: 'M**',
-    itemName: '모던 치파오',
-    size: 'S',
-    status: 'pending',
-    vendorType: 'costume',
-  },
-  {
-    id: 'b6',
-    date: '2026-04-16',
-    hours: '10:00-16:00',
-    rentalType: 'full',
-    customer: 'J**',
-    itemName: '경복궁 한옥 스튜디오 A',
-    size: '-',
-    status: 'confirmed',
-    confirmType: 'instant',
-    vendorType: 'venue',
-  },
-  {
-    id: 'b7',
-    date: '2026-04-19',
-    hours: '13:00-17:00',
-    rentalType: 'half_pm',
-    customer: 'H**',
-    itemName: '루프탑 야외촬영장',
-    size: '-',
-    status: 'pending',
-    vendorType: 'venue',
-  },
-];
-
-// 의상 대여 일정 mock (사이즈 포함, itemId는 dresses.js의 id와 일치)
-const MOCK_COSTUME_TIMELINE = [
-  {
-    itemId: 'di-1',
-    itemName: '여성 경주 한복',
-    size: 'S',
-    start: '2026-04-13',
-    end: '2026-04-13',
-    hours: '09:00-13:00',
-    type: 'half_am',
-    customer: 'K**',
-    status: 'confirmed',
-    dashboardType: 'costume',
-  },
-  {
-    itemId: 'di-1',
-    itemName: '여성 경주 한복',
-    size: 'M',
-    start: '2026-04-13',
-    end: '2026-04-13',
-    hours: '14:00-18:00',
-    type: 'half_pm',
-    customer: 'L**',
-    status: 'pending',
-    dashboardType: 'costume',
-  },
-  {
-    itemId: 'di-2',
-    itemName: '남성 경주 한복',
-    size: 'L',
-    start: '2026-04-14',
-    end: '2026-04-15',
-    hours: '10:00-18:00',
-    type: 'full',
-    customer: 'T**',
-    status: 'confirmed',
-    dashboardType: 'costume',
-  },
-  {
-    itemId: 'di-3',
-    itemName: '여성 기모노 후리소데',
-    size: 'Free',
-    start: '2026-04-15',
-    end: '2026-04-17',
-    hours: '전일',
-    type: 'multi',
-    customer: 'P**',
-    status: 'completed',
-    dashboardType: 'costume',
-  },
-  {
-    itemId: 'di-4',
-    itemName: '남성 기모노 착용',
-    size: 'M',
-    start: '2026-04-16',
-    end: '2026-04-16',
-    hours: '09:00-18:00',
-    type: 'full',
-    customer: 'M**',
-    status: 'pending',
-    dashboardType: 'costume',
-  },
-  {
-    itemId: 'di-1',
-    itemName: '여성 경주 한복',
-    size: 'L',
-    start: '2026-04-18',
-    end: '2026-04-19',
-    hours: '전일',
-    type: 'multi',
-    customer: 'S**',
-    status: 'confirmed',
-    dashboardType: 'costume',
-  },
-];
-// 장소 대여 일정 mock
-const MOCK_VENUE_TIMELINE = [
-  {
-    itemId: 'v1',
-    itemName: '한옥 스튜디오 A',
-    start: '2026-04-13',
-    end: '2026-04-13',
-    hours: '09:00-12:00',
-    type: 'half_am',
-    customer: 'A**',
-    status: 'confirmed',
-    dashboardType: 'venue',
-  },
-  {
-    itemId: 'v1',
-    itemName: '한옥 스튜디오 A',
-    start: '2026-04-14',
-    end: '2026-04-14',
-    hours: '13:00-17:00',
-    type: 'half_pm',
-    customer: 'B**',
-    status: 'pending',
-    dashboardType: 'venue',
-  },
-  {
-    itemId: 'v2',
-    itemName: '루프탑 가든',
-    start: '2026-04-15',
-    end: '2026-04-15',
-    hours: '10:00-18:00',
-    type: 'full',
-    customer: 'C**',
-    status: 'confirmed',
-    dashboardType: 'venue',
-  },
-  {
-    itemId: 'v3',
-    itemName: '카페 포토존',
-    start: '2026-04-16',
-    end: '2026-04-17',
-    hours: '전일',
-    type: 'multi',
-    customer: 'D**',
-    status: 'completed',
-    dashboardType: 'venue',
-  },
-];
-const MOCK_RENTAL_TIMELINE = [...MOCK_COSTUME_TIMELINE, ...MOCK_VENUE_TIMELINE];
 
 // ── 의상 대분류 카테고리 (벤더가 아이템 등록 시 선택) ──
 const COSTUME_CATEGORIES = {
@@ -808,6 +601,43 @@ function VendorDashboard() {
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => !b.vendorType || b.vendorType === activeDashboard);
   }, [bookings, activeDashboard]);
+
+  // ── 대여 현황 타임라인 ──
+  // 달력과 아이템별 타임라인이 MOCK_RENTAL_TIMELINE('여성 경주 한복' K**, L** …)
+  // 을 그리고 있었다. 벤더는 자기 달력에서 있지도 않은 대여 건을 보고,
+  // 반대로 진짜 들어온 예약은 어디에도 칠해지지 않았다.
+  // bookings 는 이미 booking_items 로 실제 예약을 들고 있다. 그걸 쓴다.
+  const rentalTimeline = useMemo(() => {
+    const hhmm = (ts) => {
+      const d = new Date(ts);
+      return Number.isNaN(d.getTime())
+        ? ''
+        : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    };
+    const rows = [];
+    for (const bk of bookings) {
+      const masked = bk.customer_name ? `${bk.customer_name.slice(0, 1)}**` : '-';
+      for (const it of bk.myItems || []) {
+        if (it.provider_type !== 'dress' && it.provider_type !== 'venue') continue;
+        const start = it.start_at || bk.date;
+        if (!start) continue;
+        const end = it.end_at || start;
+        rows.push({
+          itemId: it.item_id,
+          itemName: it.item_name,
+          size: it.item_option || '',
+          start: String(start).slice(0, 10),
+          end: String(end).slice(0, 10),
+          hours: it.start_at && it.end_at ? `${hhmm(it.start_at)}-${hhmm(it.end_at)}` : '',
+          type: it.timing || 'day',
+          customer: masked,
+          status: it.status,
+          dashboardType: it.provider_type === 'dress' ? 'costume' : 'venue',
+        });
+      }
+    }
+    return rows;
+  }, [bookings]);
 
   const handleUpdateProfile = async () => {
     setProfileSaveStatus('saving');
@@ -1864,10 +1694,7 @@ function VendorDashboard() {
                 style={{
                   fontSize: '2rem',
                   fontFamily: 'var(--font-serif)',
-                  color:
-                    itemAvailable === 0
-                      ? 'var(--muted)'
-                      : 'var(--gold)',
+                  color: itemAvailable === 0 ? 'var(--muted)' : 'var(--gold)',
                   margin: 0,
                 }}
               >
@@ -3527,7 +3354,7 @@ function VendorDashboard() {
                   const todayStr = fmtDate(today);
 
                   // 현재 대시보드 타입의 타임라인만 필터
-                  const filteredTimeline = MOCK_RENTAL_TIMELINE.filter(
+                  const filteredTimeline = rentalTimeline.filter(
                     (r) => r.dashboardType === activeDashboard
                   );
 
@@ -4042,7 +3869,7 @@ function VendorDashboard() {
 
                           // Find rentals that include this date — 아이템별 그룹화
                           const dayRentalsRaw = dateStr
-                            ? MOCK_RENTAL_TIMELINE.filter((r) => {
+                            ? rentalTimeline.filter((r) => {
                                 return (
                                   r.dashboardType === activeDashboard &&
                                   dateStr >= r.start &&
@@ -6060,7 +5887,9 @@ function VendorDashboard() {
                     padding: '0.75rem',
                     backgroundColor: 'var(--bg)',
                     color: 'var(--text)',
-                    border: editFormErrors.price ? '1px solid var(--danger)' : '1px solid var(--gold-dim)',
+                    border: editFormErrors.price
+                      ? '1px solid var(--danger)'
+                      : '1px solid var(--gold-dim)',
                     boxSizing: 'border-box',
                   }}
                 />
