@@ -902,6 +902,10 @@ const ArtistSchedule = () => {
 
   // ── 예약 요청 상태 ──
   const [pendingBookings, setPendingBookings] = useState([]);
+  // 매출 카드용 — 이 작가의 전체 예약.
+  // 예전에는 salesData.js(localStorage 시드)를 봤다. 실제 계정은 그 키가
+  // 없어 전부 0 이 뜨고, 시드 작가에게는 있지도 않은 매출이 보였다.
+  const [allBookings, setAllBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [rejectTarget, setRejectTarget] = useState(null); // booking.id
   const [rejectReason, setRejectReason] = useState('');
@@ -1121,7 +1125,9 @@ const ArtistSchedule = () => {
         const ids = [...new Set([...(mainId ? [mainId] : []), ...(dbLocIds || [])])];
 
         if (ids.length) {
-          const bySaved = new Map((baseProfile.locations || []).map((l) => [l.regionId || l.id, l]));
+          const bySaved = new Map(
+            (baseProfile.locations || []).map((l) => [l.regionId || l.id, l])
+          );
           baseProfile.locations = ids.map((id) => {
             const saved = bySaved.get(id);
             const meta = locationMeta(id);
@@ -1213,6 +1219,19 @@ const ArtistSchedule = () => {
     };
     loadBookings();
   }, [activeTab, artistId]);
+
+  // 매출 카드는 어느 탭에 있든 상단에 뜨므로 진입 시 한 번 불러둔다.
+  useEffect(() => {
+    if (!artistId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await getArtistBookings(artistId);
+      if (!cancelled) setAllBookings(data || []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [artistId]);
 
   /**
    * 이미지를 Supabase Storage 에 올리고 공개 URL 배열을 돌려준다.
@@ -10775,11 +10794,33 @@ const ArtistSchedule = () => {
 
         {/* ── 대시보드 홈 요약 카드 ── */}
         {(() => {
-          const totalRev = getTotalRevenue(artistId);
-          const totalNet = getTotalNetRevenue(artistId);
-          const totalCnt = getTotalCount(artistId);
-          const thisMonth = getCurrentMonthSales(artistId);
-          const lastMonth = getLastMonthSales(artistId);
+          // 실제 예약에서 센다. 예전에는 salesData.js(localStorage 시드)를
+          // 봤는데, 실제 계정은 그 키가 없어 전부 0 이 떴다. 같은 작가의
+          // 대시보드는 ₩250,000 · 1건인데 여기만 0 이었다.
+          const done = allBookings.filter((b) => b.status === 'completed');
+          const priceOf = (b) => b.total_price ?? b.package_price ?? 0;
+          const ym = (d) => String(d || '').slice(0, 7);
+          const now = new Date();
+          const thisYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+          const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const prevYm = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+          const sum = (rows) => rows.reduce((s, b) => s + priceOf(b), 0);
+
+          const totalRev = sum(done);
+          // 실수령 = 거래액 − 수수료. 수수료를 아직 안 박은 옛 예약은 0 으로 본다.
+          const totalNet = done.reduce((s, b) => s + priceOf(b) - (b.commission_total || 0), 0);
+          const totalCnt = done.length;
+          const monthRows = done.filter((b) => ym(b.date) === thisYm);
+          const lastRows = done.filter((b) => ym(b.date) === prevYm);
+          const thisMonth = { revenue: sum(monthRows), count: monthRows.length };
+          const lastMonth = { revenue: sum(lastRows), count: lastRows.length };
+
+          // 확정됐지만 아직 안 찍은 예약 = 앞으로 들어올 돈.
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const upcomingRows = allBookings.filter(
+            (b) => b.status === 'confirmed' && String(b.date || '') >= todayStr
+          );
+          const upcoming = { count: upcomingRows.length, revenue: sum(upcomingRows) };
           const revDiff =
             lastMonth.revenue > 0
               ? Math.round(((thisMonth.revenue - lastMonth.revenue) / lastMonth.revenue) * 100)
@@ -10814,8 +10855,12 @@ const ArtistSchedule = () => {
             {
               label: '이번 달 건수',
               value: `${thisMonth.count}건`,
-              sub: `정산 대기: ${thisMonth.pendingCount}건 (${formatMoney(thisMonth.pendingAmount)})`,
-              color: thisMonth.pendingCount > 0 ? 'var(--warning)' : 'var(--muted)',
+              // 예전에는 '정산 대기 N건' 이었다. 그 값은 시드 데이터의
+              // status === 'pending' 에서 왔는데, bookings 에는 정산 상태
+              // 컬럼이 자체가 없다. 결제가 붙기 전에는 만들 수 없는 숫자다.
+              // 대신 작가가 실제로 궁금해하는 '앞으로 들어올 촬영' 을 쓴다.
+              sub: `확정된 다가올 촬영: ${upcoming.count}건 (${formatMoney(upcoming.revenue)})`,
+              color: upcoming.count > 0 ? 'var(--info)' : 'var(--muted)',
             },
           ];
 
