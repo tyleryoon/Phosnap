@@ -545,6 +545,20 @@ const ArtistDashboard = () => {
   //
   // 실제 예약을 세는 쪽을 기본으로 쓰고, 이관 등으로 컬럼이 더 크면
   // 그쪽을 존중한다.
+  //
+  // ⚠ 결제 붙일 때 같이 볼 것 — profiles.completed_bookings / profiles.badge
+  //
+  //   그 컬럼은 여전히 0 이고, 거기서 파생되는 profiles.badge 는 전부
+  //   'rising' 이다. 지금은 아무 데도 영향을 주지 않는다. badge 를 읽는
+  //   코드가 앱에 하나도 없고, 이 줄이 실제 집계를 우선하기 때문이다.
+  //
+  //   위험한 건 나중이다. '상위 등급 작가만 보기' 필터나 검색 랭킹에
+  //   profiles.badge 를 쓰는 순간, 모든 작가가 조용히 rising 으로 나온다.
+  //   에러가 아니라 그럴듯한 오답이라 눈치채기 어렵다.
+  //
+  //   고칠 자리는 예약을 completed 로 바꾸는 지점이다. 거기서
+  //   completed_bookings 를 함께 올리면 트리거가 배지를 다시 매긴다.
+  //   과거 예약분 백필도 그때 한 번 돌려야 한다.
   const completedCount = Math.max(stats.completed, profile?.completed_bookings ?? 0);
   const artistData = PHOTOGRAPHERS.find((p) => p.id === artistLegacyId);
   const artistRating = profile?.avg_rating ?? artistData?.rating ?? 5.0;
@@ -1494,7 +1508,9 @@ const ArtistDashboard = () => {
                         return {
                           symbol: b.symbol,
                           label: b.label,
-                          range: next ? `${b.minShoots}~${next.minShoots - 1}건` : `${b.minShoots}건+`,
+                          range: next
+                            ? `${b.minShoots}~${next.minShoots - 1}건`
+                            : `${b.minShoots}건+`,
                           color: b.color,
                           perks: ARTIST_TIERS[b.id].benefits,
                         };
