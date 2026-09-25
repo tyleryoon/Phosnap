@@ -1075,9 +1075,13 @@ export const getProviderBusyBlocks = async (providerType, providerId, date) => {
 export const getMyBookings = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
+  // booking_items 를 함께 가져온다. 마이페이지의 '예약 모니터링' 은
+  // 작가·헤메·의상·장소가 각각 어디까지 왔는지 보여주는 화면인데,
+  // 그 구성 요소가 여기 있다. 없이 부르면 화면이 '모니터링할 예약이
+  // 없습니다' 로 비어 버린다 — 확정 예약이 있어도.
   const { data, error } = await sb
     .from('bookings')
-    .select('*')
+    .select('*, booking_items(*)')
     .order('created_at', { ascending: false });
   return { data: data || [], error };
 };
@@ -1988,17 +1992,15 @@ export const getProviderLocations = async (providerType, providerId) => {
 export const addProviderLocation = async (providerType, providerId, locationId) => {
   const sb = await getSupabase();
   if (!sb || !providerId || !locationId) return { error: null };
-  const { error } = await sb
-    .from('provider_locations')
-    .upsert(
-      {
-        provider_type: providerType,
-        provider_id: providerId,
-        location_id: locationId,
-        is_active: true,
-      },
-      { onConflict: 'provider_type,provider_id,location_id' }
-    );
+  const { error } = await sb.from('provider_locations').upsert(
+    {
+      provider_type: providerType,
+      provider_id: providerId,
+      location_id: locationId,
+      is_active: true,
+    },
+    { onConflict: 'provider_type,provider_id,location_id' }
+  );
   if (error) console.error('[addProviderLocation] 저장 실패:', error);
   return { error };
 };

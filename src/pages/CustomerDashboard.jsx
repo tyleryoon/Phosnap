@@ -261,6 +261,56 @@ const statusColors = {
   delivered: 'var(--grade-4)',
 };
 
+// ─── 예약 구성 요소 ───────────────────────────────────────────────────
+// '예약 모니터링' 탭은 작가·헤메·의상·장소가 각각 어디까지 왔는지 보여준다.
+// 예전에는 pipeline 을 null 로 두었기 때문에, 확정 예약이 세 건 있어도
+// '현재 모니터링할 예약이 없습니다' 가 뜨고 '작가 찾아보기' 버튼이 나왔다.
+// 이미 예약한 사람에게 예약하라고 하는 화면이었다.
+//
+// 구성 요소는 booking_items 에 있다. 아직 안 고른 항목은 null 로 두면
+// 화면이 '미선택' 으로 그린다 — 그게 사실이다.
+const hhmm = (ts) => {
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime())
+    ? ''
+    : `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
+
+const buildPipeline = (b) => {
+  const items = Array.isArray(b.booking_items) ? b.booking_items : [];
+  const pick = (type) => items.find((it) => it.provider_type === type) || null;
+
+  const photographer = pick('photographer');
+  const stylist = pick('stylist');
+  const dress = pick('dress');
+  const venue = pick('venue');
+
+  return {
+    // 작가는 예약의 뼈대라 항목이 없어도 예약 자체에서 채운다.
+    artist: {
+      name: photographer?.provider_name || b.photographer_name || '작가',
+      status: photographer?.status || b.status,
+    },
+    stylist: stylist && {
+      name: stylist.provider_name,
+      specialty: stylist.item_name,
+      status: stylist.status,
+    },
+    costume: dress && {
+      vendor: dress.provider_name,
+      item: [dress.item_name, dress.item_option].filter(Boolean).join(' · '),
+      status: dress.status,
+      pickupDate: dress.start_at ? String(dress.start_at).slice(0, 10) : null,
+      returnDate: dress.end_at ? String(dress.end_at).slice(0, 10) : null,
+    },
+    venue: venue && {
+      name: venue.provider_name,
+      status: venue.status,
+      time: venue.start_at && venue.end_at ? `${hhmm(venue.start_at)}-${hhmm(venue.end_at)}` : '',
+    },
+  };
+};
+
 // ─── Component ────────────────────────────────────────────────────────
 const CustomerDashboard = () => {
   const navigate = useNavigate();
@@ -371,8 +421,7 @@ const CustomerDashboard = () => {
             amount: b.total_price ?? b.package_price ?? 0,
             status: b.status,
             paidAt: b.paid_at ? String(b.paid_at).slice(0, 10) : null,
-            // 파이프라인 상세는 벤더 연동 이후 채운다.
-            pipeline: null,
+            pipeline: buildPipeline(b),
             raw: b,
           }))
         );
