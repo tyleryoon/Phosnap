@@ -66,17 +66,10 @@ import {
   getArtistTier,
   getArtistFees,
   getNextTierProgress,
-  getRemainingProposals,
-  getDailyProposalCount,
-  getMonthlySameTypeCount,
-  checkCooldown,
-  createProposal,
-  respondToProposal,
-  getSentProposals,
-  getReceivedProposals,
-  getPendingReceived,
-  getNotifications,
-  expireOldProposals,
+  // 제의 관련 함수(createProposal, getSentProposals, checkCooldown …)는
+  // 더 이상 쓰지 않는다. 전부 localStorage 를 읽고 썼는데, 그건 보낸
+  // 사람 브라우저 안에서만 사는 데이터였다. 이제 collabo_proposals
+  // 테이블과 RPC 를 쓴다 (FIX_51 · lib/supabase.js).
 } from '../data/collabo';
 import { WORLD_COUNTRIES, WORLD_CITIES } from '../data/worldCities';
 import { getLocationById } from '../data/locationUtils';
@@ -921,12 +914,36 @@ const ArtistSchedule = () => {
   const [collaboTypeFilter, setCollaboTypeFilter] = useState('all'); // 'all' | 'photographer' | 'videographer' | 'hmua'
   const [collaboView, setCollaboView] = useState('browse'); // 'browse' | 'received' | 'sent'
 
+  // 콜라보 제의 전체 (내가 보낸 것 + 받은 것). RLS 가 당사자만 보게 막는다.
+  const [collaboProposals, setCollaboProposals] = useState([]);
+  // 콜라보 상대 후보 — 실제 가입 작가·헤메. 예전에는 PHOTOGRAPHERS
+  // 하드코딩 시드를 썼고, 그래서 진짜 작가는 한 명도 안 나왔다.
+  const [collaboCandidates, setCollaboCandidates] = useState([]);
+
   // 콜라보 데이터 로드
-  const loadCollabo = useCallback(() => {
-    expireOldProposals();
-    setCollaboReceived(getPendingReceived(artistId));
-    setCollaboSent(getSentProposals(artistId));
-  }, [artistId]);
+  const loadCollabo = useCallback(async () => {
+    if (!dbPhotographerId) return;
+    const { expireCollaboProposals, getCollaboProposals, getCollaboCandidates } = await import(
+      '../lib/supabase'
+    );
+    // 7일 미응답 만료. 크론이 없어서 화면이 열릴 때 한 번 돌린다.
+    await expireCollaboProposals();
+    const [{ data: props }, { data: cands }] = await Promise.all([
+      getCollaboProposals('photographer', dbPhotographerId),
+      getCollaboCandidates(),
+    ]);
+    setCollaboProposals(props || []);
+    // 나 자신은 상대 목록에서 뺀다.
+    setCollaboCandidates(
+      (cands || []).filter(
+        (c) => !(c.providerType === 'photographer' && c.id === dbPhotographerId)
+      )
+    );
+    setCollaboReceived(
+      (props || []).filter((p) => p.to_id === dbPhotographerId && p.status === 'pending')
+    );
+    setCollaboSent((props || []).filter((p) => p.from_id === dbPhotographerId));
+  }, [dbPhotographerId]);
 
   // ── Supabase 연동 상태 ──
   const [dbConnected, setDbConnected] = useState(false);
@@ -9322,10 +9339,35 @@ const ArtistSchedule = () => {
   const renderCollaboTab = () => {
     const myType = artistType; // 'photographer' | 'hmua' | 'videographer'
     const myLocs = profile?.locations ?? [];
-    const remaining = getRemainingProposals(artistId);
-    const received = getReceivedProposals(artistId);
-    const sent = getSentProposals(artistId);
+    // ── 제의 집계 ──
+    //
+    // 예전에는 localStorage 를 읽는 함수 여섯 개(getRemainingProposals,
+    // getDailyProposalCount, checkCooldown …)를 각각 불렀다. 이제 DB 에서
+    // 한 번 받아온 목록에서 전부 파생시킨다. 화면이 쓰는 숫자와 서버가
+    // 실제로 거는 제한이 같은 데이터에서 나오게 하려는 것이다.
+    // (진짜 차단은 RPC 안에서 한다 — 여기 숫자는 안내용이다.)
+    const me = dbPhotographerId;
+    const received = collaboProposals.filter((p) => p.to_id === me);
+    const sent = collaboProposals.filter((p) => p.from_id === me);
     const pendingIn = received.filter((p) => p.status === 'pending');
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const startOfMonth = new Date(startOfDay.getFullYear(), startOfDay.getMonth(), 1);
+
+    const acceptedThisMonth = received.filter(
+      (p) => p.status === 'accepted' && p.responded_at && new Date(p.responded_at) >= startOfMonth
+    ).length;
+    // 월 수락 한도 10회 (COLLABO_RULES.maxProposalsPerMonth)
+    const remaining = Math.max(0, COLLABO_RULES.maxProposalsPerMonth - acceptedThisMonth);
+    // 동종 콜라보 월 3회 (COLLABO_RULES.maxSameTypePerMonth)
+    const sameTypeMonthUsed = sent.filter(
+      (p) => p.is_same_type && new Date(p.created_at) >= startOfMonth
+    ).length;
+    const sameTypeMonthLeft = Math.max(
+      0,
+      COLLABO_RULES.maxSameTypePerMonth - sameTypeMonthUsed
+    );
 
     // 내 작가 데이터 + 등급 계산
     //
@@ -9355,28 +9397,20 @@ const ArtistSchedule = () => {
     // 노출 ON 활동 지역 + 포트폴리오 도시 합집합
     const myAllCities = [...new Set([...myActiveRegionIds, ...myPortfolioCities])];
 
-    // 상대방의 노출 ON 활동 도시 가져오기 (프로필 기반)
-    const getTheirActiveCities = (ph) => {
-      const theirProfile = getProfile('photographer', ph.id);
-      const theirLocs = theirProfile?.locations || [];
-      const activeLocs = theirLocs.filter((l) => l.active !== false);
-      if (activeLocs.length > 0) {
-        return activeLocs.map((l) => l.regionId).filter(Boolean);
-      }
-      // 프로필 미등록 작가 → PHOTOGRAPHERS 데이터의 locationId를 활성으로 간주
-      return [ph.locationId, ...(ph.portfolioLocations || [])].filter(Boolean);
-    };
+    // 상대방의 활동 도시.
+    //
+    // 예전에는 상대의 localStorage 프로필을 읽으려 했다. 남의 브라우저
+    // 저장소를 내 브라우저에서 읽을 수는 없으니 늘 비었고, 결국 시드
+    // 배열의 locationId 로 떨어졌다. 이제 DB 의 location_id 를 쓴다.
+    const getTheirActiveCities = (ph) => [ph.locationId].filter(Boolean);
 
-    // 활동 지역 미등록 시 콜라보 불가 / 상대방도 노출 ON인 지역만 매칭
+    // 활동 지역 미등록 시 콜라보 불가 / 도시가 겹쳐야 매칭
     const matchableArtists = !hasRegions
       ? []
-      : PHOTOGRAPHERS.filter((ph) => {
-          if (ph.id === artistId) return false;
+      : collaboCandidates.filter((ph) => {
           const theirType = ph.artistType || 'photographer';
           if (!compatibleTypes.includes(theirType)) return false;
-          // 상대방의 노출 ON 활동 도시만 체크
           const theirActiveCities = getTheirActiveCities(ph);
-          // 내 노출 ON 도시와 겹치는 게 있으면 매칭
           return theirActiveCities.some((city) => myAllCities.includes(city));
         });
 
@@ -9471,42 +9505,54 @@ const ArtistSchedule = () => {
     };
 
     // 제의 보내기
-    const handleSendProposal = (targetArtist, dates, message, collaboRole, timeInfo) => {
+    //
+    // 제한(하루 3회·동종 월 3회·쿨다운 7일)은 RPC 안에서 건다. 여기서
+    // 막아봐야 콘솔 한 줄로 우회되고, 무엇보다 상대 쪽 기록이 남지 않는다.
+    // 서버가 거절하면 그 메시지를 그대로 보여준다.
+    const handleSendProposal = async (targetArtist, dates, message, collaboRole) => {
       const theirType = targetArtist.artistType || 'photographer';
       const sameType = isSameTypeCollabo(myType, theirType);
-      const result = createProposal(artistId, targetArtist.id, {
+      const { createCollaboProposal } = await import('../lib/supabase');
+      const { error } = await createCollaboProposal({
+        fromType: 'photographer',
+        fromId: dbPhotographerId,
+        toType: targetArtist.providerType,
+        toId: targetArtist.id,
         dates,
-        locationId: myMainLoc?.regionId || '',
+        locationId: myMainLoc?.regionId || null,
         message,
-        role: myType,
-        collaboRole: sameType ? collaboRole : '',
         isSameType: sameType,
-        timeStart: timeInfo?.timeStart || '',
-        timeEnd: timeInfo?.timeEnd || '',
-        dailyHours: timeInfo?.dailyHours || 0,
-        totalHours: timeInfo?.totalHours || 0,
+        collaboRole: sameType ? collaboRole : null,
       });
-      if (result.ok) {
-        showSaved('콜라보 제의를 보냈습니다 ✓');
-        loadCollabo();
-        setCollaboProposalPopup(null);
-      } else {
-        alert(result.message || '제의 실패');
+      if (error) {
+        showSaved(`제의 실패 — ${error.message || '잠시 후 다시 시도해주세요.'}`, 4000);
+        return;
       }
+      showSaved('콜라보 제의를 보냈습니다 ✓');
+      setCollaboProposalPopup(null);
+      loadCollabo();
     };
 
     // 수락 / 거절
-    const handleAccept = (proposalId) => {
-      respondToProposal(proposalId, 'accepted');
-      loadCollabo();
-      showSaved('콜라보 수락 완료 ✓');
+    const respond = async (proposalId, status, reason = '') => {
+      const { respondCollaboProposal } = await import('../lib/supabase');
+      const { error } = await respondCollaboProposal(proposalId, status, reason);
+      if (error) {
+        showSaved(`처리 실패 — ${error.message || '잠시 후 다시 시도해주세요.'}`, 4000);
+        return false;
+      }
+      await loadCollabo();
+      return true;
     };
-    const handleReject = (proposalId) => {
-      respondToProposal(proposalId, 'rejected', collaboRejectReason);
-      setCollaboRejectPopup(null);
-      setCollaboRejectReason('');
-      loadCollabo();
-      showSaved('콜라보 거절 완료');
+    const handleAccept = async (proposalId) => {
+      if (await respond(proposalId, 'accepted')) showSaved('콜라보 수락 완료 ✓');
+    };
+    const handleReject = async (proposalId) => {
+      if (await respond(proposalId, 'rejected', collaboRejectReason)) {
+        setCollaboRejectPopup(null);
+        setCollaboRejectReason('');
+        showSaved('콜라보 거절 완료');
+      }
     };
 
     // 내 활동 지역 중 이 작가와 겹치는 지역이 노출 ON인지 확인
@@ -9779,10 +9825,10 @@ const ArtistSchedule = () => {
       <div>
         {/* 상단: 제의 현황 요약 */}
         {(() => {
-          const dailyUsed = getDailyProposalCount(artistId);
-          const dailyRemaining = COLLABO_RULES.maxDailyProposals - dailyUsed;
-          const sameTypeUsed = getMonthlySameTypeCount(artistId, myType);
-          const sameTypeRemaining = COLLABO_RULES.maxSameTypePerMonth - sameTypeUsed;
+          // 내가 보낸 제의에서 센다. RPC 가 거는 제한과 같은 기준이다.
+          const dailyUsed = sent.filter((p) => new Date(p.created_at) >= startOfDay).length;
+          const dailyRemaining = Math.max(0, COLLABO_RULES.maxDailyProposals - dailyUsed);
+          const sameTypeRemaining = sameTypeMonthLeft;
           return (
             <div
               style={{
@@ -10608,10 +10654,7 @@ const ArtistSchedule = () => {
                     {sameType && (
                       <span>
                         {' '}
-                        · 동종 남은 횟수:{' '}
-                        {COLLABO_RULES.maxSameTypePerMonth -
-                          getMonthlySameTypeCount(artistId, myType)}
-                        회
+                        · 동종 남은 횟수: {sameTypeMonthLeft}회
                       </span>
                     )}
                   </div>

@@ -2696,6 +2696,127 @@ export const getPhotographerReviewByBookingId = async (bookingId) => {
   return data;
 };
 
+// ─── 콜라보 ──────────────────────────────────────────────────────────
+//
+// 예전에는 data/collabo.js 가 localStorage 에 쌓았다. 보낸 사람 브라우저
+// 안에서만 살았고, 받는 id 는 계정이 아니라 시드 배열의 줄 번호였다.
+// 이제 collabo_proposals 테이블과 RPC 를 쓴다 (FIX_51).
+
+/** 콜라보 상대 후보 — 실제 가입한 작가·헤메. */
+export const getCollaboCandidates = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: [], error: null };
+
+  const [{ data: photogs }, { data: stylists }] = await Promise.all([
+    sb
+      .from('photographers')
+      .select('id, name, name_en, location_id, artist_type, img, rating, languages, is_active')
+      .eq('is_active', true),
+    sb
+      .from('stylists')
+      .select('id, name_ko, name_en, location_id, img, is_active')
+      .eq('is_active', true),
+  ]);
+
+  // 화면은 한 목록으로 다룬다. 타입만 구분해 붙여준다.
+  const asPhotographer = (p) => ({
+    providerType: 'photographer',
+    id: p.id,
+    name: p.name,
+    nameEn: p.name_en,
+    locationId: p.location_id,
+    artistType: p.artist_type || 'photographer',
+    img: p.img,
+    rating: p.rating,
+    languages: p.languages || [],
+  });
+  const asStylist = (s) => ({
+    providerType: 'stylist',
+    id: s.id,
+    name: s.name_ko,
+    nameEn: s.name_en,
+    locationId: s.location_id,
+    artistType: 'hmk',
+    img: s.img,
+    rating: null,
+    languages: [],
+  });
+
+  return {
+    data: [...(photogs || []).map(asPhotographer), ...(stylists || []).map(asStylist)],
+    error: null,
+  };
+};
+
+/** 내가 보내거나 받은 콜라보 제의 전부. RLS 가 당사자만 보게 막는다. */
+export const getCollaboProposals = async (providerType, providerId) => {
+  const sb = await getSupabase();
+  if (!sb || !providerId) return { data: [], error: null };
+  const { data, error } = await sb
+    .from('collabo_proposals')
+    .select('*')
+    .or(
+      `and(from_type.eq.${providerType},from_id.eq.${providerId}),` +
+        `and(to_type.eq.${providerType},to_id.eq.${providerId})`
+    )
+    .order('created_at', { ascending: false });
+  if (error) console.error('[getCollaboProposals] 조회 실패:', error);
+  return { data: data || [], error };
+};
+
+/**
+ * 콜라보 제의 보내기.
+ *
+ * 하루 3회·동종 월 3회·같은 사람 7일 쿨다운은 전부 RPC 안에서 건다.
+ * 화면에서 막아도 콘솔 한 줄로 우회되기 때문이다.
+ */
+export const createCollaboProposal = async ({
+  fromType,
+  fromId,
+  toType,
+  toId,
+  dates,
+  locationId = null,
+  message = '',
+  isSameType = false,
+  collaboRole = null,
+}) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('create_collabo_proposal', {
+    p_from_type: fromType,
+    p_from_id: fromId,
+    p_to_type: toType,
+    p_to_id: toId,
+    p_dates: dates,
+    p_location_id: locationId,
+    p_message: message,
+    p_is_same_type: isSameType,
+    p_collabo_role: collaboRole,
+  });
+  return { data, error };
+};
+
+/** 받은 제의에 수락/거절. 월 수락 10회 제한도 RPC 가 본다. */
+export const respondCollaboProposal = async (proposalId, status, rejectReason = '') => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('respond_collabo_proposal', {
+    p_id: proposalId,
+    p_status: status,
+    p_reject_reason: rejectReason,
+  });
+  return { data, error };
+};
+
+/** 7일 미응답 제의를 만료로 넘긴다. 예약 쪽 expireStaleBookings 와 같은 방식. */
+export const expireCollaboProposals = async () => {
+  const sb = await getSupabase();
+  if (!sb) return { data: 0, error: null };
+  const { data, error } = await sb.rpc('expire_collabo_proposals');
+  return { data: data ?? 0, error };
+};
+
 /**
  * 내가 쓴 리뷰 — 고객 마이페이지의 '내가 작성한 리뷰' 탭.
  * 작가 이름은 여기서 조인하지 않는다. 그 화면은 이미 내 예약 목록을
