@@ -103,18 +103,10 @@ import {
 // 실제로 대시보드·스케줄·모집 페이지가 서로 다른 수수료를 말하고 있었다.
 const FEE_RANGE_TEXT = `${Math.round(ARTIST_COMMISSION_STEPS[ARTIST_COMMISSION_STEPS.length - 1].rate * 100)}~${Math.round(ARTIST_COMMISSION_STEPS[0].rate * 100)}%`;
 const EARLY_FEE_TEXT = `${Math.round(COMMISSION_TIERS.early_access.rate * 100)}%`;
-import {
-  initSalesData,
-  getTotalRevenue,
-  getTotalNetRevenue,
-  getTotalCount,
-  getMonthlySales,
-  getDateRangeSummary,
-  getCurrentMonthSales,
-  getLastMonthSales,
-  formatMoney,
-  formatMoneyFull,
-} from '../data/salesData';
+// 집계 함수(getTotalRevenue 등)는 더 이상 쓰지 않는다. 그쪽은 localStorage
+// 시드를 읽어서, 실제 계정에는 0 을 주고 시드 작가에게는 없는 매출을 줬다.
+// 이제 매출은 전부 bookings 에서 센다. 남은 건 초기화와 금액 포맷뿐이다.
+import { initSalesData, formatMoney, formatMoneyFull } from '../data/salesData';
 
 // ─── Artist Schedule & Profile Management Dashboard ───────────────────
 // 탭: 스케줄 관리 | 활동 지역 | 작가 정보 | 결제 정보 | 예약 요청 | 실적
@@ -8707,11 +8699,47 @@ const ArtistSchedule = () => {
   // ── TAB: 콜라보 ───────────────────────────────────────────────────
   // ── TAB: 실적 ──────────────────────────────────────────────────────
   const renderPerformanceTab = () => {
-    const monthly = getMonthlySales(artistId);
-    const thisMonth = getCurrentMonthSales(artistId);
-    const lastMonth = getLastMonthSales(artistId);
-    const totalRev = getTotalRevenue(artistId);
-    const totalCnt = getTotalCount(artistId);
+    // 상단 요약 카드는 실제 예약을 세는데 이 탭만 salesData(localStorage
+    // 시드)를 봤다. 그래서 같은 화면 위아래가 25만 과 ₩0 으로 갈렸다.
+    // 같은 소스를 쓴다.
+    const done = allBookings.filter((b) => b.status === 'completed');
+    const priceOf = (b) => b.total_price ?? b.package_price ?? 0;
+    const summarize = (rows) => {
+      const revenue = rows.reduce((s, b) => s + priceOf(b), 0);
+      return {
+        count: rows.length,
+        revenue,
+        netRevenue: rows.reduce((s, b) => s + priceOf(b) - (b.commission_total || 0), 0),
+        avgAmount: rows.length ? Math.round(revenue / rows.length) : 0,
+        collaboCount: rows.filter((b) => (b.collab_count || 0) > 1).length,
+        // 정산 상태 컬럼이 없다. 결제가 붙기 전에는 셀 수 없는 값이라 0 으로 둔다.
+        settledCount: 0,
+        pendingCount: 0,
+        pendingAmount: 0,
+      };
+    };
+    const inMonth = (b, ymStr) => String(b.date || '').slice(0, 7) === ymStr;
+    const now = new Date();
+    const thisYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevYm = `${prevD.getFullYear()}-${String(prevD.getMonth() + 1).padStart(2, '0')}`;
+
+    // 월별 추이 — 실제 완료 예약이 있는 달만, 오래된 순으로.
+    const byYm = new Map();
+    for (const b of done) {
+      const k = String(b.date || '').slice(0, 7);
+      if (!k) continue;
+      if (!byYm.has(k)) byYm.set(k, []);
+      byYm.get(k).push(b);
+    }
+    const monthly = [...byYm.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([yearMonth, rows]) => ({ yearMonth, ...summarize(rows) }));
+
+    const thisMonth = summarize(done.filter((b) => inMonth(b, thisYm)));
+    const lastMonth = summarize(done.filter((b) => inMonth(b, prevYm)));
+    const totalRev = done.reduce((s, b) => s + priceOf(b), 0);
+    const totalCnt = done.length;
     const avgPrice = totalCnt > 0 ? Math.round(totalRev / totalCnt) : 0;
 
     // 전월 대비 매출 변동
@@ -8726,8 +8754,11 @@ const ArtistSchedule = () => {
 
     const handleRangeSearch = () => {
       if (!perfDateStart || !perfDateEnd) return;
-      const result = getDateRangeSummary(artistId, perfDateStart, perfDateEnd);
-      setPerfRangeResult(result);
+      const rows = done.filter((b) => {
+        const d = String(b.date || '');
+        return d >= perfDateStart && d <= perfDateEnd;
+      });
+      setPerfRangeResult(summarize(rows));
     };
 
     const cellStyle = {
@@ -9144,7 +9175,9 @@ const ArtistSchedule = () => {
                       color: 'var(--success)',
                     }}
                   >
-                    {formatMoneyFull(getTotalNetRevenue(artistId))}
+                    {formatMoneyFull(
+                      done.reduce((s, b) => s + priceOf(b) - (b.commission_total || 0), 0)
+                    )}
                   </td>
                   <td
                     style={{
