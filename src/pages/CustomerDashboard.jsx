@@ -466,7 +466,7 @@ const CustomerDashboard = () => {
   ];
 
   return (
-    <div className="page-enter" style={{ paddingTop: 100, minHeight: '100vh' }}>
+    <div className="page-enter" style={{ paddingTop: 100, minHeight: '100dvh' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 20px 60px' }}>
         {/* ── Header ── */}
         <div style={{ marginBottom: '2rem' }}>

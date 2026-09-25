@@ -288,7 +288,7 @@ const FindShell = ({ kind, title, description, emptyHint }) => {
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', color: 'var(--text)' }}>
       {/* SEO 가 ' | Phosnap' 을 알아서 붙인다. 여기서 또 붙이면
           탭 제목이 '촬영 장소 찾기 | Phosnap | Phosnap' 이 된다. */}
       <SEO title={title} description={description} />

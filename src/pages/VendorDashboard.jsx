@@ -1252,7 +1252,7 @@ function VendorDashboard() {
       style={{
         backgroundColor: 'var(--bg)',
         color: 'var(--text)',
-        minHeight: '100vh',
+        minHeight: '100dvh',
         padding: '2rem 1rem',
         fontFamily: 'var(--font-sans)',
       }}

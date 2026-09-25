@@ -108,7 +108,7 @@ const VendorProfile = () => {
   const isVenue = type === 'venue';
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)' }}>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', color: 'var(--text)' }}>
       <SEO title={name} description={vendor.description || `${name} — Phosnap 제휴 업체`} />
 
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '130px 24px 60px' }}>

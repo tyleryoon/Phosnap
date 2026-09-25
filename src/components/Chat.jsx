@@ -354,7 +354,7 @@ const Chat = ({ bookingId, isOpen, onClose, channelType = 'photo', userRole = PA
         bottom: 0,
         right: 0,
         width: 'min(100%, 420px)',
-        height: '100vh',
+        height: '100dvh',
         display: 'flex',
         flexDirection: 'column',
         background: 'var(--bg)',

@@ -69,7 +69,7 @@ const TourDetail = () => {
 
   if (!instance) {
     return (
-      <div className="page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="page" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         <div className="container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🗺️</div>
@@ -154,7 +154,7 @@ const TourDetail = () => {
   };
 
   return (
-    <div className="page" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div className="page" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
       <div className="container" style={{ flex: 1, maxWidth: 600, margin: '0 auto', padding: '24px 16px' }}>
 
         {/* 뒤로가기 */}
