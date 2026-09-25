@@ -19,11 +19,18 @@ export const COLLABO_RULES = {
 
 // ── 작가 등급 시스템 (Badge Progress) ──
 // 기준: 누적 완료 건수 + 평균 평점
+// 문턱은 DB 트리거(update_artist_badge)가 쓰던 10/30/60 을 따른다.
+// 화면에는 30/100/300 이 박혀 있었는데, 수수료 문턱을 '100건은 사실상
+// 도달 불가' 라며 15/50 으로 완화해 놓고 배지만 그대로 둔 것이었다.
+//
+// feeNormal / feeCollabo 는 뺐다. 수수료는 등급이 아니라 완료 건수로
+// 정해지고(commission.js), 이 값들은 옛 정책(20/15/12)이 그대로 남아
+// 있었다. grep 해보니 화면 어디서도 읽지 않는 죽은 필드였다.
 export const ARTIST_TIERS = {
-  rising:      { ko: 'Rising',      en: 'Rising',      icon: '✦',    stars: '✦',       minShoots: 0,   minRating: 0,   feeNormal: 20, feeCollabo: 18, benefits: '기본 프로필 노출, 예약 수신' },
-  established: { ko: 'Established', en: 'Established', icon: '✦✦',   stars: '✦✦',      minShoots: 30,  minRating: 4.0, feeNormal: 15, feeCollabo: 13, benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월' },
-  premier:     { ko: 'Premier',     en: 'Premier',     icon: '✦✦✦',  stars: '✦✦✦',     minShoots: 100, minRating: 4.5, feeNormal: 12, feeCollabo: 10, benefits: '홈 추천 등록, 수수료 12%, 즉시예약 활성화' },
-  elite:       { ko: 'Elite',       en: 'Elite',       icon: '✦✦✦✦', stars: '✦✦✦✦',    minShoots: 300, minRating: 4.7, feeNormal: 12, feeCollabo: 10, benefits: '최우선 노출, 수수료 12%, 전용 매니저 배정' },
+  rising:      { ko: 'Rising',      en: 'Rising',      icon: '✦',    stars: '✦',       minShoots: 0,   minRating: 0,   benefits: '기본 프로필 노출, 예약 수신' },
+  established: { ko: 'Established', en: 'Established', icon: '✦✦',   stars: '✦✦',      minShoots: 10,  minRating: 4.0, benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월' },
+  premier:     { ko: 'Premier',     en: 'Premier',     icon: '✦✦✦',  stars: '✦✦✦',     minShoots: 30,  minRating: 4.5, benefits: '홈 추천 등록, 즉시예약 활성화' },
+  elite:       { ko: 'Elite',       en: 'Elite',       icon: '✦✦✦✦', stars: '✦✦✦✦',    minShoots: 60,  minRating: 4.7, benefits: '최우선 노출, 전용 매니저 배정' },
 };
 
 // 등급 색상
@@ -34,30 +41,38 @@ export const TIER_COLORS = {
   elite:       '#c084fc',     // 보라색
 };
 
+/** 등급 순서 — 낮은 것부터. 화면에서도 이 순서를 쓴다. */
+export const TIER_ORDER = ['rising', 'established', 'premier', 'elite'];
+
 // 작가 등급 판별 (높은 등급부터 체크 — 건수 + 평점 모두 충족 필요)
+//
+// 문턱을 여기에 또 적어두지 않는다. 예전에는 300/100/30 이 하드코딩돼
+// 있어서 ARTIST_TIERS 의 minShoots 를 고쳐도 판별이 안 따라왔다.
 export const getArtistTier = (shoots, rating = 0) => {
-  if (shoots >= 300 && rating >= 4.7) return 'elite';
-  if (shoots >= 100 && rating >= 4.5) return 'premier';
-  if (shoots >= 30  && rating >= 4.0) return 'established';
+  for (const key of [...TIER_ORDER].reverse()) {
+    const t = ARTIST_TIERS[key];
+    if (shoots >= t.minShoots && rating >= t.minRating) return key;
+  }
   return 'rising';
 };
 
-// 작가의 수수료율 조회
-export const getArtistFees = (shoots, rating = 0) => {
-  const tier = getArtistTier(shoots, rating);
-  const info = ARTIST_TIERS[tier];
-  return { tier, feeNormal: info.feeNormal, feeCollabo: info.feeCollabo };
-};
+// 작가의 등급 조회.
+//
+// 예전 이름은 getArtistFees 였고 feeNormal/feeCollabo 를 같이 돌려줬다.
+// 수수료는 등급이 아니라 완료 건수로 정해지므로(commission.js) 그 값은
+// 없앴다. 이름만 남겨 둔 건 호출부가 { tier } 만 쓰기 때문이다.
+export const getArtistFees = (shoots, rating = 0) => ({
+  tier: getArtistTier(shoots, rating),
+});
 
 // 다음 등급까지 남은 조건
 export const getNextTierProgress = (shoots, rating = 0) => {
   const tier = getArtistTier(shoots, rating);
-  const tierOrder = ['rising', 'established', 'premier', 'elite'];
-  const idx = tierOrder.indexOf(tier);
-  if (idx >= tierOrder.length - 1) return null; // 이미 최고 등급
-  const next = ARTIST_TIERS[tierOrder[idx + 1]];
+  const idx = TIER_ORDER.indexOf(tier);
+  if (idx >= TIER_ORDER.length - 1) return null; // 이미 최고 등급
+  const next = ARTIST_TIERS[TIER_ORDER[idx + 1]];
   return {
-    nextTier: tierOrder[idx + 1],
+    nextTier: TIER_ORDER[idx + 1],
     nextTierInfo: next,
     shootsNeeded: Math.max(0, next.minShoots - shoots),
     ratingNeeded: Math.max(0, +(next.minRating - rating).toFixed(1)),

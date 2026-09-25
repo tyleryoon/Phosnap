@@ -60,32 +60,36 @@ const ForArtists = ({ onAuthOpen }) => {
       <div className="hero" style={{ minHeight: '60vh' }}>
         <div className="hero-bg" />
         <div className="hero-eyebrow">{t('section.forArtists')}</div>
-        <h1 className="hero-title" style={{ fontSize: 'clamp(28px, 5vw, 60px)', whiteSpace: 'pre-line' }}>
+        <h1
+          className="hero-title"
+          style={{ fontSize: 'clamp(28px, 5vw, 60px)', whiteSpace: 'pre-line' }}
+        >
           {t('forartists.heroTitle')}
         </h1>
         <p className="hero-subtitle">{t('forartists.heroSub')}</p>
         <div className="hero-ctas">
-          <button className="btn-primary" onClick={() => navigate('/artist/register')}>{t('forartists.joinBtn')}</button>
-          <button className="btn-outline" onClick={() => onAuthOpen('artist-login')}>{t('forartists.alreadyMember')}</button>
+          <button className="btn-primary" onClick={() => navigate('/artist/register')}>
+            {t('forartists.joinBtn')}
+          </button>
+          <button className="btn-outline" onClick={() => onAuthOpen('artist-login')}>
+            {t('forartists.alreadyMember')}
+          </button>
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats
+          '2,400+ 작가 · 48개 도시 · 평점 4.93' 이 있었다. 실제 작가는 33명이다.
+          규모를 부풀려 데려온 작가는 들어와서 33명을 보고 떠난다.
+          숫자가 자랑할 만해지면 그때 다시 넣는다.
+
+          수수료만 남긴다. 규모가 아니라 조건이고, 작가가 가입 전에 알아야
+          하는 값이다. (예전엔 '8~15%' 였는데 실제 요율은 11~18% 였다.
+          이제 commission.js 에서 온다.) */}
       <div className="stats-bar" style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {[
-          { num: '2,400+', labelKey: 'forartists.statArtists' },
-          { num: '48',     labelKey: 'forartists.statCities' },
-          // 숫자는 commission.js 가 정본. 여기엔 '8~15%' 라고 적혀 있었는데
-          // 실제 요율은 11~18% 였다. 가입 전에 본 숫자가 정산 때 달라지면
-          // 그건 오타가 아니라 약속을 어긴 것이다.
-          { num: FEE_RANGE_TEXT, labelKey: 'forartists.statFee' },
-          { num: '4.93',   labelKey: 'forartists.statRating' },
-        ].map(s => (
-          <div key={s.labelKey} className="stat-item">
-            <span className="stat-num">{s.num}</span>
-            <span className="stat-label">{t(s.labelKey)}</span>
-          </div>
-        ))}
+        <div className="stat-item">
+          <span className="stat-num">{FEE_RANGE_TEXT}</span>
+          <span className="stat-label">{t('forartists.statFee')}</span>
+        </div>
       </div>
 
       {/* Features */}
@@ -94,7 +98,7 @@ const ForArtists = ({ onAuthOpen }) => {
         <h2 className="section-title">{t('forartists.whyTitle')}</h2>
         <p className="section-sub">{t('forartists.whySub')}</p>
         <div className="steps">
-          {features.map(f => (
+          {features.map((f) => (
             <div key={f.n} className="step">
               <Corners />
               <div className="step-num">{f.n}</div>
@@ -113,7 +117,7 @@ const ForArtists = ({ onAuthOpen }) => {
         <h2 className="section-title">{t('forartists.processTitle')}</h2>
         <p className="section-sub">{t('forartists.processSub')}</p>
         <div className="steps">
-          {steps.map(s => (
+          {steps.map((s) => (
             <div key={s.n} className="step">
               <Corners />
               <div className="step-num">{s.n}</div>
@@ -128,12 +132,24 @@ const ForArtists = ({ onAuthOpen }) => {
       <div className="section-pad-hero">
         <div className="section-label">{t('section.joinUs')}</div>
         <h2 className="section-title">{t('forartists.ctaTitle')}</h2>
-        <p style={{ fontFamily: 'var(--font-elegant)', fontStyle: 'italic', color: 'var(--muted)', fontSize: 18, marginBottom: 40 }}>
+        <p
+          style={{
+            fontFamily: 'var(--font-elegant)',
+            fontStyle: 'italic',
+            color: 'var(--muted)',
+            fontSize: 18,
+            marginBottom: 40,
+          }}
+        >
           {t('forartists.ctaSub')}
         </p>
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button className="btn-primary" onClick={() => navigate('/waitlist')}>{t('forartists.ctaWaitlist')}</button>
-          <button className="btn-outline" onClick={() => onAuthOpen('signup')}>{t('forartists.ctaSignup')}</button>
+          <button className="btn-primary" onClick={() => navigate('/waitlist')}>
+            {t('forartists.ctaWaitlist')}
+          </button>
+          <button className="btn-outline" onClick={() => onAuthOpen('signup')}>
+            {t('forartists.ctaSignup')}
+          </button>
         </div>
       </div>
 

@@ -9321,10 +9321,16 @@ const ArtistSchedule = () => {
     const sent = getSentProposals(artistId);
     const pendingIn = received.filter((p) => p.status === 'pending');
 
-    // 내 작가 데이터 + 등급/수수료 계산
+    // 내 작가 데이터 + 등급 계산
+    //
+    // 예전에는 myShoots 가 myArtistData?.reviews 였다. reviews 는 받은
+    // '리뷰 개수' 다. 촬영 10건 하고 리뷰 2개 받으면 시스템은 2건 한
+    // 작가로 봤다. 게다가 myArtistData 는 DB 가 아니라 하드코딩 시드
+    // 배열(PHOTOGRAPHERS)에서 찾으므로, 실제 가입 작가는 아예 안 잡혀
+    // 늘 0건이었다.
     const myArtistData = PHOTOGRAPHERS.find((p) => p.id === artistId);
-    const myShoots = myArtistData?.reviews || 0;
-    const myRating = myArtistData?.rating || 0;
+    const myShoots = allBookings.filter((b) => b.status === 'completed').length;
+    const myRating = profile?.avg_rating ?? myArtistData?.rating ?? 0;
     const myFees = getArtistFees(myShoots, myRating);
     const myTierInfo = ARTIST_TIERS[myFees.tier];
     const myTierColor = TIER_COLORS[myFees.tier];
