@@ -12,6 +12,7 @@ import {
   COMMISSION_TIERS,
   COMMISSION_CAP,
   EARLY_ACCESS_DURATION_MONTHS,
+  SETTLEMENT_OPTIONS,
 } from '../lib/commission';
 import { ARTIST_TIERS, TIER_ORDER } from '../data/collabo';
 
@@ -1603,8 +1604,11 @@ const ArtistDashboard = () => {
                         촬영일수록 실효 요율이 내려갑니다.
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                        정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 5~7일 내 등록 계좌로 자동
-                        입금
+                        {/* '5~7일' 이라고 적혀 있었다. 약관(legal.js 제3조)과 스케줄
+                            화면은 D+3 이다. 작가에게 약관보다 불리하게 안내한 셈이다.
+                            숫자는 commission.js 의 SETTLEMENT_OPTIONS 에서 온다. */}
+                        정산 주기: 촬영 완료 + 고객 확인 후 영업일 기준 D+
+                        {SETTLEMENT_OPTIONS.standard.days} 이내 등록 계좌로 자동 입금
                       </div>
                     </div>
                   </div>

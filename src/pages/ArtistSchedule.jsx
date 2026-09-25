@@ -96,6 +96,7 @@ import {
   ARTIST_COMMISSION_STEPS,
   COMMISSION_TIERS,
   EARLY_ACCESS_DURATION_MONTHS,
+  SETTLEMENT_OPTIONS,
 } from '../lib/commission';
 
 // 수수료 안내 문구는 commission.js 한 곳에서 만든다.
@@ -8515,7 +8516,9 @@ const ArtistSchedule = () => {
             {
               step: '03',
               title: '작가 정산',
-              desc: '촬영 완료 확인 후 D+3 영업일 이내 작가 계좌로 자동 입금',
+              // 숫자는 commission.js 가 정본. 대시보드엔 '5~7일' 이라고
+              // 적혀 있었는데 약관(legal.js 제3조)은 D+3 이었다.
+              desc: `촬영 완료 확인 후 D+${SETTLEMENT_OPTIONS.standard.days} 영업일 이내 작가 계좌로 자동 입금`,
             },
           ].map((item) => (
             <div
@@ -8738,6 +8741,16 @@ const ArtistSchedule = () => {
 
     const thisMonth = summarize(done.filter((b) => inMonth(b, thisYm)));
     const lastMonth = summarize(done.filter((b) => inMonth(b, prevYm)));
+
+    // 확정됐지만 아직 안 찍은 예약 = 앞으로 들어올 돈.
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const upcomingRows = allBookings.filter(
+      (b) => b.status === 'confirmed' && String(b.date || '') >= todayStr
+    );
+    const upcomingPerf = {
+      count: upcomingRows.length,
+      revenue: upcomingRows.reduce((s, b) => s + priceOf(b), 0),
+    };
     const totalRev = done.reduce((s, b) => s + priceOf(b), 0);
     const totalCnt = done.length;
     const avgPrice = totalCnt > 0 ? Math.round(totalRev / totalCnt) : 0;
@@ -8814,10 +8827,13 @@ const ArtistSchedule = () => {
                 color: 'var(--text)',
               },
               {
-                label: '정산 대기',
-                value: `${thisMonth.pendingCount}건`,
-                sub: formatMoneyFull(thisMonth.pendingAmount),
-                color: thisMonth.pendingCount > 0 ? 'var(--warning)' : 'var(--muted)',
+                // '정산 대기' 였다. 정산 상태 컬럼이 없어 늘 0건이 떴는데,
+                // 작가는 그걸 '받을 돈 없음' 으로 읽는다. 실제로는 확정된
+                // 다가올 촬영이 79만원어치 있었다. 상단 카드와 같은 표현을 쓴다.
+                label: '확정된 다가올 촬영',
+                value: `${upcomingPerf.count}건`,
+                sub: formatMoneyFull(upcomingPerf.revenue),
+                color: upcomingPerf.count > 0 ? 'var(--info)' : 'var(--muted)',
               },
             ].map((c, i) => (
               <div
@@ -9105,31 +9121,21 @@ const ArtistSchedule = () => {
                         {m.collaboCount > 0 ? `${m.collaboCount}건` : '-'}
                       </td>
                       <td style={{ ...cellStyle, textAlign: 'center' }}>
-                        {m.pending > 0 ? (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              padding: '2px 8px',
-                              border: '1px solid rgba(250,204,21,0.3)',
-                              color: 'var(--warning)',
-                              fontFamily: 'var(--font-serif)',
-                            }}
-                          >
-                            대기 {m.pending}건
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              padding: '2px 8px',
-                              border: '1px solid rgba(34,197,94,0.2)',
-                              color: 'var(--success)',
-                              fontFamily: 'var(--font-serif)',
-                            }}
-                          >
-                            완료
-                          </span>
-                        )}
+                        {/* m.pending 은 존재한 적이 없는 필드라 늘 undefined 였다.
+                            undefined > 0 은 false 이므로 이 칸은 언제나 '완료' 를
+                            띄웠다 — 정산을 추적하지도 않으면서 '돈 받았다' 고
+                            단언한 셈이다. 결제가 붙어 정산 상태가 생기기 전까지는
+                            모른다고 말하는 게 맞다. */}
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: 'var(--muted)',
+                            fontFamily: 'var(--font-serif)',
+                          }}
+                          title="정산 상태는 결제 연동 후 표시됩니다"
+                        >
+                          —
+                        </span>
                       </td>
                     </tr>
                   );
