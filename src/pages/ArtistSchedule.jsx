@@ -977,7 +977,10 @@ const ArtistSchedule = () => {
         if (session?.user) {
           let { data: photog } = await sb
             .from('photographers')
-            .select('id, location_id')
+            // portfolio 도 같이 읽는다. 아래에서 profile 이 비어 있을 때
+            // 채워 주는데, 안 읽어오면 다른 기기에서 포트폴리오가 빈 채로
+            // 보이고 그 상태로 저장하면 DB 값이 날아간다.
+            .select('id, location_id, portfolio')
             .eq('user_id', session.user.id)
             .maybeSingle();
 
@@ -1033,8 +1036,34 @@ const ArtistSchedule = () => {
                   };
                 });
               }
-              // tours 는 profile 상태로 관리되며 setTours 는 저장을 유발하므로
-              // 로드 시점에 호출하지 않는다.
+              // 투어도 hmk 와 똑같은 함정이 있었다.
+              //
+              // setTours 는 저장을 유발하니 로드 때 부르면 안 되는 게 맞다.
+              // 그런데 그 이유로 아무것도 안 채워두는 바람에, 다른 기기에서
+              // 열면 투어 목록이 비어 보였다. 그 상태로 포트폴리오나 지역을
+              // 저장하면 replacePackages('tour', []) 가 돌아 DB 의 투어가
+              // 통째로 지워진다.
+              //
+              // setProfileState 로 직접 채운다 — 저장을 유발하지 않는다.
+              // 이미 값이 있으면(= 내가 쓰던 기기) 건드리지 않는다.
+              const tourRows = mapped.filter((p) => p.type === 'tour');
+              if (tourRows.length) {
+                setProfileState((prev) => {
+                  if (!prev) return prev;
+                  if ((prev.tours || []).length) return prev;
+                  return { ...prev, tours: tourRows };
+                });
+              }
+            }
+
+            // 포트폴리오도 같은 이유로 DB 에서 채운다.
+            // photographers.portfolio 는 [{url, caption, regionId}] 배열이다.
+            if (Array.isArray(photog.portfolio) && photog.portfolio.length) {
+              setProfileState((prev) => {
+                if (!prev) return prev;
+                if ((prev.portfolio || []).length) return prev;
+                return { ...prev, portfolio: photog.portfolio };
+              });
             }
             // 스케줄 로드
             const { data: schedData } = await getScheduleMonth(photog.id, calYear, calMonth + 1);
@@ -2628,7 +2657,10 @@ const ArtistSchedule = () => {
     const removeLoc = (id) => {
       const loc = locs.find((l) => l.id === id);
       if (loc?.isMain) {
-        showSaved('메인 활동지는 삭제할 수 없습니다. 다른 지역을 메인으로 지정한 후 삭제해주세요.', 4000);
+        showSaved(
+          '메인 활동지는 삭제할 수 없습니다. 다른 지역을 메인으로 지정한 후 삭제해주세요.',
+          4000
+        );
         return;
       }
       const remaining = locs.filter((l) => l.id !== id);
