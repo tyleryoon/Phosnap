@@ -101,13 +101,49 @@
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 
-  <!-- ── Service Worker Registration ── -->
+  <!-- ── Service Worker Registration ──
+       개발 서버에서는 등록하지 않는다.
+
+       dev 서버는 자주 죽고 자주 재시작한다. 그때마다 서비스 워커가
+       캐시된 오프라인 페이지를 내주는 바람에, 서버만 잠깐 없는 상황이
+       '인터넷이 끊긴 것' 처럼 보였다. 푸는 방법은 캐시를 지우는 것뿐인데
+       그러면 로그인 세션까지 같이 날아간다. 한 세션에 네 번 겪었다.
+
+       이미 등록돼 있던 워커와 캐시도 걷어낸다. 안 그러면 이 수정 이후에도
+       예전에 설치된 워커가 계속 남아 같은 일을 반복한다. -->
   <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+
+      var host = location.hostname;
+      var isDev = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+
+      if (isDev) {
+        navigator.serviceWorker
+          .getRegistrations()
+          .then(function (regs) {
+            regs.forEach(function (r) {
+              r.unregister();
+            });
+          })
+          .catch(function () {});
+        if (window.caches) {
+          caches
+            .keys()
+            .then(function (keys) {
+              keys.forEach(function (k) {
+                caches.delete(k);
+              });
+            })
+            .catch(function () {});
+        }
+        return;
+      }
+
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/sw.js').catch(function () {});
       });
-    }
+    })();
   </script>
 </body>
 </html>
