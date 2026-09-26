@@ -7535,13 +7535,54 @@ const ArtistSchedule = () => {
               marginBottom: 6,
             }}
           >
-            🗺️ 포토 투어 <span style={{ color: 'var(--accent-a50)' }}>— {tours.length}개</span>
+            🗺️ 포토 투어{' '}
+            <span
+              style={{
+                marginLeft: 6,
+                padding: '2px 8px',
+                fontSize: 9,
+                letterSpacing: '0.1em',
+                border: '1px solid var(--border)',
+                color: 'var(--muted)',
+              }}
+            >
+              준비 중
+            </span>
           </div>
-          <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 16, lineHeight: 1.6 }}>
-            촬영 + 투어를 결합한 특별 상품을 만들어보세요. 고객에게 장소 가이드와 함께 촬영을
-            제공합니다.
+          {/* 투어 예약은 아직 DB 에 없다. tourBookingStore.js 2행에
+              '현재 localStorage 기반 mock, 추후 Supabase 이전' 이라고 적혀 있고
+              실제로 투어 테이블이 하나도 없다.
+
+              그런데 작가 상세 페이지(Profile.jsx 773행)는 tours 가 있으면
+              고객에게 투어를 보여주고 참여 버튼까지 띄운다. 즉 작가가 투어를
+              하나라도 만들면, 고객은 참여 신청을 하는데 그 기록은 고객
+              브라우저에만 쌓이고 작가는 영영 모른다. 콜라보가 그랬던 것과
+              같은 구조다.
+
+              지금은 투어 상품이 0건이라 아무 일도 안 일어난다. 만들어지기
+              전에 입구를 막는다. DB 로 옮기면 이 블록을 되돌리면 된다. */}
+          <div
+            style={{
+              fontSize: 12,
+              color: 'var(--muted)',
+              lineHeight: 1.8,
+              padding: '16px 18px',
+              background: 'var(--bg)',
+              border: '1px dashed var(--border)',
+            }}
+          >
+            촬영과 투어를 묶은 상품입니다. 여러 고객을 함께 모아 인원이 늘수록 1인당 가격이
+            내려가는 방식이라, 모집과 정산을 서버에서 다루어야 합니다.
+            <br />그 작업이 끝나면 열겠습니다. 지금 만들어두면 고객이 참여 신청을 해도 작가에게
+            전달되지 않습니다.
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}>
+          {/* 편집 UI 는 지우지 않고 가려만 둔다. 이미 투어를 만들어 둔 작가가
+              있으면 그 데이터를 보여줘야 하고, DB 로 옮길 때 이 조건만
+              풀면 되기 때문이다. 지금은 tours 가 0건이라 아무것도 안 보인다. */}
+          <div
+            hidden={tours.length === 0}
+            style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 16 }}
+          >
             {tours.map((tour, idx) => (
               <div
                 key={idx}
@@ -8037,15 +8078,21 @@ const ArtistSchedule = () => {
               </div>
             ))}
           </div>
+          {/* 새로 만드는 입구는 막는다. 이미 있는 것을 고치고 저장하는
+              길은 남겨둔다 — 만들어 둔 작가가 지울 수는 있어야 한다. */}
           <button
             className="btn-ghost"
             style={{ fontSize: 12, color: 'var(--gold)' }}
             onClick={addTour}
+            hidden
           >
             + 투어 추가
           </button>
           {/* 포토 투어 저장 버튼 */}
-          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}>
+          <div
+            hidden={tours.length === 0}
+            style={{ marginTop: 16, display: 'flex', justifyContent: 'flex-end' }}
+          >
             <button
               className="btn-primary"
               style={{ fontSize: 13, padding: '12px 32px', letterSpacing: '0.05em' }}

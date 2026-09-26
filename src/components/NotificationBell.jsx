@@ -23,6 +23,11 @@ const NOTIF_ICONS = {
   review_new: '⭐',
   message_new: '💬',
   payment_received: '💰',
+  // 콜라보 알림은 폴백(🔔)으로도 목록에 뜨긴 했지만 예약·리뷰와 구분이
+  // 안 됐다. 아이콘을 줘서 무슨 알림인지 한눈에 보이게 한다.
+  collabo_proposal: '🤝',
+  collabo_response: '🤝',
+  collabo_cancelled: '🤝',
   system: '🔔',
   info: 'ℹ️',
 };

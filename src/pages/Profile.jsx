@@ -30,6 +30,14 @@ import {
   seedMockInstances,
 } from '../data/tourBookingStore';
 
+/** 포토 투어 노출 스위치.
+ *
+ *  투어 모집·참여는 tourBookingStore(localStorage) 에만 쌓이고 DB 테이블이
+ *  없다. 고객이 참여 신청을 해도 작가에게 전달되지 않는다.
+ *  서버로 옮긴 뒤 true 로 바꾸면 된다.
+ */
+const TOUR_ENABLED = false;
+
 // ─── Photographer Profile Page ─────────────────────────────────────────
 
 const Profile = ({ onAuthOpen }) => {
@@ -769,8 +777,12 @@ const Profile = ({ onAuthOpen }) => {
               </div>
             ))}
 
-            {/* 포토 투어 상품 (tours가 있는 작가만) */}
-            {p.tours?.length > 0 && (
+            {/* 포토 투어 — 준비 중이라 고객에게 보이지 않는다.
+                투어 모집·참여는 tourBookingStore(localStorage) 에만 쌓이고
+                DB 테이블이 없다. 여기서 참여 버튼을 누르면 그 기록은 고객
+                브라우저 안에서 끝나고 작가는 영영 모른다.
+                서버로 옮긴 뒤 아래 TOUR_ENABLED 를 true 로 바꾸면 된다. */}
+            {TOUR_ENABLED && p.tours?.length > 0 && (
               <>
                 <div style={{
                   gridColumn: '1 / -1',
