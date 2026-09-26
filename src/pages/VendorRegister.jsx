@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Corners from '../components/Corners';
 import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
+// 주소 검색 실패를 브라우저 alert 으로 띄우고 있었다.
+import { useToast } from '../contexts/ToastContext';
 import { TermsViewer } from '../components/TermsModal';
 import { TERMS_VENDOR, PRIVACY, REFUND_POLICY } from '../data/legal';
 import { getAllLocationsSorted } from '../data/locationUtils';
@@ -50,6 +52,7 @@ const VENDOR_TYPES = [
 const VendorRegister = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { toast } = useToast();
   const { addRole: authAddRole, switchRole: authSwitchRole } = useAuth();
 
   // ── Helper: 이름 유효성 검사 (특수문자/기호 차단) ────────────────────
@@ -126,7 +129,7 @@ const VendorRegister = () => {
       script.onerror = () => {
         // 스크립트를 못 불러오면 직접 입력할 수 있어야 한다.
         // 조용히 아무 일도 안 일어나면 사용자는 버튼이 고장난 줄 안다.
-        alert('주소 검색을 불러오지 못했습니다. 주소를 직접 입력해주세요.');
+        toast('주소 검색을 불러오지 못했습니다. 주소를 직접 입력해주세요.', 'error');
         setAddrSearchFailed(true);
       };
       document.head.appendChild(script);

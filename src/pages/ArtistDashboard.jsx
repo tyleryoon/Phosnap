@@ -15,6 +15,9 @@ import {
   SETTLEMENT_OPTIONS,
 } from '../lib/commission';
 import { ARTIST_TIERS, TIER_ORDER } from '../data/collabo';
+// 태그 검증 실패를 브라우저 alert 으로 띄우고 있었다. 창이 화면을 막고
+// 모양이 사이트와 따로 논다. ToastContainer 는 App.jsx 에 이미 있다.
+import { useToast } from '../contexts/ToastContext';
 
 /** 0.18 → '18%'. 소수 요율을 화면 문구로. */
 const pct = (rate) => `${Math.round(rate * 100)}%`;
@@ -172,6 +175,7 @@ const CONTENT = {
 const ArtistDashboard = () => {
   const { user, userName, isArtist, isLoggedIn } = useAuth();
   const { t, lang } = useLanguage();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const c = CONTENT[lang] || CONTENT.ko;
 
@@ -1940,7 +1944,7 @@ const ArtistDashboard = () => {
                             setProfileTags((prev) => [...prev, val]);
                             e.target.value = '';
                           } else if (e.target.value.trim() && !val) {
-                            alert('사용할 수 없는 태그입니다.');
+                            toast('사용할 수 없는 태그입니다.', 'error');
                             e.target.value = '';
                           }
                         }
@@ -1965,7 +1969,7 @@ const ArtistDashboard = () => {
                           setProfileTags((prev) => [...prev, val]);
                           inp.value = '';
                         } else if (inp?.value?.trim() && !val) {
-                          alert('사용할 수 없는 태그입니다.');
+                          toast('사용할 수 없는 태그입니다.', 'error');
                           inp.value = '';
                         }
                       }}

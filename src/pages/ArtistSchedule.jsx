@@ -2584,8 +2584,10 @@ const ArtistSchedule = () => {
       if (newPeriod.start && targetLoc.active) {
         const overlapCount = countOverlappingLocs(id, newPeriod);
         if (overlapCount > MAX_OVERLAP) {
-          alert(
-            `같은 기간에 최대 ${MAX_OVERLAP}개 지역까지만 겹칠 수 있습니다.\n현재 이 기간에 ${overlapCount}개 지역이 겹칩니다. 다른 지역의 기간을 조정하거나 노출을 해제해주세요.`
+          // 토스트는 한 줄이라 줄바꿈 대신 ' · ' 로 잇는다.
+          showSaved(
+            `같은 기간에 최대 ${MAX_OVERLAP}개 지역까지만 겹칠 수 있습니다 · 현재 ${overlapCount}개가 겹칩니다. 다른 지역의 기간을 조정하거나 노출을 해제해주세요.`,
+            5000
           );
           return;
         }
@@ -2626,7 +2628,7 @@ const ArtistSchedule = () => {
     const removeLoc = (id) => {
       const loc = locs.find((l) => l.id === id);
       if (loc?.isMain) {
-        alert('메인 활동지는 삭제할 수 없습니다. 다른 지역을 메인으로 지정한 후 삭제해주세요.');
+        showSaved('메인 활동지는 삭제할 수 없습니다. 다른 지역을 메인으로 지정한 후 삭제해주세요.', 4000);
         return;
       }
       const remaining = locs.filter((l) => l.id !== id);
@@ -3457,7 +3459,7 @@ const ArtistSchedule = () => {
                   const turningOn = !isActive;
                   // OFF→ON 전환 시, 시작일/종료일 필수 (메인 제외)
                   if (turningOn && !isMain && (!loc.period?.start || !loc.period?.end)) {
-                    alert('시작일과 종료일을 먼저 입력해주세요.');
+                    showSaved('시작일과 종료일을 먼저 입력해주세요.', 3000);
                     return;
                   }
                   // OFF→ON 전환 시, 최대 3개 겹침 제한 체크
@@ -3466,8 +3468,9 @@ const ArtistSchedule = () => {
                     const simLocs = locs.map((l) => (l.id === loc.id ? { ...l, active: true } : l));
                     const overlapCount = countOverlappingLocs(loc.id, loc.period, simLocs);
                     if (overlapCount > MAX_OVERLAP) {
-                      alert(
-                        `같은 기간에 최대 ${MAX_OVERLAP}개 지역까지만 겹칠 수 있습니다.\n이 지역을 노출하면 최대 ${overlapCount}개가 겹칩니다. 다른 지역의 노출을 먼저 해제해주세요.`
+                      showSaved(
+                        `같은 기간에 최대 ${MAX_OVERLAP}개 지역까지만 겹칠 수 있습니다 · 이 지역을 노출하면 ${overlapCount}개가 겹칩니다. 다른 지역의 노출을 먼저 해제해주세요.`,
+                        5000
                       );
                       return;
                     }
@@ -4228,8 +4231,9 @@ const ArtistSchedule = () => {
                         disabled={overLimit && wouldRemain > MAX_EXPOSED}
                         onClick={() => {
                           if (overLimit && wouldRemain > MAX_EXPOSED) {
-                            alert(
-                              `고객에게 노출되는 지역이 ${activeExposedCount}개입니다.\n최대 ${MAX_EXPOSED}개까지 동시 노출이 가능합니다.\n최소 ${activeExposedCount - MAX_EXPOSED}개 지역의 노출을 해제해주세요.`
+                            showSaved(
+                              `노출 지역이 ${activeExposedCount}개입니다 · 최대 ${MAX_EXPOSED}개까지 가능하니 ${activeExposedCount - MAX_EXPOSED}개를 해제해주세요.`,
+                              5000
                             );
                             return;
                           }
@@ -8100,7 +8104,7 @@ const ArtistSchedule = () => {
                   const next = !(profile.hourlyRateEnabled !== false);
                   // 가격 미입력 시 활성화 차단
                   if (next && !profile.hourlyRate) {
-                    alert('시간당 가격을 먼저 입력해주세요.');
+                    showSaved('시간당 가격을 먼저 입력해주세요.', 3000);
                     return;
                   }
                   saveProfileData({ ...profile, hourlyRateEnabled: next });
@@ -9698,9 +9702,7 @@ const ArtistSchedule = () => {
       // 시드에서 찾는 바람에 모든 카드가 '알 수 없음' 으로 떴다.
       const otherId = direction === 'received' ? proposal.from_id : proposal.to_id;
       const otherType = direction === 'received' ? proposal.from_type : proposal.to_type;
-      const other = collaboCandidates.find(
-        (c) => c.id === otherId && c.providerType === otherType
-      );
+      const other = collaboCandidates.find((c) => c.id === otherId && c.providerType === otherType);
       const status = PROPOSAL_STATUS[proposal.status] || PROPOSAL_STATUS.pending;
       const type = ARTIST_TYPES[other?.artistType || 'photographer'];
       return (
@@ -9739,7 +9741,9 @@ const ArtistSchedule = () => {
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>
                   {type?.icon} {type?.ko}
-                  {other?.locationId ? ` · ${locationMeta(other.locationId)?.name || other.locationId}` : ''}
+                  {other?.locationId
+                    ? ` · ${locationMeta(other.locationId)?.name || other.locationId}`
+                    : ''}
                 </div>
               </div>
             </div>
@@ -10695,7 +10699,7 @@ const ArtistSchedule = () => {
                         const start = startEl?.value;
                         const end = endEl?.value || start;
                         if (!start) {
-                          alert('날짜를 선택해주세요');
+                          showSaved('날짜를 선택해주세요', 3000);
                           return;
                         }
                         // 시간 체크
@@ -10707,7 +10711,7 @@ const ArtistSchedule = () => {
                         const [teh, tem] = timeEnd.split(':').map(Number);
                         const dailyMinutes = teh * 60 + tem - (tsh * 60 + tsm);
                         if (dailyMinutes <= 0) {
-                          alert('종료 시간이 시작 시간보다 이후여야 합니다.');
+                          showSaved('종료 시간이 시작 시간보다 이후여야 합니다.', 3000);
                           return;
                         }
                         // 동종 콜라보 역할 체크
@@ -10718,7 +10722,7 @@ const ArtistSchedule = () => {
                           if (mainBtn?.dataset.selected === 'true') selectedRole = 'main';
                           else if (subBtn?.dataset.selected === 'true') selectedRole = 'sub';
                           if (!selectedRole) {
-                            alert('동종 콜라보 시 메인/서브 역할을 선택해주세요.');
+                            showSaved('동종 콜라보 시 메인/서브 역할을 선택해주세요.', 3000);
                             return;
                           }
                         }

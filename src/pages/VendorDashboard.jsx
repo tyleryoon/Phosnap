@@ -7,6 +7,10 @@ import { useLanguage } from '../contexts/LanguageContext';
 import LocationPicker from '../components/LocationPicker';
 import ProviderLocations from '../components/ProviderLocations';
 import CollaboInbox from '../components/CollaboInbox';
+// 실패 안내를 브라우저 alert 으로 띄우고 있었다. 창이 화면을 막고,
+// 모양이 사이트와 따로 놀고, 확인을 누르기 전까지 아무것도 못 한다.
+// ToastContainer 는 App.jsx 에 이미 붙어 있는데 아무도 안 쓰고 있었다.
+import { useToast } from '../contexts/ToastContext';
 import DressFulfillment from '../components/DressFulfillment';
 import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
@@ -112,6 +116,7 @@ function VendorDashboard() {
   const navigate = useNavigate();
   const { lang } = useLanguage();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [vendorProfile, setVendorProfile] = useState(null);
   const [dbDresses, setDbDresses] = useState(null);
@@ -756,7 +761,7 @@ function VendorDashboard() {
       } catch (err) {
         // 삭제 실패를 조용히 넘기면 목록에서만 사라진 것처럼 보인다.
         console.error('[VendorDashboard] 의상 삭제 실패:', err);
-        alert('의상 삭제에 실패했습니다. 다시 시도해주세요.');
+        toast('의상 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
       }
     }
     setDresses((prev) => prev.filter((d) => d.id !== dressId));
@@ -971,7 +976,7 @@ function VendorDashboard() {
       } catch (err) {
         // 업로드 실패 시 이미지 없이 저장되지 않도록 알린다.
         console.error('[VendorDashboard] 이미지 업로드 실패:', err);
-        alert('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        toast('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
@@ -1023,7 +1028,8 @@ function VendorDashboard() {
         // 실패를 조용히 넘기면 저장 버튼이 아무 반응 없는 것처럼 보인다.
         console.error('[VendorDashboard] 의상 등록 실패:', error);
         setSaveStatus('error');
-        alert(`의상 등록에 실패했습니다.\n${error.message || '알 수 없는 오류'}`);
+        // 토스트는 한 줄이라 줄바꿈 대신 이어 붙인다.
+        toast(`의상 등록에 실패했습니다 — ${error.message || '알 수 없는 오류'}`, 'error');
         return;
       }
     } else {
@@ -1102,7 +1108,7 @@ function VendorDashboard() {
       } catch (err) {
         // 업로드 실패 시 이미지 없이 저장되지 않도록 알린다.
         console.error('[VendorDashboard] 이미지 업로드 실패:', err);
-        alert('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.');
+        toast('이미지 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       }
     } else if (imageFile) {
       imageUrl = URL.createObjectURL(imageFile);
