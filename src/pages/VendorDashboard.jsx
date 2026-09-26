@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from '../components/Icons';
 import { useLanguage } from '../contexts/LanguageContext';
 import LocationPicker from '../components/LocationPicker';
 import ProviderLocations from '../components/ProviderLocations';
+import CollaboInbox from '../components/CollaboInbox';
 import DressFulfillment from '../components/DressFulfillment';
 import PendingItems from '../components/PendingItems';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,7 +35,6 @@ import DragDropImageUpload from '../components/DragDropImageUpload';
 import ScheduleManager from '../components/ScheduleManager';
 import VenueItemsManager from '../components/VenueItemsManager';
 import ReferralCard from '../components/ReferralCard';
-
 
 // ── 의상 대분류 카테고리 (벤더가 아이템 등록 시 선택) ──
 const COSTUME_CATEGORIES = {
@@ -1750,6 +1750,9 @@ function VendorDashboard() {
             { key: 'bookings', label: '예약 현황' },
             { key: 'schedule', label: '운영 일정' },
             { key: 'timeline', label: '대여 일정' },
+            // 작가·헤메가 의상·장소 업체에게도 콜라보를 제의할 수 있는데
+            // 받는 화면이 없었다. 제의가 와도 알 방법이 없었다.
+            { key: 'collabo', label: '콜라보' },
             { key: 'reviews', label: '리뷰 관리' },
           ].map((tab) => {
             const pendingBookings = bookings.filter(
@@ -4127,6 +4130,21 @@ function VendorDashboard() {
                 );
               })()}
           </div>
+        )}
+
+        {/* 콜라보 — 의상·장소 업체도 제의를 주고받는다.
+            대시보드가 의상/장소를 한 화면에서 전환하므로 지금 보고 있는
+            쪽의 유형과 id 를 넘긴다. */}
+        {activeTab === 'collabo' && (
+          <CollaboInbox
+            providerType={activeDashboard === 'venue' ? 'venue' : 'dress'}
+            providerId={activeDashboard === 'venue' ? venueVendorId : vendorProfile?.id}
+            myLocationId={
+              profileForm.location?.locationId ||
+              (typeof profileForm.location === 'string' ? profileForm.location : null) ||
+              null
+            }
+          />
         )}
 
         {/* Reviews Tab */}
