@@ -2163,7 +2163,13 @@ export default function StylistDashboard() {
         {activeTab === 'dressRental' && (
           <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />
         )}
-        {activeTab === 'collabo' && <CollaboInbox stylistId={stylistId} />}
+        {activeTab === 'collabo' && (
+          <CollaboInbox
+            providerType="stylist"
+            providerId={stylistId}
+            myLocationId={stylistProfile?.location_id || null}
+          />
+        )}
 
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 

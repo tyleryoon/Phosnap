@@ -5,16 +5,16 @@
 // ── 상수 ──
 export const COLLABO_RULES = {
   // 보완형 콜라보 (사진+영상, 사진+헤메, 영상+헤메)
-  maxProposalsPerMonth: 10,    // 월 최대 수락 횟수
-  maxDailyProposals: 3,        // 하루 제안 발송 제한
+  maxProposalsPerMonth: 10, // 월 최대 수락 횟수
+  maxDailyProposals: 3, // 하루 제안 발송 제한
   // 확장형 콜라보 (동종: 사진+사진, 영상+영상)
-  maxSameTypePerMonth: 3,      // 동종 콜라보 월 최대 횟수
-  sameTypeRequiresRole: true,  // 동종 콜라보 시 메인/서브 역할 지정 필수
+  maxSameTypePerMonth: 3, // 동종 콜라보 월 최대 횟수
+  sameTypeRequiresRole: true, // 동종 콜라보 시 메인/서브 역할 지정 필수
   // 공통
-  rejectDoesNotCount: true,     // 거절 · 미응답 시 차감 안 함
-  consecutiveDaysAsOne: true,   // 연속일 제의 = 1회 차감
-  autoExpireDays: 7,            // 미응답 시 7일 후 자동 만료
-  cooldownSamePerson: 7,        // 같은 사람에게 재제의 쿨다운 7일
+  rejectDoesNotCount: true, // 거절 · 미응답 시 차감 안 함
+  consecutiveDaysAsOne: true, // 연속일 제의 = 1회 차감
+  autoExpireDays: 7, // 미응답 시 7일 후 자동 만료
+  cooldownSamePerson: 7, // 같은 사람에게 재제의 쿨다운 7일
 };
 
 // ── 작가 등급 시스템 (Badge Progress) ──
@@ -27,18 +27,50 @@ export const COLLABO_RULES = {
 // 정해지고(commission.js), 이 값들은 옛 정책(20/15/12)이 그대로 남아
 // 있었다. grep 해보니 화면 어디서도 읽지 않는 죽은 필드였다.
 export const ARTIST_TIERS = {
-  rising:      { ko: 'Rising',      en: 'Rising',      icon: '✦',    stars: '✦',       minShoots: 0,   minRating: 0,   benefits: '기본 프로필 노출, 예약 수신' },
-  established: { ko: 'Established', en: 'Established', icon: '✦✦',   stars: '✦✦',      minShoots: 10,  minRating: 4.0, benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월' },
-  premier:     { ko: 'Premier',     en: 'Premier',     icon: '✦✦✦',  stars: '✦✦✦',     minShoots: 30,  minRating: 4.5, benefits: '홈 추천 등록, 즉시예약 활성화' },
-  elite:       { ko: 'Elite',       en: 'Elite',       icon: '✦✦✦✦', stars: '✦✦✦✦',    minShoots: 60,  minRating: 4.7, benefits: '최우선 노출, 전용 매니저 배정' },
+  rising: {
+    ko: 'Rising',
+    en: 'Rising',
+    icon: '✦',
+    stars: '✦',
+    minShoots: 0,
+    minRating: 0,
+    benefits: '기본 프로필 노출, 예약 수신',
+  },
+  established: {
+    ko: 'Established',
+    en: 'Established',
+    icon: '✦✦',
+    stars: '✦✦',
+    minShoots: 10,
+    minRating: 4.0,
+    benefits: '검색 우선 노출, 뱃지 표시, 콜라보 제의 +2회/월',
+  },
+  premier: {
+    ko: 'Premier',
+    en: 'Premier',
+    icon: '✦✦✦',
+    stars: '✦✦✦',
+    minShoots: 30,
+    minRating: 4.5,
+    benefits: '홈 추천 등록, 즉시예약 활성화',
+  },
+  elite: {
+    ko: 'Elite',
+    en: 'Elite',
+    icon: '✦✦✦✦',
+    stars: '✦✦✦✦',
+    minShoots: 60,
+    minRating: 4.7,
+    benefits: '최우선 노출, 전용 매니저 배정',
+  },
 };
 
 // 등급 색상
 export const TIER_COLORS = {
-  rising:      'var(--muted)',
-  established: '#60a5fa',     // 파란색
-  premier:     'var(--gold)',  // 골드
-  elite:       '#c084fc',     // 보라색
+  rising: 'var(--muted)',
+  established: '#60a5fa', // 파란색
+  premier: 'var(--gold)', // 골드
+  elite: '#c084fc', // 보라색
 };
 
 /** 등급 순서 — 낮은 것부터. 화면에서도 이 순서를 쓴다. */
@@ -83,25 +115,34 @@ export const getNextTierProgress = (shoots, rating = 0) => {
 export const ARTIST_TYPES = {
   photographer: { ko: '사진작가', en: 'Photographer', icon: '📸' },
   videographer: { ko: '영상작가', en: 'Videographer', icon: '🎬' },
-  both:         { ko: '사진·영상 작가', en: 'Photo & Video', icon: '📸🎬' },
-  hmua:         { ko: 'H&M 작가', en: 'H&M Artist', icon: '💄' },
+  both: { ko: '사진·영상 작가', en: 'Photo & Video', icon: '📸🎬' },
+  hmua: { ko: 'H&M 작가', en: 'H&M Artist', icon: '💄' },
+  // 의상·장소 업체도 콜라보 상대다. 헤메가 장소를 함께 쓰거나 작가가
+  // 의상 업체와 촬영을 엮는 식으로, 실제로 같이 일하는 축이다.
+  dress: { ko: '의상 업체', en: 'Dress Vendor', icon: '👗' },
+  venue: { ko: '장소 업체', en: 'Venue', icon: '📍' },
 };
 
 // ── 콜라보 가능 조합 ──
-// 보완형: 무제한 허용 / 확장형(동종): 조건부 허용
-export const COLLABO_MATRIX = {
-  photographer: ['videographer', 'hmua', 'both', 'photographer'],  // +동종 허용
-  videographer: ['photographer', 'hmua', 'both', 'videographer'],  // +동종 허용
-  both:         ['videographer', 'hmua', 'photographer', 'both'],
-  hmua:         ['photographer', 'videographer', 'both', 'hmua'],
-};
+//
+// 처음에는 작가·헤메 넷만 열어뒀다. 의상·장소 업체를 더하면서 누가
+// 누구와 못 하는지 정할 근거가 없어 전부 열었다. 촬영 한 건에
+// 작가·헤메·의상·장소가 다 엮이는 게 이 서비스의 기본 모양이다.
+//
+// 동종(사진+사진 등)에만 제한이 더 붙는다 — 월 3회, 메인/서브 역할 필수.
+// 그건 isSameTypeCollabo 와 RPC 가 따로 본다.
+const ALL_COLLABO_TYPES = ['photographer', 'videographer', 'both', 'hmua', 'dress', 'venue'];
+export const COLLABO_MATRIX = Object.fromEntries(
+  ALL_COLLABO_TYPES.map((t) => [t, ALL_COLLABO_TYPES])
+);
 
 // ── 동종 콜라보 여부 판별 ──
 export const isSameTypeCollabo = (myType, theirType) => {
   // photographer-photographer, videographer-videographer, hmua-hmua
   if (myType === theirType) return true;
   // both는 photographer/videographer와 동종 취급
-  if (myType === 'both' && (theirType === 'photographer' || theirType === 'videographer')) return true;
+  if (myType === 'both' && (theirType === 'photographer' || theirType === 'videographer'))
+    return true;
   if (theirType === 'both' && (myType === 'photographer' || myType === 'videographer')) return true;
   return false;
 };
@@ -109,15 +150,15 @@ export const isSameTypeCollabo = (myType, theirType) => {
 // ── 콜라보 역할 ──
 export const COLLABO_ROLES = {
   main: { ko: '메인', en: 'Main' },
-  sub:  { ko: '서브', en: 'Sub' },
+  sub: { ko: '서브', en: 'Sub' },
 };
 
 // ── 제의 상태 ──
 export const PROPOSAL_STATUS = {
-  pending:  { ko: '대기 중', en: 'Pending',  color: 'var(--gold)' },
-  accepted: { ko: '수락',   en: 'Accepted', color: 'var(--success)' },
-  rejected: { ko: '거절',   en: 'Rejected', color: 'var(--danger)' },
-  expired:  { ko: '만료',   en: 'Expired',  color: 'var(--muted)' },
+  pending: { ko: '대기 중', en: 'Pending', color: 'var(--gold)' },
+  accepted: { ko: '수락', en: 'Accepted', color: 'var(--success)' },
+  rejected: { ko: '거절', en: 'Rejected', color: 'var(--danger)' },
+  expired: { ko: '만료', en: 'Expired', color: 'var(--muted)' },
 };
 
 // ── Storage helpers ──
@@ -126,7 +167,9 @@ const STORAGE_KEY = 'phosnap_collabo';
 const loadAll = () => {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { proposals: [], notifications: [] };
-  } catch { return { proposals: [], notifications: [] }; }
+  } catch {
+    return { proposals: [], notifications: [] };
+  }
 };
 const saveAll = (data) => localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
@@ -138,7 +181,9 @@ export const getMonthlyProposalCount = (artistId) => {
 
   // 이번 달 내가 보낸 수락된 제의
   const mine = proposals
-    .filter(p => p.fromId === artistId && p.createdAt?.startsWith(thisMonth) && p.status === 'accepted')
+    .filter(
+      (p) => p.fromId === artistId && p.createdAt?.startsWith(thisMonth) && p.status === 'accepted'
+    )
     .sort((a, b) => a.dates[0].localeCompare(b.dates[0]));
 
   let count = 0;
@@ -160,11 +205,12 @@ export const getMonthlySameTypeCount = (artistId, myType) => {
   const { proposals } = loadAll();
   const now = new Date();
   const thisMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  return proposals.filter(p =>
-    p.fromId === artistId &&
-    p.createdAt?.startsWith(thisMonth) &&
-    p.status === 'accepted' &&
-    p.isSameType
+  return proposals.filter(
+    (p) =>
+      p.fromId === artistId &&
+      p.createdAt?.startsWith(thisMonth) &&
+      p.status === 'accepted' &&
+      p.isSameType
   ).length;
 };
 
@@ -172,7 +218,7 @@ export const getMonthlySameTypeCount = (artistId, myType) => {
 export const getDailyProposalCount = (artistId) => {
   const { proposals } = loadAll();
   const today = new Date().toISOString().slice(0, 10);
-  return proposals.filter(p => p.fromId === artistId && p.createdAt === today).length;
+  return proposals.filter((p) => p.fromId === artistId && p.createdAt === today).length;
 };
 
 // ── 같은 사람 쿨다운 체크 ──
@@ -183,8 +229,8 @@ export const checkCooldown = (fromId, toId) => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - cooldown);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
-  const recent = proposals.find(p =>
-    p.fromId === fromId && p.toId === toId && p.createdAt >= cutoffStr
+  const recent = proposals.find(
+    (p) => p.fromId === fromId && p.toId === toId && p.createdAt >= cutoffStr
   );
   return !recent; // true = 쿨다운 통과
 };
@@ -202,18 +248,28 @@ export const getRemainingProposals = (artistId) => {
 };
 
 // ── 콜라보 제의 생성 ──
-export const createProposal = (fromId, toId, { dates, locationId, message, role, collaboRole, isSameType: sameType }) => {
+export const createProposal = (
+  fromId,
+  toId,
+  { dates, locationId, message, role, collaboRole, isSameType: sameType }
+) => {
   const data = loadAll();
 
   // 하루 제안 제한
   const dailyCount = getDailyProposalCount(fromId);
   if (dailyCount >= COLLABO_RULES.maxDailyProposals) {
-    return { error: 'daily_limit', message: `하루 최대 ${COLLABO_RULES.maxDailyProposals}회까지 제안할 수 있습니다.` };
+    return {
+      error: 'daily_limit',
+      message: `하루 최대 ${COLLABO_RULES.maxDailyProposals}회까지 제안할 수 있습니다.`,
+    };
   }
 
   // 쿨다운 체크
   if (!checkCooldown(fromId, toId)) {
-    return { error: 'cooldown', message: `같은 작가에게 ${COLLABO_RULES.cooldownSamePerson}일 이내 재요청할 수 없습니다.` };
+    return {
+      error: 'cooldown',
+      message: `같은 작가에게 ${COLLABO_RULES.cooldownSamePerson}일 이내 재요청할 수 없습니다.`,
+    };
   }
 
   // 동종 콜라보 역할 필수 체크
@@ -228,14 +284,14 @@ export const createProposal = (fromId, toId, { dates, locationId, message, role,
     dates: Array.isArray(dates) ? dates.sort() : [dates],
     locationId,
     message: message || '',
-    role: role || '',           // 요청자 타입 (예: 'photographer', 'hmua')
-    collaboRole: collaboRole || '',  // 콜라보 역할 ('main' | 'sub')
+    role: role || '', // 요청자 타입 (예: 'photographer', 'hmua')
+    collaboRole: collaboRole || '', // 콜라보 역할 ('main' | 'sub')
     isSameType: !!sameType,
     status: 'pending',
     createdAt: new Date().toISOString().slice(0, 10),
     respondedAt: null,
     rejectReason: '',
-    revenueShare: sameType ? { main: 60, sub: 40 } : null,  // 동종 기본 분배
+    revenueShare: sameType ? { main: 60, sub: 40 } : null, // 동종 기본 분배
   };
 
   data.proposals.push(proposal);
@@ -257,7 +313,7 @@ export const createProposal = (fromId, toId, { dates, locationId, message, role,
 // ── 제의 응답 (수락 / 거절) ──
 export const respondToProposal = (proposalId, status, rejectReason = '') => {
   const data = loadAll();
-  const idx = data.proposals.findIndex(p => p.id === proposalId);
+  const idx = data.proposals.findIndex((p) => p.id === proposalId);
   if (idx < 0) return { error: 'not_found' };
 
   // 동종 콜라보 수락 시 월 횟수 체크
@@ -265,7 +321,10 @@ export const respondToProposal = (proposalId, status, rejectReason = '') => {
     const fromId = data.proposals[idx].fromId;
     const count = getMonthlySameTypeCount(fromId, data.proposals[idx].role);
     if (count >= COLLABO_RULES.maxSameTypePerMonth) {
-      return { error: 'same_type_limit', message: `동종 콜라보는 월 ${COLLABO_RULES.maxSameTypePerMonth}회까지 가능합니다.` };
+      return {
+        error: 'same_type_limit',
+        message: `동종 콜라보는 월 ${COLLABO_RULES.maxSameTypePerMonth}회까지 가능합니다.`,
+      };
     }
   }
 
@@ -289,22 +348,24 @@ export const respondToProposal = (proposalId, status, rejectReason = '') => {
 
 // ── 내가 보낸 / 받은 제의 조회 ──
 export const getSentProposals = (artistId) => {
-  return loadAll().proposals.filter(p => p.fromId === artistId);
+  return loadAll().proposals.filter((p) => p.fromId === artistId);
 };
 export const getReceivedProposals = (artistId) => {
-  return loadAll().proposals.filter(p => p.toId === artistId);
+  return loadAll().proposals.filter((p) => p.toId === artistId);
 };
 export const getPendingReceived = (artistId) => {
-  return loadAll().proposals.filter(p => p.toId === artistId && p.status === 'pending');
+  return loadAll().proposals.filter((p) => p.toId === artistId && p.status === 'pending');
 };
 
 // ── 알림 조회 ──
 export const getNotifications = (artistId) => {
-  return loadAll().notifications.filter(n => n.targetId === artistId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return loadAll()
+    .notifications.filter((n) => n.targetId === artistId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 };
 export const markNotificationRead = (notifId) => {
   const data = loadAll();
-  const n = data.notifications.find(n => n.id === notifId);
+  const n = data.notifications.find((n) => n.id === notifId);
   if (n) n.read = true;
   saveAll(data);
 };
@@ -322,7 +383,7 @@ export const expireOldProposals = () => {
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
   let changed = false;
-  data.proposals.forEach(p => {
+  data.proposals.forEach((p) => {
     if (p.status === 'pending' && p.createdAt < cutoffStr) {
       p.status = 'expired';
       changed = true;

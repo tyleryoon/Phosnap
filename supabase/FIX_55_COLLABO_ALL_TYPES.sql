@@ -1,0 +1,27 @@
+-- FIX_55 — 콜라보를 네 공급자 유형 전체로 넓힌다.
+--
+-- FIX_51 에서 from_type/to_type 을 photographer·stylist 로만 열었다.
+-- 헤메가 의상·장소 업체와도 콜라보해야 하므로 dress·venue 를 더한다.
+-- 유형 문자열은 booking_items 와 provider_user_id 가 쓰는
+-- 'photographer' | 'stylist' | 'dress' | 'venue' 를 그대로 따른다.
+--
+-- 그리고 provider_owner 를 지운다. 같은 일을 하는 provider_user_id 가
+-- 이미 있었고 그쪽은 처음부터 네 유형을 다 처리했다. 먼저 찾아보지 않고
+-- 둘로 만든 게 문제였다. 하나로 되돌린다.
+--
+-- 실제 적용본은 Supabase MCP apply_migration 으로 올렸다 (마이그레이션
+-- 이름 fix_55_collabo_all_provider_types). 이 파일은 저장소 기록용이다.
+--
+-- 주요 변경
+--   1. from_type / to_type CHECK 에 dress, venue 추가
+--   2. RLS 정책 collabo_read_own 을 provider_user_id 기준으로 교체
+--   3. provider_display_name(type, id) 신설 — 네 테이블의 이름 컬럼이
+--      제각각이라(name / name_ko) 알림 문구용으로 한 곳에 모았다
+--   4. create/respond/cancel RPC 세 개를 provider_user_id 로 교체
+--   5. provider_owner 삭제
+--   6. 권한은 FIX_53 과 같은 기준 — anon·public 회수, authenticated 부여
+--
+-- 검증 (실제로 돌려봄)
+--   윤헤메(stylist) → 장소벤더6(venue) 제의 생성 → 장소벤더6 계정에서
+--   조회하니 자기 앞 1건만 보임(RLS 정상) → 거절 → 알림 두 건이 각자
+--   올바른 사람에게 감 (제의는 장소벤더6, 결과는 윤헤메)

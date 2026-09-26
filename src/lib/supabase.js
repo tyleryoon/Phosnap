@@ -2707,10 +2707,15 @@ export const getCollaboCandidates = async () => {
   const sb = await getSupabase();
   if (!sb) return { data: [], error: null };
 
-  // 컬럼 이름은 두 테이블이 다르다. photographers 는 name/name_ko,
-  // stylists 는 name_ko/name_en 이고 img 가 아니라 portfolio_images 다.
-  // 없는 컬럼을 하나라도 넣으면 PostgREST 가 쿼리 전체를 400 으로 막는다.
-  const [photoRes, stylistRes] = await Promise.all([
+  // providerType 은 DB 어휘를 그대로 쓴다 —
+  //   'photographer' | 'stylist' | 'dress' | 'venue'
+  // (booking_items.provider_type, provider_user_id 와 같은 말이다)
+  //
+  // 컬럼 이름이 테이블마다 다르다. photographers 는 name/name_ko,
+  // stylists 는 name_ko/name_en 에 img 대신 portfolio_images,
+  // 벤더 둘은 name/name_ko 에 img. 없는 컬럼을 하나라도 넣으면
+  // PostgREST 가 쿼리 전체를 400 으로 막는다.
+  const [photoRes, stylistRes, dressRes, venueRes] = await Promise.all([
     sb
       .from('photographers')
       .select('id, name, name_ko, location_id, artist_type, img, rating, languages, is_active')
@@ -2719,10 +2724,19 @@ export const getCollaboCandidates = async () => {
       .from('stylists')
       .select('id, name_ko, name_en, location_id, portfolio_images, rating, is_active')
       .eq('is_active', true),
+    sb
+      .from('dress_vendors')
+      .select('id, name, name_ko, name_en, location_id, img, is_active')
+      .eq('is_active', true),
+    sb
+      .from('venue_vendors')
+      .select('id, name, name_ko, name_en, location_id, img, is_active')
+      .eq('is_active', true),
   ]);
 
-  if (photoRes.error) console.error('[getCollaboCandidates] 작가 조회 실패:', photoRes.error);
-  if (stylistRes.error) console.error('[getCollaboCandidates] 헤메 조회 실패:', stylistRes.error);
+  const firstError =
+    photoRes.error || stylistRes.error || dressRes.error || venueRes.error || null;
+  if (firstError) console.error('[getCollaboCandidates] 조회 실패:', firstError);
 
   // 화면은 한 목록으로 다룬다. 타입만 구분해 붙여준다.
   const asPhotographer = (p) => ({
@@ -2749,10 +2763,26 @@ export const getCollaboCandidates = async () => {
     rating: s.rating,
     languages: [],
   });
+  const asVendor = (type) => (v) => ({
+    providerType: type,
+    id: v.id,
+    name: v.name || v.name_ko,
+    nameEn: v.name_en,
+    locationId: v.location_id,
+    artistType: type, // 'dress' | 'venue'
+    img: v.img,
+    rating: null,
+    languages: [],
+  });
 
   return {
-    data: [...(photoRes.data || []).map(asPhotographer), ...(stylistRes.data || []).map(asStylist)],
-    error: photoRes.error || stylistRes.error || null,
+    data: [
+      ...(photoRes.data || []).map(asPhotographer),
+      ...(stylistRes.data || []).map(asStylist),
+      ...(dressRes.data || []).map(asVendor('dress')),
+      ...(venueRes.data || []).map(asVendor('venue')),
+    ],
+    error: firstError,
   };
 };
 
