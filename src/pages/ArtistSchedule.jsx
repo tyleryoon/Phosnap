@@ -9554,6 +9554,19 @@ const ArtistSchedule = () => {
       }
     };
 
+    // 보낸 제의 취소. 상대 화면에서도 사라지므로 한 번 묻는다.
+    const handleCancel = async (proposalId) => {
+      if (!window.confirm('이 제의를 취소할까요? 상대에게도 취소 알림이 갑니다.')) return;
+      const { cancelCollaboProposal } = await import('../lib/supabase');
+      const { error } = await cancelCollaboProposal(proposalId);
+      if (error) {
+        showSaved(`취소 실패 — ${error.message || '잠시 후 다시 시도해주세요.'}`, 4000);
+        return;
+      }
+      await loadCollabo();
+      showSaved('제의를 취소했습니다');
+    };
+
     // 내 활동 지역 중 이 작가와 겹치는 지역이 노출 ON인지 확인
     const isMyMatchingLocActive = (ph) => {
       const theirActiveCities = getTheirActiveCities(ph);
@@ -9680,8 +9693,13 @@ const ArtistSchedule = () => {
 
     // 받은 제의 카드
     const ProposalCard = ({ proposal, direction }) => {
-      const other = PHOTOGRAPHERS.find(
-        (ph) => ph.id === (direction === 'received' ? proposal.fromId : proposal.toId)
+      // DB 행은 snake_case 다. 예전에는 proposal.fromId 를 찾았는데 그건
+      // localStorage 시절 이름이라 늘 undefined 였고, 상대를 PHOTOGRAPHERS
+      // 시드에서 찾는 바람에 모든 카드가 '알 수 없음' 으로 떴다.
+      const otherId = direction === 'received' ? proposal.from_id : proposal.to_id;
+      const otherType = direction === 'received' ? proposal.from_type : proposal.to_type;
+      const other = collaboCandidates.find(
+        (c) => c.id === otherId && c.providerType === otherType
       );
       const status = PROPOSAL_STATUS[proposal.status] || PROPOSAL_STATUS.pending;
       const type = ARTIST_TYPES[other?.artistType || 'photographer'];
@@ -9720,7 +9738,8 @@ const ArtistSchedule = () => {
                   {other?.nameKo || other?.name || '알 수 없음'}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>
-                  {type?.icon} {type?.ko} · {other?.location}
+                  {type?.icon} {type?.ko}
+                  {other?.locationId ? ` · ${locationMeta(other.locationId)?.name || other.locationId}` : ''}
                 </div>
               </div>
             </div>
@@ -9738,7 +9757,7 @@ const ArtistSchedule = () => {
             </span>
           </div>
           {/* 동종 콜라보 역할 표시 */}
-          {proposal.isSameType && (
+          {proposal.is_same_type && (
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <span
                 style={{
@@ -9752,22 +9771,22 @@ const ArtistSchedule = () => {
               >
                 동종 콜라보
               </span>
-              {proposal.collaboRole && (
+              {proposal.collabo_role && (
                 <span
                   style={{
                     fontSize: 10,
                     padding: '3px 10px',
                     background:
-                      proposal.collaboRole === 'main'
+                      proposal.collabo_role === 'main'
                         ? 'rgba(34,197,94,0.08)'
                         : 'rgba(200,200,200,0.08)',
-                    border: `1px solid ${proposal.collaboRole === 'main' ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
-                    color: proposal.collaboRole === 'main' ? 'var(--success)' : 'var(--muted)',
+                    border: `1px solid ${proposal.collabo_role === 'main' ? 'rgba(34,197,94,0.3)' : 'var(--border)'}`,
+                    color: proposal.collabo_role === 'main' ? 'var(--success)' : 'var(--muted)',
                     fontFamily: 'var(--font-serif)',
                   }}
                 >
-                  {COLLABO_ROLES[proposal.collaboRole]?.ko || proposal.collaboRole} (
-                  {proposal.revenueShare?.[proposal.collaboRole]}%)
+                  {COLLABO_ROLES[proposal.collabo_role]?.ko || proposal.collabo_role} (
+                  {proposal.revenue_share?.[proposal.collabo_role]}%)
                 </span>
               )}
             </div>
@@ -9810,10 +9829,22 @@ const ArtistSchedule = () => {
               </button>
             </div>
           )}
+          {/* 취소 (보낸 제의 + 아직 대기중일 때만).
+              상대가 이미 응답했다면 거둬들이지 못한다 — 수락해 놓고
+              일정까지 잡은 사람에게 뒤늦게 취소되는 게 더 나쁘다. */}
+          {direction === 'sent' && proposal.status === 'pending' && (
+            <button
+              className="btn-ghost"
+              style={{ fontSize: 11, color: 'var(--muted)', padding: '4px 12px' }}
+              onClick={() => handleCancel(proposal.id)}
+            >
+              제의 취소
+            </button>
+          )}
           {/* 거절 사유 표시 */}
-          {proposal.status === 'rejected' && proposal.rejectReason && (
+          {proposal.status === 'rejected' && proposal.reject_reason && (
             <div style={{ fontSize: 11, color: 'var(--danger)', marginTop: 4 }}>
-              사유: {proposal.rejectReason}
+              사유: {proposal.reject_reason}
             </div>
           )}
         </div>

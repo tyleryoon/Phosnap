@@ -2751,10 +2751,7 @@ export const getCollaboCandidates = async () => {
   });
 
   return {
-    data: [
-      ...(photoRes.data || []).map(asPhotographer),
-      ...(stylistRes.data || []).map(asStylist),
-    ],
+    data: [...(photoRes.data || []).map(asPhotographer), ...(stylistRes.data || []).map(asStylist)],
     error: photoRes.error || stylistRes.error || null,
   };
 };
@@ -2817,6 +2814,19 @@ export const respondCollaboProposal = async (proposalId, status, rejectReason = 
     p_status: status,
     p_reject_reason: rejectReason,
   });
+  return { data, error };
+};
+
+/**
+ * 보낸 제의 취소 (FIX_52).
+ *
+ * 보낸 사람만, 아직 pending 인 것만 거둘 수 있다. 상대가 이미 수락해
+ * 일정까지 잡았는데 뒤늦게 취소되면 그게 더 나쁘기 때문이다.
+ */
+export const cancelCollaboProposal = async (proposalId) => {
+  const sb = await getSupabase();
+  if (!sb) return { data: null, error: { message: 'Supabase 연결 실패' } };
+  const { data, error } = await sb.rpc('cancel_collabo_proposal', { p_id: proposalId });
   return { data, error };
 };
 
