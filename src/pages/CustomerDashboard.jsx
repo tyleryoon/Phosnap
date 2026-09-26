@@ -114,8 +114,11 @@ const L = {
     notiMarketing: '마케팅 알림',
     notiChat: '채팅 알림',
     deleteAccount: '회원 탈퇴',
-    deleteAccountDesc: '탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다.',
-    deleteAccountBtn: '회원 탈퇴하기',
+    // '모든 데이터가 삭제된다' 고 적혀 있었다. 사실이 아니다 — 거래 기록은
+    // 법령상 보관 의무가 있어 지울 수 없고, 그전에 탈퇴 자체가 구현돼
+    // 있지 않았다. 실제로 하는 일만 적는다.
+    deleteAccountDesc: '계정과 개인정보를 삭제합니다. 거래 기록은 법령에 따라 일정 기간 보관됩니다.',
+    deleteAccountBtn: '회원 탈퇴 문의하기',
     deleteConfirm: '정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
   },
   en: {
@@ -207,8 +210,9 @@ const L = {
     notiMarketing: 'Marketing emails',
     notiChat: 'Chat notifications',
     deleteAccount: 'Delete Account',
-    deleteAccountDesc: 'All data will be permanently deleted and cannot be recovered.',
-    deleteAccountBtn: 'Delete My Account',
+    deleteAccountDesc:
+      'Your account and personal details are removed. Transaction records are retained as required by law.',
+    deleteAccountBtn: 'Request Account Deletion',
     deleteConfirm: 'Are you sure? This action cannot be undone.',
   },
 };
@@ -315,7 +319,9 @@ const buildPipeline = (b) => {
 const CustomerDashboard = () => {
   const navigate = useNavigate();
   const { lang } = useLanguage();
-  const { user, userName, logout } = useAuth();
+  // logout 은 탈퇴 버튼이 쓰던 것이다. 그 버튼이 실제로는 로그아웃만 하고
+  // 계정을 안 지웠던 게 문제라 문의 안내로 바꿨고, 여기서도 뺐다.
+  const { user, userName } = useAuth();
   const m = L[lang] || L.ko;
 
   const [activeTab, setActiveTab] = useState('overview');
@@ -2343,11 +2349,27 @@ const CustomerDashboard = () => {
                           marginBottom: '0.6rem',
                         }}
                       >
+                        {/* 예전에는 여기 '탈퇴 확정' 버튼이 바로 탈퇴를 했다.
+                            했다고 보이기만 했다. 실제 코드는
+                              // TODO: Supabase deleteAccount
+                              await logout();
+                            로그아웃만 하고 계정은 그대로 남았다. 그런데 화면은
+                            '영구 삭제되며 복구할 수 없습니다' 라고 약속했다.
+                            사용자는 지워진 줄 알고 떠나는데 데이터는 남아 있었다.
+
+                            제대로 하려면 auth.users 삭제(service_role 필요)와
+                            '무엇을 지우고 무엇을 남길지' 정책이 있어야 한다.
+                            전자상거래법상 거래 기록은 보관 의무가 있어 '전부
+                            삭제' 는 애초에 불가능하다. 약관(legal.js 제3조)도
+                            '최대 5년 보관' 이라 화면 문구와 모순이었다.
+
+                            구현 전까지는 문의로 받는다. 작동하지 않는 버튼이
+                            '삭제됐다' 고 믿게 만드는 것보다 낫다. */}
                         {lang === 'ko'
-                          ? '정말 탈퇴하시겠습니까?'
+                          ? '탈퇴 요청은 문의로 접수합니다'
                           : lang === 'ja'
-                            ? '本当に退会しますか？'
-                            : 'Are you sure you want to delete your account?'}
+                            ? '退会のご依頼はお問い合わせで承ります'
+                            : 'Account deletion is handled through support'}
                       </div>
                       <p
                         style={{
@@ -2358,35 +2380,27 @@ const CustomerDashboard = () => {
                         }}
                       >
                         {lang === 'ko'
-                          ? '회원 탈퇴 시 다음 데이터가 영구 삭제되며 복구할 수 없습니다:'
-                          : 'The following data will be permanently deleted:'}
+                          ? '탈퇴를 원하시면 1:1 문의에서 "계정 · 개인정보" 분류로 남겨주세요. 확인 후 처리해 드립니다.'
+                          : 'Please submit a request under "Account & Privacy" in 1:1 Support. We will process it after verification.'}
                       </p>
-                      <ul
+                      <p
                         style={{
                           fontSize: '0.78rem',
                           color: 'var(--muted)',
                           margin: '0 0 1rem',
-                          paddingLeft: '1.2rem',
-                          lineHeight: 2,
+                          lineHeight: 1.8,
                         }}
                       >
-                        <li>
-                          {lang === 'ko' ? '예약 내역 및 결제 기록' : 'Booking & payment history'}
-                        </li>
-                        <li>{lang === 'ko' ? '작성한 리뷰' : 'Your reviews'}</li>
-                        <li>{lang === 'ko' ? '즐겨찾기 목록' : 'Favorites list'}</li>
-                        <li>{lang === 'ko' ? '쿠폰 및 포인트' : 'Coupons & points'}</li>
-                      </ul>
+                        {lang === 'ko'
+                          ? '계정과 개인정보(이름 · 연락처 · 주소)는 삭제됩니다. 다만 완료된 예약과 결제 기록은 관련 법령에 따라 일정 기간 보관되며, 이때 개인을 식별할 수 있는 정보는 지워집니다.'
+                          : 'Your account and personal details (name, contact, address) are removed. Completed bookings and payment records are retained for a period required by law, with identifying information stripped.'}
+                      </p>
                       <div style={{ display: 'flex', gap: '0.75rem' }}>
                         <button
-                          onClick={async () => {
-                            // TODO: Supabase deleteAccount
-                            await logout();
-                            navigate('/');
-                          }}
+                          onClick={() => navigate('/support')}
                           style={{ ...goldBtn, background: 'var(--danger)', color: '#fff' }}
                         >
-                          {lang === 'ko' ? '탈퇴 확정' : 'Confirm Delete'}
+                          {lang === 'ko' ? '문의로 이동' : 'Go to Support'}
                         </button>
                         <button onClick={() => setShowDeleteConfirm(false)} style={ghostBtn}>
                           {lang === 'ko' ? '취소' : 'Cancel'}
