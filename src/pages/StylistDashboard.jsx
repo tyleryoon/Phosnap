@@ -9,6 +9,7 @@ import ProviderLocations from '../components/ProviderLocations';
 import DressFulfillment from '../components/DressFulfillment';
 import ListingStatus from '../components/ListingStatus';
 import PendingItems from '../components/PendingItems';
+import CollaboInbox from '../components/CollaboInbox';
 import { getVendorReviews, getAverageRating, formatReview } from '../utils/vendorReviews';
 import { getAvatarUrl } from '../lib/supabase';
 import ProfileAvatar from '../components/ProfileAvatar';
@@ -2114,6 +2115,9 @@ export default function StylistDashboard() {
             { id: 'serviceMenu', label: t.serviceMenu },
             { id: 'schedule', label: t.schedule },
             { id: 'dressRental', label: '의상 대여' },
+            // 작가가 헤메에게 콜라보를 제의할 수 있는데 받는 화면이 없었다.
+            // 제의가 와도 헤메는 알 방법이 없었다.
+            { id: 'collabo', label: '콜라보' },
             { id: 'profileEdit', label: t.profileEdit },
             { id: 'reviews', label: t.reviews },
           ].map((tab) => (
@@ -2159,6 +2163,8 @@ export default function StylistDashboard() {
         {activeTab === 'dressRental' && (
           <DressRentalTab t={t} lang={language} stylistProfile={stylistProfile} />
         )}
+        {activeTab === 'collabo' && <CollaboInbox stylistId={stylistId} />}
+
         {activeTab === 'profileEdit' && <ProfileEditTab t={t} stylistId={stylistId} />}
 
         {/* Reviews Tab */}
